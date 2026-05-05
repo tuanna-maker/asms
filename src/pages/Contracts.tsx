@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateContract, useDeleteContract, useUpdateContract } from "@/hooks/use-contracts-api";
@@ -15,7 +15,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 
-type Contract = { id: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number };
+type Contract = {
+  id: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number
+};
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Đang thực hiện", variant: "default" },
@@ -25,7 +27,6 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 };
 
 const Contracts = () => {
-  const [contracts, setContracts] = useState<Contract[]>([]);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -53,7 +54,7 @@ const Contracts = () => {
     warrantyEnd: string | null;
     status: string;
     progress: number;
-    customer?: { name: string } | null;
+    customer?: { id: string; code: string; name: string } | null;
   };
 
   function formatISODate(iso: string | Date | null | undefined) {
@@ -71,29 +72,61 @@ const Contracts = () => {
     return uiStatus as Contract["status"];
   }
 
-  const { data: apiContracts } = useQuery({
+  function normalizeCustomer(value: unknown): string {
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+      const maybeName = (value as { name?: unknown }).name;
+      if (typeof maybeName === "string") return maybeName;
+    }
+    return "";
+  }
+  const {
+    data: apiContracts,
+    isLoading: contractsLoading,
+    isError: contractsError,
+  } = useQuery({
     queryKey: ["contracts"],
     queryFn: async () => {
       const res = await api.get<ApiSuccess<ApiContractRow[]>>("/api/v1/contracts");
-      return (res.data.data ?? []).map((row) => ({
-        id: row.code,
-        customer: row.customer?.name ?? "",
-        value: Number(row.value ?? 0),
-        products: Number(row.products ?? 0),
-        startDate: formatISODate(row.startDate),
-        endDate: formatISODate(row.endDate),
-        warrantyEnd: row.warrantyEnd ? formatISODate(row.warrantyEnd) : "—",
-        status: mapStatus(row.status),
-        progress: Number(row.progress ?? 0),
-      }));
+      return res.data.data ?? [];
     },
+    select: (rows: Array<ApiContractRow | Contract>) =>
+      (rows ?? []).map((row) => {
+        const maybeUi = row as Partial<Contract>;
+        const isUiShape = typeof maybeUi.id === "string" && "customer" in maybeUi && !("code" in (row as ApiContractRow));
+        if (isUiShape) {
+          return {
+            id: maybeUi.id ?? "",
+            customer: normalizeCustomer(maybeUi.customer),
+            value: Number(maybeUi.value ?? 0),
+            products: Number(maybeUi.products ?? 0),
+            startDate: String(maybeUi.startDate ?? "—"),
+            endDate: String(maybeUi.endDate ?? "—"),
+            warrantyEnd: String(maybeUi.warrantyEnd ?? "—"),
+            status: mapStatus(String(maybeUi.status ?? "active")),
+            progress: Number(maybeUi.progress ?? 0),
+          } satisfies Contract;
+        }
+
+        const apiRow = row as ApiContractRow;
+        return {
+          id: apiRow.code,
+          customer: normalizeCustomer(apiRow.customer),
+          value: Number(apiRow.value ?? 0),
+          products: Number(apiRow.products ?? 0),
+          startDate: formatISODate(apiRow.startDate),
+          endDate: formatISODate(apiRow.endDate),
+          warrantyEnd: apiRow.warrantyEnd ? formatISODate(apiRow.warrantyEnd) : "—",
+          status: mapStatus(apiRow.status),
+          progress: Number(apiRow.progress ?? 0),
+        } satisfies Contract;
+      }),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 
-  useEffect(() => {
-    if (!apiContracts) return;
-    setContracts(apiContracts);
+  const contracts = useMemo<Contract[]>(() => {
+    return Array.isArray(apiContracts) ? apiContracts : [];
   }, [apiContracts]);
 
   const { data: customers } = useQuery({
@@ -124,9 +157,12 @@ const Contracts = () => {
     return vnDisplayDateToISO(s);
   }
 
-  const filtered = contracts.filter(
-    (c) => c.id.toLowerCase().includes(search.toLowerCase()) || c.customer.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = contracts.filter((c) => {
+    const id = String(c.id ?? "").toLowerCase();
+    const customer = String(c.customer ?? "").toLowerCase();
+    const keyword = search.toLowerCase();
+    return id.includes(keyword) || customer.includes(keyword);
+  });
 
   const handleSave = async (updated: Contract) => {
     try {
@@ -191,6 +227,17 @@ const Contracts = () => {
 
   return (
     <div className="space-y-6">
+      {contractsLoading && (
+        <div className="rounded-xl border border-border/50 bg-card p-4 text-sm text-muted-foreground">
+          Đang tải dữ liệu hợp đồng...
+        </div>
+      )}
+      {contractsError && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          Không thể tải danh sách hợp đồng. Vui lòng thử tải lại trang.
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
@@ -344,7 +391,7 @@ const ContractTable = ({
         {contracts.map((c) => (
           <TableRow key={c.id}>
             <TableCell className="font-medium text-primary">{c.id}</TableCell>
-            <TableCell>{c.customer}</TableCell>
+            <TableCell>{typeof c.customer === "string" ? c.customer : ""}</TableCell>
             <TableCell className="text-right font-semibold">{c.value.toLocaleString()}</TableCell>
             <TableCell className="text-center">{c.products}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
@@ -360,7 +407,9 @@ const ContractTable = ({
               </div>
             </TableCell>
             <TableCell>
-              <Badge variant={statusConfig[c.status].variant}>{statusConfig[c.status].label}</Badge>
+              <Badge variant={(statusConfig[c.status] ?? statusConfig.active).variant}>
+                {(statusConfig[c.status] ?? statusConfig.active).label}
+              </Badge>
             </TableCell>
             <TableCell className="text-right">
               <div className="flex justify-end gap-1">

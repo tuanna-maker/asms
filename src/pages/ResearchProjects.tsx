@@ -5,12 +5,27 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getStatusLabel, getStatusColor } from "@/data/researchData";
 import type { ResearchProject } from "@/data/researchData";
 import CreateResearchDialog from "@/components/research/CreateResearchDialog";
 import { mapResearchProjectListRow } from "@/lib/research-project-mapper";
-import { useCreateResearchProject, useResearchProjectsList, useUpdateResearchProject } from "@/hooks/use-research-projects-api";
+import {
+  useCreateResearchProject,
+  useDeleteResearchProject,
+  useResearchProjectsList,
+  useUpdateResearchProject,
+} from "@/hooks/use-research-projects-api";
 import { toast } from "sonner";
 
 function dateToIsoStartOfDay(s: string) {
