@@ -1,0 +1,100 @@
+# Data Model Inventory
+
+Nguon phan tich: toan bo `src/data/` va `src/pages/`.
+
+## 1) Entities va truong du lieu
+
+| Entity | Truong du lieu |
+|---|---|
+| Customer | `id`, `name`, `contact`, `phone`, `email`, `address`, `contracts`, `activeContracts` |
+| ContactItem | `id`, `name`, `title`, `customerId`, `customerName`, `phone`, `email`, `isPrimary` |
+| ActivityItem (UI) / `CrmActivity` (DB: `crm_activities`) | `id`, `type` (call/email/meeting/note), `title`, `status` (scheduled/done), `activityAt`, `createdById?`, `customerId` + quan hệ `customer`, `createdBy` |
+| Contract | `id`, `customer`, `value`, `products`, `startDate`, `endDate`, `warrantyEnd`, `status`, `progress` |
+| ContractRow | `id`, `name`, `customer`, `value`, `startDate`, `endDate`, `status`, `progress` |
+| HandoverRecord (page `Handover`) | `id`, `contract`, `customer`, `products`, `currentStep`, `status`, `startDate`, `dueDate` |
+| HandoverRow | `id`, `contract`, `customer`, `products`, `date`, `status`, `isLate` |
+| TrainingCourse | `id`, `title`, `type`, `instructor`, `customer`, `startDate`, `endDate`, `participants`, `status`, `description?`, `location?`, `trainees?`, `schedule?` |
+| Trainee | `id`, `name`, `unit`, `rank?`, `attendance`, `score?` |
+| ScheduleSession | `id`, `date`, `startTime`, `endTime`, `topic`, `location`, `status` |
+| TrainingRecord (page `Handover`) | `id`, `contract`, `customer`, `sessions`, `completed`, `status`, `startDate`, `dueDate` |
+| TrainingRow | `id`, `contract`, `customer`, `topic`, `date`, `status`, `isLate` |
+| DefenseProduct | `id`, `code`, `name`, `category`, `description`, `status`, `version`, `unit`, `manufacturer`, `yearReleased`, `totalProduced`, `bom`, `specs`, `history?`, `documents?`, `trainings?` |
+| BOMItem | `materialId`, `materialName`, `quantity`, `unit`, `serialNumbers?` |
+| ProductSpec | `label`, `value` |
+| ProductDocument | `id`, `name`, `type`, `version`, `size`, `uploadedBy`, `uploadedAt` |
+| ProductTraining | `id`, `title`, `trainer`, `date`, `duration`, `participants`, `status`, `location?` |
+| ChangeHistoryEntry | `id`, `updatedBy`, `updatedAt`, `changes`, `note?` |
+| ChangeDetail | `field`, `oldValue`, `newValue` |
+| ProductRow | `id`, `name`, `category`, `customer`, `status`, `quantity`, `deliveryDate` |
+| MaterialInventory (page `Materials`) | `id`, `name`, `type`, `serial`, `quantity`, `available`, `unit`, `warehouse` |
+| MaterialTransfer | `id`, `material`, `quantity`, `from`, `to`, `type`, `date`, `status` |
+| Equipment | `id`, `name`, `serial`, `category`, `status`, `currentLocation`, `installedOn`, `managedBy`, `importDate`, `expiryDate`, `imageUrl?`, `attachments`, `transferHistory`, `maintenance` |
+| EquipmentTransferHistory | `date`, `from`, `to`, `reason`, `approvedBy` |
+| MaintenanceRecord | `date`, `type`, `description`, `status`, `nextDate?` |
+| WarrantyTicket (page `Warranty`) | `id`, `customer`, `device`, `issue`, `source`, `type`, `priority`, `step`, `status`, `assignee`, `sla`, `createdAt` |
+| ComplaintRow | `id`, `customer`, `product`, `type`, `description`, `status`, `createdDate`, `resolvedDate`, `isLate` |
+| DocItem | `id`, `name`, `category`, `fileType`, `size`, `owner`, `uploadedAt`, `tags`, `description?` |
+| TaskItem | `id`, `title`, `description`, `priority`, `assignee`, `startDate`, `deadline`, `status`, `progress`, `projectId?`, `projectCode?`, `type` |
+| ResearchProject | `id`, `code`, `name`, `manager`, `department`, `fundingSource`, `startDate`, `endDate`, `status`, `progress`, `description`, `members`, `tasks`, `deliverables`, `budget`, `budgetSpent`, `budgetItems`, `councilMembers`, `basisItems`, `deploymentItems`, `cooperationItems` |
+| ResearchTask | `id`, `title`, `assignee`, `startDate`, `endDate`, `status`, `progress`, `priority?`, `description?` |
+| ResearchDeliverable | `id`, `title`, `assignee`, `deadline`, `status`, `type`, `progress`, `description?` |
+| BudgetItem | `id`, `category`, `amount`, `spent`, `note?` |
+| CouncilMember | `id`, `name`, `role`, `organization`, `expertise` |
+| BasisItem | `id`, `code`, `title`, `type`, `issuer`, `date` |
+| DeploymentItem | `id`, `title`, `description`, `target`, `timeline`, `status` |
+| CooperationItem | `id`, `partner`, `type`, `content`, `status`, `startDate` |
+| SystemUser (page `SettingsPage`) | `id`, `name`, `email`, `role`, `status`, `lastLogin` |
+| DashboardData | `stats`, `product`, `contract`, `handover`, `training`, `complaint`, `pakd`, `customerProducts`, `customerRevenue`, `trend` |
+| PAKDMetric | `name`, `total`, `remaining` |
+| CustomerProductsMetric | `name`, `products` |
+| CustomerRevenueMetric | `name`, `revenue` |
+| TrendMetric | `month`, `sanXuat`, `hopDong`, `banGiao`, `huanLuyen` |
+
+## 2) Moi quan he giua cac entity
+
+| Tu entity | Quan he | Den entity | Khoa/field lien ket | Ghi chu |
+|---|---|---|---|---|
+| Customer | 1 - n | Contract | `Contract.customer` (theo ten don vi) | Dang lien ket bang text, chua co `customerId` |
+| Customer | 1 - n | ContactItem | `ContactItem.customerId -> Customer.id` | Quan he ro rang nhat trong CRM |
+| Customer | 1 - n | CrmActivity | `crm_activities.customer_id` | Hoat dong CRM: API `/api/v1/crm-activities`, soft delete |
+| User | 0 - n | CrmActivity | `crm_activities.created_by_id` | Nguoi ghi log; ON DELETE SET NULL |
+| Contract | 1 - n | HandoverRecord | `HandoverRecord.contract` (ma HD) | Lien ket theo ma hop dong string |
+| Contract | 1 - n | TrainingRecord | `TrainingRecord.contract` (ma HD) | Huan luyen theo hop dong |
+| Contract | 1 - n | HandoverRow | `HandoverRow.contract` | Du lieu dashboard chi tiet |
+| Contract | 1 - n | TrainingRow | `TrainingRow.contract` | Du lieu dashboard chi tiet |
+| Contract | 1 - n | MaterialTransfer | `MaterialTransfer.to` (khi `type = contract`) | Dieu chuyen vat tu theo HD |
+| Contract | 1 - n | DefenseProduct (nghiep vu) | thong qua san pham ban giao/thuoc HD | Chua co foreign key truc tiep trong model |
+| TrainingCourse | 1 - n | Trainee | `TrainingCourse.trainees[]` | Danh sach hoc vien cua khoa hoc |
+| TrainingCourse | 1 - n | ScheduleSession | `TrainingCourse.schedule[]` | Lich hoc cua khoa hoc |
+| DefenseProduct | 1 - n | BOMItem | `DefenseProduct.bom[]` | Dinh muc vat tu BOM |
+| DefenseProduct | 1 - n | ProductSpec | `DefenseProduct.specs[]` | Thuoc tinh ky thuat |
+| DefenseProduct | 1 - n | ProductDocument | `DefenseProduct.documents[]` | Tai lieu dinh kem theo san pham |
+| DefenseProduct | 1 - n | ProductTraining | `DefenseProduct.trainings[]` | Dot dao tao lien quan san pham |
+| DefenseProduct | 1 - n | ChangeHistoryEntry | `DefenseProduct.history[]` | Lich su thay doi |
+| BOMItem | n - 1 | MaterialInventory | `BOMItem.materialId <-> MaterialInventory.id` | Lien ket module Product - Materials |
+| MaterialTransfer | n - 1 | MaterialInventory | `MaterialTransfer.material` (ten) | Nen doi sang `materialId` de chuan hoa |
+| WarrantyTicket | n - 1 | Customer | `WarrantyTicket.customer` (ten) | Dang map theo ten khach hang |
+| WarrantyTicket | n - 1 | DefenseProduct/ProductRow | `WarrantyTicket.device` (ten thiet bi) | Dang map theo ten, chua co `productId` |
+| ComplaintRow | n - 1 | Customer | `ComplaintRow.customer` (ten) | Khiieu nai theo khach hang |
+| ComplaintRow | n - 1 | DefenseProduct/ProductRow | `ComplaintRow.product` (ten) | Khiieu nai theo san pham |
+| ResearchProject | 1 - n | ResearchTask | `ResearchProject.tasks[]` | Cong viec trong de tai |
+| ResearchProject | 1 - n | ResearchDeliverable | `ResearchProject.deliverables[]` | San pham dau ra de tai |
+| ResearchProject | 1 - n | BudgetItem | `ResearchProject.budgetItems[]` | Hang muc chi phi |
+| ResearchProject | 1 - n | CouncilMember | `ResearchProject.councilMembers[]` | Hoi dong tham dinh |
+| ResearchProject | 1 - n | BasisItem | `ResearchProject.basisItems[]` | So cu phap ly/chuyen mon |
+| ResearchProject | 1 - n | DeploymentItem | `ResearchProject.deploymentItems[]` | Ke hoach trien khai |
+| ResearchProject | 1 - n | CooperationItem | `ResearchProject.cooperationItems[]` | Hop tac/chuyen giao |
+| TaskItem | n - 1 | ResearchProject | `TaskItem.projectId -> ResearchProject.id` | Da co lien ket id va `projectCode` de doi chieu |
+| Equipment | 1 - n | EquipmentTransferHistory | `Equipment.transferHistory[]` | Nhat ky dieu chuyen thiet bi |
+| Equipment | 1 - n | MaintenanceRecord | `Equipment.maintenance[]` | Nhat ky bao tri/sua chua |
+| SystemUser | 1 - n | (quan tri role) | `SystemUser.role` | Role: `admin`, `manager`, `technician`, `viewer` |
+
+## 3) Nhan xet nhanh de quy chuan backend
+
+| Van de hien tai (mock/frontend) | De xuat cho backend Prisma/PostgreSQL |
+|---|---|
+| Nhieu lien ket dang qua ten (`customer`, `device`, `material`) | Chuan hoa bang ID/FK (`customer_id`, `product_id`, `material_id`) |
+| Nhieu nested array trong 1 object (vi du `ResearchProject.tasks[]`) | Tach thanh bang rieng co khoa ngoai (`research_tasks`, `research_deliverables`, ...) |
+| Chua thay truong soft delete trong mock | Bo sung `deleted_at` cho tat ca bang nghiep vu |
+| Chua thong nhat enum trang thai giua cac module | Dinh nghia enum dung chung theo module trong Prisma schema |
+

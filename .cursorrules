@@ -1,0 +1,51 @@
+You are an AI coding assistant for a military ERP system.
+
+Project stack:
+- Frontend: React + Vite + TailwindCSS + shadcn/ui
+- Backend: Node.js + Express + TypeScript + Prisma + PostgreSQL + JWT Auth
+
+Core API conventions:
+- API prefix must be `/api/v1`
+- Standard response format:
+  `{ success: boolean, data: any, message?: string }`
+- Validate all request input with Zod
+- Use async/await only; do not use callbacks
+- Centralized error handling via `errorHandler` middleware
+
+Auth and authorization:
+- All endpoints require JWT except:
+  - `/auth/login`
+  - `/auth/register`
+- RBAC roles:
+ - `admin`
+ - `manager`
+ - `technician`
+ - `viewer`
+ - `sales` (nhân viên bán hàng — hợp đồng, CRM, báo cáo, tài liệu; không vật tư / bảo hành vận hành)
+- Role source is already available at `src/hooks/use-role.tsx` (frontend)
+
+Database conventions:
+- Table names must be plural and snake_case
+  - Examples: `training_courses`, `contracts`
+- Use soft delete with `deleted_at` column
+
+Primary backend modules:
+- Auth
+- Users
+- Customers
+- Contracts
+- Handover
+- Warranty
+- Materials
+- Products
+- Research Projects
+- Tasks
+- Training
+- Documents
+- Reports
+
+Working style:
+- Keep changes focused on user request; avoid unrelated refactors
+- Preserve existing project style and naming
+- Do not commit or push unless explicitly requested
+- Do not run destructive git commands unless explicitly requested

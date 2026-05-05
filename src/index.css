@@ -1,0 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 30% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 15%;
+
+    --primary: 215 90% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 93%;
+    --secondary-foreground: 220 30% 25%;
+
+    --muted: 220 15% 93%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 170 60% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 90%;
+    --input: 220 15% 90%;
+    --ring: 215 90% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 220 30% 18%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 215 90% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 25%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 25% 25%;
+    --sidebar-ring: 215 90% 60%;
+
+    --success: 150 60% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 100%;
+    --info: 200 80% 55%;
+    --info-foreground: 0 0% 100%;
+
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  .dark {
+    --background: 222 30% 10%;
+    --foreground: 220 15% 90%;
+
+    --card: 222 25% 14%;
+    --card-foreground: 220 15% 90%;
+
+    --popover: 222 25% 14%;
+    --popover-foreground: 220 15% 90%;
+
+    --primary: 215 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 20% 20%;
+    --secondary-foreground: 220 15% 80%;
+
+    --muted: 220 20% 20%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 170 55% 40%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 22%;
+    --input: 220 20% 22%;
+    --ring: 215 85% 55%;
+
+    --sidebar-background: 222 30% 8%;
+    --sidebar-foreground: 220 15% 80%;
+    --sidebar-primary: 215 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 16%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 215 85% 60%;
+
+    --success: 150 55% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 85% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 200 75% 50%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/* React Grid Layout customization */
+.react-grid-item.react-grid-placeholder {
+  background: hsl(var(--primary) / 0.15) !important;
+  border: 2px dashed hsl(var(--primary) / 0.4) !important;
+  border-radius: 0.75rem;
+  opacity: 1 !important;
+}
+.react-grid-item > .react-resizable-handle {
+  background: none !important;
+  z-index: 30 !important;
+  opacity: 1 !important;
+}
+.react-grid-item > .react-resizable-handle::after {
+  border-color: hsl(var(--primary) / 0.6) !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-width: 3px !important;
+}
+.react-grid-item.resizing {
+  opacity: 0.9;
+}
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}

@@ -1,0 +1,668 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  active
+  inactive
+  suspended
+}
+
+enum ContractStatus {
+  draft
+  active
+  completed
+  late
+  liquidated
+}
+
+enum HandoverStatus {
+  pending
+  active
+  completed
+  late
+}
+
+enum WarrantyType {
+  warranty
+  repair
+  maintenance
+}
+
+enum WarrantyPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum WarrantyStatus {
+  open
+  processing
+  completed
+  cancelled
+}
+
+enum MaterialType {
+  identified
+  consumable
+}
+
+enum MaterialTransferType {
+  contract
+  warranty
+  repair
+}
+
+enum MaterialTransferStatus {
+  pending
+  processing
+  completed
+}
+
+enum ProductStatus {
+  developing
+  producing
+  equipped
+  stopped
+}
+
+enum ProjectStatus {
+  planning
+  active
+  completed
+  suspended
+}
+
+enum TaskPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum TaskStatus {
+  todo
+  in_progress
+  review
+  completed
+  delayed
+}
+
+enum TaskType {
+  research
+  report
+  fieldwork
+  admin
+  review
+}
+
+enum TrainingType {
+  internal
+  external
+  online
+}
+
+enum TrainingStatus {
+  planned
+  ongoing
+  completed
+  cancelled
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  pending
+}
+
+enum SessionStatus {
+  planned
+  done
+  cancelled
+}
+
+enum DocumentCategory {
+  contract
+  technical
+  policy
+  training
+  report
+  other
+}
+
+enum FileType {
+  pdf
+  doc
+  xls
+  img
+  other
+}
+
+enum CrmActivityType {
+  call
+  email
+  meeting
+  note
+}
+
+enum CrmActivityStatus {
+  scheduled
+  done
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  users       User[]
+
+  @@index([deletedAt], map: "idx_roles_deleted_at")
+  @@map("roles")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  roleId       String    @map("role_id")
+  fullName     String    @map("full_name")
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  status       UserStatus @default(active)
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  role         Role      @relation(fields: [roleId], references: [id])
+  contracts    Contract[] @relation("ContractCreatedBy")
+  handovers    Handover[] @relation("HandoverCreatedBy")
+  warranties   Warranty[] @relation("WarrantyAssignee")
+  projects     ResearchProject[] @relation("ProjectManager")
+  tasks         Task[]
+  courses       TrainingCourse[] @relation("CourseInstructor")
+  documents     Document[] @relation("DocumentOwner")
+  crmActivities CrmActivity[] @relation("CrmActivityCreatedBy")
+  refreshTokens          RefreshToken[]
+  notificationPreferences UserNotificationPreference[]
+
+  @@index([roleId], map: "idx_users_role_id")
+  @@index([status], map: "idx_users_status")
+  @@index([deletedAt], map: "idx_users_deleted_at")
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "idx_refresh_tokens_user_id")
+  @@index([expiresAt], map: "idx_refresh_tokens_expires_at")
+  @@index([deletedAt], map: "idx_refresh_tokens_deleted_at")
+  @@map("refresh_tokens")
+}
+
+/// Cài đặt thông báo theo từng người dùng (`key`: contract_expiry, new_ticket, task_late, material_low).
+model UserNotificationPreference {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  key       String   @map("preference_key")
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key], map: "uniq_user_notification_pref_key")
+  @@index([userId], map: "idx_user_notification_prefs_user")
+  @@map("user_notification_preferences")
+}
+
+model Customer {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  name            String
+  contactName     String?   @map("contact_name")
+  phone           String?
+  email           String?
+  address         String?
+  contractsCount  Int       @default(0) @map("contracts_count")
+  activeContracts Int       @default(0) @map("active_contracts")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  contacts        Contact[]
+  crmActivities   CrmActivity[]
+  contracts       Contract[]
+  handovers       Handover[]
+  warranties      Warranty[]
+  products        Product[]
+  trainingCourses TrainingCourse[]
+  documents       Document[]
+
+  @@index([name], map: "idx_customers_name")
+  @@index([deletedAt], map: "idx_customers_deleted_at")
+  @@map("customers")
+}
+
+model Contact {
+  id         String    @id @default(cuid())
+  customerId String    @map("customer_id")
+  fullName   String    @map("full_name")
+  title      String?
+  phone      String?
+  email      String?
+  isPrimary  Boolean   @default(false) @map("is_primary")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  customer   Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([customerId], map: "idx_contacts_customer_id")
+  @@index([deletedAt], map: "idx_contacts_deleted_at")
+  @@map("contacts")
+}
+
+model CrmActivity {
+  id          String            @id @default(cuid())
+  customerId  String            @map("customer_id")
+  type        CrmActivityType
+  title       String
+  status      CrmActivityStatus
+  activityAt  DateTime          @map("activity_at")
+  createdById String?           @map("created_by_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  deletedAt   DateTime?         @map("deleted_at")
+
+  customer  Customer @relation(fields: [customerId], references: [id])
+  createdBy User?    @relation("CrmActivityCreatedBy", fields: [createdById], references: [id])
+
+  @@index([customerId], map: "idx_crm_activities_customer_id")
+  @@index([activityAt], map: "idx_crm_activities_activity_at")
+  @@index([status], map: "idx_crm_activities_status")
+  @@index([deletedAt], map: "idx_crm_activities_deleted_at")
+  @@map("crm_activities")
+}
+
+model Contract {
+  id           String         @id @default(cuid())
+  code         String         @unique
+  customerId   String         @map("customer_id")
+  createdById  String?        @map("created_by_id")
+  title        String
+  value        Decimal        @db.Decimal(18, 2)
+  products     Int            @default(0)
+  startDate    DateTime       @map("start_date")
+  endDate      DateTime       @map("end_date")
+  warrantyEnd  DateTime?      @map("warranty_end")
+  status       ContractStatus @default(draft)
+  progress     Int            @default(0)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  deletedAt    DateTime?      @map("deleted_at")
+
+  customer       Customer       @relation(fields: [customerId], references: [id])
+  createdBy      User?          @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  handovers      Handover[]
+  warranties     Warranty[]
+  productsList   Product[]
+  trainingCourses TrainingCourse[]
+  documents      Document[]
+
+  @@index([customerId], map: "idx_contracts_customer_id")
+  @@index([createdById], map: "idx_contracts_created_by_id")
+  @@index([status], map: "idx_contracts_status")
+  @@index([startDate, endDate], map: "idx_contracts_date_range")
+  @@index([deletedAt], map: "idx_contracts_deleted_at")
+  @@map("contracts")
+}
+
+model Handover {
+  id          String         @id @default(cuid())
+  code        String         @unique
+  contractId  String         @map("contract_id")
+  customerId  String         @map("customer_id")
+  createdById String?        @map("created_by_id")
+  products    Int            @default(0)
+  currentStep Int            @default(1) @map("current_step")
+  status      HandoverStatus @default(pending)
+  startDate   DateTime       @map("start_date")
+  dueDate     DateTime       @map("due_date")
+  completedAt DateTime?      @map("completed_at")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+
+  contract    Contract       @relation(fields: [contractId], references: [id])
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  createdBy   User?          @relation("HandoverCreatedBy", fields: [createdById], references: [id])
+
+  @@index([contractId], map: "idx_handovers_contract_id")
+  @@index([customerId], map: "idx_handovers_customer_id")
+  @@index([createdById], map: "idx_handovers_created_by_id")
+  @@index([status], map: "idx_handovers_status")
+  @@index([deletedAt], map: "idx_handovers_deleted_at")
+  @@map("handovers")
+}
+
+model Warranty {
+  id             String           @id @default(cuid())
+  code           String           @unique
+  contractId     String?          @map("contract_id")
+  customerId     String           @map("customer_id")
+  productId      String?          @map("product_id")
+  assigneeId     String?          @map("assignee_id")
+  issue          String
+  source         String?
+  type           WarrantyType
+  priority       WarrantyPriority @default(medium)
+  status         WarrantyStatus   @default(open)
+  workflowStep   Int              @default(1) @map("workflow_step")
+  slaHours       Int?             @map("sla_hours")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  resolvedAt     DateTime?        @map("resolved_at")
+  deletedAt      DateTime?        @map("deleted_at")
+
+  contract       Contract?        @relation(fields: [contractId], references: [id])
+  customer       Customer         @relation(fields: [customerId], references: [id])
+  product        Product?         @relation(fields: [productId], references: [id])
+  assignee       User?            @relation("WarrantyAssignee", fields: [assigneeId], references: [id])
+
+  @@index([contractId], map: "idx_warranties_contract_id")
+  @@index([customerId], map: "idx_warranties_customer_id")
+  @@index([productId], map: "idx_warranties_product_id")
+  @@index([assigneeId], map: "idx_warranties_assignee_id")
+  @@index([status, priority], map: "idx_warranties_status_priority")
+  @@index([deletedAt], map: "idx_warranties_deleted_at")
+  @@map("warranties")
+}
+
+model Material {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  name          String
+  type          MaterialType
+  serial        String?
+  quantity      Int          @default(0)
+  available     Int          @default(0)
+  unit          String
+  warehouse     String
+  description   String?
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  products      Product[]
+  transfers     MaterialTransfer[]
+
+  @@index([type], map: "idx_materials_type")
+  @@index([warehouse], map: "idx_materials_warehouse")
+  @@index([deletedAt], map: "idx_materials_deleted_at")
+  @@map("materials")
+}
+
+model MaterialTransfer {
+  id          String                @id @default(cuid())
+  code        String                @unique
+  materialId  String                @map("material_id")
+  quantity    Int
+  fromWarehouse String              @map("from_warehouse")
+  destination String
+  type        MaterialTransferType
+  status      MaterialTransferStatus @default(pending)
+  transferDate DateTime             @map("transfer_date")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+  deletedAt   DateTime?             @map("deleted_at")
+
+  material    Material              @relation(fields: [materialId], references: [id])
+
+  @@index([materialId], map: "idx_material_transfers_material_id")
+  @@index([status], map: "idx_material_transfers_status")
+  @@index([type], map: "idx_material_transfers_type")
+  @@index([transferDate], map: "idx_material_transfers_transfer_date")
+  @@index([deletedAt], map: "idx_material_transfers_deleted_at")
+  @@map("material_transfers")
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  contractId     String?       @map("contract_id")
+  customerId     String?       @map("customer_id")
+  name           String
+  category       String
+  description    String?
+  status         ProductStatus @default(developing)
+  version        String?
+  manufacturer   String?
+  unit           String?
+  yearReleased   Int?          @map("year_released")
+  totalProduced  Int           @default(0) @map("total_produced")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  deletedAt      DateTime?     @map("deleted_at")
+
+  contract       Contract?     @relation(fields: [contractId], references: [id])
+  customer       Customer?     @relation(fields: [customerId], references: [id])
+  materials      Material[]
+  warranties     Warranty[]
+  documents      Document[]
+
+  @@index([contractId], map: "idx_products_contract_id")
+  @@index([customerId], map: "idx_products_customer_id")
+  @@index([status], map: "idx_products_status")
+  @@index([category], map: "idx_products_category")
+  @@index([deletedAt], map: "idx_products_deleted_at")
+  @@map("products")
+}
+
+model ResearchProject {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  managerId     String?       @map("manager_id")
+  name          String
+  department    String?
+  fundingSource String?       @map("funding_source")
+  startDate     DateTime      @map("start_date")
+  endDate       DateTime      @map("end_date")
+  status        ProjectStatus @default(planning)
+  progress      Int           @default(0)
+  budget        Decimal?      @db.Decimal(18, 2)
+  budgetSpent   Decimal?      @map("budget_spent") @db.Decimal(18, 2)
+  description   String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  manager       User?         @relation("ProjectManager", fields: [managerId], references: [id])
+  tasks         Task[]
+  documents     Document[]
+
+  @@index([managerId], map: "idx_research_projects_manager_id")
+  @@index([status], map: "idx_research_projects_status")
+  @@index([startDate, endDate], map: "idx_research_projects_date_range")
+  @@index([deletedAt], map: "idx_research_projects_deleted_at")
+  @@map("research_projects")
+}
+
+model Task {
+  id                String       @id @default(cuid())
+  code              String       @unique
+  projectId         String?      @map("project_id")
+  assigneeId        String?      @map("assignee_id")
+  title             String
+  description       String?
+  priority          TaskPriority @default(medium)
+  status            TaskStatus   @default(todo)
+  type              TaskType     @default(admin)
+  progress          Int          @default(0)
+  startDate         DateTime?    @map("start_date")
+  deadline          DateTime?    @map("deadline")
+  completedAt       DateTime?    @map("completed_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  deletedAt         DateTime?    @map("deleted_at")
+
+  project           ResearchProject? @relation(fields: [projectId], references: [id])
+  assignee          User?        @relation(fields: [assigneeId], references: [id])
+
+  @@index([projectId], map: "idx_tasks_project_id")
+  @@index([assigneeId], map: "idx_tasks_assignee_id")
+  @@index([status, priority], map: "idx_tasks_status_priority")
+  @@index([deadline], map: "idx_tasks_deadline")
+  @@index([deletedAt], map: "idx_tasks_deleted_at")
+  @@map("tasks")
+}
+
+model TrainingCourse {
+  id            String         @id @default(cuid())
+  code          String         @unique
+  contractId    String?        @map("contract_id")
+  customerId    String?        @map("customer_id")
+  instructorId  String?        @map("instructor_id")
+  title         String
+  type          TrainingType
+  startDate     DateTime       @map("start_date")
+  endDate       DateTime       @map("end_date")
+  participants  Int            @default(0)
+  status        TrainingStatus @default(planned)
+  location      String?
+  description   String?
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  deletedAt     DateTime?      @map("deleted_at")
+
+  contract      Contract?      @relation(fields: [contractId], references: [id])
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  instructor    User?          @relation("CourseInstructor", fields: [instructorId], references: [id])
+  trainees      Trainee[]
+  sessions      ScheduleSession[]
+  documents     Document[]
+
+  @@index([contractId], map: "idx_training_courses_contract_id")
+  @@index([customerId], map: "idx_training_courses_customer_id")
+  @@index([instructorId], map: "idx_training_courses_instructor_id")
+  @@index([status], map: "idx_training_courses_status")
+  @@index([deletedAt], map: "idx_training_courses_deleted_at")
+  @@map("training_courses")
+}
+
+model Trainee {
+  id               String            @id @default(cuid())
+  trainingCourseId String            @map("training_course_id")
+  fullName         String            @map("full_name")
+  unit             String?
+  rank             String?
+  attendance       AttendanceStatus  @default(pending)
+  score            Decimal?          @db.Decimal(5, 2)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  deletedAt        DateTime?         @map("deleted_at")
+
+  trainingCourse   TrainingCourse    @relation(fields: [trainingCourseId], references: [id])
+
+  @@index([trainingCourseId], map: "idx_trainees_training_course_id")
+  @@index([attendance], map: "idx_trainees_attendance")
+  @@index([deletedAt], map: "idx_trainees_deleted_at")
+  @@map("trainees")
+}
+
+model ScheduleSession {
+  id               String       @id @default(cuid())
+  trainingCourseId String       @map("training_course_id")
+  date             DateTime
+  startTime        String       @map("start_time")
+  endTime          String       @map("end_time")
+  topic            String
+  location         String?
+  status           SessionStatus @default(planned)
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  deletedAt        DateTime?    @map("deleted_at")
+
+  trainingCourse   TrainingCourse @relation(fields: [trainingCourseId], references: [id])
+
+  @@index([trainingCourseId], map: "idx_schedule_sessions_training_course_id")
+  @@index([date], map: "idx_schedule_sessions_date")
+  @@index([deletedAt], map: "idx_schedule_sessions_deleted_at")
+  @@map("schedule_sessions")
+}
+
+model Document {
+  id                String            @id @default(cuid())
+  code              String            @unique
+  ownerId           String?           @map("owner_id")
+  customerId        String?           @map("customer_id")
+  contractId        String?           @map("contract_id")
+  productId         String?           @map("product_id")
+  projectId         String?           @map("project_id")
+  trainingCourseId  String?           @map("training_course_id")
+  name              String
+  category          DocumentCategory
+  fileType          FileType          @map("file_type")
+  fileSize          String?           @map("file_size")
+  fileUrl           String?           @map("file_url")
+  tags              String[]
+  description       String?
+  uploadedAt        DateTime          @default(now()) @map("uploaded_at")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  deletedAt         DateTime?         @map("deleted_at")
+
+  owner             User?             @relation("DocumentOwner", fields: [ownerId], references: [id])
+  customer          Customer?         @relation(fields: [customerId], references: [id])
+  contract          Contract?         @relation(fields: [contractId], references: [id])
+  product           Product?          @relation(fields: [productId], references: [id])
+  project           ResearchProject?  @relation(fields: [projectId], references: [id])
+  trainingCourse    TrainingCourse?   @relation(fields: [trainingCourseId], references: [id])
+
+  @@index([ownerId], map: "idx_documents_owner_id")
+  @@index([customerId], map: "idx_documents_customer_id")
+  @@index([contractId], map: "idx_documents_contract_id")
+  @@index([productId], map: "idx_documents_product_id")
+  @@index([projectId], map: "idx_documents_project_id")
+  @@index([trainingCourseId], map: "idx_documents_training_course_id")
+  @@index([category], map: "idx_documents_category")
+  @@index([uploadedAt], map: "idx_documents_uploaded_at")
+  @@index([deletedAt], map: "idx_documents_deleted_at")
+  @@map("documents")
+}
+
+/// User-configurable picklists (warehouse names, units, …). `code` is the value stored on domain records; `label` is display text.
+model DataDefinition {
+  id        String    @id @default(cuid())
+  category  String    @map("category")
+  code      String    @map("code")
+  label     String
+  sortOrder Int       @default(0) @map("sort_order")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([category], map: "idx_data_definitions_category")
+  @@index([category, code], map: "idx_data_definitions_category_code")
+  @@index([deletedAt], map: "idx_data_definitions_deleted_at")
+  @@map("data_definitions")
+}

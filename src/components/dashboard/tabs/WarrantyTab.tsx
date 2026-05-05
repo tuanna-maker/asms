@@ -1,0 +1,106 @@
+import { useState, useMemo } from "react";
+import { Shield, Wrench, Clock, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
+import StatCard from "@/components/dashboard/StatCard";
+import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
+import PieChartWidget from "@/components/dashboard/PieChartWidget";
+import ProgressWidget from "@/components/dashboard/ProgressWidget";
+import TrendChart from "@/components/dashboard/TrendChart";
+import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
+import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
+import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
+import { DashboardData } from "@/data/dashboardData";
+import { complaintsData, ComplaintRow } from "@/data/tableData";
+
+interface WarrantyTabProps {
+  data: DashboardData;
+}
+
+const complaintCols: Column<ComplaintRow>[] = [
+  { key: "id", label: "Mã", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
+  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: [
+    { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
+    { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
+    { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
+  ]},
+  { key: "product", label: "Sản phẩm", sortable: true, hideOnMobile: true },
+  { key: "type", label: "Loại", filterable: true, filterOptions: [
+    { value: "warranty", label: "Bảo hành" }, { value: "repair", label: "Sửa chữa" },
+  ], render: (r) => (
+    <StatusBadge status={r.type === "warranty" ? "info" : "warning"} label={r.type === "warranty" ? "Bảo hành" : "Sửa chữa"} />
+  )},
+  { key: "description", label: "Mô tả", hideOnMobile: true },
+  { key: "status", label: "Trạng thái", filterable: true, filterOptions: [
+    { value: "processing", label: "Đang xử lý" }, { value: "done", label: "Hoàn thành" },
+  ], render: (r) => (
+    <StatusBadge status={r.isLate ? "destructive" : r.status === "done" ? "success" : "warning"} label={r.isLate ? "Trễ hạn" : r.status === "done" ? "Hoàn thành" : "Đang xử lý"} />
+  )},
+  { key: "createdDate", label: "Ngày tạo", sortable: true, hideOnMobile: true },
+];
+
+const widgetTemplates = [
+  { id: "stats", title: "Thống kê BH", description: "4 thẻ", icon: Shield, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
+  { id: "complaint", title: "Khiếu nại", description: "Widget tổng hợp", icon: AlertTriangle, category: "Tổng hợp", defaultSize: { w: 6, h: 4 } },
+  { id: "pie-type", title: "Phân loại PA", description: "Biểu đồ tròn", icon: Shield, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
+  { id: "progress", title: "Tiến độ xử lý", description: "Thanh tiến độ", icon: Clock, category: "Tiến độ", defaultSize: { w: 6, h: 4 } },
+  { id: "pie-status", title: "TT xử lý", description: "Biểu đồ tròn", icon: CheckCircle, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
+  { id: "trend", title: "Xu hướng", description: "Biểu đồ đường", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 12, h: 5 } },
+  { id: "table", title: "Bảng KN/BH", description: "Danh sách", icon: Shield, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
+];
+
+const WarrantyTab = ({ data }: WarrantyTabProps) => {
+  const [showAddWidget, setShowAddWidget] = useState(false);
+  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const { complaint } = data;
+  const resolvedRate = complaint.total > 0 ? Math.round((complaint.done / complaint.total) * 100) : 0;
+
+  const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
+    "stats": (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+        <StatCard title="Tổng phản ánh" value={complaint.total} icon={AlertTriangle} color="destructive" />
+        <StatCard title="Bảo hành" value={complaint.warranty} icon={Shield} color="primary" />
+        <StatCard title="Sửa chữa" value={complaint.repair} icon={Wrench} color="accent" />
+        <StatCard title="Tỷ lệ xử lý" value={`${resolvedRate}%`} icon={TrendingUp} color="success" subtitle={`${complaint.done}/${complaint.total} hoàn thành`} />
+      </div>
+    ),
+    "complaint": (
+      <ComplaintWidget total={complaint.total} warranty={complaint.warranty} repair={complaint.repair}
+        processing={complaint.processing} done={complaint.done} onTime={complaint.onTime} late={complaint.late} />
+    ),
+    "pie-type": (
+      <PieChartWidget title="Phân loại phản ánh" icon={Shield} iconColor="bg-destructive/10 text-destructive"
+        data={[{ name: "Bảo hành", value: complaint.warranty }, { name: "Sửa chữa", value: complaint.repair }]} />
+    ),
+    "progress": (
+      <ProgressWidget title="Tiến độ xử lý phản ánh" icon={Clock} total={complaint.total}
+        items={[
+          { label: "Đang xử lý", value: complaint.processing, color: "bg-warning" },
+          { label: "Hoàn thành", value: complaint.done, color: "bg-success" },
+        ]} completedOnTime={complaint.onTime} completedLate={complaint.late} />
+    ),
+    "pie-status": (
+      <PieChartWidget title="Trạng thái xử lý" icon={CheckCircle} iconColor="bg-success/10 text-success"
+        data={[
+          { name: "Đúng hạn", value: complaint.onTime },
+          { name: "Chậm tiến độ", value: complaint.late },
+          { name: "Đang xử lý", value: complaint.processing },
+        ]} />
+    ),
+    "trend": <TrendChart data={data.trend} />,
+    "table": <DashboardTable title="Danh sách khiếu nại / bảo hành" columns={complaintCols} data={complaintsData} />,
+  }), [data]);
+
+  const widgets: WidgetConfig[] = useMemo(() =>
+    activeWidgetIds.filter(id => widgetComponents[id]).map(id => {
+      const tpl = widgetTemplates.find(t => t.id === id);
+      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 } };
+    }), [activeWidgetIds, widgetComponents]);
+
+  return (
+    <>
+      <DashboardGrid widgets={widgets} storageKey="warranty-dashboard" onAddWidget={() => setShowAddWidget(true)} />
+      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={(id) => { if (!activeWidgetIds.includes(id)) setActiveWidgetIds(prev => [...prev, id]); }} />
+    </>
+  );
+};
+
+export default WarrantyTab;
