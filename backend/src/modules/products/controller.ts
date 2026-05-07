@@ -4,14 +4,24 @@ import { z } from "zod";
 import { HttpError } from "../../lib/errors/HttpError";
 import { sendSuccess } from "../../lib/response";
 
-import { createProductSchema, productIdParamSchema, updateProductSchema } from "./schema";
+import {
+  createProductSchema,
+  productBomParamSchema,
+  productIdParamSchema,
+  updateProductBomSchema,
+  updateProductSchema,
+  upsertProductBomSchema,
+} from "./schema";
 
 import {
   createProductService,
   getProductDetailService,
   listProductsService,
+  removeProductBomService,
   softDeleteProductService,
+  updateProductBomService,
   updateProductService,
+  upsertProductBomService,
 } from "./service";
 
 function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
@@ -48,4 +58,24 @@ export async function deleteProductController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(productIdParamSchema, req.params);
   const data = await softDeleteProductService(id);
   return sendSuccess(res, data, "Product deleted");
+}
+
+export async function upsertProductBomController(req: Request, res: Response) {
+  const { id } = zodParseOrThrow(productIdParamSchema, req.params);
+  const payload = zodParseOrThrow(upsertProductBomSchema, req.body);
+  const data = await upsertProductBomService(id, payload);
+  return sendSuccess(res, data, "Product BOM upserted");
+}
+
+export async function updateProductBomController(req: Request, res: Response) {
+  const { id, materialId } = zodParseOrThrow(productBomParamSchema, req.params);
+  const payload = zodParseOrThrow(updateProductBomSchema, req.body);
+  const data = await updateProductBomService(id, materialId, payload);
+  return sendSuccess(res, data, "Product BOM updated");
+}
+
+export async function deleteProductBomController(req: Request, res: Response) {
+  const { id, materialId } = zodParseOrThrow(productBomParamSchema, req.params);
+  const data = await removeProductBomService(id, materialId);
+  return sendSuccess(res, data, "Product BOM deleted");
 }

@@ -61,14 +61,21 @@ export async function getContractDetailService(id: string) {
       customer: { select: { id: true, code: true, name: true } },
       handovers: { where: { deletedAt: null } },
       warranties: { where: { deletedAt: null } },
-      productsList: { where: { deletedAt: null } },
+      contractProducts: {
+        where: { deletedAt: null, product: { deletedAt: null } },
+        include: { product: true },
+      },
       trainingCourses: { where: { deletedAt: null } },
       documents: { where: { deletedAt: null } },
     },
   });
   if (!contract) throw new HttpError(404, "Contract not found");
-  const products = contract.productsList.reduce((sum, product) => sum + product.totalProduced, 0);
-  return { ...contract, products };
+  const productsList = contract.contractProducts.map((item) => ({
+    ...item.product,
+    totalProduced: item.quantity,
+  }));
+  const products = productsList.reduce((sum, product) => sum + product.totalProduced, 0);
+  return { ...contract, productsList, products };
 }
 
 export async function createContractService(payload: {
@@ -146,12 +153,68 @@ export async function softDeleteContractService(id: string) {
   await prisma.$transaction([
     prisma.handover.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
     prisma.warranty.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
-    prisma.product.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
+    prisma.contractProduct.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
     prisma.trainingCourse.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
     prisma.document.updateMany({ where: { contractId: resolvedId, deletedAt: null }, data: { deletedAt: now } }),
     prisma.contract.update({ where: { id: resolvedId }, data: { deletedAt: now } }),
   ]);
 
   return { id: resolvedId };
+}
+
+export async function setContractProductsService(
+  id: string,
+  payload: { products: Array<{ productId: string; quantity: number }> },
+) {
+  const resolvedId = await resolveContractId(id);
+
+  const productIds = [...new Set(payload.products.map((item) => item.productId))];
+  if (productIds.length > 0) {
+    const validProducts = await prisma.product.findMany({
+      where: { id: { in: productIds }, deletedAt: null },
+      select: { id: true },
+    });
+    const validSet = new Set(validProducts.map((item) => item.id));
+    const invalid = productIds.filter((productId) => !validSet.has(productId));
+    if (invalid.length > 0) throw new HttpError(400, "Invalid products", { invalidProductIds: invalid });
+  }
+
+  const now = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.contractProduct.updateMany({
+      where: { contractId: resolvedId, deletedAt: null },
+      data: { deletedAt: now },
+    });
+
+    if (payload.products.length === 0) return;
+
+    await tx.contractProduct.createMany({
+      data: payload.products.map((item) => ({
+        contractId: resolvedId,
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    });
+  });
+
+  const products = await prisma.contractProduct.findMany({
+    where: { contractId: resolvedId, deletedAt: null, product: { deletedAt: null } },
+    include: { product: true },
+  });
+
+  const total = products.reduce((sum, item) => sum + item.quantity, 0);
+  await prisma.contract.update({
+    where: { id: resolvedId },
+    data: { products: total },
+  });
+
+  return {
+    contractId: resolvedId,
+    products: products.map((item) => ({
+      ...item.product,
+      totalProduced: item.quantity,
+    })),
+    total,
+  };
 }
 

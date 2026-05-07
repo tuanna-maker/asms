@@ -1,20 +1,15 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useCreateWarranty, useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-api";
+import { useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-api";
 import { qk } from "@/lib/query-keys";
 import { Plus, Search, Shield, Clock, CheckCircle, AlertTriangle, ArrowRight, Eye, Monitor, Pencil } from "lucide-react";
 import WarrantyDetailDialog, { type WarrantyTicketUi } from "@/components/details/WarrantyDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
 
 const workflowSteps = [
   { label: "Tiếp nhận", key: "receive" },
@@ -24,8 +19,6 @@ const workflowSteps = [
   { label: "Thực hiện SC", key: "repair" },
   { label: "Kiểm tra sau SC", key: "verify" },
 ];
-
-const NO_PRODUCT = "__none__";
 
 const priorityBadge = (p: string) => {
   const map: Record<string, { label: string; className: string }> = {
@@ -52,14 +45,7 @@ const Warranty = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<WarrantyTicketUi | null>(null);
-  const [createForm, setCreateForm] = useState({
-    source: "customer" as "customer" | "internal",
-    customerId: "",
-    productId: NO_PRODUCT,
-    issue: "",
-    type: "warranty" as "warranty" | "repair" | "maintenance",
-    priority: "medium" as "low" | "medium" | "high" | "urgent",
-  });
+  const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
   type ApiSuccess<T> = { success: true; data: T; message?: string };
 
   function formatISODate(iso: string | null | undefined) {
@@ -114,46 +100,6 @@ const Warranty = () => {
     staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
-
-  const createWarranty = useCreateWarranty();
-
-  const defaultSla = (p: string) => (p === "high" || p === "urgent" ? 24 : p === "medium" ? 48 : 72);
-
-  const handleCreateTicket = async () => {
-    if (!createForm.customerId) {
-      toast.error("Vui lòng chọn khách hàng");
-      return;
-    }
-    if (!createForm.issue.trim()) {
-      toast.error("Vui lòng mô tả sự cố");
-      return;
-    }
-    try {
-      await createWarranty.mutateAsync({
-        customerId: createForm.customerId,
-        issue: createForm.issue.trim(),
-        type: createForm.type,
-        priority: createForm.priority,
-        source: createForm.source === "customer" ? "Khách hàng" : "Nội bộ",
-        status: "open",
-        workflowStep: 1,
-        slaHours: defaultSla(createForm.priority),
-        ...(createForm.productId && createForm.productId !== NO_PRODUCT ? { productId: createForm.productId } : {}),
-      });
-      toast.success("Đã tạo phiếu yêu cầu");
-      setShowCreate(false);
-      setCreateForm({
-        source: "customer",
-        customerId: "",
-        productId: NO_PRODUCT,
-        issue: "",
-        type: "warranty",
-        priority: "medium",
-      });
-    } catch {
-      toast.error("Không thể tạo ticket");
-    }
-  };
 
   const filtered = useMemo(
     () =>
@@ -224,106 +170,7 @@ const Warranty = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Tìm ticket..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Tạo ticket</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Tạo phiếu yêu cầu mới</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label>Nguồn</Label>
-                <Select
-                  value={createForm.source}
-                  onValueChange={(v) => setCreateForm((p) => ({ ...p, source: v as "customer" | "internal" }))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Chọn nguồn" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="customer">Khách hàng</SelectItem>
-                    <SelectItem value="internal">Nội bộ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Khách hàng</Label>
-                <Select
-                  value={createForm.customerId || undefined}
-                  onValueChange={(v) => setCreateForm((p) => ({ ...p, customerId: v }))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Chọn đơn vị" /></SelectTrigger>
-                  <SelectContent>
-                    {customerOptions.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Thiết bị (tùy chọn)</Label>
-                <Select
-                  value={createForm.productId}
-                  onValueChange={(v) => setCreateForm((p) => ({ ...p, productId: v }))}
-                >
-                  <SelectTrigger><SelectValue placeholder="Chọn sản phẩm" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NO_PRODUCT}>— Chưa chọn —</SelectItem>
-                    {productOptions.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} ({c.code})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Mô tả sự cố</Label>
-                <Textarea
-                  rows={4}
-                  placeholder="Mô tả chi tiết sự cố..."
-                  value={createForm.issue}
-                  onChange={(e) => setCreateForm((p) => ({ ...p, issue: e.target.value }))}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Phân loại</Label>
-                  <Select
-                    value={createForm.type}
-                    onValueChange={(v) => setCreateForm((p) => ({ ...p, type: v as "warranty" | "repair" | "maintenance" }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Loại" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="warranty">Bảo hành</SelectItem>
-                      <SelectItem value="repair">Sửa chữa</SelectItem>
-                      <SelectItem value="maintenance">Bảo trì</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Mức độ ưu tiên</Label>
-                  <Select
-                    value={createForm.priority}
-                    onValueChange={(v) => setCreateForm((p) => ({ ...p, priority: v as typeof createForm.priority }))}
-                  >
-                    <SelectTrigger><SelectValue placeholder="Mức độ" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="urgent">Khẩn cấp</SelectItem>
-                      <SelectItem value="high">Cao</SelectItem>
-                      <SelectItem value="medium">Trung bình</SelectItem>
-                      <SelectItem value="low">Thấp</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setShowCreate(false)}>Hủy</Button>
-                <Button onClick={() => void handleCreateTicket()} disabled={createWarranty.isPending}>
-                  Tạo ticket
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo ticket</Button>
       </div>
 
       {isError && (
@@ -387,7 +234,10 @@ const Warranty = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setSelectedTicket(t)}
+                            onClick={() => {
+                              setDetailMode("view");
+                              setSelectedTicket(t);
+                            }}
                             aria-label={`Xem ticket ${t.code}`}
                           >
                             <Eye className="h-4 w-4" />
@@ -396,7 +246,10 @@ const Warranty = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => setSelectedTicket(t)}
+                            onClick={() => {
+                              setDetailMode("edit");
+                              setSelectedTicket(t);
+                            }}
                             aria-label={`Sửa ticket ${t.code}`}
                           >
                             <Pencil className="h-4 w-4" />
@@ -415,7 +268,22 @@ const Warranty = () => {
         ))}
       </Tabs>
 
-      <WarrantyDetailDialog ticket={selectedTicket} open={!!selectedTicket} onOpenChange={(o) => !o && setSelectedTicket(null)} />
+      <WarrantyDetailDialog
+        ticket={selectedTicket}
+        customerOptions={customerOptions}
+        productOptions={productOptions}
+        mode={detailMode}
+        open={!!selectedTicket}
+        onOpenChange={(o) => !o && setSelectedTicket(null)}
+      />
+      <WarrantyDetailDialog
+        ticket={null}
+        customerOptions={customerOptions}
+        productOptions={productOptions}
+        mode="create"
+        open={showCreate}
+        onOpenChange={setShowCreate}
+      />
     </div>
   );
 };

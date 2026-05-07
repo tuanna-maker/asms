@@ -4,21 +4,21 @@ export async function getContractProductCounts(contractIds: string[]) {
   const uniqueIds = [...new Set(contractIds.filter(Boolean))];
   if (uniqueIds.length === 0) return new Map<string, number>();
 
-  const grouped = await prisma.product.groupBy({
+  const grouped = await prisma.contractProduct.groupBy({
     by: ["contractId"],
     where: {
       contractId: { in: uniqueIds },
       deletedAt: null,
     },
     _sum: {
-      totalProduced: true,
+      quantity: true,
     },
   });
 
   return new Map(
     grouped
       .filter((row): row is typeof row & { contractId: string } => typeof row.contractId === "string")
-      .map((row) => [row.contractId, row._sum.totalProduced ?? 0]),
+      .map((row) => [row.contractId, row._sum.quantity ?? 0]),
   );
 }
 

@@ -16,7 +16,15 @@ export type ProductListItem = {
   yearReleased: number | null;
   totalProduced: number;
   customerId: string | null;
-  contractId: string | null;
+  bom?: Array<{
+    materialId: string;
+    materialName: string;
+    quantity: number;
+    unit: string;
+    serialNumbers?: string[];
+    createdAt?: string;
+    updatedAt?: string;
+  }>;
 };
 
 export type CreateProductPayload = {
@@ -27,7 +35,6 @@ export type CreateProductPayload = {
   version?: string;
   description?: string;
   customerId?: string;
-  contractId?: string;
   manufacturer?: string;
   unit?: string;
   yearReleased?: number;
@@ -83,6 +90,53 @@ export function useDeleteProduct() {
       void qc.invalidateQueries({ queryKey: qk.contracts.all });
       void qc.invalidateQueries({ queryKey: qk.handovers.all });
       void qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+    },
+  });
+}
+
+export type UpsertProductBomPayload = {
+  materialId: string;
+  quantity: number;
+  serialNumbers?: string[];
+};
+
+export function useUpsertProductBom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: UpsertProductBomPayload }) =>
+      api.post(`/api/v1/products/${encodeURIComponent(id)}/bom`, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.products.all });
+    },
+  });
+}
+
+export function useUpdateProductBom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      materialId,
+      payload,
+    }: {
+      id: string;
+      materialId: string;
+      payload: { quantity?: number; serialNumbers?: string[] };
+    }) =>
+      api.put(`/api/v1/products/${encodeURIComponent(id)}/bom/${encodeURIComponent(materialId)}`, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.products.all });
+    },
+  });
+}
+
+export function useDeleteProductBom() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, materialId }: { id: string; materialId: string }) =>
+      api.delete(`/api/v1/products/${encodeURIComponent(id)}/bom/${encodeURIComponent(materialId)}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.products.all });
     },
   });
 }

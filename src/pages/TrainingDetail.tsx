@@ -24,7 +24,6 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { typeLabel, statusLabel, statusColor, Trainee, ScheduleSession } from "@/data/trainingData";
 import { useTrainingCourse } from "@/hooks/use-training";
-import { useProductsList } from "@/hooks/use-products-api";
 import { buildSessionPayload, buildTraineePayload } from "@/lib/training-payload";
 
 const attendanceLabel = { present: "Có mặt", absent: "Vắng", pending: "Chưa điểm danh" };
@@ -74,7 +73,6 @@ const TrainingDetail = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { course, isLoading, isError, error } = useTrainingCourse(id);
-  const { data: products = [] } = useProductsList(Boolean(course?.contractId));
 
   const [traineeDialog, setTraineeDialog] = useState(false);
   const [editingTrainee, setEditingTrainee] = useState<Trainee | null>(null);
@@ -116,11 +114,7 @@ const TrainingDetail = () => {
 
   const trainees = course.trainees || [];
   const schedule = course.schedule || [];
-  const syncedParticipants = course.contractId
-    ? products
-        .filter((product) => product.contractId === course.contractId)
-        .reduce((sum, product) => sum + (Number(product.totalProduced) || 0), 0)
-    : course.participants;
+  const syncedParticipants = course.participants;
 
   const traineeStats = {
     total: syncedParticipants,

@@ -32,3 +32,12 @@ export const listContractsQuerySchema = z.object({
   search: z.string().optional(),
 });
 
+export const setContractProductsSchema = z.object({
+  products: z.array(
+    z.object({
+      productId: z.string().min(1),
+      quantity: z.number().int().positive(),
+    }),
+  ),
+});
+

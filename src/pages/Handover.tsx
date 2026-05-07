@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Truck, ClipboardCheck, Package, GraduationCap, FileCheck, CheckCircle, Clock, ArrowRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +21,6 @@ import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 import { useDeleteHandover, useHandoversList, type HandoverListItem } from "@/hooks/use-handovers-api";
 import { useTrainingCoursesQuery } from "@/hooks/use-training";
-import { useProductsList } from "@/hooks/use-products-api";
 import { HandoverUpsertDialog } from "@/components/handover/HandoverUpsertDialog";
 
 const steps = [
@@ -55,7 +54,6 @@ const statusBadge = (status: string) => {
 const Handover = () => {
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
   const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } = useTrainingCoursesQuery();
-  const { data: products = [] } = useProductsList();
   const { data: contractOptions = [] } = useQuery({
     queryKey: qk.contracts.all,
     queryFn: async () => {
@@ -70,41 +68,9 @@ const Handover = () => {
   const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
   const deleteHandover = useDeleteHandover();
 
-  const productCountByContract = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const product of products) {
-      if (!product.contractId) continue;
-      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
-    }
-    return counts;
-  }, [products]);
-
-  const syncedContractOptions = useMemo(
-    () =>
-      contractOptions.map((contract) => ({
-        ...contract,
-        products: productCountByContract.get(contract.id) ?? contract.products ?? 0,
-      })),
-    [contractOptions, productCountByContract],
-  );
-
-  const syncedHandoverRows = useMemo(
-    () =>
-      handoverRows.map((handover) => ({
-        ...handover,
-        products: productCountByContract.get(handover.contractId) ?? handover.products,
-      })),
-    [handoverRows, productCountByContract],
-  );
-
-  const syncedTrainingRows = useMemo(
-    () =>
-      trainingRows.map((course) => ({
-        ...course,
-        participants: course.contractId ? productCountByContract.get(course.contractId) ?? course.participants : course.participants,
-      })),
-    [trainingRows, productCountByContract],
-  );
+  const syncedContractOptions = contractOptions;
+  const syncedHandoverRows = handoverRows;
+  const syncedTrainingRows = trainingRows;
 
   const activeCount = syncedHandoverRows.filter((h) => h.status === "active").length;
   const completedCount = syncedHandoverRows.filter((h) => h.status === "completed").length;

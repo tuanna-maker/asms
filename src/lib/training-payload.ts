@@ -4,6 +4,7 @@ export function buildTrainingCoursePayload(form: Omit<TrainingCourse, "id">) {
   return {
     title: form.title,
     type: form.type,
+    contractId: form.contractId || undefined,
     instructorId: form.instructor || undefined,
     customerId: form.customer || undefined,
     startDate: form.startDate,

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Shield, Monitor, User, Clock, AlertTriangle, CheckCircle, ArrowRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useDeleteWarranty, useUpdateWarranty } from "@/hooks/use-warranties-api";
+import { useCreateWarranty, useDeleteWarranty, useUpdateWarranty } from "@/hooks/use-warranties-api";
 
 const workflowSteps = [
   { label: "Tiếp nhận", key: "receive" },
@@ -49,6 +49,9 @@ export type WarrantyTicketUi = {
 
 interface Props {
   ticket: WarrantyTicketUi | null;
+  customerOptions?: Array<{ id: string; code: string; name: string }>;
+  productOptions?: Array<{ id: string; code: string; name: string }>;
+  mode?: "view" | "edit" | "create";
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -66,8 +69,13 @@ const typeMap: Record<string, { label: string; variant: "default" | "secondary" 
   maintenance: { label: "Bảo trì", variant: "outline" },
 };
 
-const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
+const NO_PRODUCT = "__none__";
+
+const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [], mode = "edit", open, onOpenChange }: Props) => {
+  const isViewMode = mode === "view";
+  const isCreateMode = mode === "create";
   const updateW = useUpdateWarranty();
+  const createW = useCreateWarranty();
   const deleteW = useDeleteWarranty();
 
   const [issue, setIssue] = useState("");
@@ -75,21 +83,64 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
   const [type, setType] = useState<string>("maintenance");
   const [workflowStep, setWorkflowStep] = useState(1);
   const [status, setStatus] = useState<WarrantyTicketUi["backendStatus"]>("open");
+  const [customerId, setCustomerId] = useState("");
+  const [productId, setProductId] = useState(NO_PRODUCT);
+  const [source, setSource] = useState<"customer" | "internal">("customer");
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
-    if (!ticket || !open) return;
+    if (!open) return;
+    if (isCreateMode) {
+      setIssue("");
+      setPriority("medium");
+      setType("warranty");
+      setWorkflowStep(1);
+      setStatus("open");
+      setCustomerId("");
+      setProductId(NO_PRODUCT);
+      setSource("customer");
+      setConfirmDelete(false);
+      return;
+    }
+    if (!ticket) return;
     setIssue(ticket.issue);
     setPriority(ticket.priority);
     setType(ticket.type);
     setWorkflowStep(Math.min(Math.max(ticket.step, 1), workflowSteps.length));
     setStatus(ticket.backendStatus);
     setConfirmDelete(false);
-  }, [ticket, open]);
+  }, [ticket, open, isCreateMode]);
 
   const displayStatus = status === "completed" ? "completed" : status === "cancelled" ? "completed" : "processing";
 
   const handleSave = async () => {
+    if (isCreateMode) {
+      if (!customerId) {
+        toast.error("Vui lòng chọn khách hàng");
+        return;
+      }
+      if (!issue.trim()) {
+        toast.error("Vui lòng mô tả sự cố");
+        return;
+      }
+      try {
+        await createW.mutateAsync({
+          customerId,
+          issue: issue.trim(),
+          type: type as "warranty" | "repair" | "maintenance",
+          priority: priority as "low" | "medium" | "high" | "urgent",
+          source: source === "customer" ? "Khách hàng" : "Nội bộ",
+          status,
+          workflowStep,
+          ...(productId && productId !== NO_PRODUCT ? { productId } : {}),
+        });
+        toast.success("Đã tạo ticket");
+        onOpenChange(false);
+      } catch {
+        toast.error("Không thể tạo ticket");
+      }
+      return;
+    }
     if (!ticket) return;
     try {
       await updateW.mutateAsync({
@@ -121,10 +172,10 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
     }
   };
 
-  if (!ticket) return null;
+  if (!ticket && !isCreateMode) return null;
 
-  const pCfg = priorityMap[ticket.priority] || priorityMap.low;
-  const tCfg = typeMap[ticket.type] || typeMap.maintenance;
+  const pCfg = priorityMap[isCreateMode ? priority : (ticket?.priority ?? "medium")] || priorityMap.low;
+  const tCfg = typeMap[isCreateMode ? type : (ticket?.type ?? "maintenance")] || typeMap.maintenance;
 
   return (
     <>
@@ -133,7 +184,7 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              Ticket {ticket.code}
+              {isCreateMode ? "Tạo ticket mới" : `Ticket ${ticket?.code ?? ""}`}
             </DialogTitle>
           </DialogHeader>
 
@@ -178,23 +229,68 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket.customer} />
-              <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket.device} />
-              <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket.source} />
-              <InfoItem icon={<User className="h-4 w-4" />} label="Đơn vị xử lý" value={ticket.assignee || "—"} />
-              <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA" value={ticket.sla} />
+              <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket?.customer ?? "—"} />
+              <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket?.device ?? "—"} />
+              <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket?.source ?? "—"} />
+              <InfoItem icon={<User className="h-4 w-4" />} label="Đơn vị xử lý" value={ticket?.assignee || "—"} />
+              <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA" value={ticket?.sla ?? "—"} />
             </div>
 
             <div className="space-y-4 rounded-lg border border-border p-4">
-              <h4 className="text-sm font-semibold text-card-foreground">Chỉnh sửa (lưu DB)</h4>
+              <h4 className="text-sm font-semibold text-card-foreground">
+                {isViewMode ? "Chi tiết ticket" : "Chỉnh sửa (lưu DB)"}
+              </h4>
               <div className="space-y-2">
                 <Label htmlFor="wi-issue">Mô tả sự cố</Label>
-                <Textarea id="wi-issue" value={issue} onChange={(e) => setIssue(e.target.value)} rows={3} />
+                <Textarea
+                  id="wi-issue"
+                  value={issue}
+                  onChange={(e) => setIssue(e.target.value)}
+                  rows={3}
+                  readOnly={isViewMode}
+                />
               </div>
+              {isCreateMode ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Khách hàng</Label>
+                    <Select value={customerId || undefined} onValueChange={setCustomerId}>
+                      <SelectTrigger><SelectValue placeholder="Chọn khách hàng" /></SelectTrigger>
+                      <SelectContent>
+                        {customerOptions.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Thiết bị (tùy chọn)</Label>
+                    <Select value={productId} onValueChange={setProductId}>
+                      <SelectTrigger><SelectValue placeholder="Chọn sản phẩm" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_PRODUCT}>— Chưa chọn —</SelectItem>
+                        {productOptions.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>{p.name} ({p.code})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nguồn</Label>
+                    <Select value={source} onValueChange={(v) => setSource(v as "customer" | "internal")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customer">Khách hàng</SelectItem>
+                        <SelectItem value="internal">Nội bộ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Loại</Label>
-                  <Select value={type} onValueChange={setType}>
+                  <Select value={type} onValueChange={setType} disabled={isViewMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="warranty">Bảo hành</SelectItem>
@@ -205,7 +301,7 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Ưu tiên</Label>
-                  <Select value={priority} onValueChange={(v) => setPriority(v)}>
+                  <Select value={priority} onValueChange={(v) => setPriority(v)} disabled={isViewMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="urgent">Khẩn cấp</SelectItem>
@@ -217,7 +313,7 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Bước hiện tại</Label>
-                  <Select value={String(workflowStep)} onValueChange={(v) => setWorkflowStep(Number(v))}>
+                  <Select value={String(workflowStep)} onValueChange={(v) => setWorkflowStep(Number(v))} disabled={isViewMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {workflowSteps.map((s, i) => (
@@ -228,7 +324,7 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
                 </div>
                 <div className="space-y-2">
                   <Label>Trạng thái</Label>
-                  <Select value={status} onValueChange={(v) => setStatus(v as WarrantyTicketUi["backendStatus"])}>
+                  <Select value={status} onValueChange={(v) => setStatus(v as WarrantyTicketUi["backendStatus"])} disabled={isViewMode}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="open">Mở</SelectItem>
@@ -245,29 +341,33 @@ const WarrantyDetailDialog = ({ ticket, open, onOpenChange }: Props) => {
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              Ngày tạo: {ticket.createdAt}
+              Ngày tạo: {ticket?.createdAt ?? "—"}
             </div>
           </div>
 
           <DialogFooter className="flex flex-wrap gap-2 sm:justify-between">
-            <Button type="button" variant="destructive" className="mr-auto gap-1" onClick={() => setConfirmDelete(true)}>
-              <Trash2 className="h-4 w-4" /> Xóa
-            </Button>
+            {!isViewMode && !isCreateMode ? (
+              <Button type="button" variant="destructive" className="mr-auto gap-1" onClick={() => setConfirmDelete(true)}>
+                <Trash2 className="h-4 w-4" /> Xóa
+              </Button>
+            ) : null}
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Đóng</Button>
-              <Button type="button" onClick={() => void handleSave()} disabled={updateW.isPending}>
-                {updateW.isPending ? "Đang lưu…" : "Lưu"}
-              </Button>
+              {!isViewMode ? (
+                <Button type="button" onClick={() => void handleSave()} disabled={updateW.isPending || createW.isPending}>
+                  {(updateW.isPending || createW.isPending) ? "Đang lưu…" : (isCreateMode ? "Tạo ticket" : "Lưu")}
+                </Button>
+              ) : null}
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialog open={!isViewMode && !isCreateMode && confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xóa ticket?</AlertDialogTitle>
-            <AlertDialogDescription>Phiếu {ticket.code} sẽ được đánh dấu xóa mềm trên máy chủ.</AlertDialogDescription>
+            <AlertDialogDescription>Phiếu {ticket?.code ?? ""} sẽ được đánh dấu xóa mềm trên máy chủ.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>

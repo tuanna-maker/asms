@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Plus, Calendar, Users, Clock, CheckCircle, Search, Edit, Trash2, Eye } from "lucide-react";
@@ -19,14 +19,12 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { TrainingCourse, typeLabel, statusLabel, statusColor } from "@/data/trainingData";
 import { useTrainingCourses } from "@/hooks/use-training";
-import { useProductsList } from "@/hooks/use-products-api";
 import { buildTrainingCoursePayload } from "@/lib/training-payload";
 
 const Training = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const courses = useTrainingCourses();
-  const { data: products = [] } = useProductsList();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,35 +32,17 @@ const Training = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<TrainingCourse, "id">>({
     title: "", type: "internal", instructor: "", customer: "",
-    startDate: "", endDate: "", participants: 0, status: "planned", description: "",
+    startDate: "", endDate: "", participants: 0, status: "planned", description: "", contractId: null,
   });
 
-  const productCountByContract = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const product of products) {
-      if (!product.contractId) continue;
-      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
-    }
-    return counts;
-  }, [products]);
-
-  const syncedCourses = useMemo(
-    () =>
-      courses.map((course) => ({
-        ...course,
-        participants: course.contractId ? productCountByContract.get(course.contractId) ?? course.participants : course.participants,
-      })),
-    [courses, productCountByContract],
-  );
-
   const stats = {
-    total: syncedCourses.length,
-    ongoing: syncedCourses.filter(c => c.status === "ongoing").length,
-    completed: syncedCourses.filter(c => c.status === "completed").length,
-    participants: syncedCourses.reduce((s, c) => s + c.participants, 0),
+    total: courses.length,
+    ongoing: courses.filter(c => c.status === "ongoing").length,
+    completed: courses.filter(c => c.status === "completed").length,
+    participants: courses.reduce((s, c) => s + c.participants, 0),
   };
 
-  const filtered = syncedCourses.filter(c => {
+  const filtered = courses.filter(c => {
     if (tab !== "all" && c.status !== tab) return false;
     if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.id.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -70,7 +50,7 @@ const Training = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ title: "", type: "internal", instructor: "", customer: "", startDate: "", endDate: "", participants: 0, status: "planned", description: "" });
+    setForm({ title: "", type: "internal", instructor: "", customer: "", startDate: "", endDate: "", participants: 0, status: "planned", description: "", contractId: null });
     setDialogOpen(true);
   };
 

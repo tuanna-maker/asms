@@ -8,6 +8,7 @@ import {
   contractIdParamSchema,
   createContractSchema,
   listContractsQuerySchema,
+  setContractProductsSchema,
   updateContractSchema,
 } from "./schema";
 
@@ -15,6 +16,7 @@ import {
   createContractService,
   getContractDetailService,
   listContractsService,
+  setContractProductsService,
   softDeleteContractService,
   updateContractService,
 } from "./service";
@@ -69,5 +71,12 @@ export async function deleteContractController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(contractIdParamSchema, req.params);
   const data = await softDeleteContractService(id);
   return sendSuccess(res, data, "Contract deleted");
+}
+
+export async function setContractProductsController(req: Request, res: Response) {
+  const { id } = zodParseOrThrow(contractIdParamSchema, req.params);
+  const payload = zodParseOrThrow(setContractProductsSchema, req.body);
+  const data = await setContractProductsService(id, payload);
+  return sendSuccess(res, data, "Contract products updated");
 }
 

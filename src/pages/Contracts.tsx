@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useDeleteContract } from "@/hooks/use-contracts-api";
-import { useProductsList } from "@/hooks/use-products-api";
 import { Plus, Search, Filter, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import ContractDetailDialog from "@/components/details/ContractDetailDialog";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
@@ -135,25 +134,7 @@ const Contracts = () => {
   });
 
   const deleteContractMutation = useDeleteContract();
-  const { data: products = [] } = useProductsList();
-
-  const productCountByContract = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const product of products) {
-      if (!product.contractId) continue;
-      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
-    }
-    return counts;
-  }, [products]);
-
-  const contractsWithProductTotals = useMemo(
-    () =>
-      contracts.map((contract) => ({
-        ...contract,
-        products: contract.dbId ? productCountByContract.get(contract.dbId) ?? 0 : contract.products,
-      })),
-    [contracts, productCountByContract],
-  );
+  const contractsWithProductTotals = contracts;
 
   const filtered = contractsWithProductTotals.filter((c) => {
     const id = String(c.id ?? "").toLowerCase();

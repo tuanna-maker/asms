@@ -42,6 +42,7 @@ export async function listTrainingCoursesController(req: Request, res: Response)
   const filters = {
     ...(query.status !== undefined ? { status: query.status } : {}),
     ...(query.type !== undefined ? { type: query.type } : {}),
+    ...(query.contractId !== undefined ? { contractId: query.contractId } : {}),
   };
 
   const data = await listTrainingCoursesService(filters);

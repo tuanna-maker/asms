@@ -14,13 +14,28 @@ function genTrainingCode() {
   return `TC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
+async function resolveContractIdOptional(idOrCode: string | undefined) {
+  if (idOrCode == null || idOrCode === "") return undefined;
+  const contract = await prisma.contract.findFirst({
+    where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
+    select: { id: true },
+  });
+  if (!contract) throw new HttpError(404, "Contract not found");
+  return contract.id;
+}
+
 export async function listTrainingCoursesService(filters: {
   status?: string;
   type?: string;
+  contractId?: string;
 }) {
   const where: Prisma.TrainingCourseWhereInput = { deletedAt: null };
   if (filters.status) where.status = filters.status as TrainingStatus;
   if (filters.type) where.type = filters.type as TrainingType;
+  if (filters.contractId) {
+    const resolvedContractId = await resolveContractIdOptional(filters.contractId);
+    if (resolvedContractId) where.contractId = resolvedContractId;
+  }
 
   const rows = await prisma.trainingCourse.findMany({
     where,
@@ -82,14 +97,15 @@ export async function createTrainingCourseService(payload: {
   location?: string;
   description?: string;
 }) {
-  const participants = payload.contractId
-    ? await getContractProductCount(payload.contractId)
+  const resolvedContractId = await resolveContractIdOptional(payload.contractId);
+  const participants = resolvedContractId
+    ? await getContractProductCount(resolvedContractId)
     : payload.participants ?? 0;
 
   const created = await prisma.trainingCourse.create({
     data: {
       code: payload.code ?? genTrainingCode(),
-      contractId: payload.contractId ?? null,
+      contractId: resolvedContractId ?? null,
       customerId: payload.customerId ?? null,
       instructorId: payload.instructorId ?? null,
       title: payload.title,
@@ -145,15 +161,18 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
   });
   if (!existing) throw new HttpError(404, "Training course not found");
 
-  const participants = payload.contractId
-    ? await getContractProductCount(payload.contractId)
+  const resolvedContractId = await resolveContractIdOptional(
+    payload.contractId === null ? undefined : payload.contractId ?? undefined,
+  );
+  const participants = resolvedContractId
+    ? await getContractProductCount(resolvedContractId)
     : payload.participants;
 
   const updated = await prisma.trainingCourse.update({
     where: { id },
     data: {
       ...(payload.code !== undefined ? { code: payload.code } : {}),
-      ...(payload.contractId !== undefined ? { contractId: payload.contractId } : {}),
+      ...(payload.contractId !== undefined ? { contractId: payload.contractId === null ? null : (resolvedContractId ?? null) } : {}),
       ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
       ...(payload.instructorId !== undefined ? { instructorId: payload.instructorId } : {}),
       ...(payload.title !== undefined ? { title: payload.title } : {}),

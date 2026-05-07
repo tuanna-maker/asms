@@ -42,6 +42,7 @@ export type UploadDocumentPayload = {
   name: string;
   category: DocumentPayload["category"];
   fileType: DocumentPayload["fileType"];
+  ownerId?: string;
   contractId?: string;
   customerId?: string;
   productId?: string;
@@ -59,6 +60,7 @@ export function useUploadDocument() {
       form.append("name", payload.name);
       form.append("category", payload.category);
       form.append("fileType", payload.fileType);
+      if (payload.ownerId) form.append("ownerId", payload.ownerId);
       if (payload.contractId) form.append("contractId", payload.contractId);
       if (payload.customerId) form.append("customerId", payload.customerId);
       if (payload.productId) form.append("productId", payload.productId);

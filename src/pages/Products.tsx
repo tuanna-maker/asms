@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { productCategoryColors, DefenseProduct, defaultDocuments } from "@/data/productsData";
+import { productCategoryColors, DefenseProduct } from "@/data/productsData";
 import ProductDetailDialog from "@/components/details/ProductDetailDialog";
 import CreateProductDialog from "@/components/details/CreateProductDialog";
-import { EditProductDialog } from "@/components/details/EditProductDialog";
 import StatCard from "@/components/dashboard/StatCard";
 import {
   AlertDialog,
@@ -22,7 +21,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/hooks/use-auth";
-import { useCreateProduct, useDeleteProduct, useProductsList, useUpdateProduct, type ProductListItem } from "@/hooks/use-products-api";
+import {
+  useCreateProduct,
+  useDeleteProduct,
+  useDeleteProductBom,
+  useProductsList,
+  useUpdateProduct,
+  useUpdateProductBom,
+  useUpsertProductBom,
+  type ProductListItem,
+} from "@/hooks/use-products-api";
 import { toast } from "sonner";
 
 function apiProductToDefense(p: ProductListItem): DefenseProduct {
@@ -38,7 +46,13 @@ function apiProductToDefense(p: ProductListItem): DefenseProduct {
     manufacturer: p.manufacturer ?? "—",
     yearReleased: p.yearReleased ?? new Date().getFullYear(),
     totalProduced: p.totalProduced,
-    bom: [],
+    bom: (p.bom ?? []).map((item) => ({
+      materialId: item.materialId,
+      materialName: item.materialName,
+      quantity: item.quantity,
+      unit: item.unit,
+      ...(item.serialNumbers && item.serialNumbers.length > 0 ? { serialNumbers: item.serialNumbers } : {}),
+    })),
     specs: [],
   };
 }
@@ -56,6 +70,9 @@ const Products = () => {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
+  const upsertProductBom = useUpsertProductBom();
+  const updateProductBom = useUpdateProductBom();
+  const deleteProductBom = useDeleteProductBom();
 
   const [products, setProducts] = useState<DefenseProduct[]>([]);
 
@@ -171,7 +188,11 @@ const Products = () => {
                       <Badge variant="outline" className="gap-1"><Layers className="h-3 w-3" />{p.bom.length}</Badge>
                     </TableCell>
                     <TableCell className="text-right font-medium">{p.totalProduced.toLocaleString()}</TableCell>
-                    <TableCell><Badge variant="outline" className={statusLabel[p.status].cls}>{statusLabel[p.status].label}</Badge></TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={(statusLabel[p.status] ?? statusLabel.developing).cls}>
+                        {(statusLabel[p.status] ?? statusLabel.developing).label}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="ghost" onClick={() => openDetail(p)}><Eye className="h-4 w-4" /></Button>
@@ -205,7 +226,9 @@ const Products = () => {
                       <p className="font-medium truncate">{p.name}</p>
                       <p className="font-mono text-[10px] text-muted-foreground mt-0.5 truncate" title={p.id}>{p.id}</p>
                     </div>
-                    <Badge variant="outline" className={statusLabel[p.status].cls}>{statusLabel[p.status].label}</Badge>
+                    <Badge variant="outline" className={(statusLabel[p.status] ?? statusLabel.developing).cls}>
+                      {(statusLabel[p.status] ?? statusLabel.developing).label}
+                    </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs">
                     <Badge variant="outline" className={productCategoryColors[p.category]}>{p.category}</Badge>
@@ -224,19 +247,25 @@ const Products = () => {
         product={selected ? products.find(p => p.id === selected.id) ?? selected : null}
         open={open}
         onOpenChange={setOpen}
-        onUpdateBom={(productId, materialId, serialNumbers) => {
-          setProducts(prev => prev.map(p =>
-            p.id === productId
-              ? { ...p, bom: p.bom.map(b => b.materialId === materialId ? { ...b, serialNumbers } : b) }
-              : p
-          ));
+        onUpdateBomQuantity={async (productId, materialId, quantity) => {
+          await updateProductBom.mutateAsync({
+            id: productId,
+            materialId,
+            payload: { quantity },
+          });
         }}
-        onAddDocument={(productId, doc) => {
-          setProducts(prev => prev.map(p =>
-            p.id === productId
-              ? { ...p, documents: [doc, ...(p.documents ?? defaultDocuments)] }
-              : p
-          ));
+        onRemoveBom={async (productId, materialId) => {
+          await deleteProductBom.mutateAsync({ id: productId, materialId });
+        }}
+        onAddBom={async (productId, bomItem) => {
+          await upsertProductBom.mutateAsync({
+            id: productId,
+            payload: {
+              materialId: bomItem.materialId,
+              quantity: bomItem.quantity,
+              ...(bomItem.serialNumbers?.length ? { serialNumbers: bomItem.serialNumbers } : {}),
+            },
+          });
         }}
       />
       <CreateProductDialog
@@ -249,14 +278,35 @@ const Products = () => {
         }}
       />
 
-      <EditProductDialog
+      <ProductDetailDialog
+        product={productToEdit ? products.find((p) => p.id === productToEdit.id) ?? productToEdit : null}
         open={editOpen}
         onOpenChange={(o) => {
           setEditOpen(o);
           if (!o) setProductToEdit(null);
         }}
-        product={productToEdit}
-        onSave={async (id, payload) => {
+        onUpdateBomQuantity={async (productId, materialId, quantity) => {
+          await updateProductBom.mutateAsync({
+            id: productId,
+            materialId,
+            payload: { quantity },
+          });
+        }}
+        onRemoveBom={async (productId, materialId) => {
+          await deleteProductBom.mutateAsync({ id: productId, materialId });
+        }}
+        onAddBom={async (productId, bomItem) => {
+          await upsertProductBom.mutateAsync({
+            id: productId,
+            payload: {
+              materialId: bomItem.materialId,
+              quantity: bomItem.quantity,
+              ...(bomItem.serialNumbers?.length ? { serialNumbers: bomItem.serialNumbers } : {}),
+            },
+          });
+        }}
+        editable
+        onSaveEdits={async (id, payload) => {
           await updateProduct.mutateAsync({ id, payload });
         }}
       />

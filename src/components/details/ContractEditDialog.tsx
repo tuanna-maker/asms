@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +17,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
-import { useProductsList, useUpdateProduct } from "@/hooks/use-products-api";
+import { useProductsList } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
+import { api } from "@/lib/api";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
@@ -44,6 +45,17 @@ type DetailDocument = {
   fileSize?: string | null;
 };
 
+type DraftProduct = DetailProduct & {
+  id: string;
+  totalProduced: number;
+};
+
+type DraftDocument = {
+  tempId: string;
+  name: string;
+  file: File;
+};
+
 type DetailTraining = {
   id?: string;
   code?: string;
@@ -62,6 +74,19 @@ type ContractDetailData = {
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
   trainingCourses?: DetailTraining[];
+};
+
+type TrainingCourseRow = {
+  id: string;
+  code: string;
+  title: string;
+  type: string | null;
+  startDate: string;
+  endDate: string;
+  participants: number;
+  status: string;
+  location: string | null;
+  contractId: string | null;
 };
 
 interface Props {
@@ -91,6 +116,15 @@ function isoToDisplay(iso: string): string {
 const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "doc", "docx", "xls", "xlsx", "csv"];
 const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
 
+function toDocType(file: File): "pdf" | "doc" | "xls" | "img" | "other" {
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "pdf";
+  if (["doc", "docx"].includes(ext)) return "doc";
+  if (["xls", "xlsx", "csv"].includes(ext)) return "xls";
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "img";
+  return "other";
+}
+
 function splitTerms(value: string | null | undefined) {
   const text = (value ?? "").replace(/\r\n/g, "\n").trim();
   if (!text) return [""];
@@ -103,8 +137,8 @@ function joinTerms(items: string[]) {
 }
 
 const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", customers = [] }: Props) => {
-  const queryClient = useQueryClient();
   const isCreateMode = mode === "create";
+  const queryClient = useQueryClient();
   const [form, setForm] = useState({
     customerId: "",
     customer: "",
@@ -123,21 +157,78 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   const [addQuantity, setAddQuantity] = useState("1");
   const [docName, setDocName] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [draftProducts, setDraftProducts] = useState<DraftProduct[]>([]);
+  const [draftExistingDocuments, setDraftExistingDocuments] = useState<DetailDocument[]>([]);
+  const [draftNewDocuments, setDraftNewDocuments] = useState<DraftDocument[]>([]);
+  const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
+  const [selectedTrainingId, setSelectedTrainingId] = useState("");
   const { data: detailData, isLoading: detailLoading } = useContractDetail(!isCreateMode && open ? contract?.id ?? null : null);
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
-  const updateProduct = useUpdateProduct();
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
   const detail = detailData as ContractDetailData | null;
   const productsList = useMemo<DetailProduct[]>(() => (detail?.productsList ?? []) as DetailProduct[], [detail]);
+  const productMapById = useMemo(
+    () => new Map(allProducts.filter((p) => !!p.id).map((p) => [p.id, p])),
+    [allProducts],
+  );
   const productTotal = useMemo(
-    () => (detail ? productsList.reduce((sum, product) => sum + (Number(product.totalProduced) || 0), 0) : contract?.products ?? 0),
-    [contract?.products, detail, productsList],
+    () => draftProducts.reduce((sum, product) => sum + (Number(product.totalProduced) || 0), 0),
+    [draftProducts],
   );
   const documentsList = useMemo<DetailDocument[]>(() => (detail?.documents ?? []) as DetailDocument[], [detail]);
-  const trainingList = useMemo<DetailTraining[]>(() => (detail?.trainingCourses ?? []) as DetailTraining[], [detail]);
+  const combinedDraftDocuments = useMemo(
+    () => [
+      ...draftExistingDocuments,
+      ...draftNewDocuments.map((doc) => ({
+        code: doc.tempId,
+        name: doc.name,
+        fileType: toDocType(doc.file),
+        fileSize: `${Math.max(1, Math.round(doc.file.size / 1024))} KB`,
+      })),
+    ],
+    [draftExistingDocuments, draftNewDocuments],
+  );
+  const contractIdForTraining = typeof detail?.id === "string" && detail.id ? detail.id : contract?.dbId;
+  const { data: trainingFromModule = [], isLoading: trainingLoading } = useQuery({
+    queryKey: ["training-by-contract", contractIdForTraining],
+    enabled: open && !isCreateMode && !!contractIdForTraining,
+    queryFn: async () => {
+      const res = await api.get<{ success: boolean; data: TrainingCourseRow[] }>(
+        `/api/v1/training?contractId=${encodeURIComponent(contractIdForTraining!)}`,
+      );
+      return res.data.data ?? [];
+    },
+  });
+  const { data: allTrainingCourses = [] } = useQuery({
+    queryKey: ["all-training-courses-for-contract-link"],
+    enabled: open && !isCreateMode,
+    queryFn: async () => {
+      const res = await api.get<{ success: boolean; data: TrainingCourseRow[] }>("/api/v1/training");
+      return res.data.data ?? [];
+    },
+  });
+  const trainingList = useMemo<DetailTraining[]>(
+    () =>
+      trainingFromModule.map((course) => ({
+        id: course.id,
+        code: course.code,
+        title: course.title,
+        type: course.type,
+        startDate: course.startDate,
+        endDate: course.endDate,
+        participants: course.participants,
+        status: course.status,
+        location: course.location,
+      })),
+    [trainingFromModule],
+  );
+  const trainingOptions = useMemo(
+    () => allTrainingCourses.filter((course) => !trainingList.some((linked) => linked.id === course.id)),
+    [allTrainingCourses, trainingList],
+  );
 
   useEffect(() => {
     if (contract && !isCreateMode) {
@@ -178,6 +269,11 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setAddQuantity("1");
     setDocName("");
     setDocFile(null);
+    setDraftProducts([]);
+    setDraftExistingDocuments([]);
+    setDraftNewDocuments([]);
+    setRemovedDocumentIds([]);
+    setSelectedTrainingId("");
   }, [open, isCreateMode]);
 
   useEffect(() => {
@@ -186,14 +282,82 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setTermItems(splitTerms(terms));
   }, [open, detail?.terms, contract?.terms, isCreateMode]);
 
+  useEffect(() => {
+    if (!open) return;
+    if (isCreateMode) {
+      setDraftProducts([]);
+      setDraftExistingDocuments([]);
+      setDraftNewDocuments([]);
+      setRemovedDocumentIds([]);
+      return;
+    }
+    const mappedProducts = (productsList ?? [])
+      .filter((p): p is DetailProduct & { id: string } => typeof p.id === "string" && p.id.trim() !== "")
+      .map((p) => ({
+        ...p,
+        id: p.id,
+        totalProduced: Number(p.totalProduced) || 0,
+      }));
+    setDraftProducts(mappedProducts);
+    setDraftExistingDocuments(documentsList);
+    setDraftNewDocuments([]);
+    setRemovedDocumentIds([]);
+  }, [open, isCreateMode, productsList, documentsList]);
+
+  useEffect(() => {
+    if (!open || draftProducts.length === 0) return;
+    setDraftProducts((items) =>
+      items.map((item) => {
+        const latest = productMapById.get(item.id);
+        if (!latest) return item;
+        return {
+          ...item,
+          code: latest.code ?? item.code,
+          name: latest.name ?? item.name,
+          category: latest.category ?? item.category,
+          manufacturer: latest.manufacturer ?? item.manufacturer,
+          status: latest.status ?? item.status,
+        };
+      }),
+    );
+  }, [open, draftProducts.length, productMapById]);
+
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
   const termsText = (detail?.terms ?? form.terms ?? "").trim();
   const progressValue = Math.min(100, Math.max(0, Number(form.progress) || 0));
   const contractDbId = typeof detail?.id === "string" && detail.id.trim() ? detail.id : contract?.dbId ?? contractCode;
+  const assignedProductIds = new Set(draftProducts.map((p) => p.id));
   const productOptions = allProducts.filter(
-    (p) => !!p.id && p.id.trim() !== "" && (!p.contractId || p.contractId === contractDbId || p.contractId === contractCode),
+    (p) =>
+      !!p.id &&
+      p.id.trim() !== "" &&
+      !assignedProductIds.has(p.id),
   );
+
+  const syncProductsToContract = async (targetContractId: string) => {
+    await api.put(`/api/v1/contracts/${encodeURIComponent(targetContractId)}/products`, {
+      products: draftProducts.map((product) => ({
+        productId: product.id,
+        quantity: Math.max(1, Number(product.totalProduced) || 1),
+      })),
+    });
+  };
+
+  const syncDocumentsToContract = async (targetContractId: string) => {
+    for (const docId of removedDocumentIds) {
+      await deleteDocument.mutateAsync(docId);
+    }
+    for (const doc of draftNewDocuments) {
+      await uploadDocument.mutateAsync({
+        file: doc.file,
+        contractId: targetContractId,
+        name: doc.name.trim(),
+        category: "contract",
+        fileType: toDocType(doc.file),
+      });
+    }
+  };
 
   const handleCreateContract = async () => {
     if (!isCreateMode) return;
@@ -202,10 +366,11 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
       return;
     }
     try {
-      await createContract.mutateAsync({
+      const created = await createContract.mutateAsync({
         customerId: form.customerId,
         title: form.title.trim() || "Hợp đồng mới",
         value: Number(form.value || 0),
+        products: Math.max(0, Number(productTotal) || 0),
         startDate: form.startDate,
         endDate: form.endDate,
         warrantyEnd: form.warrantyEnd || undefined,
@@ -213,6 +378,14 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
         progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
         terms: joinTerms(termItems),
       });
+      const createdPayload = (created as { data?: { data?: { id?: string; code?: string } } })?.data?.data;
+      const createdContractId = createdPayload?.id ?? createdPayload?.code;
+      if (createdContractId) {
+        await syncProductsToContract(createdContractId);
+        await syncDocumentsToContract(createdContractId);
+      } else if (draftProducts.length > 0 || draftNewDocuments.length > 0) {
+        toast.warning("Đã tạo hợp đồng nhưng chưa liên kết được sản phẩm/tài liệu. Vui lòng mở lại để lưu bổ sung.");
+      }
       toast.success("Đã tạo hợp đồng");
       onOpenChange(false);
     } catch {
@@ -221,10 +394,6 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   };
 
   const handleAddProduct = async () => {
-    if (isCreateMode || !contractCode) {
-      toast.error("Vui lòng tạo hợp đồng trước khi thêm sản phẩm");
-      return;
-    }
     const qty = Number(addQuantity);
     if (!selectedProductId) {
       toast.error("Vui lòng chọn sản phẩm");
@@ -234,38 +403,44 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
       toast.error("Số lượng phải lớn hơn 0");
       return;
     }
-
-    try {
-      await updateProduct.mutateAsync({
-        id: selectedProductId,
-        payload: { contractId: contractCode, totalProduced: qty },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["contracts"] });
-
-      setSelectedProductId("");
-      setAddQuantity("1");
-      toast.success("Đã thêm sản phẩm vào hợp đồng");
-    } catch {
-      toast.error("Không thể thêm sản phẩm vào hợp đồng");
+    const selected = allProducts.find((p) => p.id === selectedProductId);
+    if (!selected) {
+      toast.error("Không tìm thấy sản phẩm đã chọn");
+      return;
     }
+    setDraftProducts((items) => {
+      const existed = items.find((item) => item.id === selected.id);
+      if (existed) {
+        return items.map((item) =>
+          item.id === selected.id
+            ? { ...item, totalProduced: Math.max(1, Number(item.totalProduced) + qty) }
+            : item,
+        );
+      }
+      return [
+        ...items,
+        {
+          id: selected.id,
+          code: selected.code,
+          name: selected.name,
+          category: selected.category,
+          status: selected.status,
+          manufacturer: selected.manufacturer,
+          totalProduced: qty,
+        },
+      ];
+    });
+    setSelectedProductId("");
+    setAddQuantity("1");
   };
 
-  const handleRemoveProduct = async (product: DetailProduct) => {
+  const handleRemoveProduct = (product: DraftProduct) => {
     const productId = product.id;
     if (!productId) {
       toast.error("Không xác định được sản phẩm để xóa");
       return;
     }
-    try {
-      await updateProduct.mutateAsync({
-        id: productId,
-        payload: { contractId: "" },
-      });
-      await queryClient.invalidateQueries({ queryKey: ["contracts"] });
-      toast.success("Đã xóa sản phẩm khỏi hợp đồng");
-    } catch {
-      toast.error("Không thể xóa sản phẩm");
-    }
+    setDraftProducts((items) => items.filter((item) => item.id !== productId));
   };
 
   const handleChangeTerm = (index: number, value: string) => {
@@ -276,26 +451,32 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setTermItems((items) => [...items, ""]);
   };
 
-  const handlePersistTerms = async (items = termItems) => {
+  const handleSaveContract = async () => {
     if (isCreateMode || !contractCode) return;
+    if (!form.startDate || !form.endDate) {
+      toast.error("Vui lòng nhập ngày bắt đầu và kết thúc");
+      return;
+    }
     try {
       await updateContract.mutateAsync({
         id: contractCode,
-        payload: { terms: joinTerms(items) },
+        payload: {
+          value: Number(form.value || 0),
+          startDate: form.startDate,
+          endDate: form.endDate,
+          warrantyEnd: form.warrantyEnd || undefined,
+          status: form.status as "draft" | "active" | "completed" | "late" | "liquidated",
+          progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
+          terms: joinTerms(termItems),
+        },
       });
-      await queryClient.invalidateQueries({ queryKey: ["contracts", "detail", contractCode] });
+      await syncProductsToContract(contractCode);
+      await syncDocumentsToContract(contractDbId);
+      toast.success("Đã cập nhật hợp đồng");
+      onOpenChange(false);
     } catch {
-      toast.error("Không thể lưu điều khoản hợp đồng");
+      toast.error("Không thể cập nhật hợp đồng");
     }
-  };
-
-  const toDocType = (file: File): "pdf" | "doc" | "xls" | "img" | "other" => {
-    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-    if (ext === "pdf") return "pdf";
-    if (["doc", "docx"].includes(ext)) return "doc";
-    if (["xls", "xlsx", "csv"].includes(ext)) return "xls";
-    if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "img";
-    return "other";
   };
 
   const handleSelectDocumentFile = (file: File | null) => {
@@ -332,45 +513,70 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
       toast.error("Vui lòng chọn file đính kèm");
       return;
     }
-    try {
-      await uploadDocument.mutateAsync({
-        file: docFile,
-        contractId: contractDbId,
+    setDraftNewDocuments((items) => [
+      ...items,
+      {
+        tempId: `draft-${Date.now()}-${items.length}`,
         name: docName.trim(),
-        category: "contract",
-        fileType: toDocType(docFile),
-      });
-      if (contractCode) {
-        await queryClient.invalidateQueries({ queryKey: ["contracts", "detail", contractCode] });
-      }
-      setDocName("");
-      setDocFile(null);
-      toast.success("Đã thêm tài liệu đính kèm");
-    } catch {
-      toast.error("Không thể thêm tài liệu");
-    }
+        file: docFile,
+      },
+    ]);
+    setDocName("");
+    setDocFile(null);
   };
 
-  const handleDeleteDocument = async (doc: DetailDocument) => {
+  const handleDeleteDocument = (doc: DetailDocument) => {
     const docId = doc.id ?? doc.code;
     if (!docId) {
       toast.error("Không xác định được tài liệu để xóa");
       return;
     }
+    const isDraft = docId.startsWith("draft-");
+    if (isDraft) {
+      setDraftNewDocuments((items) => items.filter((item) => item.tempId !== docId));
+      return;
+    }
+    setDraftExistingDocuments((items) => items.filter((item) => (item.id ?? item.code) !== docId));
+    setRemovedDocumentIds((items) => (items.includes(docId) ? items : [...items, docId]));
+  };
+
+  const handleAddTrainingCourse = async () => {
+    if (isCreateMode || !contractIdForTraining) {
+      toast.error("Vui lòng tạo hợp đồng trước khi liên kết đào tạo");
+      return;
+    }
+    if (!selectedTrainingId) {
+      toast.error("Vui lòng chọn khóa đào tạo đã có");
+      return;
+    }
     try {
-      await deleteDocument.mutateAsync(docId);
-      if (contractCode) {
-        await queryClient.invalidateQueries({ queryKey: ["contracts", "detail", contractCode] });
-      }
-      toast.success("Đã xóa tài liệu");
+      await api.put(`/api/v1/training/${encodeURIComponent(selectedTrainingId)}`, { contractId: contractIdForTraining });
+      await queryClient.invalidateQueries({ queryKey: ["training-by-contract", contractIdForTraining] });
+      await queryClient.invalidateQueries({ queryKey: ["trainingCourses"] });
+      setSelectedTrainingId("");
+      toast.success("Đã liên kết khóa đào tạo");
     } catch {
-      toast.error("Không thể xóa tài liệu");
+      toast.error("Không thể liên kết khóa đào tạo");
+    }
+  };
+
+  const handleDetachTrainingCourse = async (trainingId?: string) => {
+    if (!trainingId) return;
+    try {
+      await api.put(`/api/v1/training/${encodeURIComponent(trainingId)}`, { contractId: null });
+      if (contractIdForTraining) {
+        await queryClient.invalidateQueries({ queryKey: ["training-by-contract", contractIdForTraining] });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["trainingCourses"] });
+      toast.success("Đã bỏ liên kết khóa đào tạo");
+    } catch {
+      toast.error("Không thể bỏ liên kết khóa đào tạo");
     }
   };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-[59vw] xl:max-w-[900px] p-0 flex flex-col gap-0 overflow-hidden">
         <SheetHeader className="flex h-16 flex-row items-center justify-between border-b border-border/50 px-6 pr-14 space-y-0 shrink-0 gap-3">
           <SheetTitle className="flex items-center gap-2 text-left leading-6 m-0 min-w-0">
             <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
@@ -378,16 +584,19 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
               {isCreateMode ? "Tạo hợp đồng mới" : `Chỉnh sửa hợp đồng ${contractCode}`}
             </span>
           </SheetTitle>
-          {isCreateMode ? (
-            <Button onClick={() => void handleCreateContract()} disabled={createContract.isPending}>
-              {createContract.isPending ? "Đang tạo..." : "Tạo hợp đồng"}
-            </Button>
-          ) : null}
+          <Button
+            onClick={() => void (isCreateMode ? handleCreateContract() : handleSaveContract())}
+            disabled={isCreateMode ? createContract.isPending : updateContract.isPending}
+          >
+            {isCreateMode
+              ? (createContract.isPending ? "Đang tạo..." : "Tạo hợp đồng")
+              : (updateContract.isPending ? "Đang lưu..." : "Lưu")}
+          </Button>
         </SheetHeader>
 
         <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
           <div className="border-b border-border/50 px-6 shrink-0 overflow-x-auto">
-            <TabsList className="h-11 bg-transparent p-0 gap-1">
+            <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
               <TabTrigger value="info" icon={<Info className="h-4 w-4" />} label="Thông tin chung" />
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản & Điều kiện" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
@@ -485,11 +694,6 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                     rows={3}
                     value={term}
                     onChange={(e) => handleChangeTerm(index, e.target.value)}
-                    onBlur={() => {
-                      if (!isCreateMode) {
-                        void handlePersistTerms();
-                      }
-                    }}
                     placeholder={termsText ? undefined : "Nhập nội dung điều khoản..."}
                   />
                 </div>
@@ -498,13 +702,10 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           </TabsContent>
 
           <TabsContent value="products" className="flex-1 overflow-y-auto p-6 mt-0">
-            {isCreateMode ? (
-              <EmptyHint text="Vui lòng tạo hợp đồng trước, sau đó quay lại để gắn danh mục sản phẩm." />
-            ) : (
-              <>
-            {detailLoading && productsList.length === 0 ? (
+            <>
+            {detailLoading && !isCreateMode && draftProducts.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải danh mục sản phẩm...</div>
-            ) : productsList.length === 0 ? (
+            ) : draftProducts.length === 0 ? (
               <EmptyHint text="Hợp đồng chưa có sản phẩm gắn kèm." />
             ) : (
               <div className="rounded-lg border border-border/60 overflow-hidden">
@@ -521,20 +722,35 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {productsList.map((p, idx) => (
+                    {draftProducts.map((p, idx) => (
                       <TableRow key={p.id ?? p.code ?? idx}>
                         <TableCell className="font-medium">{p.code ?? "—"}</TableCell>
                         <TableCell>{p.name ?? "—"}</TableCell>
                         <TableCell>{p.category ?? "—"}</TableCell>
                         <TableCell>{p.manufacturer ?? "—"}</TableCell>
-                        <TableCell className="text-right">{p.totalProduced ?? 0}</TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            min={1}
+                            value={String(p.totalProduced ?? 0)}
+                            onChange={(e) =>
+                              setDraftProducts((items) =>
+                                items.map((item) =>
+                                  item.id === p.id
+                                    ? { ...item, totalProduced: Math.max(1, Number(e.target.value) || 1) }
+                                    : item,
+                                ),
+                              )
+                            }
+                            className="ml-auto h-8 w-24 text-right"
+                          />
+                        </TableCell>
                         <TableCell className="text-right">{p.status ?? "—"}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => void handleRemoveProduct(p)}
-                            disabled={updateProduct.isPending}
                           >
                             Xóa
                           </Button>
@@ -575,28 +791,23 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                 </div>
                 <Button
                   onClick={() => void handleAddProduct()}
-                  disabled={updateProduct.isPending}
                 >
                   Thêm sản phẩm
                 </Button>
               </div>
             </div>
-              </>
-            )}
+            </>
           </TabsContent>
 
           <TabsContent value="docs" className="flex-1 overflow-y-auto p-6 mt-0">
-            {isCreateMode ? (
-              <EmptyHint text="Vui lòng tạo hợp đồng trước, sau đó quay lại để thêm tài liệu đính kèm." />
-            ) : (
-              <>
-            {detailLoading && documentsList.length === 0 ? (
+            <>
+            {detailLoading && !isCreateMode && combinedDraftDocuments.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải tài liệu...</div>
-            ) : documentsList.length === 0 ? (
+            ) : combinedDraftDocuments.length === 0 ? (
               <EmptyHint text="Hợp đồng chưa có tài liệu đính kèm." />
             ) : (
               <div className="space-y-2">
-                {documentsList.map((d, i) => (
+                {combinedDraftDocuments.map((d, i) => (
                   <div key={d.id ?? d.code ?? i} className="flex items-center justify-between rounded-lg border border-border/60 bg-card p-3">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-card-foreground truncate">{d.name ?? "Tài liệu"}</p>
@@ -648,8 +859,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                 </Button>
               </div>
             </div>
-              </>
-            )}
+            </>
           </TabsContent>
 
           <TabsContent value="training" className="flex-1 overflow-y-auto p-6 space-y-3 mt-0">
@@ -657,7 +867,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
               <EmptyHint text="Vui lòng tạo hợp đồng trước, sau đó quay lại để liên kết khóa đào tạo." />
             ) : (
               <>
-            {detailLoading && trainingList.length === 0 ? (
+            {(detailLoading || trainingLoading) && trainingList.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải khóa đào tạo...</div>
             ) : trainingList.length === 0 ? (
               <EmptyHint text="Hợp đồng chưa có khóa đào tạo nào." />
@@ -666,7 +876,12 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                 <div key={t.id ?? t.code ?? i} className="rounded-lg border border-border/60 bg-card p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <h4 className="text-sm font-semibold text-card-foreground">{t.title ?? "Khóa đào tạo"}</h4>
-                    <Badge variant={String(t.status) === "completed" ? "secondary" : "default"}>{t.status ?? "planned"}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={String(t.status) === "completed" ? "secondary" : "default"}>{t.status ?? "planned"}</Badge>
+                      <Button size="sm" variant="destructive" onClick={() => void handleDetachTrainingCourse(t.id)}>
+                        Bỏ chọn
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
                     <p><span className="text-card-foreground font-medium">Mã khóa:</span> {t.code ?? "—"}</p>
@@ -679,6 +894,25 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                 </div>
               ))
             )}
+            <div className="mt-3 rounded-lg border border-border/60 bg-card p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-card-foreground">Chọn khóa đào tạo & huấn luyện đã có</h4>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Khóa đào tạo</p>
+                <Select value={selectedTrainingId} onValueChange={setSelectedTrainingId}>
+                  <SelectTrigger><SelectValue placeholder="Chọn khóa đào tạo có sẵn" /></SelectTrigger>
+                  <SelectContent>
+                    {trainingOptions.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.code} - {course.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => void handleAddTrainingCourse()}>Thêm vào hợp đồng</Button>
+              </div>
+            </div>
               </>
             )}
           </TabsContent>

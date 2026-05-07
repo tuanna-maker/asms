@@ -27,6 +27,7 @@ export const updateTrainingCourseSchema = createTrainingCourseSchema.partial().e
 export const listTrainingQuerySchema = z.object({
   status: trainingStatusSchema.optional(),
   type: trainingTypeSchema.optional(),
+  contractId: z.string().optional(),
 });
 
 export const trainingIdParamSchema = z.object({
