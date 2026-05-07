@@ -27,7 +27,7 @@ function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
 
 export async function listDocumentsController(req: Request, res: Response) {
   const query = zodParseOrThrow(listDocumentsQuerySchema, req.query);
-  const input: any = {};
+  const input: Record<string, unknown> = {};
   if (query.category !== undefined) input.category = query.category;
   if (query.fileType !== undefined) input.fileType = query.fileType;
   if (query.ownerId !== undefined) input.ownerId = query.ownerId;
@@ -38,7 +38,7 @@ export async function listDocumentsController(req: Request, res: Response) {
   if (query.trainingCourseId !== undefined) input.trainingCourseId = query.trainingCourseId;
   if (query.name !== undefined) input.name = query.name;
 
-  const data = await listDocumentsService(input);
+  const data = await listDocumentsService(input as Parameters<typeof listDocumentsService>[0]);
   return sendSuccess(res, data);
 }
 
@@ -50,7 +50,7 @@ export async function getDocumentDetailController(req: Request, res: Response) {
 
 export async function createDocumentController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createDocumentSchema, req.body);
-  const input: any = { ...payload, tags: payload.tags ?? [] };
+  const input: Record<string, unknown> = { ...payload, tags: payload.tags ?? [] };
   if (payload.ownerId === undefined) delete input.ownerId;
   if (payload.customerId === undefined) delete input.customerId;
   if (payload.contractId === undefined) delete input.contractId;
@@ -60,8 +60,43 @@ export async function createDocumentController(req: Request, res: Response) {
   if (payload.fileSize === undefined) delete input.fileSize;
   if (payload.fileUrl === undefined) delete input.fileUrl;
 
-  const data = await createDocumentService(input);
+  const data = await createDocumentService(input as Parameters<typeof createDocumentService>[0]);
   return sendSuccess(res, data, "Document created");
+}
+
+function fileTypeFromName(name: string): "pdf" | "doc" | "xls" | "img" | "other" {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  if (ext === "pdf") return "pdf";
+  if (["doc", "docx"].includes(ext)) return "doc";
+  if (["xls", "xlsx", "csv"].includes(ext)) return "xls";
+  if (["png", "jpg", "jpeg", "gif", "webp"].includes(ext)) return "img";
+  return "other";
+}
+
+export async function uploadDocumentController(req: Request, res: Response) {
+  const file = req.file as Express.Multer.File | undefined;
+  if (!file) throw new HttpError(400, "Missing document file");
+
+  const body = req.body as Record<string, string | undefined>;
+  const input: Parameters<typeof createDocumentService>[0] = {
+    name: body.name?.trim() || file.originalname,
+    category: body.category ?? "contract",
+    fileType: body.fileType ?? fileTypeFromName(file.originalname),
+    tags: [],
+    fileSize: `${Math.max(1, Math.round(file.size / 1024))} KB`,
+    fileUrl: `/api/v1/uploads/documents/${file.filename}`,
+  };
+  if (body.ownerId) input.ownerId = body.ownerId;
+  if (body.customerId) input.customerId = body.customerId;
+  if (body.contractId) input.contractId = body.contractId;
+  if (body.productId) input.productId = body.productId;
+  if (body.projectId) input.projectId = body.projectId;
+  if (body.trainingCourseId) input.trainingCourseId = body.trainingCourseId;
+  if (body.description?.trim()) input.description = body.description.trim();
+
+  const data = await createDocumentService(input);
+
+  return sendSuccess(res, data, "Document uploaded");
 }
 
 export async function updateDocumentController(req: Request, res: Response) {

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { useCreateHandover, useUpdateHandover, type HandoverListItem } from "@/hooks/use-handovers-api";
 
-type ContractOption = { id: string; code: string; title: string | null };
+type ContractOption = { id: string; code: string; title: string | null; products: number };
 
 type Props = {
   open: boolean;
@@ -28,7 +28,6 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
   const updateH = useUpdateHandover();
 
   const [contractId, setContractId] = useState("");
-  const [products, setProducts] = useState(1);
   const [currentStep, setCurrentStep] = useState(1);
   const [status, setStatus] = useState<"pending" | "active" | "completed" | "late">("pending");
   const [startDate, setStartDate] = useState("");
@@ -38,7 +37,6 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
     if (!open) return;
     if (editing) {
       setContractId(editing.contractId);
-      setProducts(editing.products);
       setCurrentStep(editing.currentStep);
       setStatus(editing.status);
       setStartDate(toDateInput(editing.startDate));
@@ -46,7 +44,6 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
     } else {
       const d = new Date();
       setContractId(contracts[0]?.id ?? "");
-      setProducts(1);
       setCurrentStep(1);
       setStatus("pending");
       setStartDate(d.toISOString().slice(0, 10));
@@ -54,13 +51,12 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
     }
   }, [open, editing, contracts]);
 
+  const selectedContract = contracts.find((contract) => contract.id === contractId);
+  const productCount = selectedContract?.products ?? editing?.products ?? 0;
+
   const submit = async () => {
     if (!contractId) {
       toast.error("Chọn hợp đồng");
-      return;
-    }
-    if (products < 0) {
-      toast.error("Số sản phẩm không hợp lệ");
       return;
     }
     const start = startDate ? new Date(`${startDate}T12:00:00`).toISOString() : undefined;
@@ -70,7 +66,6 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
         await updateH.mutateAsync({
           id: editing.id,
           payload: {
-            products,
             currentStep,
             status,
             startDate: start,
@@ -82,7 +77,6 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
       } else {
         await createH.mutateAsync({
           contractId,
-          products,
           currentStep,
           status,
           startDate: start,
@@ -117,7 +111,8 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Số sản phẩm</Label>
-              <Input type="number" min={0} value={products} onChange={(e) => setProducts(Number(e.target.value))} />
+              <Input type="number" min={0} value={productCount} readOnly className="bg-muted/50" />
+              <p className="text-xs text-muted-foreground">Tự động tính từ danh mục sản phẩm của hợp đồng.</p>
             </div>
             <div className="space-y-1.5">
               <Label>Bước (1–5)</Label>

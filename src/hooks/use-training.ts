@@ -24,6 +24,7 @@ type TrainingCourseStatus = TrainingCourse["status"];
 type TrainingCourseListRow = {
   id: string;
   code?: string;
+  contractId?: string | null;
   title: string;
   type: TrainingCourseType;
   startDate: string;
@@ -57,6 +58,7 @@ type ScheduleSessionRow = {
 
 type TrainingCourseDetailRow = {
   id: string;
+  contractId?: string | null;
   title: string;
   type: TrainingCourseType;
   instructorId?: string | null;
@@ -77,6 +79,7 @@ function mapCourseListItem(item: unknown): TrainingCourse {
   const row = item as TrainingCourseListRow;
   return {
     id: row.id,
+    contractId: row.contract?.id ?? row.contractId ?? null,
     title: row.title,
     type: row.type,
     instructor: "",
@@ -162,6 +165,7 @@ export const useTrainingCourse = (id: string | undefined) => {
       ? undefined
       : {
           id: data.id,
+          contractId: data.contractId ?? null,
           title: data.title,
           type: data.type,
           instructor: data.instructorId ?? "",

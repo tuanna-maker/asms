@@ -79,7 +79,7 @@ export async function updateTrainingCourseController(req: Request, res: Response
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateTrainingCourseSchema, req.body);
   if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
-  const data = await updateTrainingCourseService(id, payload);
+  const data = await updateTrainingCourseService(id, payload as Parameters<typeof updateTrainingCourseService>[1]);
   return sendSuccess(res, data, "Training course updated");
 }
 

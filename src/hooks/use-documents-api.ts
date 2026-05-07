@@ -37,6 +37,40 @@ export function useCreateDocument() {
   });
 }
 
+export type UploadDocumentPayload = {
+  file: File;
+  name: string;
+  category: DocumentPayload["category"];
+  fileType: DocumentPayload["fileType"];
+  contractId?: string;
+  customerId?: string;
+  productId?: string;
+  projectId?: string;
+  trainingCourseId?: string;
+  description?: string;
+};
+
+export function useUploadDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: UploadDocumentPayload) => {
+      const form = new FormData();
+      form.append("file", payload.file);
+      form.append("name", payload.name);
+      form.append("category", payload.category);
+      form.append("fileType", payload.fileType);
+      if (payload.contractId) form.append("contractId", payload.contractId);
+      if (payload.customerId) form.append("customerId", payload.customerId);
+      if (payload.productId) form.append("productId", payload.productId);
+      if (payload.projectId) form.append("projectId", payload.projectId);
+      if (payload.trainingCourseId) form.append("trainingCourseId", payload.trainingCourseId);
+      if (payload.description) form.append("description", payload.description);
+      return api.post("/api/v1/documents/upload", form);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.documents.all }),
+  });
+}
+
 export function useUpdateDocument() {
   const qc = useQueryClient();
   return useMutation({

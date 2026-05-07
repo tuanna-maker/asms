@@ -10,9 +10,13 @@ import { useTrainingCourse, useTrainingCourses } from "@/hooks/use-training";
 
 const mockedUseQuery = vi.mocked(useQuery);
 
+type MockQueryArgs = { queryKey?: readonly unknown[] };
+type MockQueryResult = { data?: unknown; isLoading?: boolean; isError?: boolean; error?: unknown };
+
 describe("use-training hooks", () => {
   it("returns list data from training courses query", () => {
-    mockedUseQuery.mockImplementation(({ queryKey }: any) => {
+    mockedUseQuery.mockImplementation(((args: MockQueryArgs): MockQueryResult => {
+      const { queryKey } = args;
       if (queryKey?.[0] === "trainingCourses") {
         return {
           data: [
@@ -27,10 +31,10 @@ describe("use-training hooks", () => {
               location: "HCM",
             },
           ],
-        } as any;
+        };
       }
-      return { data: undefined, isLoading: false, isError: false, error: null } as any;
-    });
+      return { data: undefined, isLoading: false, isError: false, error: null };
+    }) as unknown as typeof useQuery);
 
     const { result } = renderHook(() => useTrainingCourses());
     expect(result.current).toHaveLength(1);
@@ -47,7 +51,8 @@ describe("use-training hooks", () => {
   });
 
   it("prefers mapped detail over list fallback", () => {
-    mockedUseQuery.mockImplementation(({ queryKey }: any) => {
+    mockedUseQuery.mockImplementation(((args: MockQueryArgs): MockQueryResult => {
+      const { queryKey } = args;
       if (queryKey?.[0] === "trainingCourses") {
         return {
           data: [
@@ -61,7 +66,7 @@ describe("use-training hooks", () => {
               status: "planned",
             },
           ],
-        } as any;
+        };
       }
       if (queryKey?.[0] === "trainingCourse") {
         return {
@@ -81,10 +86,10 @@ describe("use-training hooks", () => {
           isLoading: false,
           isError: false,
           error: null,
-        } as any;
+        };
       }
-      return { data: undefined, isLoading: false, isError: false, error: null } as any;
-    });
+      return { data: undefined, isLoading: false, isError: false, error: null };
+    }) as unknown as typeof useQuery);
 
     const { result } = renderHook(() => useTrainingCourse("tc-2"));
     expect(result.current.course?.title).toBe("Detail title");

@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
@@ -13,8 +15,8 @@ export async function listMaterialsService(filters: {
   type?: string;
   warehouse?: string;
 }) {
-  const where: any = { deletedAt: null };
-  if (filters.type) where.type = filters.type;
+  const where: Prisma.MaterialWhereInput = { deletedAt: null };
+  if (filters.type) where.type = filters.type as NonNullable<Prisma.MaterialWhereInput["type"]>;
   if (filters.warehouse) where.warehouse = filters.warehouse;
   if (filters.search) {
     const s = filters.search;
@@ -64,7 +66,7 @@ export async function createMaterialService(payload: {
     data: {
       code: payload.code ?? genMaterialCode(),
       name: payload.name,
-      type: payload.type as any,
+      type: payload.type as Prisma.MaterialCreateInput["type"],
       serial: payload.serial ?? null,
       quantity: payload.quantity,
       available: payload.available ?? payload.quantity,
@@ -75,7 +77,19 @@ export async function createMaterialService(payload: {
   });
 }
 
-export async function updateMaterialService(id: string, payload: any) {
+type UpdateMaterialPayload = Partial<{
+  code: string;
+  name: string;
+  type: string;
+  serial: string | null;
+  quantity: number;
+  available: number;
+  unit: string;
+  warehouse: string;
+  description: string | null;
+}>;
+
+export async function updateMaterialService(id: string, payload: UpdateMaterialPayload) {
   const existing = await prisma.material.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
   if (!existing) throw new HttpError(404, "Material not found");
 
@@ -84,7 +98,7 @@ export async function updateMaterialService(id: string, payload: any) {
     data: {
       ...(payload.code !== undefined ? { code: payload.code } : {}),
       ...(payload.name !== undefined ? { name: payload.name } : {}),
-      ...(payload.type !== undefined ? { type: payload.type } : {}),
+      ...(payload.type !== undefined ? { type: payload.type as NonNullable<Prisma.MaterialUpdateInput["type"]> } : {}),
       ...(payload.serial !== undefined ? { serial: payload.serial } : {}),
       ...(payload.quantity !== undefined ? { quantity: payload.quantity } : {}),
       ...(payload.available !== undefined ? { available: payload.available } : {}),
@@ -114,9 +128,9 @@ export async function listMaterialTransfersService(filters: {
   type?: string;
   status?: string;
 }) {
-  const where: any = { deletedAt: null };
-  if (filters.type) where.type = filters.type;
-  if (filters.status) where.status = filters.status;
+  const where: Prisma.MaterialTransferWhereInput = { deletedAt: null };
+  if (filters.type) where.type = filters.type as NonNullable<Prisma.MaterialTransferWhereInput["type"]>;
+  if (filters.status) where.status = filters.status as NonNullable<Prisma.MaterialTransferWhereInput["status"]>;
   if (filters.search) {
     const s = filters.search;
     where.OR = [
@@ -127,8 +141,7 @@ export async function listMaterialTransfersService(filters: {
     ];
   }
 
-  const prismaAny = prisma as any;
-  return prismaAny.materialTransfer.findMany({
+  return prisma.materialTransfer.findMany({
     where,
     orderBy: [{ transferDate: "desc" }, { createdAt: "desc" }],
     select: {

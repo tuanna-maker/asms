@@ -17,14 +17,17 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
   const [manualCode, setManualCode] = useState("");
   const [scanning, setScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const scannerRef = useRef<any>(null);
+  type Html5QrcodeLike = { stop: () => Promise<void> };
+  const scannerRef = useRef<Html5QrcodeLike | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
       try {
         await scannerRef.current.stop();
-      } catch {}
+      } catch {
+        // ignore stop errors when scanner already stopped
+      }
       scannerRef.current = null;
     }
     setScanning(false);
@@ -57,18 +60,21 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1,
         },
-        (decodedText: string, result: any) => {
+        (decodedText: string, result: { result?: { format?: { formatName?: string } } } | undefined) => {
           const format = result?.result?.format?.formatName || "QR/Barcode";
           onScan(decodedText, format);
           toast.success(`Đã quét: ${decodedText}`, { description: `Định dạng: ${format}` });
           stopScanner();
           onClose();
         },
-        () => {} // ignore errors during scanning
+        () => {
+          // ignore errors during scanning
+        },
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setScanning(false);
-      setCameraError(err?.message || "Không thể truy cập camera. Vui lòng cấp quyền camera.");
+      const message = err instanceof Error ? err.message : "Không thể truy cập camera. Vui lòng cấp quyền camera.";
+      setCameraError(message);
     }
   }, [onScan, onClose, stopScanner]);
 

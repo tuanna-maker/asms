@@ -57,7 +57,10 @@ function generateLayouts(widgets: WidgetConfig[]): LayoutItem[] {
   });
 }
 const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps) => {
-  const { width: containerWidth, containerRef } = useContainerWidth({ initialWidth: 1280 }) as any;
+  const containerHook = useContainerWidth as unknown as (
+    opts: { initialWidth: number },
+  ) => { width: number; containerRef: React.RefObject<HTMLDivElement> };
+  const { width: containerWidth, containerRef } = containerHook({ initialWidth: 1280 });
   const [isEditing, setIsEditing] = useState(false);
   const [removedWidgets, setRemovedWidgets] = useState<string[]>(() => {
     try {
@@ -78,7 +81,9 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
         const newWidgets = widgets.filter(w => !savedIds.includes(w.id));
         return [...validLayouts, ...generateLayouts(newWidgets)];
       }
-    } catch {}
+    } catch {
+      // ignore parse errors and fall through to defaults
+    }
     return generateLayouts(widgets);
   });
 

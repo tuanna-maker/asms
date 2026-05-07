@@ -10,10 +10,13 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import { contractsData, ContractRow, handoversData, HandoverRow, trainingsData, TrainingRow } from "@/data/tableData";
+import type { ContractRow, HandoverRow, TrainingRow } from "@/data/tableData";
 
 interface ProjectTabProps {
   data: DashboardData;
+  contracts?: ContractRow[];
+  handovers?: HandoverRow[];
+  trainings?: TrainingRow[];
 }
 
 const customerFilterOptions = [
@@ -82,7 +85,7 @@ const widgetTemplates = [
   { id: "table-training", title: "Bảng HL", description: "Danh sách", icon: GraduationCap, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
 ];
 
-const ProjectTab = ({ data }: ProjectTabProps) => {
+const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: ProjectTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
 
@@ -130,10 +133,10 @@ const ProjectTab = ({ data }: ProjectTabProps) => {
     ),
     "pakd": <PAKDWidget data={data.pakd} />,
     "trend": <TrendChart data={data.trend} />,
-    "table-contract": <DashboardTable title="Danh sách hợp đồng" columns={contractCols} data={contractsData} />,
-    "table-handover": <DashboardTable title="Danh sách bàn giao" columns={handoverCols} data={handoversData} />,
-    "table-training": <DashboardTable title="Danh sách huấn luyện" columns={trainingCols} data={trainingsData} />,
-  }), [data]);
+    "table-contract": <DashboardTable title="Danh sách hợp đồng" columns={contractCols} data={contracts} />,
+    "table-handover": <DashboardTable title="Danh sách bàn giao" columns={handoverCols} data={handovers} />,
+    "table-training": <DashboardTable title="Danh sách huấn luyện" columns={trainingCols} data={trainings} />,
+  }), [data, contracts, handovers, trainings]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

@@ -19,6 +19,7 @@ export interface ScheduleSession {
 
 export interface TrainingCourse {
   id: string;
+  contractId?: string | null;
   title: string;
   type: "internal" | "external" | "online";
   instructor: string;

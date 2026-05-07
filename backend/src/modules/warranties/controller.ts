@@ -46,7 +46,7 @@ export async function getWarrantyDetailController(req: Request, res: Response) {
 export async function createWarrantyController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createWarrantySchema, req.body);
 
-  const input: any = { ...payload };
+  const input: Record<string, unknown> = { ...payload };
   if (payload.contractId === undefined) delete input.contractId;
   if (payload.productId === undefined) delete input.productId;
   if (payload.assigneeId === undefined) delete input.assigneeId;
@@ -60,7 +60,7 @@ export async function createWarrantyController(req: Request, res: Response) {
   // default assigneeId = current user if not provided
   if (input.assigneeId === undefined) input.assigneeId = req.user?.id ?? null;
 
-  const data = await createWarrantyService(input);
+  const data = await createWarrantyService(input as Parameters<typeof createWarrantyService>[0]);
   return sendSuccess(res, data, "Warranty ticket created");
 }
 

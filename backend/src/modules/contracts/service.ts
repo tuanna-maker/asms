@@ -1,5 +1,8 @@
+import type { Prisma } from "@prisma/client";
+
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { getContractProductCounts } from "./product-count";
 
 function genContractCode() {
   return `HD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -19,15 +22,15 @@ export async function listContractsService(filters: {
   customerId?: string;
   search?: string;
 }) {
-  const where: any = { deletedAt: null };
-  if (filters.status) where.status = filters.status;
+  const where: Prisma.ContractWhereInput = { deletedAt: null };
+  if (filters.status) where.status = filters.status as NonNullable<Prisma.ContractWhereInput["status"]>;
   if (filters.customerId) where.customerId = filters.customerId;
   if (filters.search) {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { title: { contains: s, mode: "insensitive" } }];
   }
 
-  return prisma.contract.findMany({
+  const rows = await prisma.contract.findMany({
     where,
     orderBy: { startDate: "desc" },
     select: {
@@ -41,10 +44,13 @@ export async function listContractsService(filters: {
       warrantyEnd: true,
       status: true,
       progress: true,
+      terms: true,
       customerId: true,
       customer: { select: { id: true, code: true, name: true } },
     },
   });
+  const counts = await getContractProductCounts(rows.map((row) => row.id));
+  return rows.map((row) => ({ ...row, products: counts.get(row.id) ?? 0 }));
 }
 
 export async function getContractDetailService(id: string) {
@@ -61,19 +67,21 @@ export async function getContractDetailService(id: string) {
     },
   });
   if (!contract) throw new HttpError(404, "Contract not found");
-  return contract;
+  const products = contract.productsList.reduce((sum, product) => sum + product.totalProduced, 0);
+  return { ...contract, products };
 }
 
 export async function createContractService(payload: {
   customerId: string;
   title: string;
   value: number;
-  products: number;
+  products?: number;
   startDate: Date;
   endDate: Date;
   warrantyEnd?: Date;
   status?: string;
   progress?: number;
+  terms?: string | null;
   createdById: string;
 }) {
   return prisma.contract.create({
@@ -82,13 +90,14 @@ export async function createContractService(payload: {
       customerId: payload.customerId,
       createdById: payload.createdById,
       title: payload.title,
-      value: payload.value as any,
-      products: payload.products,
+      value: payload.value as unknown as Prisma.Decimal,
+      products: 0,
       startDate: payload.startDate,
       endDate: payload.endDate,
       warrantyEnd: payload.warrantyEnd ?? null,
-      ...(payload.status !== undefined ? { status: payload.status as any } : {}),
+      ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractCreateInput["status"]> } : {}),
       ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
     },
     include: {
       customer: { select: { id: true, code: true, name: true } },
@@ -96,7 +105,19 @@ export async function createContractService(payload: {
   });
 }
 
-export async function updateContractService(id: string, payload: any) {
+type UpdateContractPayload = Partial<{
+  customerId: string;
+  title: string;
+  value: number;
+  startDate: Date;
+  endDate: Date;
+  warrantyEnd: Date | null;
+  status: string;
+  progress: number;
+  terms: string | null;
+}>;
+
+export async function updateContractService(id: string, payload: UpdateContractPayload) {
   const resolvedId = await resolveContractId(id);
 
   return prisma.contract.update({
@@ -104,13 +125,13 @@ export async function updateContractService(id: string, payload: any) {
     data: {
       ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
       ...(payload.title !== undefined ? { title: payload.title } : {}),
-      ...(payload.value !== undefined ? { value: payload.value as any } : {}),
-      ...(payload.products !== undefined ? { products: payload.products } : {}),
+      ...(payload.value !== undefined ? { value: payload.value as unknown as Prisma.Decimal } : {}),
       ...(payload.startDate !== undefined ? { startDate: payload.startDate } : {}),
       ...(payload.endDate !== undefined ? { endDate: payload.endDate } : {}),
       ...(payload.warrantyEnd !== undefined ? { warrantyEnd: payload.warrantyEnd } : {}),
-      ...(payload.status !== undefined ? { status: payload.status } : {}),
+      ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractUpdateInput["status"]> } : {}),
       ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
     },
     include: {
       customer: { select: { id: true, code: true, name: true } },

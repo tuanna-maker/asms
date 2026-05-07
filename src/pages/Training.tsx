@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Plus, Calendar, Users, Clock, CheckCircle, Search, Edit, Trash2, Eye } from "lucide-react";
@@ -19,12 +19,14 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { TrainingCourse, typeLabel, statusLabel, statusColor } from "@/data/trainingData";
 import { useTrainingCourses } from "@/hooks/use-training";
+import { useProductsList } from "@/hooks/use-products-api";
 import { buildTrainingCoursePayload } from "@/lib/training-payload";
 
 const Training = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const courses = useTrainingCourses();
+  const { data: products = [] } = useProductsList();
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,14 +37,32 @@ const Training = () => {
     startDate: "", endDate: "", participants: 0, status: "planned", description: "",
   });
 
+  const productCountByContract = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const product of products) {
+      if (!product.contractId) continue;
+      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
+    }
+    return counts;
+  }, [products]);
+
+  const syncedCourses = useMemo(
+    () =>
+      courses.map((course) => ({
+        ...course,
+        participants: course.contractId ? productCountByContract.get(course.contractId) ?? course.participants : course.participants,
+      })),
+    [courses, productCountByContract],
+  );
+
   const stats = {
-    total: courses.length,
-    ongoing: courses.filter(c => c.status === "ongoing").length,
-    completed: courses.filter(c => c.status === "completed").length,
-    participants: courses.reduce((s, c) => s + c.participants, 0),
+    total: syncedCourses.length,
+    ongoing: syncedCourses.filter(c => c.status === "ongoing").length,
+    completed: syncedCourses.filter(c => c.status === "completed").length,
+    participants: syncedCourses.reduce((s, c) => s + c.participants, 0),
   };
 
-  const filtered = courses.filter(c => {
+  const filtered = syncedCourses.filter(c => {
     if (tab !== "all" && c.status !== tab) return false;
     if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.id.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -179,13 +199,13 @@ const Training = () => {
             <div><Label>Tiêu đề *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Loại</Label>
-                <Select value={form.type} onValueChange={(v: any) => setForm({ ...form, type: v })}>
+                <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as typeof form.type })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="internal">Nội bộ</SelectItem><SelectItem value="external">Khách hàng</SelectItem><SelectItem value="online">Online</SelectItem></SelectContent>
                 </Select>
               </div>
               <div><Label>Trạng thái</Label>
-                <Select value={form.status} onValueChange={(v: any) => setForm({ ...form, status: v })}>
+                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as typeof form.status })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="planned">Kế hoạch</SelectItem><SelectItem value="ongoing">Đang TH</SelectItem><SelectItem value="completed">Hoàn thành</SelectItem></SelectContent>
                 </Select>

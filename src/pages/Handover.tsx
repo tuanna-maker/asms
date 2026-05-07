@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Truck, ClipboardCheck, Package, GraduationCap, FileCheck, CheckCircle, Clock, ArrowRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 import { useDeleteHandover, useHandoversList, type HandoverListItem } from "@/hooks/use-handovers-api";
 import { useTrainingCoursesQuery } from "@/hooks/use-training";
+import { useProductsList } from "@/hooks/use-products-api";
 import { HandoverUpsertDialog } from "@/components/handover/HandoverUpsertDialog";
 
 const steps = [
@@ -54,10 +55,11 @@ const statusBadge = (status: string) => {
 const Handover = () => {
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
   const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } = useTrainingCoursesQuery();
+  const { data: products = [] } = useProductsList();
   const { data: contractOptions = [] } = useQuery({
     queryKey: qk.contracts.all,
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<Array<{ id: string; code: string; title: string | null }>>>("/api/v1/contracts");
+      const res = await api.get<ApiSuccess<Array<{ id: string; code: string; title: string | null; products: number }>>>("/api/v1/contracts");
       return res.data.data ?? [];
     },
     staleTime: 60_000,
@@ -68,8 +70,44 @@ const Handover = () => {
   const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
   const deleteHandover = useDeleteHandover();
 
-  const activeCount = handoverRows.filter((h) => h.status === "active").length;
-  const completedCount = handoverRows.filter((h) => h.status === "completed").length;
+  const productCountByContract = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const product of products) {
+      if (!product.contractId) continue;
+      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
+    }
+    return counts;
+  }, [products]);
+
+  const syncedContractOptions = useMemo(
+    () =>
+      contractOptions.map((contract) => ({
+        ...contract,
+        products: productCountByContract.get(contract.id) ?? contract.products ?? 0,
+      })),
+    [contractOptions, productCountByContract],
+  );
+
+  const syncedHandoverRows = useMemo(
+    () =>
+      handoverRows.map((handover) => ({
+        ...handover,
+        products: productCountByContract.get(handover.contractId) ?? handover.products,
+      })),
+    [handoverRows, productCountByContract],
+  );
+
+  const syncedTrainingRows = useMemo(
+    () =>
+      trainingRows.map((course) => ({
+        ...course,
+        participants: course.contractId ? productCountByContract.get(course.contractId) ?? course.participants : course.participants,
+      })),
+    [trainingRows, productCountByContract],
+  );
+
+  const activeCount = syncedHandoverRows.filter((h) => h.status === "active").length;
+  const completedCount = syncedHandoverRows.filter((h) => h.status === "completed").length;
 
   return (
     <div className="space-y-6">
@@ -99,7 +137,7 @@ const Handover = () => {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Tổng bàn giao</p>
-            <p className="text-2xl font-bold text-card-foreground">{handoverRows.length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{syncedHandoverRows.length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
@@ -126,7 +164,7 @@ const Handover = () => {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Đợt huấn luyện</p>
-            <p className="text-2xl font-bold text-card-foreground">{trainingRows.length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{syncedTrainingRows.length}</p>
           </div>
         </div>
       </div>
@@ -144,8 +182,8 @@ const Handover = () => {
 
       <Tabs defaultValue="handover">
         <TabsList>
-          <TabsTrigger value="handover">Bàn giao ({handoverRows.length})</TabsTrigger>
-          <TabsTrigger value="training">Huấn luyện ({trainingRows.length})</TabsTrigger>
+          <TabsTrigger value="handover">Bàn giao ({syncedHandoverRows.length})</TabsTrigger>
+          <TabsTrigger value="training">Huấn luyện ({syncedTrainingRows.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="handover">
@@ -183,14 +221,14 @@ const Handover = () => {
                       Đang tải…
                     </TableCell>
                   </TableRow>
-                ) : handoverRows.length === 0 ? (
+                ) : syncedHandoverRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Chưa có bàn giao. Nhấn «Thêm bàn giao» để tạo mới.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  handoverRows.map((h) => (
+                  syncedHandoverRows.map((h) => (
                     <TableRow key={h.id}>
                       <TableCell className="font-medium text-primary">{h.code}</TableCell>
                       <TableCell className="text-muted-foreground">{h.contract.code}</TableCell>
@@ -258,14 +296,14 @@ const Handover = () => {
                       Đang tải…
                     </TableCell>
                   </TableRow>
-                ) : trainingRows.length === 0 ? (
+                ) : syncedTrainingRows.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       Chưa có dữ liệu huấn luyện.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  trainingRows.map((t) => (
+                  syncedTrainingRows.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="font-medium text-primary">{t.id}</TableCell>
                       <TableCell className="text-muted-foreground">{t.title}</TableCell>
@@ -290,7 +328,7 @@ const Handover = () => {
           setUpsertOpen(o);
           if (!o) setEditingHandover(null);
         }}
-        contracts={contractOptions}
+        contracts={syncedContractOptions}
         editing={editingHandover}
       />
 

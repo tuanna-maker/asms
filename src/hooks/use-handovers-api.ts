@@ -23,7 +23,7 @@ export type HandoverListItem = {
 
 export type CreateHandoverPayload = {
   contractId: string;
-  products: number;
+  products?: number;
   currentStep?: number;
   status?: "pending" | "active" | "completed" | "late";
   dueDate?: string;

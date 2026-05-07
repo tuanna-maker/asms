@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import {
   Info, ListChecks, Boxes, Files, GraduationCap, Download, Edit,
 } from "lucide-react";
 import ContractEditDialog from "./ContractEditDialog";
-import { toast } from "sonner";
+import { useContractDetail } from "@/hooks/use-contracts-api";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Đang thực hiện", variant: "default" },
@@ -21,27 +21,100 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   liquidated: { label: "Đã thanh lý", variant: "outline" },
 };
 
-type Contract = {
-  id: string; customer: string; value: number; products: number;
-  startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
+const trainingStatusLabel: Record<string, string> = {
+  planned: "Lên kế hoạch",
+  ongoing: "Đang diễn ra",
+  completed: "Hoàn thành",
+  cancelled: "Đã hủy",
 };
+
+type Contract = {
+  id: string; dbId?: string; customer: string; value: number; products: number;
+  startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
+  terms?: string | null;
+};
+
+type DetailProduct = {
+  id?: string;
+  code?: string;
+  name?: string;
+  category?: string | null;
+  status?: string | null;
+  manufacturer?: string | null;
+  unit?: string | null;
+  totalProduced?: number | null;
+};
+
+type DetailDocument = {
+  id?: string;
+  code?: string;
+  name?: string;
+  fileType?: string | null;
+  fileSize?: string | null;
+  fileUrl?: string | null;
+  category?: string | null;
+};
+
+type DetailTraining = {
+  id?: string;
+  code?: string;
+  title?: string;
+  type?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  participants?: number | null;
+  status?: string | null;
+  location?: string | null;
+};
+
+type ContractDetailData = {
+  terms?: string | null;
+  productsList?: DetailProduct[];
+  documents?: DetailDocument[];
+  trainingCourses?: DetailTraining[];
+};
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
 
 interface Props {
   contract: Contract | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave?: (updated: Contract) => void;
 }
 
-const ContractDetailDialog = ({ contract, open, onOpenChange, onSave }: Props) => {
+const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [editing, setEditing] = useState(false);
+
+  const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
+  const detail = detailData as ContractDetailData | null;
+
+  const productsList = useMemo<DetailProduct[]>(
+    () => (detail?.productsList ?? []) as DetailProduct[],
+    [detail],
+  );
+  const productTotal = useMemo(
+    () => (detail ? productsList.reduce((sum, product) => sum + (Number(product.totalProduced) || 0), 0) : contract?.products ?? 0),
+    [contract?.products, detail, productsList],
+  );
+  const documentsList = useMemo<DetailDocument[]>(
+    () => (detail?.documents ?? []) as DetailDocument[],
+    [detail],
+  );
+  const trainingList = useMemo<DetailTraining[]>(
+    () => (detail?.trainingCourses ?? []) as DetailTraining[],
+    [detail],
+  );
+
   if (!contract) return null;
   const cfg = statusConfig[contract.status] || statusConfig.active;
-
-  const handleSave = (updated: Contract) => {
-    if (onSave) onSave(updated);
-    else toast.success(`Đã cập nhật hợp đồng ${updated.id}`);
-  };
+  const termsText = (detail?.terms ?? contract.terms ?? "").trim();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -85,7 +158,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange, onSave }: Props) =
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoItem icon={<Users className="h-4 w-4" />} label="Khách hàng" value={contract.customer} />
               <InfoItem icon={<DollarSign className="h-4 w-4" />} label="Giá trị hợp đồng" value={`${contract.value.toLocaleString()} triệu đồng`} />
-              <InfoItem icon={<Package className="h-4 w-4" />} label="Số lượng sản phẩm" value={`${contract.products} sản phẩm`} />
+              <InfoItem icon={<Package className="h-4 w-4" />} label="Số lượng sản phẩm" value={`${productTotal} sản phẩm`} />
               <InfoItem icon={<Shield className="h-4 w-4" />} label="Bảo hành đến" value={contract.warrantyEnd} />
               <InfoItem icon={<Calendar className="h-4 w-4" />} label="Ngày bắt đầu" value={contract.startDate} />
               <InfoItem icon={<Calendar className="h-4 w-4" />} label="Ngày kết thúc" value={contract.endDate} />
@@ -116,83 +189,120 @@ const ContractDetailDialog = ({ contract, open, onOpenChange, onSave }: Props) =
 
           {/* Điều khoản chính */}
           <TabsContent value="terms" className="flex-1 overflow-y-auto p-6 space-y-4 mt-0">
-            {[
-              { title: "Phạm vi cung cấp", content: `Cung cấp ${contract.products} sản phẩm cùng dịch vụ lắp đặt, vận hành thử và bàn giao theo đúng tiêu chuẩn kỹ thuật đã thống nhất.` },
-              { title: "Giá trị & thanh toán", content: `Tổng giá trị hợp đồng ${contract.value.toLocaleString()} triệu đồng. Thanh toán theo 3 đợt: 30% tạm ứng, 60% sau bàn giao, 10% sau nghiệm thu.` },
-              { title: "Tiến độ thực hiện", content: `Bắt đầu từ ${contract.startDate} và hoàn thành chậm nhất ${contract.endDate}. Phạt chậm tiến độ 0,1%/ngày trên giá trị hợp đồng.` },
-              { title: "Bảo hành & hỗ trợ", content: `Bảo hành đến ${contract.warrantyEnd}. Hỗ trợ kỹ thuật 24/7 trong toàn bộ thời gian bảo hành.` },
-              { title: "Điều khoản chấm dứt", content: "Hai bên có quyền chấm dứt hợp đồng nếu bên còn lại vi phạm nghiêm trọng và không khắc phục trong vòng 30 ngày kể từ khi nhận thông báo." },
-            ].map((t, i) => (
-              <div key={i} className="rounded-lg border border-border/60 bg-card p-4">
-                <h4 className="text-sm font-semibold text-card-foreground mb-1.5">{i + 1}. {t.title}</h4>
-                <p className="text-sm text-muted-foreground leading-relaxed">{t.content}</p>
+            {detailLoading && !termsText ? (
+              <div className="text-sm text-muted-foreground">Đang tải điều khoản hợp đồng...</div>
+            ) : termsText ? (
+              <div className="rounded-lg border border-border/60 bg-card p-4">
+                <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">{termsText}</p>
               </div>
-            ))}
+            ) : (
+              <EmptyHint text="Hợp đồng chưa có điều khoản. Hãy chỉnh sửa hợp đồng để bổ sung." />
+            )}
           </TabsContent>
 
           {/* Danh mục sản phẩm */}
           <TabsContent value="products" className="flex-1 overflow-y-auto p-6 mt-0">
-            <div className="rounded-lg border border-border/60 overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã SP</TableHead>
-                    <TableHead>Tên sản phẩm</TableHead>
-                    <TableHead className="text-right">Số lượng</TableHead>
-                    <TableHead className="text-right">Đơn giá (triệu)</TableHead>
-                    <TableHead className="text-right">Thành tiền (triệu)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sampleProducts(contract).map((p) => (
-                    <TableRow key={p.code}>
-                      <TableCell className="font-medium">{p.code}</TableCell>
-                      <TableCell>{p.name}</TableCell>
-                      <TableCell className="text-right">{p.qty}</TableCell>
-                      <TableCell className="text-right">{p.price.toLocaleString()}</TableCell>
-                      <TableCell className="text-right font-medium">{(p.qty * p.price).toLocaleString()}</TableCell>
+            {detailLoading && productsList.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Đang tải danh mục sản phẩm...</div>
+            ) : productsList.length === 0 ? (
+              <EmptyHint text="Hợp đồng chưa có sản phẩm gắn kèm." />
+            ) : (
+              <div className="rounded-lg border border-border/60 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Mã SP</TableHead>
+                      <TableHead>Tên sản phẩm</TableHead>
+                      <TableHead>Phân loại</TableHead>
+                      <TableHead>Hãng sản xuất</TableHead>
+                      <TableHead className="text-right">Số lượng</TableHead>
+                      <TableHead className="text-right">Trạng thái</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {productsList.map((p, idx) => (
+                      <TableRow key={p.id ?? p.code ?? idx}>
+                        <TableCell className="font-medium">{p.code ?? "—"}</TableCell>
+                        <TableCell>{p.name ?? "—"}</TableCell>
+                        <TableCell>{p.category ?? "—"}</TableCell>
+                        <TableCell>{p.manufacturer ?? "—"}</TableCell>
+                        <TableCell className="text-right">{p.totalProduced ?? 0}</TableCell>
+                        <TableCell className="text-right">{p.status ?? "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </TabsContent>
 
           {/* Tài liệu */}
           <TabsContent value="docs" className="flex-1 overflow-y-auto p-6 mt-0">
-            <div className="space-y-2">
-              {sampleDocs.map((d, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg border border-border/60 bg-card p-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <FileText className="h-5 w-5 text-primary shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-card-foreground truncate">{d.name}</p>
-                      <p className="text-xs text-muted-foreground">{d.type} • {d.size}</p>
+            {detailLoading && documentsList.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Đang tải tài liệu...</div>
+            ) : documentsList.length === 0 ? (
+              <EmptyHint text="Hợp đồng chưa có tài liệu đính kèm." />
+            ) : (
+              <div className="space-y-2">
+                {documentsList.map((d, i) => (
+                  <div key={d.id ?? d.code ?? i} className="flex items-center justify-between rounded-lg border border-border/60 bg-card p-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileText className="h-5 w-5 text-primary shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-card-foreground truncate">{d.name ?? "Tài liệu"}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {(d.fileType ?? "—").toString().toUpperCase()}
+                          {d.fileSize ? ` • ${d.fileSize}` : ""}
+                        </p>
+                      </div>
                     </div>
+                    {d.fileUrl ? (
+                      <a
+                        href={d.fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline shrink-0"
+                      >
+                        <Download className="h-4 w-4" /> Tải về
+                      </a>
+                    ) : (
+                      <span className="text-xs text-muted-foreground shrink-0">Chưa có file</span>
+                    )}
                   </div>
-                  <button className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline shrink-0">
-                    <Download className="h-4 w-4" /> Tải về
-                  </button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Đào tạo & Huấn luyện */}
           <TabsContent value="training" className="flex-1 overflow-y-auto p-6 space-y-3 mt-0">
-            {sampleTraining.map((t, i) => (
-              <div key={i} className="rounded-lg border border-border/60 bg-card p-4">
-                <div className="flex items-start justify-between gap-3 mb-2">
-                  <h4 className="text-sm font-semibold text-card-foreground">{t.title}</h4>
-                  <Badge variant={t.status === "Hoàn thành" ? "secondary" : "default"}>{t.status}</Badge>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                  <p><span className="text-card-foreground font-medium">Giảng viên:</span> {t.trainer}</p>
-                  <p><span className="text-card-foreground font-medium">Ngày:</span> {t.date}</p>
-                  <p><span className="text-card-foreground font-medium">Học viên:</span> {t.attendees}</p>
-                </div>
-              </div>
-            ))}
+            {detailLoading && trainingList.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Đang tải khóa đào tạo...</div>
+            ) : trainingList.length === 0 ? (
+              <EmptyHint text="Hợp đồng chưa có khóa đào tạo nào." />
+            ) : (
+              trainingList.map((t, i) => {
+                const statusKey = String(t.status ?? "planned");
+                return (
+                  <div key={t.id ?? t.code ?? i} className="rounded-lg border border-border/60 bg-card p-4">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <h4 className="text-sm font-semibold text-card-foreground">{t.title ?? "Khóa đào tạo"}</h4>
+                      <Badge variant={statusKey === "completed" ? "secondary" : "default"}>
+                        {trainingStatusLabel[statusKey] ?? statusKey}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
+                      <p><span className="text-card-foreground font-medium">Mã khóa:</span> {t.code ?? "—"}</p>
+                      <p><span className="text-card-foreground font-medium">Bắt đầu:</span> {formatDate(t.startDate)}</p>
+                      <p><span className="text-card-foreground font-medium">Kết thúc:</span> {formatDate(t.endDate)}</p>
+                      <p><span className="text-card-foreground font-medium">Hình thức:</span> {t.type ?? "—"}</p>
+                      <p><span className="text-card-foreground font-medium">Học viên:</span> {t.participants ?? 0}</p>
+                      <p><span className="text-card-foreground font-medium">Địa điểm:</span> {t.location ?? "—"}</p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </TabsContent>
         </Tabs>
       </SheetContent>
@@ -200,7 +310,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange, onSave }: Props) =
         contract={contract}
         open={editing}
         onOpenChange={setEditing}
-        onSave={handleSave}
       />
     </Sheet>
   );
@@ -226,26 +335,10 @@ const InfoItem = ({ icon, label, value }: { icon: React.ReactNode; label: string
   </div>
 );
 
-const sampleProducts = (c: Contract) => {
-  const unit = Math.max(1, Math.round(c.value / Math.max(1, c.products)));
-  return [
-    { code: "SP-001", name: "Thiết bị chính loại A", qty: Math.ceil(c.products / 2), price: unit },
-    { code: "SP-002", name: "Phụ kiện đi kèm", qty: Math.floor(c.products / 3) || 1, price: Math.max(1, Math.round(unit * 0.4)) },
-    { code: "SP-003", name: "Module mở rộng", qty: Math.floor(c.products / 4) || 1, price: Math.max(1, Math.round(unit * 0.6)) },
-  ];
-};
-
-const sampleDocs = [
-  { name: "Hợp đồng gốc.pdf", type: "PDF", size: "1.2 MB" },
-  { name: "Phụ lục kỹ thuật.docx", type: "DOCX", size: "480 KB" },
-  { name: "Biên bản bàn giao.pdf", type: "PDF", size: "820 KB" },
-  { name: "Bảng báo giá chi tiết.xlsx", type: "XLSX", size: "210 KB" },
-];
-
-const sampleTraining = [
-  { title: "Hướng dẫn vận hành cơ bản", trainer: "Nguyễn Văn A", date: "12/03/2025", attendees: "15 người", status: "Hoàn thành" },
-  { title: "Đào tạo bảo trì định kỳ", trainer: "Trần Thị B", date: "20/04/2025", attendees: "8 người", status: "Hoàn thành" },
-  { title: "Huấn luyện xử lý sự cố nâng cao", trainer: "Lê Văn C", date: "05/06/2025", attendees: "Dự kiến 10 người", status: "Sắp diễn ra" },
-];
+const EmptyHint = ({ text }: { text: string }) => (
+  <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-6 text-center">
+    <p className="text-sm text-muted-foreground">{text}</p>
+  </div>
+);
 
 export default ContractDetailDialog;

@@ -4,12 +4,13 @@ export const createContractSchema = z.object({
   customerId: z.string().min(1),
   title: z.string().min(1),
   value: z.number(),
-  products: z.number().int().nonnegative(),
+  products: z.number().int().nonnegative().optional(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   warrantyEnd: z.coerce.date().optional(),
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
   progress: z.number().int().nonnegative().optional(),
+  terms: z.string().optional().nullable(),
 });
 
 export const updateContractSchema = createContractSchema

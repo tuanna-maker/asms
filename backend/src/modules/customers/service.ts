@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
@@ -19,7 +21,7 @@ async function resolveCustomerId(idOrCode: string) {
 }
 
 function buildCustomerWhere(filters: { search?: string }) {
-  const where: any = { deletedAt: null };
+  const where: Prisma.CustomerWhereInput = { deletedAt: null };
   if (filters.search) {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { name: { contains: s, mode: "insensitive" } }];
@@ -28,7 +30,8 @@ function buildCustomerWhere(filters: { search?: string }) {
 }
 
 export async function listCustomersService(filters: z.infer<typeof listCustomersQuerySchema>) {
-  const where = buildCustomerWhere({ search: (filters as any).search });
+  const search = (filters as { search?: string }).search;
+  const where = buildCustomerWhere(search !== undefined ? { search } : {});
   return prisma.customer.findMany({
     where,
     orderBy: { name: "asc" },

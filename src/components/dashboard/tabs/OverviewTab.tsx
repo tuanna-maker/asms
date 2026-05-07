@@ -14,11 +14,11 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import { contractsData, ContractRow } from "@/data/tableData";
+import type { ContractRow } from "@/data/tableData";
 
 interface OverviewTabProps {
   data: DashboardData;
-  /** Thay bảng mock bằng dữ liệu hợp đồng từ API (nếu có) */
+  /** Dữ liệu hợp đồng đã chuẩn hoá từ API (rỗng nếu không có) */
   contractsTableData?: ContractRow[];
 }
 
@@ -136,7 +136,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
       <DashboardTable
         title="Danh sách hợp đồng"
         columns={contractColumns}
-        data={contractsTableData && contractsTableData.length > 0 ? contractsTableData : contractsData}
+        data={contractsTableData ?? []}
       />
     ),
   }), [contractsTableData, data]);

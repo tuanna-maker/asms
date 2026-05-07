@@ -15,7 +15,7 @@ export const handoverIdParamSchema = z.object({
 
 export const createHandoverSchema = z.object({
   contractId: z.string().min(1),
-  products: z.number().int().nonnegative(),
+  products: z.number().int().nonnegative().optional(),
   currentStep: z.number().int().min(1).max(5).optional(),
   status: handoverStatusEnum.optional(),
   dueDate: z.coerce.date().optional(),

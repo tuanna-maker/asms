@@ -24,6 +24,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { typeLabel, statusLabel, statusColor, Trainee, ScheduleSession } from "@/data/trainingData";
 import { useTrainingCourse } from "@/hooks/use-training";
+import { useProductsList } from "@/hooks/use-products-api";
 import { buildSessionPayload, buildTraineePayload } from "@/lib/training-payload";
 
 const attendanceLabel = { present: "Có mặt", absent: "Vắng", pending: "Chưa điểm danh" };
@@ -73,6 +74,7 @@ const TrainingDetail = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { course, isLoading, isError, error } = useTrainingCourse(id);
+  const { data: products = [] } = useProductsList(Boolean(course?.contractId));
 
   const [traineeDialog, setTraineeDialog] = useState(false);
   const [editingTrainee, setEditingTrainee] = useState<Trainee | null>(null);
@@ -114,9 +116,14 @@ const TrainingDetail = () => {
 
   const trainees = course.trainees || [];
   const schedule = course.schedule || [];
+  const syncedParticipants = course.contractId
+    ? products
+        .filter((product) => product.contractId === course.contractId)
+        .reduce((sum, product) => sum + (Number(product.totalProduced) || 0), 0)
+    : course.participants;
 
   const traineeStats = {
-    total: trainees.length,
+    total: syncedParticipants,
     present: trainees.filter(t => t.attendance === "present").length,
     absent: trainees.filter(t => t.attendance === "absent").length,
     avgScore: (() => {
@@ -290,7 +297,7 @@ const TrainingDetail = () => {
 
         <div className="flex items-center gap-2 shrink-0">
           <Label className="text-xs whitespace-nowrap">Trạng thái:</Label>
-          <Select value={course.status} onValueChange={(v: any) => updateStatus(v)}>
+          <Select value={course.status} onValueChange={(v) => updateStatus(v as typeof course.status)}>
             <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="planned">Lên kế hoạch</SelectItem>
@@ -530,7 +537,7 @@ const TrainingDetail = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Điểm danh</Label>
-                <Select value={traineeForm.attendance} onValueChange={(v: any) => setTraineeForm({ ...traineeForm, attendance: v })}>
+                <Select value={traineeForm.attendance} onValueChange={(v) => setTraineeForm({ ...traineeForm, attendance: v as typeof traineeForm.attendance })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pending">Chưa điểm danh</SelectItem>
@@ -562,7 +569,7 @@ const TrainingDetail = () => {
             </div>
             <div><Label>Địa điểm</Label><Input value={sessionForm.location} onChange={(e) => setSessionForm({ ...sessionForm, location: e.target.value })} /></div>
             <div><Label>Trạng thái</Label>
-              <Select value={sessionForm.status} onValueChange={(v: any) => setSessionForm({ ...sessionForm, status: v })}>
+              <Select value={sessionForm.status} onValueChange={(v) => setSessionForm({ ...sessionForm, status: v as typeof sessionForm.status })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="planned">Chưa diễn ra</SelectItem>

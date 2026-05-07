@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Wallet, Package, TrendingDown, BarChart3, Monitor, MapPin, Wrench, Eye, History, FileText, Calendar, AlertTriangle, Search } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Wallet, Package, TrendingDown, Monitor, MapPin, Wrench, Eye, History, FileText, AlertTriangle, Search } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import PAKDWidget from "@/components/dashboard/PAKDWidget";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import { DashboardData } from "@/data/dashboardData";
-import { equipmentData, statusConfig, Equipment } from "@/data/equipmentData";
+import { statusConfig, Equipment } from "@/data/equipmentData";
+import type { MaterialListRow } from "@/hooks/use-materials-api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,32 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MaterialTabProps {
   data: DashboardData;
+  materials?: MaterialListRow[];
+}
+
+function mapMaterialToEquipment(m: MaterialListRow): Equipment {
+  const quantity = Number(m.quantity ?? 0);
+  const available = Number(m.available ?? 0);
+  let status: Equipment["status"];
+  if (quantity === 0) status = "decommissioned";
+  else if (available === 0) status = "active";
+  else if (available === quantity) status = "storage";
+  else status = "active";
+  return {
+    id: m.code,
+    name: m.name,
+    serial: m.serial ?? "—",
+    category: m.type === "identified" ? "Định danh" : "Tiêu hao",
+    status,
+    importDate: "—",
+    expiryDate: null,
+    currentLocation: m.warehouse,
+    installedOn: null,
+    managedBy: m.warehouse,
+    transferHistory: [],
+    maintenance: [],
+    attachments: [],
+  };
 }
 
 const EquipmentDetailDialog = ({ equipment, open, onClose }: { equipment: Equipment | null; open: boolean; onClose: () => void }) => {
@@ -187,7 +214,7 @@ const EquipmentCard = ({ equipment, onView }: { equipment: Equipment; onView: ()
   );
 };
 
-const MaterialTab = ({ data }: MaterialTabProps) => {
+const MaterialTab = ({ data, materials = [] }: MaterialTabProps) => {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -197,7 +224,9 @@ const MaterialTab = ({ data }: MaterialTabProps) => {
   const remainingPAKD = data.pakd.reduce((sum, p) => sum + p.remaining, 0);
   const usedPAKD = totalPAKD - remainingPAKD;
 
-  const filteredEquipment = equipmentData.filter((e) => {
+  const equipmentList = useMemo<Equipment[]>(() => materials.map(mapMaterialToEquipment), [materials]);
+
+  const filteredEquipment = equipmentList.filter((e) => {
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
       e.id.toLowerCase().includes(search.toLowerCase()) ||
       e.serial.toLowerCase().includes(search.toLowerCase()) ||
@@ -207,18 +236,18 @@ const MaterialTab = ({ data }: MaterialTabProps) => {
   });
 
   const statusCounts = {
-    active: equipmentData.filter(e => e.status === "active").length,
-    storage: equipmentData.filter(e => e.status === "storage").length,
-    transferring: equipmentData.filter(e => e.status === "transferring").length,
-    maintenance: equipmentData.filter(e => e.status === "maintenance").length,
-    decommissioned: equipmentData.filter(e => e.status === "decommissioned").length,
+    active: equipmentList.filter(e => e.status === "active").length,
+    storage: equipmentList.filter(e => e.status === "storage").length,
+    transferring: equipmentList.filter(e => e.status === "transferring").length,
+    maintenance: equipmentList.filter(e => e.status === "maintenance").length,
+    decommissioned: equipmentList.filter(e => e.status === "decommissioned").length,
   };
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard title="Tổng thiết bị" value={equipmentData.length} icon={Monitor} color="primary" />
+        <StatCard title="Tổng thiết bị" value={equipmentList.length} icon={Monitor} color="primary" />
         <StatCard title="Đang sử dụng" value={statusCounts.active} icon={Package} color="success" />
         <StatCard title="Điều chuyển" value={statusCounts.transferring} icon={TrendingDown} color="warning" />
         <StatCard title="Sửa chữa" value={statusCounts.maintenance} icon={Wrench} color="destructive" />
@@ -267,7 +296,7 @@ const MaterialTab = ({ data }: MaterialTabProps) => {
         <div className="flex items-center gap-2 sm:gap-3">
           <Monitor className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           <h3 className="font-semibold text-card-foreground text-sm sm:text-base">Theo dõi thiết bị</h3>
-          <Badge variant="secondary" className="ml-auto text-xs">{equipmentData.length} thiết bị</Badge>
+          <Badge variant="secondary" className="ml-auto text-xs">{equipmentList.length} thiết bị</Badge>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">

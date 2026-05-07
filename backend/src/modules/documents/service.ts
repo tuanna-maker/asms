@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
@@ -25,9 +27,9 @@ export async function listDocumentsService(filters: {
   trainingCourseId?: string;
   name?: string;
 }) {
-  const where: any = { deletedAt: null };
-  if (filters.category) where.category = filters.category;
-  if (filters.fileType) where.fileType = filters.fileType;
+  const where: Prisma.DocumentWhereInput = { deletedAt: null };
+  if (filters.category) where.category = filters.category as NonNullable<Prisma.DocumentWhereInput["category"]>;
+  if (filters.fileType) where.fileType = filters.fileType as NonNullable<Prisma.DocumentWhereInput["fileType"]>;
   if (filters.ownerId) where.ownerId = filters.ownerId;
   if (filters.customerId) where.customerId = filters.customerId;
   if (filters.contractId) where.contractId = filters.contractId;
@@ -107,8 +109,8 @@ export async function createDocumentService(payload: {
       projectId: payload.projectId ?? null,
       trainingCourseId: payload.trainingCourseId ?? null,
       name: payload.name,
-      category: payload.category as any,
-      fileType: payload.fileType as any,
+      category: payload.category as Prisma.DocumentCreateInput["category"],
+      fileType: payload.fileType as Prisma.DocumentCreateInput["fileType"],
       tags: payload.tags ?? [],
       description: payload.description ?? null,
       fileSize: payload.fileSize ?? null,
@@ -117,26 +119,44 @@ export async function createDocumentService(payload: {
   });
 }
 
-export async function updateDocumentService(id: string, payload: any) {
+type UpdateDocumentPayload = Partial<{
+  name: string;
+  category: string;
+  fileType: string;
+  ownerId: string | null;
+  customerId: string | null;
+  contractId: string | null;
+  productId: string | null;
+  projectId: string | null;
+  trainingCourseId: string | null;
+  description: string | null;
+  tags: string[];
+  fileSize: string | null;
+  fileUrl: string | null;
+}>;
+
+export async function updateDocumentService(id: string, payload: UpdateDocumentPayload) {
   const resolvedId = await resolveDocumentId(id);
+
+  const data: Prisma.DocumentUncheckedUpdateInput = {
+    ...(payload.name !== undefined ? { name: payload.name } : {}),
+    ...(payload.category !== undefined ? { category: payload.category as NonNullable<Prisma.DocumentUncheckedUpdateInput["category"]> } : {}),
+    ...(payload.fileType !== undefined ? { fileType: payload.fileType as NonNullable<Prisma.DocumentUncheckedUpdateInput["fileType"]> } : {}),
+    ...(payload.ownerId !== undefined ? { ownerId: payload.ownerId } : {}),
+    ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
+    ...(payload.contractId !== undefined ? { contractId: payload.contractId } : {}),
+    ...(payload.productId !== undefined ? { productId: payload.productId } : {}),
+    ...(payload.projectId !== undefined ? { projectId: payload.projectId } : {}),
+    ...(payload.trainingCourseId !== undefined ? { trainingCourseId: payload.trainingCourseId } : {}),
+    ...(payload.description !== undefined ? { description: payload.description } : {}),
+    ...(payload.tags !== undefined ? { tags: payload.tags } : {}),
+    ...(payload.fileSize !== undefined ? { fileSize: payload.fileSize } : {}),
+    ...(payload.fileUrl !== undefined ? { fileUrl: payload.fileUrl } : {}),
+  };
 
   return prisma.document.update({
     where: { id: resolvedId },
-    data: {
-      ...(payload.name !== undefined ? { name: payload.name } : {}),
-      ...(payload.category !== undefined ? { category: payload.category } : {}),
-      ...(payload.fileType !== undefined ? { fileType: payload.fileType } : {}),
-      ...(payload.ownerId !== undefined ? { ownerId: payload.ownerId } : {}),
-      ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
-      ...(payload.contractId !== undefined ? { contractId: payload.contractId } : {}),
-      ...(payload.productId !== undefined ? { productId: payload.productId } : {}),
-      ...(payload.projectId !== undefined ? { projectId: payload.projectId } : {}),
-      ...(payload.trainingCourseId !== undefined ? { trainingCourseId: payload.trainingCourseId } : {}),
-      ...(payload.description !== undefined ? { description: payload.description } : {}),
-      ...(payload.tags !== undefined ? { tags: payload.tags } : {}),
-      ...(payload.fileSize !== undefined ? { fileSize: payload.fileSize } : {}),
-      ...(payload.fileUrl !== undefined ? { fileUrl: payload.fileUrl } : {}),
-    },
+    data,
   });
 }
 

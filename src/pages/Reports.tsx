@@ -5,36 +5,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
 import { useReportsByYear } from "@/hooks/use-reports-api";
 
-const fallbackContractByCustomer: Array<{ name: string; contracts: number; value: number }> = [];
-
-const contractStatus = [
-  { name: "Đang thực hiện", value: 3, fill: "hsl(215, 90%, 50%)" },
-  { name: "Hoàn thành", value: 2, fill: "hsl(150, 60%, 45%)" },
-  { name: "Chậm tiến độ", value: 1, fill: "hsl(38, 92%, 55%)" },
-  { name: "Đã thanh lý", value: 1, fill: "hsl(220, 15%, 70%)" },
-];
-
-const fallbackMonthlyTrend = [
-  { month: "T1", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T2", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T3", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T4", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T5", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T6", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T7", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T8", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T9", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T10", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T11", contracts: 0, complaints: 0, handovers: 0 },
-  { month: "T12", contracts: 0, complaints: 0, handovers: 0 },
-];
-
-const fallbackUnitPerformance: Array<{ unit: string; tasks: number; completed: number; onTime: number; satisfaction: number }> = [];
-
-const COLORS = ["hsl(215, 90%, 50%)", "hsl(150, 60%, 45%)", "hsl(38, 92%, 55%)", "hsl(0, 75%, 55%)"];
+const EmptyState = ({ text }: { text: string }) => (
+  <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
+    {text}
+  </div>
+);
 
 const Reports = () => {
-  const [year, setYear] = useState("2024");
+  const [year, setYear] = useState("2026");
   const { data: apiReports, isLoading, isError, error } = useReportsByYear(year);
 
   const contractsTotal = apiReports?.contracts.total ?? 0;
@@ -56,10 +34,10 @@ const Reports = () => {
       { name: "Đã thanh lý", value: liquidated, fill: "hsl(220, 15%, 70%)" },
     ];
   }, [apiReports]);
-  const contractByCustomer = apiReports?.customer_breakdown?.length ? apiReports.customer_breakdown : fallbackContractByCustomer;
-
-  const monthlyTrend = apiReports?.trends?.monthly?.length ? apiReports.trends.monthly : fallbackMonthlyTrend;
-  const unitPerformance = apiReports?.unit_performance?.length ? apiReports.unit_performance : fallbackUnitPerformance;
+  const hasContractStatus = contractStatusPie.some((p) => p.value > 0);
+  const contractByCustomer = apiReports?.customer_breakdown ?? [];
+  const monthlyTrend = apiReports?.trends?.monthly ?? [];
+  const unitPerformance = apiReports?.unit_performance ?? [];
 
   const productByLine = useMemo(() => {
     const byType = apiReports?.warranties.byType ?? {};
@@ -99,6 +77,8 @@ const Reports = () => {
         <Select value={year} onValueChange={setYear}>
           <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
           <SelectContent>
+            <SelectItem value="2026">Năm 2026</SelectItem>
+            <SelectItem value="2025">Năm 2025</SelectItem>
             <SelectItem value="2024">Năm 2024</SelectItem>
             <SelectItem value="2023">Năm 2023</SelectItem>
           </SelectContent>
@@ -179,33 +159,35 @@ const Reports = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
               <h3 className="font-semibold text-card-foreground mb-4">Số hợp đồng theo khách hàng</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={contractByCustomer}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="contracts" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
               {contractByCustomer.length === 0 ? (
-                <p className="text-sm text-muted-foreground mt-3">Chưa có dữ liệu hợp đồng theo khách hàng.</p>
-              ) : null}
+                <EmptyState text="Chưa có dữ liệu hợp đồng theo khách hàng." />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={contractByCustomer}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="contracts" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
               <h3 className="font-semibold text-card-foreground mb-4">Giá trị HĐ theo khách hàng (triệu đ)</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={contractByCustomer}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="hsl(170, 60%, 45%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
               {contractByCustomer.length === 0 ? (
-                <p className="text-sm text-muted-foreground mt-3">Chưa có dữ liệu giá trị hợp đồng theo khách hàng.</p>
-              ) : null}
+                <EmptyState text="Chưa có dữ liệu giá trị hợp đồng theo khách hàng." />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={contractByCustomer}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" fill="hsl(170, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -214,35 +196,40 @@ const Reports = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
               <h3 className="font-semibold text-card-foreground mb-4">Trạng thái hợp đồng</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie data={contractStatusPie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                    {contractStatusPie.map((entry, i) => (
-                      <Cell key={i} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              {!hasContractStatus ? (
+                <EmptyState text="Chưa có dữ liệu trạng thái hợp đồng." />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie data={contractStatusPie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
+                      {contractStatusPie.map((entry, i) => (
+                        <Cell key={i} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
             </div>
             <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
               <h3 className="font-semibold text-card-foreground mb-4">Xu hướng theo tháng</h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="contracts" name="Hợp đồng" stroke="hsl(215, 90%, 50%)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="complaints" name="Khiếu nại" stroke="hsl(38, 92%, 55%)" strokeWidth={2} />
-                  <Line type="monotone" dataKey="handovers" name="Bàn giao" stroke="hsl(150, 60%, 45%)" strokeWidth={2} />
-                </LineChart>
-              </ResponsiveContainer>
-              {monthlyTrend.every((m) => m.contracts === 0 && m.complaints === 0 && m.handovers === 0) ? (
-                <p className="text-sm text-muted-foreground mt-3">Chưa có dữ liệu xu hướng theo tháng trong năm đã chọn.</p>
-              ) : null}
+              {monthlyTrend.length === 0 ? (
+                <EmptyState text="Chưa có dữ liệu xu hướng theo tháng trong năm đã chọn." />
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
+                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Legend />
+                    <Line type="monotone" dataKey="contracts" name="Hợp đồng" stroke="hsl(215, 90%, 50%)" strokeWidth={2} />
+                    <Line type="monotone" dataKey="complaints" name="Khiếu nại" stroke="hsl(38, 92%, 55%)" strokeWidth={2} />
+                    <Line type="monotone" dataKey="handovers" name="Bàn giao" stroke="hsl(150, 60%, 45%)" strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </TabsContent>
@@ -250,60 +237,62 @@ const Reports = () => {
         <TabsContent value="product">
           <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
             <h3 className="font-semibold text-card-foreground mb-4">Thống kê theo dòng sản phẩm</h3>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={productByLine}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="produced" name="Sản xuất" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="delivered" name="Đã giao" fill="hsl(150, 60%, 45%)" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="warranty" name="BH/SC" fill="hsl(38, 92%, 55%)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
             {productByLine.every((p) => p.warranty === 0 && p.delivered === 0) ? (
-              <p className="text-sm text-muted-foreground mt-3">Chưa có dữ liệu theo nhóm sản phẩm.</p>
-            ) : null}
+              <EmptyState text="Chưa có dữ liệu theo nhóm sản phẩm." />
+            ) : (
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={productByLine}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="produced" name="Sản xuất" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="delivered" name="Đã giao" fill="hsl(150, 60%, 45%)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="warranty" name="BH/SC" fill="hsl(38, 92%, 55%)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="unit">
           <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
             <h3 className="font-semibold text-card-foreground mb-4">Hiệu suất đơn vị thực hiện</h3>
-            <div className="space-y-4">
-              {unitPerformance.map((u) => (
-                <div key={u.unit} className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-medium text-card-foreground">{u.unit}</span>
-                    <span className="text-sm text-muted-foreground">Hài lòng: <span className="font-bold text-success">{u.satisfaction}%</span></span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">Nhiệm vụ</p>
-                      <p className="text-lg font-bold text-card-foreground">{u.tasks}</p>
+            {unitPerformance.length === 0 ? (
+              <EmptyState text="Chưa có dữ liệu hiệu suất đơn vị trong năm đã chọn." />
+            ) : (
+              <div className="space-y-4">
+                {unitPerformance.map((u) => (
+                  <div key={u.unit} className="rounded-lg bg-secondary/30 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-medium text-card-foreground">{u.unit}</span>
+                      <span className="text-sm text-muted-foreground">Hài lòng: <span className="font-bold text-success">{u.satisfaction}%</span></span>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Hoàn thành</p>
-                      <p className="text-lg font-bold text-success">{u.completed}</p>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Nhiệm vụ</p>
+                        <p className="text-lg font-bold text-card-foreground">{u.tasks}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Hoàn thành</p>
+                        <p className="text-lg font-bold text-success">{u.completed}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Đúng hạn</p>
+                        <p className="text-lg font-bold text-primary">{u.onTime}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Đúng hạn</p>
-                      <p className="text-lg font-bold text-primary">{u.onTime}</p>
+                    <div className="mt-2 h-2 rounded-full bg-secondary">
+                      <div
+                        className="h-2 rounded-full bg-success"
+                        style={{ width: `${u.tasks > 0 ? (u.completed / u.tasks) * 100 : 0}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="mt-2 h-2 rounded-full bg-secondary">
-                    <div
-                      className="h-2 rounded-full bg-success"
-                      style={{ width: `${u.tasks > 0 ? (u.completed / u.tasks) * 100 : 0}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-              {unitPerformance.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Chưa có dữ liệu hiệu suất đơn vị trong năm đã chọn.</p>
-              ) : null}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

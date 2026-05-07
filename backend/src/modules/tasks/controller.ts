@@ -27,7 +27,7 @@ function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
 
 export async function listTasksController(req: Request, res: Response) {
   const query = zodParseOrThrow(listTasksQuerySchema, req.query);
-  const input: any = {};
+  const input: { status?: string; priority?: string; type?: string; projectId?: string } = {};
   if (query.status !== undefined) input.status = query.status;
   if (query.priority !== undefined) input.priority = query.priority;
   if (query.type !== undefined) input.type = query.type;
@@ -44,7 +44,7 @@ export async function getTaskDetailController(req: Request, res: Response) {
 
 export async function createTaskController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createTaskSchema, req.body);
-  const input: any = { title: payload.title };
+  const input: Parameters<typeof createTaskService>[0] = { title: payload.title };
   if (payload.projectId !== undefined) input.projectId = payload.projectId;
   if (payload.code !== undefined) input.code = payload.code;
   if (payload.description !== undefined) input.description = payload.description;
@@ -62,7 +62,7 @@ export async function createTaskController(req: Request, res: Response) {
 export async function updateTaskController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(taskIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateTaskSchema, req.body);
-  const input: any = {};
+  const input: Parameters<typeof updateTaskService>[1] = {};
   if (payload.projectId !== undefined) input.projectId = payload.projectId;
   if (payload.code !== undefined) input.code = payload.code;
   if (payload.title !== undefined) input.title = payload.title;

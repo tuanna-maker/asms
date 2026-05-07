@@ -1,17 +1,11 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Filter, Calendar, Play, Pause, Timer, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getDashboardData } from "@/data/dashboardData";
-import type { ContractRow } from "@/data/tableData";
-import { api } from "@/lib/api";
-import type { ApiSuccess } from "@/lib/api-types";
-import { qk } from "@/lib/query-keys";
-import { useReportsByYear } from "@/hooks/use-reports-api";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
 import CustomerTab from "@/components/dashboard/tabs/CustomerTab";
 import RevenueTab from "@/components/dashboard/tabs/RevenueTab";
@@ -30,40 +24,6 @@ const quarters = [
   { value: "q4", label: "Quý 4" },
 ];
 const DEFAULT_YEAR = "2026";
-
-function formatShortSlash(iso: string) {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-
-function mapContractToOverviewRow(row: {
-  code: string;
-  title: string;
-  value: string | number;
-  startDate: string;
-  endDate: string;
-  status: string;
-  progress: number;
-  customer?: { name: string } | null;
-}): ContractRow {
-  const st = row.status === "completed" ? "completed" : row.status === "late" ? "late" : "active";
-  const v = Number(row.value ?? 0);
-  const valueTy = v >= 1_000_000 ? v / 1e9 : v;
-  return {
-    id: row.code,
-    name: row.title,
-    customer: row.customer?.name ?? "—",
-    value: Number.isFinite(valueTy) ? valueTy : 0,
-    startDate: formatShortSlash(row.startDate),
-    endDate: formatShortSlash(row.endDate),
-    status: st,
-    progress: Math.round(Number(row.progress ?? 0)),
-  };
-}
 
 const customers = [
   { value: "all", label: "Tất cả khách hàng" },
@@ -93,56 +53,8 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
-  const { data: liveContracts } = useQuery({
-    queryKey: qk.contracts.all,
-    queryFn: async () => {
-      const res = await api.get<
-        ApiSuccess<
-          Array<{
-            code: string;
-            title: string;
-            value: string | number;
-            startDate: string;
-            endDate: string;
-            status: string;
-            progress: number;
-            customer?: { name: string } | null;
-          }>
-        >
-      >("/api/v1/contracts");
-      return res.data.data ?? [];
-    },
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-
-  const { data: reports } = useReportsByYear(year);
-
-  const overviewContractRows = useMemo(
-    () => (liveContracts && liveContracts.length > 0 ? liveContracts.map(mapContractToOverviewRow) : undefined),
-    [liveContracts],
-  );
-
-  const data = useMemo(() => {
-    const base = getDashboardData({ year, quarter, customer });
-    if (!reports) return base;
-    const bs = reports.contracts.byStatus ?? {};
-    const draft = typeof bs.draft === "number" ? bs.draft : 0;
-    const active = typeof bs.active === "number" ? bs.active : 0;
-    const activeContractsCount =
-      reports.contracts.total > 0 ? active + draft : base.stats.activeContracts;
-    return {
-      ...base,
-      stats: {
-        ...base.stats,
-        totalProducts:
-          reports.products.deliveredTotal > 0 ? reports.products.deliveredTotal : base.stats.totalProducts,
-        activeContracts: activeContractsCount,
-        pendingComplaints:
-          reports.warranties.total > 0 ? reports.warranties.total : base.stats.pendingComplaints,
-      },
-    };
-  }, [year, quarter, customer, reports]);
+  const { data, liveContracts, liveHandovers, liveTrainings, liveMaterials, isLoading: dashboardLoading, isError: dashboardError } =
+    useDashboardData(year);
 
   const activeFilters = [year !== DEFAULT_YEAR, quarter !== "all", customer !== "all"].filter(Boolean).length;
 
@@ -322,15 +234,29 @@ const Index = () => {
             </div>
           )}
         </div>
+        {dashboardLoading && (
+          <div className="rounded-xl border border-border/50 bg-card p-4 text-sm text-muted-foreground">
+            Đang tải dữ liệu dashboard...
+          </div>
+        )}
+        {dashboardError && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+            Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.
+          </div>
+        )}
         <TabsContent value="overview">
-          <OverviewTab data={data} contractsTableData={overviewContractRows} />
+          <OverviewTab data={data} contractsTableData={liveContracts} />
         </TabsContent>
         <TabsContent value="customer"><CustomerTab data={data} /></TabsContent>
         <TabsContent value="revenue"><RevenueTab data={data} /></TabsContent>
-        <TabsContent value="project"><ProjectTab data={data} /></TabsContent>
+        <TabsContent value="project">
+          <ProjectTab data={data} contracts={liveContracts} handovers={liveHandovers} trainings={liveTrainings} />
+        </TabsContent>
         <TabsContent value="product"><ProductTab data={data} /></TabsContent>
         <TabsContent value="warranty"><WarrantyTab data={data} /></TabsContent>
-        <TabsContent value="material"><MaterialTab data={data} /></TabsContent>
+        <TabsContent value="material">
+          <MaterialTab data={data} materials={liveMaterials} />
+        </TabsContent>
         <TabsContent value="alerts"><AlertTab data={data} /></TabsContent>
       </Tabs>
 

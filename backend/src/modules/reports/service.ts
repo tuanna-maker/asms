@@ -1,3 +1,5 @@
+import type { Prisma } from "@prisma/client";
+
 import { prisma } from "../../utils/prisma";
 
 function getYearRange(year?: string) {
@@ -118,22 +120,22 @@ export async function getReportsService(filters: { year?: string }) {
   const range = getYearRange(filters.year);
   const prevRange = filters.year ? getYearRange(String(Number(filters.year) - 1)) : null;
 
-  const contractWhere: any = { deletedAt: null };
+  const contractWhere: Prisma.ContractWhereInput = { deletedAt: null };
   if (range) contractWhere.startDate = { gte: range.start, lte: range.end };
 
-  const handoverWhere: any = { deletedAt: null };
+  const handoverWhere: Prisma.HandoverWhereInput = { deletedAt: null };
   if (range) handoverWhere.startDate = { gte: range.start, lte: range.end };
 
-  const trainingWhere: any = { deletedAt: null };
+  const trainingWhere: Prisma.TrainingCourseWhereInput = { deletedAt: null };
   if (range) trainingWhere.startDate = { gte: range.start, lte: range.end };
 
-  const warrantyWhere: any = { deletedAt: null };
+  const warrantyWhere: Prisma.WarrantyWhereInput = { deletedAt: null };
   if (range) warrantyWhere.createdAt = { gte: range.start, lte: range.end };
-  const taskWhere: any = { deletedAt: null };
+  const taskWhere: Prisma.TaskWhereInput = { deletedAt: null };
   if (range) taskWhere.createdAt = { gte: range.start, lte: range.end };
-  const prevContractWhere: any = { deletedAt: null };
+  const prevContractWhere: Prisma.ContractWhereInput = { deletedAt: null };
   if (prevRange) prevContractWhere.startDate = { gte: prevRange.start, lte: prevRange.end };
-  const prevWarrantyWhere: any = { deletedAt: null };
+  const prevWarrantyWhere: Prisma.WarrantyWhereInput = { deletedAt: null };
   if (prevRange) prevWarrantyWhere.createdAt = { gte: prevRange.start, lte: prevRange.end };
 
   const [contractsRows, handoversRows, trainingRows, warrantyRows, taskRows, customersTotal, productsDeliveredTotal, prevContractsCount, prevWarrantiesCount, prevProductsDelivered] = await Promise.all([
@@ -186,7 +188,7 @@ export async function getReportsService(filters: { year?: string }) {
     },
     handovers: {
       total: handoversRows.length,
-      byStatus: groupByStatus(handoversRows as any),
+      byStatus: groupByStatus(handoversRows as { status: string }[]),
     },
     training_courses: {
       total: trainingRows.length,
@@ -194,8 +196,8 @@ export async function getReportsService(filters: { year?: string }) {
     },
     warranties: {
       total: warrantyRows.length,
-      byStatus: groupByStatus(warrantyRows as any),
-      byType: groupByType(warrantyRows as any),
+      byStatus: groupByStatus(warrantyRows as { status: string }[]),
+      byType: groupByType(warrantyRows as { type: string }[]),
     },
     trends: { monthly },
     customer_breakdown: byCustomer,

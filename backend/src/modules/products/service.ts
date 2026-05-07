@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { syncContractProductCounts } from "../contracts/product-count";
 
 import { createProductSchema } from "./schema";
 import type { z } from "zod";
@@ -73,6 +74,12 @@ export async function getProductDetailService(idOrCode: string) {
 
 export async function updateProductService(idOrCode: string, payload: Record<string, unknown>) {
   const id = await resolveProductId(idOrCode);
+  const existing = await prisma.product.findFirst({
+    where: { id, deletedAt: null },
+    select: { contractId: true },
+  });
+  if (!existing) throw new HttpError(404, "Product not found");
+
   const data: Record<string, unknown> = {};
   if (payload.code !== undefined) data.code = payload.code;
   if (payload.name !== undefined) data.name = payload.name;
@@ -107,11 +114,13 @@ export async function updateProductService(idOrCode: string, payload: Record<str
   if (Object.keys(data).length === 0) throw new HttpError(400, "No fields to update");
 
   try {
-    return await prisma.product.update({
+    const updated = await prisma.product.update({
       where: { id },
       data: data as object,
       select: listSelect,
     });
+    await syncContractProductCounts([existing.contractId, updated.contractId]);
+    return updated;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");
@@ -122,10 +131,12 @@ export async function updateProductService(idOrCode: string, payload: Record<str
 
 export async function softDeleteProductService(idOrCode: string) {
   const id = await resolveProductId(idOrCode);
-  await prisma.product.update({
+  const deleted = await prisma.product.update({
     where: { id },
     data: { deletedAt: new Date() },
+    select: { contractId: true },
   });
+  await syncContractProductCounts([deleted.contractId]);
   return { id };
 }
 
@@ -140,7 +151,7 @@ export async function createProductService(payload: CreateProductInput) {
   const contractId = await resolveContractIdOptional(payload.contractId);
 
   try {
-    return await prisma.product.create({
+    const created = await prisma.product.create({
       data: {
         code: payload.code,
         name: payload.name,
@@ -157,6 +168,8 @@ export async function createProductService(payload: CreateProductInput) {
       },
       select: listSelect,
     });
+    await syncContractProductCounts([created.contractId]);
+    return created;
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");

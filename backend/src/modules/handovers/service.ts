@@ -3,6 +3,7 @@ import type { z } from "zod";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { getContractProductCount, getContractProductCounts } from "../contracts/product-count";
 
 import { createHandoverSchema } from "./schema";
 
@@ -83,11 +84,13 @@ export async function listHandoversService(filters: {
     }
   }
 
-  return prisma.handover.findMany({
+  const rows = await prisma.handover.findMany({
     where,
     orderBy: { createdAt: "desc" },
     select: listSelect,
   });
+  const counts = await getContractProductCounts(rows.map((row) => row.contractId));
+  return rows.map((row) => ({ ...row, products: counts.get(row.contractId) ?? 0 }));
 }
 
 export async function getHandoverDetailService(idOrCode: string) {
@@ -101,7 +104,8 @@ export async function getHandoverDetailService(idOrCode: string) {
     },
   });
   if (!row) throw new HttpError(404, "Handover not found");
-  return row;
+  const products = await getContractProductCount(row.contractId);
+  return { ...row, products };
 }
 
 type CreateHandoverInput = z.infer<typeof createHandoverSchema>;
@@ -117,6 +121,7 @@ export async function createHandoverService(payload: CreateHandoverInput, actorI
   const startDate = payload.startDate ?? new Date();
   const dueDate =
     payload.dueDate ?? new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000);
+  const products = await getContractProductCount(contract.id);
 
   return prisma.handover.create({
     data: {
@@ -124,7 +129,7 @@ export async function createHandoverService(payload: CreateHandoverInput, actorI
       contractId: contract.id,
       customerId: contract.customerId,
       createdById: actorId ?? null,
-      products: payload.products,
+      products,
       currentStep: payload.currentStep ?? 1,
       status: (payload.status ?? "pending") as "pending" | "active" | "completed" | "late",
       startDate,
@@ -138,7 +143,6 @@ export async function updateHandoverService(idOrCode: string, payload: Record<st
   const resolvedId = await resolveHandoverId(idOrCode);
 
   const data: Record<string, unknown> = {};
-  if (payload.products !== undefined) data.products = payload.products;
   if (payload.currentStep !== undefined) data.currentStep = payload.currentStep;
   if (payload.status !== undefined) data.status = payload.status;
   if (payload.startDate !== undefined) data.startDate = payload.startDate;
@@ -154,7 +158,8 @@ export async function updateHandoverService(idOrCode: string, payload: Record<st
     select: listSelect,
   });
   if (!row) throw new HttpError(404, "Handover not found");
-  return row;
+  const products = await getContractProductCount(row.contractId);
+  return { ...row, products };
 }
 
 export async function softDeleteHandoverService(idOrCode: string) {

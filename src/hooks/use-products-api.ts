@@ -53,6 +53,9 @@ export function useCreateProduct() {
     mutationFn: async (payload: CreateProductPayload) => api.post("/api/v1/products", payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.products.all });
+      void qc.invalidateQueries({ queryKey: qk.contracts.all });
+      void qc.invalidateQueries({ queryKey: qk.handovers.all });
+      void qc.invalidateQueries({ queryKey: ["trainingCourses"] });
     },
   });
 }
@@ -64,6 +67,9 @@ export function useUpdateProduct() {
       api.put(`/api/v1/products/${encodeURIComponent(id)}`, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.products.all });
+      void qc.invalidateQueries({ queryKey: qk.contracts.all });
+      void qc.invalidateQueries({ queryKey: qk.handovers.all });
+      void qc.invalidateQueries({ queryKey: ["trainingCourses"] });
     },
   });
 }
@@ -74,6 +80,9 @@ export function useDeleteProduct() {
     mutationFn: async (id: string) => api.delete(`/api/v1/products/${encodeURIComponent(id)}`),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.products.all });
+      void qc.invalidateQueries({ queryKey: qk.contracts.all });
+      void qc.invalidateQueries({ queryKey: qk.handovers.all });
+      void qc.invalidateQueries({ queryKey: ["trainingCourses"] });
     },
   });
 }

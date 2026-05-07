@@ -114,7 +114,11 @@ export async function seedDemoBusinessData() {
     customers.push({ id: row.id, code: row.code });
   }
 
-  const cid = (code: string) => customers.find((x) => x.code === code)?.id!;
+  const cid = (code: string) => {
+    const found = customers.find((x) => x.code === code);
+    if (!found) throw new Error(`Customer not found: ${code}`);
+    return found.id;
+  };
   const customerIds = customers.map((c) => c.id);
 
   await prisma.contact.deleteMany({ where: { customerId: { in: customerIds } } });
@@ -209,7 +213,11 @@ export async function seedDemoBusinessData() {
     materials.push({ id: row.id, code: row.code });
   }
 
-  const mid = (code: string) => materials.find((x) => x.code === code)?.id!;
+  const mid = (code: string) => {
+    const found = materials.find((x) => x.code === code);
+    if (!found) throw new Error(`Material not found: ${code}`);
+    return found.id;
+  };
 
   // ── Sản phẩm (+ liên kết vật tư mẫu) ──────────────────────────
   const productSpecs = [
@@ -300,8 +308,20 @@ export async function seedDemoBusinessData() {
     { code: "HD-2026-060", cust: "QK-09", title: "Thuê kênh VSAT thử nghiệm kết nối MQĐ", value: money("4900000000"), products: 0, start: utc(2026, 5, 1), end: utc(2026, 12, 31), warrantyEnd: utc(2028, 12, 31), status: "draft", progress: 8 },
   ];
 
+  const buildTerms = (c: Cs) => {
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    return [
+      `1. Phạm vi cung cấp: Cung cấp ${c.products} sản phẩm/dịch vụ cùng lắp đặt, vận hành thử và bàn giao theo tiêu chuẩn kỹ thuật đã thống nhất.`,
+      `2. Giá trị & thanh toán: Tổng giá trị hợp đồng ${c.value.toString()} VND. Thanh toán theo 3 đợt: 30% tạm ứng, 60% sau bàn giao, 10% sau nghiệm thu.`,
+      `3. Tiến độ thực hiện: Bắt đầu ${fmt(c.start)}, hoàn thành chậm nhất ${fmt(c.end)}. Phạt chậm tiến độ 0,1%/ngày trên giá trị hợp đồng.`,
+      `4. Bảo hành & hỗ trợ: Bảo hành đến ${c.warrantyEnd ? fmt(c.warrantyEnd) : "(theo thoả thuận riêng)"}. Hỗ trợ kỹ thuật 24/7 trong thời gian bảo hành.`,
+      `5. Điều khoản chấm dứt: Hai bên có quyền chấm dứt nếu bên còn lại vi phạm nghiêm trọng và không khắc phục trong vòng 30 ngày kể từ khi nhận thông báo.`,
+    ].join("\n\n");
+  };
+
   const contracts: { id: string; code: string }[] = [];
   for (const c of contractSpecs) {
+    const terms = buildTerms(c);
     const row = await prisma.contract.upsert({
       where: { code: c.code },
       update: {
@@ -314,6 +334,7 @@ export async function seedDemoBusinessData() {
         warrantyEnd: c.warrantyEnd ?? null,
         status: c.status,
         progress: c.progress,
+        terms,
         createdById: admin.id,
       },
       create: {
@@ -327,13 +348,18 @@ export async function seedDemoBusinessData() {
         warrantyEnd: c.warrantyEnd ?? null,
         status: c.status,
         progress: c.progress,
+        terms,
         createdById: admin.id,
       },
     });
     contracts.push({ id: row.id, code: row.code });
   }
 
-  const hd = (code: string) => contracts.find((x) => x.code === code)?.id!;
+  const hd = (code: string) => {
+    const found = contracts.find((x) => x.code === code);
+    if (!found) throw new Error(`Contract not found: ${code}`);
+    return found.id;
+  };
 
   await prisma.product.update({
     where: { code: "VTĐ-RF300/QP" },
@@ -523,7 +549,11 @@ export async function seedDemoBusinessData() {
     projects.push({ id: row.id, code: row.code });
   }
 
-  const pid = (code: string) => projects.find((x) => x.code === code)?.id!;
+  const pid = (code: string) => {
+    const found = projects.find((x) => x.code === code);
+    if (!found) throw new Error(`Project not found: ${code}`);
+    return found.id;
+  };
 
   const taskSeed: Array<{
     code: string;

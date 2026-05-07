@@ -35,7 +35,7 @@ function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
 
 export async function listMaterialsController(req: Request, res: Response) {
   const query = zodParseOrThrow(listMaterialsQuerySchema, req.query);
-  const input: any = {};
+  const input: { search?: string; type?: string; warehouse?: string } = {};
   if (query.search !== undefined) input.search = query.search;
   if (query.type !== undefined) input.type = query.type;
   if (query.warehouse !== undefined) input.warehouse = query.warehouse;
@@ -52,7 +52,7 @@ export async function getMaterialDetailController(req: Request, res: Response) {
 
 export async function createMaterialController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createMaterialSchema, req.body);
-  const input: any = {
+  const input: Parameters<typeof createMaterialService>[0] = {
     code: payload.code,
     name: payload.name,
     type: payload.type,
@@ -71,7 +71,7 @@ export async function createMaterialController(req: Request, res: Response) {
 export async function updateMaterialController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(materialIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateMaterialSchema, req.body);
-  const data = await updateMaterialService(id, payload);
+  const data = await updateMaterialService(id, payload as Parameters<typeof updateMaterialService>[1]);
   return sendSuccess(res, data, "Material updated");
 }
 

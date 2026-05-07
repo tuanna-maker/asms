@@ -1,5 +1,14 @@
+import type {
+  AttendanceStatus,
+  Prisma,
+  SessionStatus,
+  TrainingStatus,
+  TrainingType,
+} from "@prisma/client";
+
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { getContractProductCount, getContractProductCounts } from "../contracts/product-count";
 
 function genTrainingCode() {
   return `TC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -9,11 +18,11 @@ export async function listTrainingCoursesService(filters: {
   status?: string;
   type?: string;
 }) {
-  const where: any = { deletedAt: null };
-  if (filters.status) where.status = filters.status;
-  if (filters.type) where.type = filters.type;
+  const where: Prisma.TrainingCourseWhereInput = { deletedAt: null };
+  if (filters.status) where.status = filters.status as TrainingStatus;
+  if (filters.type) where.type = filters.type as TrainingType;
 
-  return prisma.trainingCourse.findMany({
+  const rows = await prisma.trainingCourse.findMany({
     where,
     orderBy: { startDate: "desc" },
     select: {
@@ -26,10 +35,16 @@ export async function listTrainingCoursesService(filters: {
       participants: true,
       status: true,
       location: true,
+      contractId: true,
       customer: { select: { id: true, code: true, name: true } },
       contract: { select: { id: true, code: true } },
     },
   });
+  const counts = await getContractProductCounts(rows.map((row) => row.contractId).filter(Boolean) as string[]);
+  return rows.map((row) => ({
+    ...row,
+    participants: row.contractId ? counts.get(row.contractId) ?? 0 : row.participants,
+  }));
 }
 
 export async function getTrainingCourseDetailService(id: string) {
@@ -48,7 +63,9 @@ export async function getTrainingCourseDetailService(id: string) {
   });
 
   if (!course) throw new HttpError(404, "Training course not found");
-  return course;
+  if (!course.contractId) return course;
+  const participants = await getContractProductCount(course.contractId);
+  return { ...course, participants };
 }
 
 export async function createTrainingCourseService(payload: {
@@ -65,6 +82,10 @@ export async function createTrainingCourseService(payload: {
   location?: string;
   description?: string;
 }) {
+  const participants = payload.contractId
+    ? await getContractProductCount(payload.contractId)
+    : payload.participants ?? 0;
+
   const created = await prisma.trainingCourse.create({
     data: {
       code: payload.code ?? genTrainingCode(),
@@ -72,13 +93,13 @@ export async function createTrainingCourseService(payload: {
       customerId: payload.customerId ?? null,
       instructorId: payload.instructorId ?? null,
       title: payload.title,
-      type: payload.type as any,
+      type: payload.type as TrainingType,
       startDate: payload.startDate,
       endDate: payload.endDate,
-      participants: payload.participants ?? 0,
+      participants,
       location: payload.location ?? null,
       description: payload.description ?? null,
-      ...(payload.status !== undefined ? { status: payload.status as any } : {}),
+      ...(payload.status !== undefined ? { status: payload.status as TrainingStatus } : {}),
     },
     select: {
       id: true,
@@ -102,12 +123,31 @@ export async function createTrainingCourseService(payload: {
   return created;
 }
 
-export async function updateTrainingCourseService(id: string, payload: any) {
+type UpdateTrainingCoursePayload = Partial<{
+  code: string;
+  contractId: string | null;
+  customerId: string | null;
+  instructorId: string | null;
+  title: string;
+  type: string;
+  startDate: Date;
+  endDate: Date;
+  participants: number;
+  status: string;
+  location: string | null;
+  description: string | null;
+}>;
+
+export async function updateTrainingCourseService(id: string, payload: UpdateTrainingCoursePayload) {
   const existing = await prisma.trainingCourse.findFirst({
     where: { id, deletedAt: null },
     select: { id: true },
   });
   if (!existing) throw new HttpError(404, "Training course not found");
+
+  const participants = payload.contractId
+    ? await getContractProductCount(payload.contractId)
+    : payload.participants;
 
   const updated = await prisma.trainingCourse.update({
     where: { id },
@@ -117,11 +157,11 @@ export async function updateTrainingCourseService(id: string, payload: any) {
       ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
       ...(payload.instructorId !== undefined ? { instructorId: payload.instructorId } : {}),
       ...(payload.title !== undefined ? { title: payload.title } : {}),
-      ...(payload.type !== undefined ? { type: payload.type } : {}),
+      ...(payload.type !== undefined ? { type: payload.type as TrainingType } : {}),
       ...(payload.startDate !== undefined ? { startDate: payload.startDate } : {}),
       ...(payload.endDate !== undefined ? { endDate: payload.endDate } : {}),
-      ...(payload.participants !== undefined ? { participants: payload.participants } : {}),
-      ...(payload.status !== undefined ? { status: payload.status } : {}),
+      ...(participants !== undefined ? { participants } : {}),
+      ...(payload.status !== undefined ? { status: payload.status as TrainingStatus } : {}),
       ...(payload.location !== undefined ? { location: payload.location } : {}),
       ...(payload.description !== undefined ? { description: payload.description } : {}),
     },
@@ -192,7 +232,7 @@ export async function addTraineeService(trainingCourseId: string, payload: {
       fullName: payload.fullName,
       unit: payload.unit ?? null,
       rank: payload.rank ?? null,
-      attendance: payload.attendance as any,
+      attendance: payload.attendance as AttendanceStatus,
       ...(payload.score !== undefined ? { score: payload.score } : {}),
     },
   });
@@ -249,7 +289,7 @@ export async function addScheduleSessionService(trainingCourseId: string, payloa
       endTime: payload.endTime,
       topic: payload.topic,
       location: payload.location ?? null,
-      ...(payload.status !== undefined ? { status: payload.status as any } : {}),
+      ...(payload.status !== undefined ? { status: payload.status as SessionStatus } : {}),
     },
   });
 }

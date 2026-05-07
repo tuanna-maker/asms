@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateWarranty, useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-api";
 import { qk } from "@/lib/query-keys";
-import { Plus, Search, Shield, Clock, CheckCircle, AlertTriangle, ArrowRight, Eye, Monitor } from "lucide-react";
+import { Plus, Search, Shield, Clock, CheckCircle, AlertTriangle, ArrowRight, Eye, Monitor, Pencil } from "lucide-react";
 import WarrantyDetailDialog, { type WarrantyTicketUi } from "@/components/details/WarrantyDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -382,7 +382,26 @@ const Warranty = () => {
                       <TableCell className="text-sm text-muted-foreground">{t.assignee}</TableCell>
                       <TableCell><Badge variant="outline">{t.sla}</Badge></TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedTicket(t)}><Eye className="h-4 w-4" /></Button>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setSelectedTicket(t)}
+                            aria-label={`Xem ticket ${t.code}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => setSelectedTicket(t)}
+                            aria-label={`Sửa ticket ${t.code}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

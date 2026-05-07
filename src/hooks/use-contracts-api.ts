@@ -7,12 +7,13 @@ export type ContractPayload = {
   customerId: string;
   title: string;
   value: number;
-  products: number;
+  products?: number;
   startDate: string;
   endDate: string;
   warrantyEnd?: string;
   status?: "draft" | "active" | "completed" | "late" | "liquidated";
   progress?: number;
+  terms?: string | null;
 };
 
 export function useContractsList() {
@@ -21,6 +22,17 @@ export function useContractsList() {
     queryFn: async () => {
       const res = await api.get<ApiSuccess<unknown[]>>("/api/v1/contracts");
       return res.data.data ?? [];
+    },
+  });
+}
+
+export function useContractDetail(id: string | null | undefined) {
+  return useQuery({
+    queryKey: id ? [...qk.contracts.all, "detail", id] : ["contracts", "detail", "noop"],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<Record<string, unknown>>>(`/api/v1/contracts/${id}`);
+      return res.data.data ?? null;
     },
   });
 }

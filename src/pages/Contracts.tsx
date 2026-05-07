@@ -1,22 +1,21 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { useCreateContract, useDeleteContract, useUpdateContract } from "@/hooks/use-contracts-api";
+import { useDeleteContract } from "@/hooks/use-contracts-api";
+import { useProductsList } from "@/hooks/use-products-api";
 import { Plus, Search, Filter, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import ContractDetailDialog from "@/components/details/ContractDetailDialog";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 
 type Contract = {
-  id: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number
+  id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number; terms?: string | null
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -29,15 +28,6 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 const Contracts = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    customerId: "",
-    title: "",
-    value: "",
-    products: "",
-    startDate: "",
-    endDate: "",
-    warrantyEnd: "",
-  });
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
@@ -54,6 +44,7 @@ const Contracts = () => {
     warrantyEnd: string | null;
     status: string;
     progress: number;
+    terms?: string | null;
     customer?: { id: string; code: string; name: string } | null;
   };
 
@@ -97,6 +88,7 @@ const Contracts = () => {
         if (isUiShape) {
           return {
             id: maybeUi.id ?? "",
+            ...(typeof maybeUi.dbId === "string" ? { dbId: maybeUi.dbId } : {}),
             customer: normalizeCustomer(maybeUi.customer),
             value: Number(maybeUi.value ?? 0),
             products: Number(maybeUi.products ?? 0),
@@ -105,12 +97,14 @@ const Contracts = () => {
             warrantyEnd: String(maybeUi.warrantyEnd ?? "—"),
             status: mapStatus(String(maybeUi.status ?? "active")),
             progress: Number(maybeUi.progress ?? 0),
+            terms: typeof maybeUi.terms === "string" ? maybeUi.terms : null,
           } satisfies Contract;
         }
 
         const apiRow = row as ApiContractRow;
         return {
           id: apiRow.code,
+          dbId: apiRow.id,
           customer: normalizeCustomer(apiRow.customer),
           value: Number(apiRow.value ?? 0),
           products: Number(apiRow.products ?? 0),
@@ -119,6 +113,7 @@ const Contracts = () => {
           warrantyEnd: apiRow.warrantyEnd ? formatISODate(apiRow.warrantyEnd) : "—",
           status: mapStatus(apiRow.status),
           progress: Number(apiRow.progress ?? 0),
+          terms: typeof apiRow.terms === "string" ? apiRow.terms : null,
         } satisfies Contract;
       }),
     staleTime: 60_000,
@@ -139,54 +134,33 @@ const Contracts = () => {
     refetchOnWindowFocus: false,
   });
 
-  const updateContractMutation = useUpdateContract();
-  const createContractMutation = useCreateContract();
   const deleteContractMutation = useDeleteContract();
+  const { data: products = [] } = useProductsList();
 
-  function vnDisplayDateToISO(display: string): string | undefined {
-    const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(display.trim());
-    if (!m) return undefined;
-    const [, dd, mm, yyyy] = m;
-    return `${yyyy}-${mm}-${dd}`;
-  }
+  const productCountByContract = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const product of products) {
+      if (!product.contractId) continue;
+      counts.set(product.contractId, (counts.get(product.contractId) ?? 0) + (Number(product.totalProduced) || 0));
+    }
+    return counts;
+  }, [products]);
 
-  function toApiDateString(s: string): string | undefined {
-    const t = s.trim();
-    if (!t || t === "—") return undefined;
-    if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
-    return vnDisplayDateToISO(s);
-  }
+  const contractsWithProductTotals = useMemo(
+    () =>
+      contracts.map((contract) => ({
+        ...contract,
+        products: contract.dbId ? productCountByContract.get(contract.dbId) ?? 0 : contract.products,
+      })),
+    [contracts, productCountByContract],
+  );
 
-  const filtered = contracts.filter((c) => {
+  const filtered = contractsWithProductTotals.filter((c) => {
     const id = String(c.id ?? "").toLowerCase();
     const customer = String(c.customer ?? "").toLowerCase();
     const keyword = search.toLowerCase();
     return id.includes(keyword) || customer.includes(keyword);
   });
-
-  const handleSave = async (updated: Contract) => {
-    try {
-      const startISO = toApiDateString(updated.startDate);
-      const endISO = toApiDateString(updated.endDate);
-      const warrantyISO = toApiDateString(updated.warrantyEnd);
-      await updateContractMutation.mutateAsync({
-        id: updated.id,
-        payload: {
-          title: `Hợp đồng ${updated.id}`,
-          value: updated.value,
-          products: updated.products,
-          status: updated.status as "draft" | "active" | "completed" | "late" | "liquidated",
-          progress: updated.progress,
-          ...(startISO ? { startDate: startISO } : {}),
-          ...(endISO ? { endDate: endISO } : {}),
-          ...(warrantyISO ? { warrantyEnd: warrantyISO } : {}),
-        },
-      });
-      toast.success(`Đã cập nhật hợp đồng ${updated.id}`);
-    } catch {
-      toast.error("Không thể cập nhật hợp đồng");
-    }
-  };
 
   const handleConfirmDeleteContract = async () => {
     const code = deletingContractId;
@@ -199,29 +173,6 @@ const Contracts = () => {
       if (editingContract?.id === code) setEditingContract(null);
     } catch {
       toast.error("Không thể xóa hợp đồng");
-    }
-  };
-
-  const handleCreate = async () => {
-    if (!createForm.customerId || !createForm.startDate || !createForm.endDate) {
-      toast.error("Vui lòng nhập đủ khách hàng và thời gian");
-      return;
-    }
-    try {
-      await createContractMutation.mutateAsync({
-        customerId: createForm.customerId,
-        title: createForm.title.trim() || "Hợp đồng mới",
-        value: Number(createForm.value || 0),
-        products: Number(createForm.products || 0),
-        startDate: createForm.startDate,
-        endDate: createForm.endDate,
-        warrantyEnd: createForm.warrantyEnd || undefined,
-      });
-      toast.success("Đã tạo hợp đồng");
-      setShowCreate(false);
-      setCreateForm({ customerId: "", title: "", value: "", products: "", startDate: "", endDate: "", warrantyEnd: "" });
-    } catch {
-      toast.error("Không thể tạo hợp đồng");
     }
   };
 
@@ -244,28 +195,28 @@ const Contracts = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Tổng hợp đồng</p>
-            <p className="text-2xl font-bold text-card-foreground">{contracts.length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/10 text-info"><Clock className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Đang thực hiện</p>
-            <p className="text-2xl font-bold text-card-foreground">{contracts.filter((c) => c.status === "active").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "active").length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10 text-success"><CheckCircle className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Hoàn thành</p>
-            <p className="text-2xl font-bold text-card-foreground">{contracts.filter((c) => c.status === "completed" || c.status === "liquidated").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "completed" || c.status === "liquidated").length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10 text-warning"><AlertTriangle className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Chậm tiến độ</p>
-            <p className="text-2xl font-bold text-card-foreground">{contracts.filter((c) => c.status === "late").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "late").length}</p>
           </div>
         </div>
       </div>
@@ -278,51 +229,17 @@ const Contracts = () => {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1" /> Lọc</Button>
-          <Dialog open={showCreate} onOpenChange={setShowCreate}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Tạo hợp đồng mới</DialogTitle></DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">Khách hàng</label>
-                  <Select value={createForm.customerId} onValueChange={(v) => setCreateForm((p) => ({ ...p, customerId: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Chọn khách hàng" /></SelectTrigger>
-                    <SelectContent>
-                      {(customers ?? []).map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2"><label className="text-sm font-medium text-foreground">Tiêu đề</label><Input placeholder="Tên hợp đồng" value={createForm.title} onChange={(e) => setCreateForm((p) => ({ ...p, title: e.target.value }))} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-sm font-medium text-foreground">Giá trị (triệu đồng)</label><Input type="number" placeholder="0" value={createForm.value} onChange={(e) => setCreateForm((p) => ({ ...p, value: e.target.value }))} /></div>
-                  <div className="space-y-2"><label className="text-sm font-medium text-foreground">Số lượng sản phẩm</label><Input type="number" placeholder="0" value={createForm.products} onChange={(e) => setCreateForm((p) => ({ ...p, products: e.target.value }))} /></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-sm font-medium text-foreground">Ngày bắt đầu</label><Input type="date" value={createForm.startDate} onChange={(e) => setCreateForm((p) => ({ ...p, startDate: e.target.value }))} /></div>
-                  <div className="space-y-2"><label className="text-sm font-medium text-foreground">Ngày kết thúc</label><Input type="date" value={createForm.endDate} onChange={(e) => setCreateForm((p) => ({ ...p, endDate: e.target.value }))} /></div>
-                </div>
-                <div className="space-y-2"><label className="text-sm font-medium text-foreground">Thời gian bảo hành</label><Input type="date" value={createForm.warrantyEnd} onChange={(e) => setCreateForm((p) => ({ ...p, warrantyEnd: e.target.value }))} /></div>
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setShowCreate(false)}>Hủy</Button>
-                  <Button onClick={handleCreate}>Tạo hợp đồng</Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="all">
         <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
-          <TabsTrigger value="all" className="text-xs sm:text-sm">Tất cả ({contracts.length})</TabsTrigger>
-          <TabsTrigger value="active" className="text-xs sm:text-sm">Đang TH ({contracts.filter((c) => c.status === "active").length})</TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs sm:text-sm">Hoàn thành ({contracts.filter((c) => c.status === "completed" || c.status === "liquidated").length})</TabsTrigger>
-          <TabsTrigger value="late" className="text-xs sm:text-sm">Chậm TĐ ({contracts.filter((c) => c.status === "late").length})</TabsTrigger>
+          <TabsTrigger value="all" className="text-xs sm:text-sm">Tất cả ({contractsWithProductTotals.length})</TabsTrigger>
+          <TabsTrigger value="active" className="text-xs sm:text-sm">Đang TH ({contractsWithProductTotals.filter((c) => c.status === "active").length})</TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm">Hoàn thành ({contractsWithProductTotals.filter((c) => c.status === "completed" || c.status === "liquidated").length})</TabsTrigger>
+          <TabsTrigger value="late" className="text-xs sm:text-sm">Chậm TĐ ({contractsWithProductTotals.filter((c) => c.status === "late").length})</TabsTrigger>
         </TabsList>
         {["all", "active", "completed", "late"].map((tab) => (
           <TabsContent key={tab} value={tab}>
@@ -336,8 +253,15 @@ const Contracts = () => {
         ))}
       </Tabs>
 
-      <ContractDetailDialog contract={selectedContract} open={!!selectedContract} onOpenChange={(o) => !o && setSelectedContract(null)} onSave={handleSave} />
-      <ContractEditDialog contract={editingContract} open={!!editingContract} onOpenChange={(o) => !o && setEditingContract(null)} onSave={handleSave} />
+      <ContractDetailDialog contract={selectedContract} open={!!selectedContract} onOpenChange={(o) => !o && setSelectedContract(null)} />
+      <ContractEditDialog contract={editingContract} open={!!editingContract} onOpenChange={(o) => !o && setEditingContract(null)} />
+      <ContractEditDialog
+        contract={null}
+        open={showCreate}
+        onOpenChange={setShowCreate}
+        mode="create"
+        customers={customers ?? []}
+      />
 
       <AlertDialog open={!!deletingContractId} onOpenChange={(o) => !o && setDeletingContractId(null)}>
         <AlertDialogContent>

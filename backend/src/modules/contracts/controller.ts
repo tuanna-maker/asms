@@ -47,12 +47,12 @@ export async function createContractController(req: Request, res: Response) {
   const createdById = req.user?.id;
   if (!createdById) throw new HttpError(401, "Missing user");
 
-  const input: any = { ...payload, createdById };
+  const input: Record<string, unknown> & { createdById: string } = { ...payload, createdById };
   if (payload.warrantyEnd === undefined) delete input.warrantyEnd;
   if (payload.status === undefined) delete input.status;
   if (payload.progress === undefined) delete input.progress;
 
-  const data = await createContractService(input);
+  const data = await createContractService(input as Parameters<typeof createContractService>[0]);
   return sendSuccess(res, data, "Contract created");
 }
 
@@ -61,7 +61,7 @@ export async function updateContractController(req: Request, res: Response) {
   const payload = zodParseOrThrow(updateContractSchema, req.body);
   if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
 
-  const data = await updateContractService(id, payload);
+  const data = await updateContractService(id, payload as Parameters<typeof updateContractService>[1]);
   return sendSuccess(res, data, "Contract updated");
 }
 
