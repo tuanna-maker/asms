@@ -61,7 +61,7 @@ const EquipmentDetailDialog = ({ equipment, open, onClose }: { equipment: Equipm
 
         <div className="space-y-4 pt-2">
           {/* Basic Info */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div className="space-y-1">
               <span className="text-muted-foreground text-xs">Mã thiết bị</span>
               <p className="font-semibold text-card-foreground">{equipment.id}</p>
@@ -246,7 +246,7 @@ const MaterialTab = ({ data, materials = [] }: MaterialTabProps) => {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard title="Tổng thiết bị" value={equipmentList.length} icon={Monitor} color="primary" />
         <StatCard title="Đang sử dụng" value={statusCounts.active} icon={Package} color="success" />
         <StatCard title="Điều chuyển" value={statusCounts.transferring} icon={TrendingDown} color="warning" />

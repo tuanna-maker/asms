@@ -193,7 +193,7 @@ const Documents = () => {
         <Button onClick={openCreate} className="gap-2"><Upload className="h-4 w-4" /> Tải lên</Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><FolderOpen className="h-5 w-5 text-primary" /></div><div><div className="text-2xl font-bold">{stats.total}</div><div className="text-xs text-muted-foreground">Tổng tài liệu</div></div></div></Card>
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><FileText className="h-5 w-5 text-primary" /></div><div><div className="text-2xl font-bold">{stats.contracts}</div><div className="text-xs text-muted-foreground">Hợp đồng</div></div></div></Card>
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-info/10"><FileText className="h-5 w-5 text-info" /></div><div><div className="text-2xl font-bold">{stats.technical}</div><div className="text-xs text-muted-foreground">Kỹ thuật</div></div></div></Card>
@@ -260,7 +260,7 @@ const Documents = () => {
           <DialogHeader><DialogTitle>{editingId ? "Chỉnh sửa tài liệu" : "Tải lên tài liệu mới"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Tên tài liệu *</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="VD: Quy trình bảo hành.pdf" /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Danh mục</Label>
                 <Select value={form.category} onValueChange={(v: DocItem["category"]) => setForm({ ...form, category: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -287,7 +287,7 @@ const Documents = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Kích thước</Label><Input value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} placeholder="VD: 2.4 MB" /></div>
               <div><Label>Người tạo *</Label><Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} /></div>
             </div>

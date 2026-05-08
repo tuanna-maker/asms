@@ -4,6 +4,7 @@ import { Plus, Lock, Unlock, RotateCcw, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from "@/hooks/use-mobile";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -33,7 +34,8 @@ interface DashboardGridProps {
 }
 
 const COLS = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
-const ROW_HEIGHT = 80;
+const ROW_HEIGHT_DESKTOP = 96;
+const ROW_HEIGHT_MOBILE = 82;
 
 function generateLayouts(widgets: WidgetConfig[]): LayoutItem[] {
   let x = 0;
@@ -57,6 +59,7 @@ function generateLayouts(widgets: WidgetConfig[]): LayoutItem[] {
   });
 }
 const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps) => {
+  const isMobile = useIsMobile();
   const containerHook = useContainerWidth as unknown as (
     opts: { initialWidth: number },
   ) => { width: number; containerRef: React.RefObject<HTMLDivElement> };
@@ -191,13 +194,13 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
         className="dashboard-grid"
         layouts={{ lg: visibleLayouts }}
         cols={COLS}
-        rowHeight={ROW_HEIGHT}
+        rowHeight={isMobile ? ROW_HEIGHT_MOBILE : ROW_HEIGHT_DESKTOP}
         width={containerWidth || 1280}
         dragConfig={{ enabled: isEditing, handle: ".drag-handle" }}
         resizeConfig={{ enabled: isEditing }}
         onLayoutChange={handleLayoutChange}
         compactor={verticalCompactor}
-        margin={[16, 16] as const}
+        margin={isMobile ? ([12, 12] as const) : ([16, 16] as const)}
         containerPadding={[0, 0] as const}
       >
         {visibleWidgets.map(widget => (
@@ -215,7 +218,7 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
                 </button>
               </>
             )}
-            <div className={`h-full w-full overflow-auto ${isEditing ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}>
+            <div className={`h-full w-full overflow-hidden ${isEditing ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}>
               {widget.component}
             </div>
           </div>

@@ -8,10 +8,11 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import { contractsData, ContractRow } from "@/data/tableData";
+import { ContractRow } from "@/data/tableData";
 
 interface RevenueTabProps {
   data: DashboardData;
+  contracts?: ContractRow[];
 }
 
 const revenueColumns: Column<ContractRow>[] = [
@@ -41,7 +42,7 @@ const widgetTemplates = [
   { id: "table", title: "Bảng DT HĐ", description: "Chi tiết", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
 ];
 
-const RevenueTab = ({ data }: RevenueTabProps) => {
+const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
 
@@ -61,8 +62,8 @@ const RevenueTab = ({ data }: RevenueTabProps) => {
     "chart-revenue": <CustomerRevenueChart data={data.customerRevenue} />,
     "pie-revenue": <PieChartWidget title="Phân bổ DT theo KH" icon={TrendingUp} iconColor="bg-success/10 text-success" data={data.customerRevenue.map(c => ({ name: c.name, value: c.revenue }))} />,
     "trend": <TrendChart data={data.trend} />,
-    "table": <DashboardTable title="Chi tiết DT theo HĐ" columns={revenueColumns} data={contractsData} />,
-  }), [data]);
+    "table": <DashboardTable title="Chi tiết DT theo HĐ" columns={revenueColumns} data={contracts} />,
+  }), [contracts, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

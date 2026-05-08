@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { DefenseProduct } from "@/data/productsData";
-import type { CreateProductPayload } from "@/hooks/use-products-api";
+import { DefenseProduct, ProductSpecField } from "@/data/productsData";
+import type { CreateProductPayload, ProductSpec } from "@/hooks/use-products-api";
+import { Plus, Trash2 } from "lucide-react";
 
 const CATEGORIES = ["Vô tuyến", "Mã hóa", "Trinh sát", "Ra đa", "Chỉ huy", "Vệ tinh", "Chuyển tiếp", "Truyền dẫn"];
 
@@ -88,11 +89,41 @@ const CreateProductDialog = ({
   const [form, setForm] = useState(initial);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [specs, setSpecs] = useState<ProductSpecField[]>([]);
   const { toast } = useToast();
 
   const update = <K extends keyof typeof initial>(k: K, v: (typeof initial)[K]) => {
     setForm((prev) => ({ ...prev, [k]: v }));
     if (errors[k as keyof FormErrors]) setErrors((e) => ({ ...e, [k]: undefined }));
+  };
+
+  const addSpec = () => {
+    const next = `spec-${specs.length + 1}-${Date.now().toString(36)}`;
+    setSpecs((prev) => [...prev, { key: next, label: "" }]);
+  };
+
+  const updateSpec = (idx: number, patch: Partial<ProductSpecField>) => {
+    setSpecs((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  };
+
+  const removeSpec = (idx: number) => {
+    setSpecs((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const buildSpecsPayload = (): { ok: true; specs: ProductSpec[] } | { ok: false; message: string } => {
+    const cleaned = specs
+      .map((s) => ({ key: s.key.trim(), label: s.label.trim(), unit: s.unit?.trim() ?? "" }))
+      .filter((s) => s.label.length > 0);
+    const seen = new Set<string>();
+    for (const spec of cleaned) {
+      if (!spec.key) return { ok: false, message: "Mỗi thông số cần có mã (key)" };
+      if (seen.has(spec.key)) return { ok: false, message: `Mã thông số trùng nhau: ${spec.key}` };
+      seen.add(spec.key);
+    }
+    return {
+      ok: true,
+      specs: cleaned.map((s) => ({ key: s.key, label: s.label, ...(s.unit ? { unit: s.unit } : {}) })),
+    };
   };
 
   const handleSubmit = async () => {
@@ -122,6 +153,11 @@ const CreateProductDialog = ({
         setErrors({ code: "Mã quân sự đã tồn tại trong danh sách" });
         return;
       }
+      const specsResult = buildSpecsPayload();
+      if (!specsResult.ok) {
+        toast({ title: "Lỗi thông số", description: specsResult.message, variant: "destructive" });
+        return;
+      }
       setSubmitting(true);
       try {
         const payload: CreateProductPayload = {
@@ -135,11 +171,13 @@ const CreateProductDialog = ({
           ...(result.data.yearReleased !== undefined ? { yearReleased: result.data.yearReleased } : {}),
           ...(result.data.totalProduced !== undefined ? { totalProduced: result.data.totalProduced } : {}),
           ...(result.data.description !== undefined ? { description: result.data.description } : {}),
+          ...(specsResult.specs.length > 0 ? { specs: specsResult.specs } : {}),
         };
         await onApiCreate(payload);
         toast({ title: "Đã tạo sản phẩm", description: `${result.data.code} — ${result.data.name}` });
         setForm(initial);
         setErrors({});
+        setSpecs([]);
         onOpenChange(false);
       } catch (e) {
         toast({ title: "Lỗi", description: errMessage(e), variant: "destructive" });
@@ -166,6 +204,11 @@ const CreateProductDialog = ({
       return;
     }
     const d = result.data;
+    const specsResult = buildSpecsPayload();
+    if (!specsResult.ok) {
+      toast({ title: "Lỗi thông số", description: specsResult.message, variant: "destructive" });
+      return;
+    }
     const newProduct: DefenseProduct = {
       id: d.id,
       code: d.code,
@@ -179,12 +222,17 @@ const CreateProductDialog = ({
       totalProduced: d.totalProduced,
       description: d.description || "",
       bom: [],
-      specs: [],
+      specs: specsResult.specs.map((s) => ({
+        key: s.key,
+        label: s.label,
+        ...(s.unit ? { unit: s.unit } : {}),
+      })),
     };
     onCreate(newProduct);
     toast({ title: "Đã tạo sản phẩm", description: `${newProduct.id} - ${newProduct.name}` });
     setForm(initial);
     setErrors({});
+    setSpecs([]);
     onOpenChange(false);
   };
 
@@ -192,6 +240,7 @@ const CreateProductDialog = ({
     if (!o) {
       setForm(initial);
       setErrors({});
+      setSpecs([]);
     }
     onOpenChange(o);
   };
@@ -266,6 +315,60 @@ const CreateProductDialog = ({
             <Field label="Mô tả" error={errors.description}>
               <Textarea rows={3} placeholder="Mô tả ngắn về sản phẩm..." value={form.description} onChange={(e) => update("description", e.target.value)} maxLength={500} />
             </Field>
+          </div>
+
+          <div className="md:col-span-2 space-y-2 rounded-lg border border-border/60 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <Label className="text-sm">Thông số kỹ thuật</Label>
+                <p className="text-xs text-muted-foreground">
+                  Khai báo các trường thông số (label-only). Giá trị thực tế sẽ điền theo từng hợp đồng.
+                </p>
+              </div>
+              <Button type="button" size="sm" variant="outline" onClick={addSpec}>
+                <Plus className="h-4 w-4 mr-1" /> Thêm
+              </Button>
+            </div>
+            {specs.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Chưa có thông số nào.</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="hidden sm:grid grid-cols-[1fr_1fr_120px_auto] gap-2 text-xs text-muted-foreground px-1">
+                  <span>Mã (key)</span>
+                  <span>Tên thông số</span>
+                  <span>Đơn vị</span>
+                  <span></span>
+                </div>
+                {specs.map((s, idx) => (
+                  <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_120px_auto] gap-2 items-center">
+                    <Input
+                      value={s.key}
+                      placeholder="vd: chieu-cao"
+                      onChange={(e) => updateSpec(idx, { key: e.target.value })}
+                    />
+                    <Input
+                      value={s.label}
+                      placeholder="vd: Chiều cao"
+                      onChange={(e) => updateSpec(idx, { label: e.target.value })}
+                    />
+                    <Input
+                      value={s.unit ?? ""}
+                      placeholder="cm, kg..."
+                      onChange={(e) => updateSpec(idx, { unit: e.target.value })}
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      type="button"
+                      className="text-destructive"
+                      onClick={() => removeSpec(idx)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

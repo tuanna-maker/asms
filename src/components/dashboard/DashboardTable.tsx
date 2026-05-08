@@ -112,7 +112,7 @@ function DashboardTable<T>({
   const isFiltered = search.trim() || activeFilterCount > 0;
 
   return (
-    <div className="rounded-xl bg-card p-3 sm:p-5 shadow-sm border border-border/50 space-y-3">
+    <div className="rounded-xl bg-card p-3 sm:p-5 shadow-sm border border-border/50 space-y-3 sm:space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <h3 className="font-semibold text-card-foreground text-sm sm:text-base">{title}</h3>
@@ -151,7 +151,7 @@ function DashboardTable<T>({
           <Button
             variant={showFilters ? "secondary" : "outline"}
             size="sm"
-            className="h-8 gap-1.5 text-xs shrink-0"
+            className="h-8 gap-1.5 text-xs shrink-0 w-full sm:w-auto"
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter className="h-3.5 w-3.5" />
@@ -164,7 +164,7 @@ function DashboardTable<T>({
           </Button>
         )}
         {isFiltered && (
-          <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground shrink-0" onClick={clearAll}>
+          <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground shrink-0 w-full sm:w-auto" onClick={clearAll}>
             <X className="h-3 w-3 mr-1" /> Xóa lọc
           </Button>
         )}
@@ -175,7 +175,7 @@ function DashboardTable<T>({
         <div className="flex flex-wrap gap-2 pb-1">
           {filterableColumns.map(col => (
             <Select key={col.key} value={filters[col.key] || "all"} onValueChange={(v) => setFilters(prev => ({ ...prev, [col.key]: v }))}>
-              <SelectTrigger className="w-auto min-w-[140px] h-8 text-xs">
+              <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px] h-8 text-xs">
                 <SelectValue placeholder={col.label} />
               </SelectTrigger>
               <SelectContent>
@@ -225,7 +225,7 @@ function DashboardTable<T>({
               processedData.map((row, i) => (
                 <TableRow key={i}>
                   {visibleColumns.map(col => (
-                    <TableCell key={col.key} className={`text-sm ${col.className || ""}`}>
+                    <TableCell key={col.key} className={`text-xs sm:text-sm ${col.className || ""}`}>
                       {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? "—")}
                     </TableCell>
                   ))}

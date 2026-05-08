@@ -9,10 +9,11 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import { complaintsData, ComplaintRow } from "@/data/tableData";
+import { ComplaintRow } from "@/data/tableData";
 
 interface WarrantyTabProps {
   data: DashboardData;
+  complaints?: ComplaintRow[];
 }
 
 const complaintCols: Column<ComplaintRow>[] = [
@@ -47,7 +48,7 @@ const widgetTemplates = [
   { id: "table", title: "Bảng KN/BH", description: "Danh sách", icon: Shield, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
 ];
 
-const WarrantyTab = ({ data }: WarrantyTabProps) => {
+const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
   const { complaint } = data;
@@ -86,8 +87,8 @@ const WarrantyTab = ({ data }: WarrantyTabProps) => {
         ]} />
     ),
     "trend": <TrendChart data={data.trend} />,
-    "table": <DashboardTable title="Danh sách khiếu nại / bảo hành" columns={complaintCols} data={complaintsData} />,
-  }), [data]);
+    "table": <DashboardTable title="Danh sách khiếu nại / bảo hành" columns={complaintCols} data={complaints} />,
+  }), [complaints, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

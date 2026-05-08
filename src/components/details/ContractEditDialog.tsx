@@ -16,8 +16,10 @@ import {
   Info, ListChecks, Boxes, Files, GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
+import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
 import { useProductsList } from "@/hooks/use-products-api";
+import type { ProductSpec } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { api } from "@/lib/api";
 
@@ -35,6 +37,8 @@ type DetailProduct = {
   status?: string | null;
   manufacturer?: string | null;
   totalProduced?: number | null;
+  specs?: ProductSpec[];
+  specValues?: Record<string, string>;
 };
 
 type DetailDocument = {
@@ -48,6 +52,8 @@ type DetailDocument = {
 type DraftProduct = DetailProduct & {
   id: string;
   totalProduced: number;
+  specs: ProductSpec[];
+  specValues: Record<string, string>;
 };
 
 type DraftDocument = {
@@ -162,6 +168,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   const [draftNewDocuments, setDraftNewDocuments] = useState<DraftDocument[]>([]);
   const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
   const [selectedTrainingId, setSelectedTrainingId] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<DraftProduct | null>(null);
   const { data: detailData, isLoading: detailLoading } = useContractDetail(!isCreateMode && open ? contract?.id ?? null : null);
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
@@ -274,6 +281,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setDraftNewDocuments([]);
     setRemovedDocumentIds([]);
     setSelectedTrainingId("");
+    setSelectedProduct(null);
   }, [open, isCreateMode]);
 
   useEffect(() => {
@@ -297,11 +305,14 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
         ...p,
         id: p.id,
         totalProduced: Number(p.totalProduced) || 0,
+        specs: (p.specs ?? []) as ProductSpec[],
+        specValues: { ...(p.specValues ?? {}) },
       }));
     setDraftProducts(mappedProducts);
     setDraftExistingDocuments(documentsList);
     setDraftNewDocuments([]);
     setRemovedDocumentIds([]);
+    setSelectedProduct(null);
   }, [open, isCreateMode, productsList, documentsList]);
 
   useEffect(() => {
@@ -317,6 +328,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           category: latest.category ?? item.category,
           manufacturer: latest.manufacturer ?? item.manufacturer,
           status: latest.status ?? item.status,
+          specs: (latest.specs ?? item.specs ?? []) as ProductSpec[],
         };
       }),
     );
@@ -337,10 +349,20 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
 
   const syncProductsToContract = async (targetContractId: string) => {
     await api.put(`/api/v1/contracts/${encodeURIComponent(targetContractId)}/products`, {
-      products: draftProducts.map((product) => ({
-        productId: product.id,
-        quantity: Math.max(1, Number(product.totalProduced) || 1),
-      })),
+      products: draftProducts.map((product) => {
+        const cleanedValues: Record<string, string> = {};
+        const allowedKeys = new Set(product.specs.map((s) => s.key));
+        for (const [key, val] of Object.entries(product.specValues ?? {})) {
+          if (!allowedKeys.has(key)) continue;
+          const trimmed = String(val ?? "").trim();
+          if (trimmed.length > 0) cleanedValues[key] = trimmed;
+        }
+        return {
+          productId: product.id,
+          quantity: Math.max(1, Number(product.totalProduced) || 1),
+          ...(Object.keys(cleanedValues).length > 0 ? { specValues: cleanedValues } : {}),
+        };
+      }),
     });
   };
 
@@ -427,6 +449,8 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           status: selected.status,
           manufacturer: selected.manufacturer,
           totalProduced: qty,
+          specs: (selected.specs ?? []) as ProductSpec[],
+          specValues: {},
         },
       ];
     });
@@ -576,7 +600,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-[59vw] xl:max-w-[900px] p-0 flex flex-col gap-0 overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-[75vw] xl:max-w-[1140px] p-0 flex flex-col gap-0 overflow-hidden">
         <SheetHeader className="flex h-16 flex-row items-center justify-between border-b border-border/50 px-6 pr-14 space-y-0 shrink-0 gap-3">
           <SheetTitle className="flex items-center gap-2 text-left leading-6 m-0 min-w-0">
             <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
@@ -747,13 +771,22 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
                         </TableCell>
                         <TableCell className="text-right">{p.status ?? "—"}</TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => void handleRemoveProduct(p)}
-                          >
-                            Xóa
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setSelectedProduct(p)}
+                            >
+                              Chi tiết
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => void handleRemoveProduct(p)}
+                            >
+                              Xóa
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -918,6 +951,29 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           </TabsContent>
         </Tabs>
       </SheetContent>
+      <ContractProductDetailDialog
+        contractId={contractDbId ?? null}
+        contractCode={contractCode || null}
+        productId={selectedProduct?.id ?? null}
+        quantity={Number(selectedProduct?.totalProduced) || 0}
+        specs={selectedProduct?.specs ?? []}
+        specValues={selectedProduct?.specValues ?? {}}
+        editable
+        onSaveSpecValues={(values) => {
+          if (!selectedProduct?.id) return;
+          setDraftProducts((items) =>
+            items.map((item) =>
+              item.id === selectedProduct.id
+                ? { ...item, specValues: values }
+                : item,
+            ),
+          );
+        }}
+        open={!!selectedProduct}
+        onOpenChange={(next) => {
+          if (!next) setSelectedProduct(null);
+        }}
+      />
     </Sheet>
   );
 };

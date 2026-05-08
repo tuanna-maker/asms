@@ -9,10 +9,11 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import { productsData, ProductRow } from "@/data/tableData";
+import { ProductRow } from "@/data/tableData";
 
 interface ProductTabProps {
   data: DashboardData;
+  products?: ProductRow[];
 }
 
 const productCols: Column<ProductRow>[] = [
@@ -46,7 +47,7 @@ const widgetTemplates = [
   { id: "table", title: "Bảng SP", description: "Danh sách", icon: Package, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
 ];
 
-const ProductTab = ({ data }: ProductTabProps) => {
+const ProductTab = ({ data, products = [] }: ProductTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
 
@@ -77,8 +78,8 @@ const ProductTab = ({ data }: ProductTabProps) => {
     ),
     "chart-customer": <CustomerProductChart data={data.customerProducts} />,
     "trend": <TrendChart data={data.trend} />,
-    "table": <DashboardTable title="Danh sách sản phẩm" columns={productCols} data={productsData} />,
-  }), [data]);
+    "table": <DashboardTable title="Danh sách sản phẩm" columns={productCols} data={products} />,
+  }), [data, products]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

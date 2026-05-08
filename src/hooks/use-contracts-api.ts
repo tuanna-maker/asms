@@ -61,3 +61,41 @@ export function useDeleteContract() {
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.contracts.all }),
   });
 }
+
+export type SetContractProductItem = {
+  productId: string;
+  quantity: number;
+  specValues?: Record<string, string>;
+};
+
+export function useSetContractProducts() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, products }: { id: string; products: SetContractProductItem[] }) =>
+      api.put(`/api/v1/contracts/${id}/products`, { products }),
+    onSuccess: (_, { id }) => {
+      void qc.invalidateQueries({ queryKey: qk.contracts.all });
+      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", id] });
+      void qc.invalidateQueries({ queryKey: qk.products.all });
+    },
+  });
+}
+
+export function useUpdateContractProduct() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      contractId,
+      productId,
+      payload,
+    }: {
+      contractId: string;
+      productId: string;
+      payload: { specValues?: Record<string, string>; quantity?: number };
+    }) => api.put(`/api/v1/contracts/${contractId}/products/${productId}`, payload),
+    onSuccess: (_, { contractId }) => {
+      void qc.invalidateQueries({ queryKey: qk.contracts.all });
+      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", contractId] });
+    },
+  });
+}

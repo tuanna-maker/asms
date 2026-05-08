@@ -12,7 +12,9 @@ import {
   Info, ListChecks, Boxes, Files, GraduationCap, Download, Edit,
 } from "lucide-react";
 import ContractEditDialog from "./ContractEditDialog";
+import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail } from "@/hooks/use-contracts-api";
+import type { ProductSpec } from "@/hooks/use-products-api";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   active: { label: "Đang thực hiện", variant: "default" },
@@ -43,6 +45,8 @@ type DetailProduct = {
   manufacturer?: string | null;
   unit?: string | null;
   totalProduced?: number | null;
+  specs?: ProductSpec[];
+  specValues?: Record<string, string>;
 };
 
 type DetailDocument = {
@@ -91,6 +95,7 @@ interface Props {
 
 const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [editing, setEditing] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
 
   const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
   const detail = detailData as ContractDetailData | null;
@@ -120,7 +125,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-3xl p-0 flex flex-col gap-0 overflow-hidden"
+        className="w-full sm:max-w-[75vw] xl:max-w-[1140px] p-0 flex flex-col gap-0 overflow-hidden"
       >
         <SheetHeader className="flex h-16 flex-row items-center justify-between border-b border-border/50 px-6 pr-14 space-y-0 shrink-0 gap-3">
           <SheetTitle className="flex items-center gap-2 text-left leading-6 m-0 min-w-0">
@@ -217,6 +222,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
                       <TableHead>Hãng sản xuất</TableHead>
                       <TableHead className="text-right">Số lượng</TableHead>
                       <TableHead className="text-right">Trạng thái</TableHead>
+                      <TableHead className="text-right">Thao tác</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -228,6 +234,16 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
                         <TableCell>{p.manufacturer ?? "—"}</TableCell>
                         <TableCell className="text-right">{p.totalProduced ?? 0}</TableCell>
                         <TableCell className="text-right">{p.status ?? "—"}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSelectedProduct(p)}
+                            disabled={!p.id}
+                          >
+                            Chi tiết
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -310,6 +326,19 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
         contract={contract}
         open={editing}
         onOpenChange={setEditing}
+      />
+      <ContractProductDetailDialog
+        contractId={(detailData as { id?: string } | null)?.id ?? contract.dbId ?? contract.id}
+        contractCode={contract.id}
+        productId={selectedProduct?.id ?? null}
+        quantity={Number(selectedProduct?.totalProduced) || 0}
+        specs={selectedProduct?.specs ?? []}
+        specValues={selectedProduct?.specValues ?? {}}
+        editable={false}
+        open={!!selectedProduct}
+        onOpenChange={(next) => {
+          if (!next) setSelectedProduct(null);
+        }}
       />
     </Sheet>
   );

@@ -223,7 +223,7 @@ const ResearchProjectDetail = () => {
             ) : (
               <p className="text-sm text-muted-foreground leading-relaxed">{project.description}</p>
             )}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-3 border-t border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-3 border-t border-border/50">
               <div className="text-center">
                 <p className="text-lg font-bold font-mono text-primary">{project.progress}%</p>
                 <p className="text-[10px] text-muted-foreground">Tiến độ</p>
@@ -244,7 +244,7 @@ const ResearchProjectDetail = () => {
           </div>
 
           {/* Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {[
               { label: "Tiến độ", value: `${project.progress}%`, icon: TrendingUp, color: "text-primary", bg: "bg-primary/10", sub: `${daysLeft} ngày còn lại` },
               { label: "Tổng kinh phí", value: formatCurrency(totalBudget), icon: Banknote, color: "text-success", bg: "bg-success/10", sub: `Đã sử dụng: ${budgetPct}%` },
@@ -383,23 +383,23 @@ const ResearchProjectDetail = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b text-xs text-muted-foreground">
-                      <th className="text-left py-2 font-medium">Công việc</th>
-                      {!isMobile && <th className="text-left py-2 font-medium">Người thực hiện</th>}
-                      {!isMobile && <th className="text-left py-2 font-medium">Ưu tiên</th>}
-                      {!isMobile && <th className="text-left py-2 font-medium">Hạn</th>}
-                      <th className="text-left py-2 font-medium">Trạng thái</th>
-                      <th className="text-left py-2 font-medium">Tiến độ</th>
+                      <th className="text-left py-3 px-3 font-medium">Công việc</th>
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium">Người thực hiện</th>}
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium">Ưu tiên</th>}
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium">Hạn</th>}
+                      <th className="text-left py-3 px-3 font-medium">Trạng thái</th>
+                      <th className="text-left py-3 px-3 font-medium">Tiến độ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {project.tasks.map(tk => (
                       <tr key={tk.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="py-2.5 font-medium">{tk.title}</td>
-                        {!isMobile && <td className="py-2.5 text-muted-foreground text-xs">{tk.assignee}</td>}
-                        {!isMobile && <td className="py-2.5"><Badge className={`${priorityColors[tk.priority || "medium"]} border-0 text-[10px]`}>{priorityLabels[tk.priority || "medium"]}</Badge></td>}
-                        {!isMobile && <td className="py-2.5 font-mono text-xs text-muted-foreground">{tk.endDate}</td>}
-                        <td className="py-2.5"><Badge className={`${taskStatusColors[tk.status]} border-0 text-[10px]`}>{taskStatusLabels[tk.status]}</Badge></td>
-                        <td className="py-2.5 w-24">
+                        <td className="py-3 px-3 font-medium">{tk.title}</td>
+                        {!isMobile && <td className="py-3 px-3 text-muted-foreground text-xs">{tk.assignee}</td>}
+                        {!isMobile && <td className="py-3 px-3"><Badge className={`${priorityColors[tk.priority || "medium"]} border-0 text-[10px]`}>{priorityLabels[tk.priority || "medium"]}</Badge></td>}
+                        {!isMobile && <td className="py-3 px-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{tk.endDate}</td>}
+                        <td className="py-3 px-3"><Badge className={`${taskStatusColors[tk.status]} border-0 text-[10px]`}>{taskStatusLabels[tk.status]}</Badge></td>
+                        <td className="py-3 px-3 w-28">
                           <div className="flex items-center gap-2">
                             <Progress value={tk.progress} className="h-1.5 flex-1" />
                             <span className="text-[10px] font-mono text-muted-foreground">{tk.progress}%</span>
@@ -478,7 +478,7 @@ const ResearchProjectDetail = () => {
         <TabsContent value="budget" className="mt-4">
           <div className="rounded-xl bg-card border border-border/50 p-4 shadow-sm">
             <h3 className="font-semibold text-sm flex items-center gap-2 mb-4"><Wallet className="w-4 h-4 text-primary" /> Chi phí đề tài</h3>
-            <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b border-border/50">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 pb-4 border-b border-border/50">
               <div className="text-center">
                 <p className="text-lg font-bold font-mono">{formatCurrencyShort(totalBudget)}</p>
                 <p className="text-[10px] text-muted-foreground">Tổng kinh phí</p>
@@ -496,11 +496,11 @@ const ResearchProjectDetail = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 font-medium text-muted-foreground text-xs">Hạng mục</th>
-                    <th className="text-right py-2 font-medium text-muted-foreground text-xs">Phân bổ</th>
-                    <th className="text-right py-2 font-medium text-muted-foreground text-xs">Đã chi</th>
-                    <th className="text-right py-2 font-medium text-muted-foreground text-xs">Còn lại</th>
-                    <th className="text-left py-2 font-medium text-muted-foreground text-xs w-24">Tỷ lệ</th>
+                    <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Hạng mục</th>
+                    <th className="text-right py-3 px-3 font-medium text-muted-foreground text-xs">Phân bổ</th>
+                    <th className="text-right py-3 px-3 font-medium text-muted-foreground text-xs">Đã chi</th>
+                    <th className="text-right py-3 px-3 font-medium text-muted-foreground text-xs">Còn lại</th>
+                    <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs w-28">Tỷ lệ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -508,11 +508,11 @@ const ResearchProjectDetail = () => {
                     const pct = b.amount > 0 ? Math.round((b.spent / b.amount) * 100) : 0;
                     return (
                       <tr key={b.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="py-2.5 font-medium">{b.category}</td>
-                        <td className="py-2.5 text-right font-mono text-xs">{formatCurrency(b.amount)}</td>
-                        <td className="py-2.5 text-right font-mono text-xs">{formatCurrency(b.spent)}</td>
-                        <td className="py-2.5 text-right font-mono text-xs text-success">{formatCurrency(b.amount - b.spent)}</td>
-                        <td className="py-2.5">
+                        <td className="py-3 px-3 font-medium">{b.category}</td>
+                        <td className="py-3 px-3 text-right font-mono text-xs whitespace-nowrap">{formatCurrency(b.amount)}</td>
+                        <td className="py-3 px-3 text-right font-mono text-xs whitespace-nowrap">{formatCurrency(b.spent)}</td>
+                        <td className="py-3 px-3 text-right font-mono text-xs text-success whitespace-nowrap">{formatCurrency(b.amount - b.spent)}</td>
+                        <td className="py-3 px-3">
                           <div className="flex items-center gap-2">
                             <Progress value={pct} className="h-1.5 flex-1" />
                             <span className="text-[10px] font-mono">{pct}%</span>
@@ -538,16 +538,16 @@ const ResearchProjectDetail = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 font-medium text-muted-foreground text-xs">Họ tên</th>
-                      <th className="text-left py-2 font-medium text-muted-foreground text-xs">Vai trò</th>
-                      {!isMobile && <th className="text-left py-2 font-medium text-muted-foreground text-xs">Đơn vị</th>}
-                      {!isMobile && <th className="text-left py-2 font-medium text-muted-foreground text-xs">Chuyên môn</th>}
+                      <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Họ tên</th>
+                      <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Vai trò</th>
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Đơn vị</th>}
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Chuyên môn</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {project.councilMembers.map(m => (
                       <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="py-2.5">
+                        <td className="py-3 px-3">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center text-accent font-semibold text-xs">
                               {m.name.split(" ").slice(-1)[0]?.[0]}
@@ -555,11 +555,11 @@ const ResearchProjectDetail = () => {
                             <span className="font-medium">{m.name}</span>
                           </div>
                         </td>
-                        <td className="py-2.5">
+                        <td className="py-3 px-3">
                           <Badge className={`${m.role === "Chủ tịch" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"} border-0 text-[10px]`}>{m.role}</Badge>
                         </td>
-                        {!isMobile && <td className="py-2.5 text-muted-foreground text-xs">{m.organization}</td>}
-                        {!isMobile && <td className="py-2.5 text-muted-foreground text-xs">{m.expertise}</td>}
+                        {!isMobile && <td className="py-3 px-3 text-muted-foreground text-xs">{m.organization}</td>}
+                        {!isMobile && <td className="py-3 px-3 text-muted-foreground text-xs">{m.expertise}</td>}
                       </tr>
                     ))}
                   </tbody>
@@ -645,17 +645,17 @@ const ResearchProjectDetail = () => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 font-medium text-muted-foreground text-xs">Đối tác</th>
-                      <th className="text-left py-2 font-medium text-muted-foreground text-xs">Hình thức</th>
-                      {!isMobile && <th className="text-left py-2 font-medium text-muted-foreground text-xs">Nội dung</th>}
-                      <th className="text-center py-2 font-medium text-muted-foreground text-xs">Trạng thái</th>
-                      {!isMobile && <th className="text-left py-2 font-medium text-muted-foreground text-xs">Bắt đầu</th>}
+                      <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Đối tác</th>
+                      <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Hình thức</th>
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Nội dung</th>}
+                      <th className="text-center py-3 px-3 font-medium text-muted-foreground text-xs">Trạng thái</th>
+                      {!isMobile && <th className="text-left py-3 px-3 font-medium text-muted-foreground text-xs">Bắt đầu</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {project.cooperationItems.map(c => (
                       <tr key={c.id} className="border-b last:border-0 hover:bg-muted/30">
-                        <td className="py-2.5">
+                        <td className="py-3 px-3">
                           <div className="flex items-center gap-2.5">
                             <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
                               <Handshake className="w-4 h-4 text-warning" />
@@ -663,14 +663,14 @@ const ResearchProjectDetail = () => {
                             <span className="font-medium">{c.partner}</span>
                           </div>
                         </td>
-                        <td className="py-2.5"><Badge className="bg-accent/15 text-accent border-0 text-[10px]">{c.type}</Badge></td>
-                        {!isMobile && <td className="py-2.5 text-muted-foreground text-xs max-w-[250px]">{c.content}</td>}
-                        <td className="py-2.5 text-center">
+                        <td className="py-3 px-3"><Badge className="bg-accent/15 text-accent border-0 text-[10px]">{c.type}</Badge></td>
+                        {!isMobile && <td className="py-3 px-3 text-muted-foreground text-xs max-w-[250px]">{c.content}</td>}
+                        <td className="py-3 px-3 text-center">
                           <Badge className={`${coopStatusColor(c.status)} border-0 text-[10px]`}>
                             {c.status === "active" ? "Đang hoạt động" : c.status === "pending" ? "Chờ duyệt" : "Hoàn thành"}
                           </Badge>
                         </td>
-                        {!isMobile && <td className="py-2.5 font-mono text-xs text-muted-foreground">{c.startDate}</td>}
+                        {!isMobile && <td className="py-3 px-3 font-mono text-xs text-muted-foreground whitespace-nowrap">{c.startDate}</td>}
                       </tr>
                     ))}
                   </tbody>

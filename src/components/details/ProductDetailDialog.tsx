@@ -8,8 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User } from "lucide-react";
-import { DefenseProduct, BOMItem, productCategoryColors, defaultTrainings, ProductTraining } from "@/data/productsData";
+import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User, Trash2 } from "lucide-react";
+import { DefenseProduct, BOMItem, productCategoryColors, ProductSpecField } from "@/data/productsData";
 import { useNavigate } from "react-router-dom";
 import ProductImageGallery from "./ProductImageGallery";
 import type { UpdateProductPayload } from "@/hooks/use-products-api";
@@ -97,6 +97,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
   const [bomQuantities, setBomQuantities] = useState<Record<string, string>>({});
   const [docName, setDocName] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
+  const [specsDraft, setSpecsDraft] = useState<ProductSpecField[]>([]);
 
   useEffect(() => {
     if (!open || !product) return;
@@ -114,6 +115,13 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
       qtyMap[item.materialId] = String(item.quantity);
     }
     setBomQuantities(qtyMap);
+    setSpecsDraft(
+      (product.specs ?? []).map((s) => ({
+        key: s.key,
+        label: s.label,
+        ...(s.unit ? { unit: s.unit } : {}),
+      })),
+    );
   }, [open, product]);
 
   const { data: productDocuments = [], isLoading: isDocumentsLoading, isFetching: isDocumentsFetching } = useQuery({
@@ -141,6 +149,25 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
       toast.error("Vui lòng nhập tên và phân loại sản phẩm");
       return;
     }
+    const cleanedSpecs = specsDraft
+      .map((s) => ({
+        key: s.key.trim(),
+        label: s.label.trim(),
+        unit: s.unit?.trim() ?? "",
+      }))
+      .filter((s) => s.label.length > 0);
+    const seen = new Set<string>();
+    for (const spec of cleanedSpecs) {
+      if (!spec.key) {
+        toast.error("Mỗi thông số cần có mã (key)");
+        return;
+      }
+      if (seen.has(spec.key)) {
+        toast.error(`Mã thông số trùng nhau: ${spec.key}`);
+        return;
+      }
+      seen.add(spec.key);
+    }
     setSubmitting(true);
     try {
       await onSaveEdits(product.id, {
@@ -153,6 +180,11 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
         yearReleased,
         totalProduced,
         description: description.trim() || undefined,
+        specs: cleanedSpecs.map((s) => ({
+          key: s.key,
+          label: s.label,
+          ...(s.unit ? { unit: s.unit } : {}),
+        })),
       });
       if (onUpdateBomQuantity) {
         for (const item of product.bom) {
@@ -479,13 +511,103 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
 
           <TabsContent value="specs" className="mt-4">
             <Card>
-              <CardContent className="pt-6 space-y-2">
-                {product.specs.map((s, i) => (
-                  <div key={i} className="flex justify-between py-2 border-b border-border last:border-0">
-                    <span className="text-sm text-muted-foreground">{s.label}</span>
-                    <span className="text-sm font-medium">{s.value}</span>
+              <CardContent className="pt-6 space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Khai báo các trường thông số kỹ thuật (Tên thông số). Giá trị thực tế sẽ được điền theo từng hợp đồng.
+                </p>
+                {editable ? (
+                  <div className="space-y-2">
+                    {specsDraft.length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+                        Chưa có thông số nào. Bấm "Thêm thông số" để khai báo.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="hidden sm:grid grid-cols-[1fr_1fr_120px_auto] gap-2 text-xs text-muted-foreground px-1">
+                          <span>Mã (key)</span>
+                          <span>Tên thông số</span>
+                          <span>Đơn vị</span>
+                          <span></span>
+                        </div>
+                        {specsDraft.map((spec, idx) => (
+                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_120px_auto] gap-2 items-center">
+                            <Input
+                              value={spec.key}
+                              placeholder="vd: chieu-cao"
+                              onChange={(e) =>
+                                setSpecsDraft((prev) =>
+                                  prev.map((s, i) => (i === idx ? { ...s, key: e.target.value } : s)),
+                                )
+                              }
+                            />
+                            <Input
+                              value={spec.label}
+                              placeholder="vd: Chiều cao"
+                              onChange={(e) =>
+                                setSpecsDraft((prev) =>
+                                  prev.map((s, i) => (i === idx ? { ...s, label: e.target.value } : s)),
+                                )
+                              }
+                            />
+                            <Input
+                              value={spec.unit ?? ""}
+                              placeholder="cm, kg..."
+                              onChange={(e) =>
+                                setSpecsDraft((prev) =>
+                                  prev.map((s, i) => (i === idx ? { ...s, unit: e.target.value } : s)),
+                                )
+                              }
+                            />
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-destructive"
+                              onClick={() => setSpecsDraft((prev) => prev.filter((_, i) => i !== idx))}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const next = `spec-${specsDraft.length + 1}-${Date.now().toString(36)}`;
+                        setSpecsDraft((prev) => [...prev, { key: next, label: "" }]);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" /> Thêm thông số
+                    </Button>
                   </div>
-                ))}
+                ) : product.specs.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+                    Sản phẩm chưa khai báo thông số.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border/60">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Mã</TableHead>
+                          <TableHead>Tên thông số</TableHead>
+                          <TableHead>Đơn vị</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {product.specs.map((s) => (
+                          <TableRow key={s.key}>
+                            <TableCell className="font-mono text-xs text-muted-foreground">{s.key}</TableCell>
+                            <TableCell className="text-sm">{s.label}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{s.unit ?? "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

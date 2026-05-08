@@ -3,6 +3,12 @@ import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 
+export type ProductSpec = {
+  key: string;
+  label: string;
+  unit?: string;
+};
+
 export type ProductListItem = {
   id: string;
   code: string;
@@ -16,6 +22,7 @@ export type ProductListItem = {
   yearReleased: number | null;
   totalProduced: number;
   customerId: string | null;
+  specs?: ProductSpec[];
   bom?: Array<{
     materialId: string;
     materialName: string;
@@ -39,6 +46,7 @@ export type CreateProductPayload = {
   unit?: string;
   yearReleased?: number;
   totalProduced?: number;
+  specs?: ProductSpec[];
 };
 
 export type UpdateProductPayload = Partial<CreateProductPayload>;

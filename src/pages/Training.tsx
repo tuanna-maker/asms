@@ -113,7 +113,7 @@ const Training = () => {
         <Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> Tạo khóa mới</Button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-primary/10"><GraduationCap className="h-5 w-5 text-primary" /></div><div><div className="text-2xl font-bold">{stats.total}</div><div className="text-xs text-muted-foreground">Tổng khóa</div></div></div></Card>
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-warning/10"><Clock className="h-5 w-5 text-warning" /></div><div><div className="text-2xl font-bold">{stats.ongoing}</div><div className="text-xs text-muted-foreground">Đang diễn ra</div></div></div></Card>
         <Card className="p-4"><div className="flex items-center gap-3"><div className="p-2 rounded-lg bg-success/10"><CheckCircle className="h-5 w-5 text-success" /></div><div><div className="text-2xl font-bold">{stats.completed}</div><div className="text-xs text-muted-foreground">Hoàn thành</div></div></div></Card>
@@ -177,7 +177,7 @@ const Training = () => {
           <DialogHeader><DialogTitle>{editingId ? "Chỉnh sửa khóa đào tạo" : "Tạo khóa đào tạo mới"}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div><Label>Tiêu đề *</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Loại</Label>
                 <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as typeof form.type })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -191,11 +191,11 @@ const Training = () => {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Giảng viên *</Label><Input value={form.instructor} onChange={(e) => setForm({ ...form, instructor: e.target.value })} /></div>
               <div><Label>Khách hàng / Đơn vị</Label><Input value={form.customer} onChange={(e) => setForm({ ...form, customer: e.target.value })} /></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><Label>Ngày bắt đầu *</Label><Input type="date" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} /></div>
               <div><Label>Ngày kết thúc</Label><Input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} /></div>
             </div>

@@ -37,6 +37,26 @@ export interface ProductTraining {
   location?: string;
 }
 
+export interface ProductSpecField {
+  key: string;
+  label: string;
+  unit?: string;
+}
+
+function slugifySpecKey(label: string, idx: number): string {
+  const base = label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return base ? `${base}-${idx}` : `spec-${idx}`;
+}
+
+function specLabels(rows: { label: string }[]): ProductSpecField[] {
+  return rows.map((row, idx) => ({ key: slugifySpecKey(row.label, idx), label: row.label }));
+}
+
 export interface DefenseProduct {
   id: string; // Mã sản phẩm
   code: string; // Mã quân sự
@@ -50,7 +70,7 @@ export interface DefenseProduct {
   yearReleased: number;
   totalProduced: number;
   bom: BOMItem[];
-  specs: { label: string; value: string }[];
+  specs: ProductSpecField[];
   history?: ChangeHistoryEntry[];
   documents?: ProductDocument[];
   trainings?: ProductTraining[];
@@ -123,13 +143,13 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-004", materialName: "Connector SMA 50Ω", quantity: 6, unit: "cái" },
       { materialId: "VT-013", materialName: "Pin lithium CR123A 3V", quantity: 4, unit: "cái" },
     ],
-    specs: [
-      { label: "Dải tần", value: "30-512 MHz" },
-      { label: "Công suất phát", value: "5W" },
-      { label: "Mã hóa", value: "AES-256" },
-      { label: "Trọng lượng", value: "1.2 kg" },
-      { label: "IP rating", value: "IP67" },
-    ],
+    specs: specLabels([
+      { label: "Dải tần" },
+      { label: "Công suất phát" },
+      { label: "Mã hóa" },
+      { label: "Trọng lượng" },
+      { label: "IP rating" },
+    ]),
   },
   {
     id: "SP-002",
@@ -150,12 +170,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-011", materialName: "Tụ điện tantal 100μF/25V", quantity: 24, unit: "cái" },
       { materialId: "VT-015", materialName: "Vỏ nhôm chống nước IP67", quantity: 1, unit: "cái" },
     ],
-    specs: [
-      { label: "Thuật toán", value: "AES-512, RSA-4096" },
-      { label: "Tốc độ", value: "256 kbps" },
-      { label: "Giao diện", value: "RJ45, RS-232" },
-      { label: "Nhiệt độ HĐ", value: "-20°C đến +60°C" },
-    ],
+    specs: specLabels([
+      { label: "Thuật toán" },
+      { label: "Tốc độ" },
+      { label: "Giao diện" },
+      { label: "Nhiệt độ HĐ" },
+    ]),
   },
   {
     id: "SP-003",
@@ -177,12 +197,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-009", materialName: "Cáp quang single-mode SM-9/125", quantity: 12, unit: "mét" },
       { materialId: "VT-015", materialName: "Vỏ nhôm chống nước IP67", quantity: 1, unit: "cái" },
     ],
-    specs: [
-      { label: "Tầm quan sát ngày", value: "10 km" },
-      { label: "Tầm quan sát đêm", value: "5 km" },
-      { label: "Đo xa laser", value: "Đến 15 km" },
-      { label: "Độ phóng đại", value: "2x - 30x" },
-    ],
+    specs: specLabels([
+      { label: "Tầm quan sát ngày" },
+      { label: "Tầm quan sát đêm" },
+      { label: "Đo xa laser" },
+      { label: "Độ phóng đại" },
+    ]),
   },
   {
     id: "SP-004",
@@ -204,12 +224,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-002", materialName: "Cáp tín hiệu đồng trục RG-58", quantity: 80, unit: "mét" },
       { materialId: "VT-010", materialName: "Anten logarit 30-1000MHz", quantity: 2, unit: "cái" },
     ],
-    specs: [
-      { label: "Băng tần", value: "X-band (8-12 GHz)" },
-      { label: "Tầm phát hiện", value: "40 km" },
-      { label: "Độ chính xác", value: "±10 m" },
-      { label: "Tốc độ quét", value: "12 vòng/phút" },
-    ],
+    specs: specLabels([
+      { label: "Băng tần" },
+      { label: "Tầm phát hiện" },
+      { label: "Độ chính xác" },
+      { label: "Tốc độ quét" },
+    ]),
   },
   {
     id: "SP-005",
@@ -230,12 +250,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-009", materialName: "Cáp quang single-mode SM-9/125", quantity: 200, unit: "mét" },
       { materialId: "VT-007", materialName: "Cảm biến nhiệt độ PT-100", quantity: 6, unit: "cái" },
     ],
-    specs: [
-      { label: "Số trạm làm việc", value: "8 trạm" },
-      { label: "Bản đồ", value: "GIS 3D thời gian thực" },
-      { label: "Liên kết", value: "Vệ tinh + 4G/5G + VHF" },
-      { label: "Triển khai", value: "< 30 phút" },
-    ],
+    specs: specLabels([
+      { label: "Số trạm làm việc" },
+      { label: "Bản đồ" },
+      { label: "Liên kết" },
+      { label: "Triển khai" },
+    ]),
   },
   {
     id: "SP-006",
@@ -256,12 +276,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-002", materialName: "Cáp tín hiệu đồng trục RG-58", quantity: 25, unit: "mét" },
       { materialId: "VT-004", materialName: "Connector SMA 50Ω", quantity: 12, unit: "cái" },
     ],
-    specs: [
-      { label: "Băng tần", value: "Ku-band (12-18 GHz)" },
-      { label: "Đường kính anten", value: "1.2 m" },
-      { label: "Tốc độ dữ liệu", value: "20 Mbps" },
-      { label: "Triển khai", value: "< 15 phút" },
-    ],
+    specs: specLabels([
+      { label: "Băng tần" },
+      { label: "Đường kính anten" },
+      { label: "Tốc độ dữ liệu" },
+      { label: "Triển khai" },
+    ]),
   },
   {
     id: "SP-007",
@@ -282,12 +302,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-005", materialName: "Bộ nguồn switching 24V/10A", quantity: 1, unit: "cái" },
       { materialId: "VT-015", materialName: "Vỏ nhôm chống nước IP67", quantity: 1, unit: "cái" },
     ],
-    specs: [
-      { label: "Dải tần", value: "136-174 / 400-470 MHz" },
-      { label: "Công suất", value: "25W" },
-      { label: "Vùng phủ", value: "Đến 50 km" },
-      { label: "Nguồn", value: "AC/DC + Pin dự phòng" },
-    ],
+    specs: specLabels([
+      { label: "Dải tần" },
+      { label: "Công suất" },
+      { label: "Vùng phủ" },
+      { label: "Nguồn" },
+    ]),
   },
   {
     id: "SP-008",
@@ -307,12 +327,12 @@ export const defenseProducts: DefenseProduct[] = [
       { materialId: "VT-005", materialName: "Bộ nguồn switching 24V/10A", quantity: 1, unit: "cái" },
       { materialId: "VT-014", materialName: "Bộ chuyển đổi A/D 16-bit", quantity: 1, unit: "cái" },
     ],
-    specs: [
-      { label: "Tốc độ", value: "10 Gbps" },
-      { label: "Khoảng cách", value: "Đến 80 km" },
-      { label: "Số kênh", value: "16 kênh DWDM" },
-      { label: "MTBF", value: "100,000 giờ" },
-    ],
+    specs: specLabels([
+      { label: "Tốc độ" },
+      { label: "Khoảng cách" },
+      { label: "Số kênh" },
+      { label: "MTBF" },
+    ]),
   },
 ];
 

@@ -116,17 +116,17 @@ const Warranty = () => {
     <div className="space-y-6">
       {/* Workflow */}
       <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-        <h3 className="font-semibold text-card-foreground mb-4">Quy trình xử lý ticket</h3>
-        <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1">
+        <h3 className="font-semibold text-card-foreground mb-4">Quy trình xử lý bảo hành / sửa chữa</h3>
+        <div className="flex items-center justify-start overflow-x-auto pb-2 gap-2 sm:gap-3">
           {workflowSteps.map((step, i) => (
             <div key={step.key} className="flex items-center shrink-0">
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1.5 min-w-[88px] sm:min-w-[105px]">
                 <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-bold">
                   {i + 1}
                 </div>
-                <span className="text-[10px] sm:text-xs font-medium text-card-foreground text-center max-w-[70px] sm:max-w-[90px]">{step.label}</span>
+                <span className="text-[10px] sm:text-xs font-medium text-card-foreground text-center leading-tight max-w-[88px] sm:max-w-[105px]">{step.label}</span>
               </div>
-              {i < workflowSteps.length - 1 && <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-1 sm:mx-2 mt-[-20px]" />}
+              {i < workflowSteps.length - 1 && <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-1 sm:mx-2 mt-[-14px]" />}
             </div>
           ))}
         </div>
@@ -168,13 +168,13 @@ const Warranty = () => {
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div className="relative flex-1 max-w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Tìm ticket..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <Input placeholder="Tìm phiếu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo ticket</Button>
+        <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo phiếu</Button>
       </div>
 
       {isError && (
-        <p className="text-sm text-destructive">Không tải được danh sách ticket. Kiểm tra kết nối hoặc quyền truy cập.</p>
+        <p className="text-sm text-destructive">Không tải được danh sách phiếu. Kiểm tra kết nối hoặc quyền truy cập.</p>
       )}
       {isLoading && !isError && (
         <p className="text-sm text-muted-foreground">Đang tải danh sách…</p>
@@ -194,7 +194,7 @@ const Warranty = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Mã ticket</TableHead>
+                    <TableHead>Mã phiếu</TableHead>
                     <TableHead>Khách hàng</TableHead>
                     <TableHead>Thiết bị</TableHead>
                     <TableHead>Loại</TableHead>
@@ -262,7 +262,7 @@ const Warranty = () => {
               </Table>
             </div>
             {!isLoading && !isError && filtered.length === 0 && (
-              <p className="text-sm text-muted-foreground py-4 text-center">Không có ticket nào.</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">Không có phiếu nào.</p>
             )}
           </TabsContent>
         ))}

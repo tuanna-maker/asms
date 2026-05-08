@@ -206,36 +206,36 @@ const ResearchProjects = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/30">
-                  <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Mã</th>
-                  <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Tên đề tài</th>
-                  {!isMobile && <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Chủ nhiệm</th>}
-                  {!isMobile && <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Thời gian</th>}
-                  <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground">Trạng thái</th>
-                  <th className="text-left py-2.5 px-3 text-xs font-medium text-muted-foreground w-32">Tiến độ</th>
-                  <th className="py-2.5 px-3 w-10" />
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Mã</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Tên đề tài</th>
+                  {!isMobile && <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Chủ nhiệm</th>}
+                  {!isMobile && <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Thời gian</th>}
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground">Trạng thái</th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground w-36">Tiến độ</th>
+                  <th className="py-3 px-4 w-12" />
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((p) => (
                   <tr key={p.code} className="border-b last:border-0 hover:bg-muted/20 transition-colors group">
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-4">
                       <Link to={`/de-tai/${encodeURIComponent(p.code)}`} className="font-mono text-xs text-primary hover:underline">{p.code}</Link>
                     </td>
-                    <td className="py-2.5 px-3 max-w-xs">
+                    <td className="py-3 px-4 max-w-xs">
                       <Link to={`/de-tai/${encodeURIComponent(p.code)}`} className="font-medium hover:text-primary transition-colors line-clamp-1">{p.name}</Link>
                     </td>
-                    {!isMobile && <td className="py-2.5 px-3 text-muted-foreground">{p.manager || "—"}</td>}
-                    {!isMobile && <td className="py-2.5 px-3 text-muted-foreground font-mono text-xs">{p.startDate} → {p.endDate}</td>}
-                    <td className="py-2.5 px-3">
+                    {!isMobile && <td className="py-3 px-4 text-muted-foreground">{p.manager || "—"}</td>}
+                    {!isMobile && <td className="py-3 px-4 text-muted-foreground font-mono text-xs whitespace-nowrap">{p.startDate} → {p.endDate}</td>}
+                    <td className="py-3 px-4">
                       <Badge className={`${getStatusColor(p.status)} border-0 text-[10px]`}>{getStatusLabel(p.status)}</Badge>
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <Progress value={p.progress} className="h-1.5 flex-1" />
                         <span className="text-xs font-mono text-muted-foreground w-8 text-right">{p.progress}%</span>
                       </div>
                     </td>
-                    <td className="py-2.5 px-3">
+                    <td className="py-3 px-4">
                       <div className="flex gap-1">
                         <button
                           type="button"

@@ -22,11 +22,12 @@ interface PieChartWidgetProps {
 const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetProps) => {
   const total = data.reduce((s, d) => s + d.value, 0);
   const isMobile = useIsMobile();
+  const compactData = data.slice(0, 8);
 
   return (
     <FullscreenWrapper>
       <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col">
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3 mb-3">
           <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconColor}`}>
             <Icon className="h-5 w-5" />
           </div>
@@ -35,31 +36,21 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
         {total === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Không có dữ liệu</p>
         ) : (
-          <div className={`${isMobile ? "h-[280px]" : "h-[380px]"}`}>
+          <div className={isMobile ? "h-[340px]" : "h-[480px]"}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={data}
+                  data={compactData}
                   cx="50%"
-                  cy="45%"
-                  innerRadius={isMobile ? 40 : 70}
-                  outerRadius={isMobile ? 65 : 110}
-                  paddingAngle={3}
+                  cy={isMobile ? "42%" : "40%"}
+                  innerRadius={isMobile ? 44 : 74}
+                  outerRadius={isMobile ? 72 : 118}
+                  paddingAngle={2}
                   dataKey="value"
-                  label={isMobile ? false : ({ name, percent, x, y, midAngle }) => {
-                    const RADIAN = Math.PI / 180;
-                    const radius = 135;
-                    const cx2 = x;
-                    const cy2 = y;
-                    return (
-                      <text x={cx2} y={cy2} fill="hsl(var(--muted-foreground))" textAnchor={midAngle > 90 && midAngle < 270 ? "end" : "start"} dominantBaseline="central" fontSize={12}>
-                        {`${name} ${(percent * 100).toFixed(0)}%`}
-                      </text>
-                    );
-                  }}
-                  labelLine={isMobile ? false : { stroke: "hsl(var(--muted-foreground))", strokeWidth: 1, type: "default" }}
+                  label={false}
+                  labelLine={false}
                 >
-                  {data.map((_, i) => (
+                  {compactData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
@@ -68,9 +59,12 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
                   formatter={(value: number, name: string) => [value, name]}
                 />
                 <Legend
-                  wrapperStyle={{ fontSize: isMobile ? 11 : 12 }}
+                  layout="horizontal"
+                  verticalAlign="bottom"
+                  align="center"
+                  wrapperStyle={{ fontSize: isMobile ? 11 : 12, lineHeight: 1.6 }}
                   formatter={(value: string) => {
-                    const item = data.find(d => d.name === value);
+                    const item = compactData.find(d => d.name === value);
                     if (item && total > 0) {
                       return `${value} ${Math.round((item.value / total) * 100)}%`;
                     }

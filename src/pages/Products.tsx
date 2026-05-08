@@ -53,7 +53,11 @@ function apiProductToDefense(p: ProductListItem): DefenseProduct {
       unit: item.unit,
       ...(item.serialNumbers && item.serialNumbers.length > 0 ? { serialNumbers: item.serialNumbers } : {}),
     })),
-    specs: [],
+    specs: (p.specs ?? []).map((s) => ({
+      key: s.key,
+      label: s.label,
+      ...(s.unit ? { unit: s.unit } : {}),
+    })),
   };
 }
 

@@ -19,13 +19,13 @@ interface ProgressWidgetProps {
 const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, completedLate }: ProgressWidgetProps) => {
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50 h-full flex flex-col">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full flex flex-col">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Icon className="h-5 w-5" />
           </div>
           <h3 className="font-semibold text-card-foreground">{title}</h3>
-          <span className="ml-auto text-2xl font-bold text-card-foreground">{total}</span>
+          <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
         </div>
 
         <div className="space-y-3 flex-1">
@@ -51,7 +51,7 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
         </div>
 
         {(completedOnTime !== undefined || completedLate !== undefined) && (
-          <div className="mt-4 flex gap-4 pt-3 border-t border-border/50">
+          <div className="mt-4 flex flex-wrap gap-3 sm:gap-4 pt-3 border-t border-border/50">
             {completedOnTime !== undefined && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="h-2.5 w-2.5 rounded-full bg-success" />

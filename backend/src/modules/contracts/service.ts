@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
@@ -53,6 +53,16 @@ export async function listContractsService(filters: {
   return rows.map((row) => ({ ...row, products: counts.get(row.id) ?? 0 }));
 }
 
+function toSpecValues(value: Prisma.JsonValue | null | undefined): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const result: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof raw === "string") result[key] = raw;
+    else if (raw != null) result[key] = String(raw);
+  }
+  return result;
+}
+
 export async function getContractDetailService(id: string) {
   const resolvedId = await resolveContractId(id);
   const contract = await prisma.contract.findFirst({
@@ -73,6 +83,7 @@ export async function getContractDetailService(id: string) {
   const productsList = contract.contractProducts.map((item) => ({
     ...item.product,
     totalProduced: item.quantity,
+    specValues: toSpecValues(item.specValues),
   }));
   const products = productsList.reduce((sum, product) => sum + product.totalProduced, 0);
   return { ...contract, productsList, products };
@@ -164,7 +175,9 @@ export async function softDeleteContractService(id: string) {
 
 export async function setContractProductsService(
   id: string,
-  payload: { products: Array<{ productId: string; quantity: number }> },
+  payload: {
+    products: Array<{ productId: string; quantity: number; specValues?: Record<string, string> | undefined }>;
+  },
 ) {
   const resolvedId = await resolveContractId(id);
 
@@ -188,13 +201,16 @@ export async function setContractProductsService(
 
     if (payload.products.length === 0) return;
 
-    await tx.contractProduct.createMany({
-      data: payload.products.map((item) => ({
-        contractId: resolvedId,
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
-    });
+    for (const item of payload.products) {
+      await tx.contractProduct.create({
+        data: {
+          contractId: resolvedId,
+          productId: item.productId,
+          quantity: item.quantity,
+          specValues: (item.specValues ?? {}) as Prisma.InputJsonValue,
+        },
+      });
+    }
   });
 
   const products = await prisma.contractProduct.findMany({
@@ -213,8 +229,65 @@ export async function setContractProductsService(
     products: products.map((item) => ({
       ...item.product,
       totalProduced: item.quantity,
+      specValues: toSpecValues(item.specValues),
     })),
     total,
   };
 }
 
+export async function updateContractProductService(
+  contractIdOrCode: string,
+  productIdOrCode: string,
+  payload: { specValues?: Record<string, string> | undefined; quantity?: number | undefined },
+) {
+  const resolvedContractId = await resolveContractId(contractIdOrCode);
+
+  const product = await prisma.product.findFirst({
+    where: { deletedAt: null, OR: [{ id: productIdOrCode }, { code: productIdOrCode }] },
+    select: { id: true },
+  });
+  if (!product) throw new HttpError(404, "Product not found");
+
+  const link = await prisma.contractProduct.findFirst({
+    where: {
+      contractId: resolvedContractId,
+      productId: product.id,
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+  if (!link) throw new HttpError(404, "Contract product link not found");
+
+  const data: Prisma.ContractProductUpdateInput = {};
+  if (payload.specValues !== undefined) {
+    data.specValues = payload.specValues as Prisma.InputJsonValue;
+  }
+  if (payload.quantity !== undefined) {
+    data.quantity = payload.quantity;
+  }
+
+  const updated = await prisma.contractProduct.update({
+    where: { id: link.id },
+    data,
+    include: { product: true },
+  });
+
+  if (payload.quantity !== undefined) {
+    const total = await prisma.contractProduct.aggregate({
+      where: { contractId: resolvedContractId, deletedAt: null, product: { deletedAt: null } },
+      _sum: { quantity: true },
+    });
+    await prisma.contract.update({
+      where: { id: resolvedContractId },
+      data: { products: total._sum.quantity ?? 0 },
+    });
+  }
+
+  return {
+    contractId: resolvedContractId,
+    productId: product.id,
+    quantity: updated.quantity,
+    specValues: toSpecValues(updated.specValues),
+    product: updated.product,
+  };
+}

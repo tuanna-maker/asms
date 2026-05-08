@@ -8,7 +8,7 @@ import { useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-
 import { useProductsList, type ProductListItem } from "@/hooks/use-products-api";
 import { useReportsByYear, type ReportsApi } from "@/hooks/use-reports-api";
 
-import type { ContractRow, HandoverRow, TrainingRow } from "@/data/tableData";
+import type { ComplaintRow, ContractRow, HandoverRow, ProductRow, TrainingRow } from "@/data/tableData";
 import type { DashboardData } from "@/data/dashboardData";
 
 type ApiContractRow = {
@@ -102,6 +102,36 @@ function mapTrainingRow(row: TrainingApiRow): TrainingRow {
   };
 }
 
+function mapProductRow(row: ProductListItem): ProductRow {
+  const status: ProductRow["status"] =
+    row.status === "equipped" ? "equipped" : row.status === "stopped" ? "inspecting" : "producing";
+  return {
+    id: row.code,
+    name: row.name,
+    category: row.category || "—",
+    customer: "—",
+    status,
+    quantity: Number(row.totalProduced ?? 0),
+    deliveryDate: "—",
+  };
+}
+
+function mapWarrantyRow(row: WarrantyListRow): ComplaintRow {
+  const status: ComplaintRow["status"] = row.status === "completed" ? "done" : "processing";
+  const type: ComplaintRow["type"] = row.type === "warranty" ? "warranty" : "repair";
+  return {
+    id: row.code,
+    customer: row.customer?.name ?? "—",
+    product: row.product?.name ?? "—",
+    type,
+    description: row.issue,
+    status,
+    createdDate: formatVnDate(row.createdAt),
+    resolvedDate: row.status === "completed" ? formatVnDate(row.createdAt) : null,
+    isLate: row.status === "cancelled",
+  };
+}
+
 function buildPakdFromMaterials(materials: MaterialListRow[]): DashboardData["pakd"] {
   const buckets = new Map<string, { name: string; total: number; remaining: number }>();
   for (const m of materials) {
@@ -121,6 +151,8 @@ export type UseDashboardDataResult = {
   liveContracts: ContractRow[];
   liveHandovers: HandoverRow[];
   liveTrainings: TrainingRow[];
+  liveProducts: ProductRow[];
+  liveWarranties: ComplaintRow[];
   liveMaterials: MaterialListRow[];
   isLoading: boolean;
   isError: boolean;
@@ -248,6 +280,8 @@ export function useDashboardData(year: string): UseDashboardDataResult {
       liveContracts: apiContracts.map(mapContractRow),
       liveHandovers: apiHandovers.map(mapHandoverRow),
       liveTrainings: apiTrainings.map(mapTrainingRow),
+      liveProducts: apiProducts.map(mapProductRow),
+      liveWarranties: apiWarranties.map(mapWarrantyRow),
       liveMaterials: apiMaterials,
       isLoading:
         contractsQ.isLoading ||

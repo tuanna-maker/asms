@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import { useCreateHandover, useUpdateHandover, type HandoverListItem } from "@/hooks/use-handovers-api";
 
 type ContractOption = { id: string; code: string; title: string | null; products: number };
+const handoverSteps = [
+  { value: 1, label: "1 - Lập & phê duyệt KH" },
+  { value: 2, label: "2 - Lập & phê duyệt TTR" },
+  { value: 3, label: "3 - Chuẩn bị hàng hóa" },
+  { value: 4, label: "4 - Bàn giao" },
+  { value: 5, label: "5 - Huấn luyện" },
+];
 
 type Props = {
   open: boolean;
@@ -108,15 +115,26 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Số sản phẩm</Label>
               <Input type="number" min={0} value={productCount} readOnly className="bg-muted/50" />
               <p className="text-xs text-muted-foreground">Tự động tính từ danh mục sản phẩm của hợp đồng.</p>
             </div>
             <div className="space-y-1.5">
-              <Label>Bước (1–5)</Label>
-              <Input type="number" min={1} max={5} value={currentStep} onChange={(e) => setCurrentStep(Number(e.target.value))} />
+              <Label>Bước thực hiện</Label>
+              <Select value={String(currentStep)} onValueChange={(v) => setCurrentStep(Number(v))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {handoverSteps.map((step) => (
+                    <SelectItem key={step.value} value={String(step.value)}>
+                      {step.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-1.5">
@@ -131,7 +149,7 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Ngày bắt đầu</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />

@@ -321,13 +321,14 @@ model Contract {
   updatedAt    DateTime       @updatedAt @map("updated_at")
   deletedAt    DateTime?      @map("deleted_at")
 
-  customer       Customer       @relation(fields: [customerId], references: [id])
-  createdBy      User?          @relation("ContractCreatedBy", fields: [createdById], references: [id])
-  handovers      Handover[]
-  warranties     Warranty[]
-  productsList   Product[]
-  trainingCourses TrainingCourse[]
-  documents      Document[]
+  customer         Customer          @relation(fields: [customerId], references: [id])
+  createdBy        User?             @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  handovers        Handover[]
+  warranties       Warranty[]
+  productsList     Product[]
+  contractProducts ContractProduct[]
+  trainingCourses  TrainingCourse[]
+  documents        Document[]
 
   @@index([customerId], map: "idx_contracts_customer_id")
   @@index([createdById], map: "idx_contracts_created_by_id")
@@ -414,6 +415,7 @@ model Material {
   deletedAt     DateTime?    @map("deleted_at")
 
   products      Product[]
+  productBoms   ProductBom[]
   transfers     MaterialTransfer[]
 
   @@index([type], map: "idx_materials_type")
@@ -447,28 +449,31 @@ model MaterialTransfer {
 }
 
 model Product {
-  id             String        @id @default(cuid())
-  code           String        @unique
-  contractId     String?       @map("contract_id")
-  customerId     String?       @map("customer_id")
-  name           String
-  category       String
-  description    String?
-  status         ProductStatus @default(developing)
-  version        String?
-  manufacturer   String?
-  unit           String?
-  yearReleased   Int?          @map("year_released")
-  totalProduced  Int           @default(0) @map("total_produced")
-  createdAt      DateTime      @default(now()) @map("created_at")
-  updatedAt      DateTime      @updatedAt @map("updated_at")
-  deletedAt      DateTime?     @map("deleted_at")
+  id            String        @id @default(cuid())
+  code          String        @unique
+  contractId    String?       @map("contract_id")
+  customerId    String?       @map("customer_id")
+  name          String
+  category      String
+  description   String?
+  status        ProductStatus @default(developing)
+  version       String?
+  manufacturer  String?
+  unit          String?
+  yearReleased  Int?          @map("year_released")
+  totalProduced Int           @default(0) @map("total_produced")
+  specs         Json          @default("[]")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
 
-  contract       Contract?     @relation(fields: [contractId], references: [id])
-  customer       Customer?     @relation(fields: [customerId], references: [id])
-  materials      Material[]
-  warranties     Warranty[]
-  documents      Document[]
+  contract         Contract?         @relation(fields: [contractId], references: [id])
+  customer         Customer?         @relation(fields: [customerId], references: [id])
+  materials        Material[]
+  contractProducts ContractProduct[]
+  productBoms      ProductBom[]
+  warranties       Warranty[]
+  documents        Document[]
 
   @@index([contractId], map: "idx_products_contract_id")
   @@index([customerId], map: "idx_products_customer_id")
@@ -476,6 +481,44 @@ model Product {
   @@index([category], map: "idx_products_category")
   @@index([deletedAt], map: "idx_products_deleted_at")
   @@map("products")
+}
+
+model ContractProduct {
+  id          String    @id @default(cuid())
+  contractId  String    @map("contract_id")
+  productId   String    @map("product_id")
+  quantity    Int       @default(0)
+  specValues  Json      @default("{}") @map("spec_values")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  contract Contract @relation(fields: [contractId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@index([contractId], map: "idx_contract_products_contract_id")
+  @@index([productId], map: "idx_contract_products_product_id")
+  @@index([deletedAt], map: "idx_contract_products_deleted_at")
+  @@index([contractId, productId, deletedAt], map: "idx_contract_products_contract_product_deleted")
+  @@map("contract_products")
+}
+
+model ProductBom {
+  id            String   @id @default(cuid())
+  productId     String   @map("product_id")
+  materialId    String   @map("material_id")
+  quantity      Int
+  serialNumbers String[] @default([]) @map("serial_numbers")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  material Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([productId, materialId], map: "uniq_product_boms_product_material")
+  @@index([productId], map: "idx_product_boms_product_id")
+  @@index([materialId], map: "idx_product_boms_material_id")
+  @@map("product_boms")
 }
 
 model ResearchProject {

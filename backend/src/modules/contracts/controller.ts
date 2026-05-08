@@ -6,9 +6,11 @@ import { sendSuccess } from "../../lib/response";
 
 import {
   contractIdParamSchema,
+  contractProductParamSchema,
   createContractSchema,
   listContractsQuerySchema,
   setContractProductsSchema,
+  updateContractProductSchema,
   updateContractSchema,
 } from "./schema";
 
@@ -18,6 +20,7 @@ import {
   listContractsService,
   setContractProductsService,
   softDeleteContractService,
+  updateContractProductService,
   updateContractService,
 } from "./service";
 
@@ -78,5 +81,12 @@ export async function setContractProductsController(req: Request, res: Response)
   const payload = zodParseOrThrow(setContractProductsSchema, req.body);
   const data = await setContractProductsService(id, payload);
   return sendSuccess(res, data, "Contract products updated");
+}
+
+export async function updateContractProductController(req: Request, res: Response) {
+  const { id, productId } = zodParseOrThrow(contractProductParamSchema, req.params);
+  const payload = zodParseOrThrow(updateContractProductSchema, req.body);
+  const data = await updateContractProductService(id, productId, payload);
+  return sendSuccess(res, data, "Contract product updated");
 }
 

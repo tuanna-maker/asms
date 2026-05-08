@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Truck, ClipboardCheck, Package, GraduationCap, FileCheck, CheckCircle, Clock, ArrowRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,8 +29,8 @@ import { useTrainingCoursesQuery } from "@/hooks/use-training";
 import { HandoverUpsertDialog } from "@/components/handover/HandoverUpsertDialog";
 
 const steps = [
-  { icon: ClipboardCheck, label: "Lập & phê duyệt KH", key: "plan" },
-  { icon: FileCheck, label: "Lập & phê duyệt TTR", key: "ttr" },
+  { icon: ClipboardCheck, label: "Lập & phê duyệt kế hoạch", key: "plan" },
+  { icon: FileCheck, label: "Lập & phê duyệt tờ trình", key: "ttr" },
   { icon: Package, label: "Chuẩn bị hàng hóa", key: "prepare" },
   { icon: Truck, label: "Bàn giao", key: "handover" },
   { icon: GraduationCap, label: "Huấn luyện", key: "training" },
@@ -52,6 +57,7 @@ const statusBadge = (status: string) => {
 };
 
 const Handover = () => {
+  const qc = useQueryClient();
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
   const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } = useTrainingCoursesQuery();
   const { data: contractOptions = [] } = useQuery({
@@ -66,6 +72,19 @@ const Handover = () => {
   const [upsertOpen, setUpsertOpen] = useState(false);
   const [editingHandover, setEditingHandover] = useState<HandoverListItem | null>(null);
   const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
+  const [trainingCreateOpen, setTrainingCreateOpen] = useState(false);
+  const [trainingSubmitting, setTrainingSubmitting] = useState(false);
+  const [trainingForm, setTrainingForm] = useState({
+    title: "",
+    contractId: "",
+    type: "internal" as "internal" | "external" | "online",
+    status: "planned" as "planned" | "ongoing" | "completed",
+    startDate: "",
+    endDate: "",
+    participants: 0,
+    location: "",
+    description: "",
+  });
   const deleteHandover = useDeleteHandover();
 
   const syncedContractOptions = contractOptions;
@@ -75,28 +94,70 @@ const Handover = () => {
   const activeCount = syncedHandoverRows.filter((h) => h.status === "active").length;
   const completedCount = syncedHandoverRows.filter((h) => h.status === "completed").length;
 
+  const resetTrainingForm = () =>
+    setTrainingForm({
+      title: "",
+      contractId: "",
+      type: "internal",
+      status: "planned",
+      startDate: "",
+      endDate: "",
+      participants: 0,
+      location: "",
+      description: "",
+    });
+
+  const handleCreateTraining = async () => {
+    if (!trainingForm.title.trim() || !trainingForm.startDate) {
+      toast.error("Vui lòng nhập tiêu đề và ngày bắt đầu");
+      return;
+    }
+    try {
+      setTrainingSubmitting(true);
+      await api.post("/api/v1/training", {
+        title: trainingForm.title.trim(),
+        type: trainingForm.type,
+        status: trainingForm.status,
+        startDate: trainingForm.startDate,
+        endDate: trainingForm.endDate || trainingForm.startDate,
+        participants: Number(trainingForm.participants || 0),
+        contractId: trainingForm.contractId || undefined,
+        location: trainingForm.location.trim() || undefined,
+        description: trainingForm.description.trim() || undefined,
+      });
+      await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+      toast.success("Đã tạo bài huấn luyện");
+      setTrainingCreateOpen(false);
+      resetTrainingForm();
+    } catch {
+      toast.error("Không thể tạo bài huấn luyện");
+    } finally {
+      setTrainingSubmitting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Workflow Steps */}
       <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
         <h3 className="font-semibold text-card-foreground mb-4">Quy trình bàn giao & huấn luyện</h3>
-        <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1">
+        <div className="flex items-center justify-start overflow-x-auto pb-2 gap-2 sm:gap-3">
           {steps.map((step, i) => (
             <div key={step.key} className="flex items-center shrink-0">
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-1.5 min-w-[88px] sm:min-w-[110px]">
                 <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <step.icon className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
-                <span className="text-[10px] sm:text-xs font-medium text-card-foreground text-center max-w-[70px] sm:max-w-[100px]">{step.label}</span>
+                <span className="text-[10px] sm:text-xs font-medium text-card-foreground text-center leading-tight max-w-[88px] sm:max-w-[110px]">{step.label}</span>
               </div>
-              {i < steps.length - 1 && <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-1 sm:mx-3 mt-[-20px]" />}
+              {i < steps.length - 1 && <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-1 sm:mx-2 mt-[-16px]" />}
             </div>
           ))}
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Truck className="h-6 w-6" />
@@ -166,7 +227,7 @@ const Handover = () => {
               Thêm bàn giao
             </Button>
           </div>
-          <div className="rounded-xl bg-card border border-border/50 shadow-sm">
+          <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -243,7 +304,20 @@ const Handover = () => {
         </TabsContent>
 
         <TabsContent value="training">
-          <div className="rounded-xl bg-card border border-border/50 shadow-sm">
+          <div className="flex justify-end mb-3">
+            <Button
+              size="sm"
+              className="gap-1.5"
+              onClick={() => {
+                resetTrainingForm();
+                setTrainingCreateOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              Tạo huấn luyện
+            </Button>
+          </div>
+          <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -287,6 +361,90 @@ const Handover = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={trainingCreateOpen} onOpenChange={setTrainingCreateOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Tạo bài huấn luyện</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Tiêu đề *</Label>
+              <Input
+                value={trainingForm.title}
+                onChange={(e) => setTrainingForm((prev) => ({ ...prev, title: e.target.value }))}
+                placeholder="Nhập tên khóa huấn luyện"
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Hợp đồng liên kết</Label>
+                <Select value={trainingForm.contractId || "__none__"} onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, contractId: v === "__none__" ? "" : v }))}>
+                  <SelectTrigger><SelectValue placeholder="Chọn hợp đồng" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Không liên kết</SelectItem>
+                    {syncedContractOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.code} — {c.title || "—"}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Loại</Label>
+                <Select value={trainingForm.type} onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, type: v as "internal" | "external" | "online" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="internal">Nội bộ</SelectItem>
+                    <SelectItem value="external">Khách hàng</SelectItem>
+                    <SelectItem value="online">Online</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Ngày bắt đầu *</Label>
+                <Input type="date" value={trainingForm.startDate} onChange={(e) => setTrainingForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Ngày kết thúc</Label>
+                <Input type="date" value={trainingForm.endDate} onChange={(e) => setTrainingForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Số học viên</Label>
+                <Input type="number" min={0} value={trainingForm.participants} onChange={(e) => setTrainingForm((prev) => ({ ...prev, participants: Number(e.target.value || 0) }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Trạng thái</Label>
+                <Select value={trainingForm.status} onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, status: v as "planned" | "ongoing" | "completed" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planned">Kế hoạch</SelectItem>
+                    <SelectItem value="ongoing">Đang thực hiện</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Địa điểm</Label>
+              <Input value={trainingForm.location} onChange={(e) => setTrainingForm((prev) => ({ ...prev, location: e.target.value }))} placeholder="Địa điểm huấn luyện" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mô tả</Label>
+              <Textarea rows={3} value={trainingForm.description} onChange={(e) => setTrainingForm((prev) => ({ ...prev, description: e.target.value }))} placeholder="Mô tả ngắn nội dung khóa học" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrainingCreateOpen(false)}>Hủy</Button>
+            <Button onClick={() => void handleCreateTraining()} disabled={trainingSubmitting}>
+              {trainingSubmitting ? "Đang tạo..." : "Tạo huấn luyện"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <HandoverUpsertDialog
         open={upsertOpen}

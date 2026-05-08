@@ -26,6 +26,11 @@ export const contractIdParamSchema = z.object({
   id: z.string().min(1),
 });
 
+export const contractProductParamSchema = z.object({
+  id: z.string().min(1),
+  productId: z.string().min(1),
+});
+
 export const listContractsQuerySchema = z.object({
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
   customerId: z.string().optional(),
@@ -37,7 +42,16 @@ export const setContractProductsSchema = z.object({
     z.object({
       productId: z.string().min(1),
       quantity: z.number().int().positive(),
+      specValues: z.record(z.string(), z.string()).optional(),
     }),
   ),
 });
 
+export const updateContractProductSchema = z
+  .object({
+    specValues: z.record(z.string(), z.string()).optional(),
+    quantity: z.number().int().positive().optional(),
+  })
+  .refine((o) => Object.keys(o).length > 0, {
+    message: "Cần ít nhất một trường cập nhật",
+  });

@@ -14,6 +14,7 @@ const listSelect = {
   code: true,
   name: true,
   category: true,
+  specs: true,
   status: true,
   version: true,
   description: true,
@@ -22,8 +23,95 @@ const listSelect = {
   yearReleased: true,
   totalProduced: true,
   customerId: true,
-  contractId: true,
+  createdAt: true,
+  updatedAt: true,
+  productBoms: {
+    select: {
+      materialId: true,
+      quantity: true,
+      serialNumbers: true,
+      createdAt: true,
+      updatedAt: true,
+      material: {
+        select: {
+          id: true,
+          code: true,
+          name: true,
+          unit: true,
+          serial: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  },
+  contractProducts: {
+    where: { deletedAt: null, contract: { deletedAt: null } },
+    select: {
+      quantity: true,
+      contract: {
+        select: {
+          id: true,
+          code: true,
+          title: true,
+          trainingCourses: {
+            where: { deletedAt: null },
+            select: {
+              id: true,
+              code: true,
+              title: true,
+              startDate: true,
+              endDate: true,
+              participants: true,
+              status: true,
+              location: true,
+              instructor: { select: { fullName: true } },
+            },
+            orderBy: { startDate: "asc" },
+          },
+        },
+      },
+    },
+  },
 } satisfies Prisma.ProductSelect;
+
+type ProductRow = Prisma.ProductGetPayload<{ select: typeof listSelect }>;
+
+function formatProductWithBom(row: ProductRow) {
+  return {
+    ...row,
+    bom: row.productBoms.map((item) => ({
+      materialId: item.material.code,
+      materialName: item.material.name,
+      quantity: item.quantity,
+      unit: item.material.unit,
+      serialNumbers:
+        item.serialNumbers.length > 0
+          ? item.serialNumbers
+          : item.material.serial
+            ? [item.material.serial]
+            : [],
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    })),
+    contracts: row.contractProducts.map((link) => ({
+      id: link.contract.id,
+      code: link.contract.code,
+      title: link.contract.title,
+      quantity: link.quantity,
+      trainings: link.contract.trainingCourses.map((course) => ({
+        id: course.id,
+        code: course.code,
+        title: course.title,
+        startDate: course.startDate,
+        endDate: course.endDate,
+        participants: course.participants,
+        status: course.status,
+        location: course.location,
+        trainer: course.instructor?.fullName ?? "Chưa phân công",
+      })),
+    })),
+  };
+}
 
 async function resolveCustomerIdOptional(idOrCode: string | undefined) {
   if (idOrCode == null || idOrCode === "") return null;
@@ -35,22 +123,13 @@ async function resolveCustomerIdOptional(idOrCode: string | undefined) {
   return customer.id;
 }
 
-async function resolveContractIdOptional(idOrCode: string | undefined) {
-  if (idOrCode == null || idOrCode === "") return null;
-  const contract = await prisma.contract.findFirst({
-    where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
-    select: { id: true },
-  });
-  if (!contract) throw new HttpError(404, "Contract not found");
-  return contract.id;
-}
-
 export async function listProductsService() {
-  return prisma.product.findMany({
+  const rows = await prisma.product.findMany({
     where: { deletedAt: null },
     orderBy: { name: "asc" },
     select: listSelect,
   });
+  return rows.map(formatProductWithBom);
 }
 
 async function resolveProductId(idOrCode: string) {
@@ -62,6 +141,15 @@ async function resolveProductId(idOrCode: string) {
   return row.id;
 }
 
+async function resolveMaterialId(idOrCode: string) {
+  const row = await prisma.material.findFirst({
+    where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
+    select: { id: true },
+  });
+  if (!row) throw new HttpError(404, "Material not found");
+  return row.id;
+}
+
 export async function getProductDetailService(idOrCode: string) {
   const id = await resolveProductId(idOrCode);
   const row = await prisma.product.findFirst({
@@ -69,14 +157,14 @@ export async function getProductDetailService(idOrCode: string) {
     select: listSelect,
   });
   if (!row) throw new HttpError(404, "Product not found");
-  return row;
+  return formatProductWithBom(row);
 }
 
 export async function updateProductService(idOrCode: string, payload: Record<string, unknown>) {
   const id = await resolveProductId(idOrCode);
   const existing = await prisma.product.findFirst({
     where: { id, deletedAt: null },
-    select: { contractId: true },
+    select: { id: true },
   });
   if (!existing) throw new HttpError(404, "Product not found");
 
@@ -84,6 +172,7 @@ export async function updateProductService(idOrCode: string, payload: Record<str
   if (payload.code !== undefined) data.code = payload.code;
   if (payload.name !== undefined) data.name = payload.name;
   if (payload.category !== undefined) data.category = payload.category;
+  if (payload.specs !== undefined) data.specs = payload.specs;
   if (payload.status !== undefined) data.status = payload.status;
   if (payload.version !== undefined) data.version = payload.version;
   if (payload.description !== undefined) data.description = payload.description;
@@ -96,11 +185,6 @@ export async function updateProductService(idOrCode: string, payload: Record<str
     const v = payload.customerId;
     data.customerId =
       v === null || v === "" ? null : await resolveCustomerIdOptional(String(v));
-  }
-  if (payload.contractId !== undefined) {
-    const v = payload.contractId;
-    data.contractId =
-      v === null || v === "" ? null : await resolveContractIdOptional(String(v));
   }
 
   if (payload.code !== undefined) {
@@ -116,11 +200,10 @@ export async function updateProductService(idOrCode: string, payload: Record<str
   try {
     const updated = await prisma.product.update({
       where: { id },
-      data: data as object,
+      data: data as Prisma.ProductUpdateInput,
       select: listSelect,
     });
-    await syncContractProductCounts([existing.contractId, updated.contractId]);
-    return updated;
+    return formatProductWithBom(updated);
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");
@@ -131,13 +214,120 @@ export async function updateProductService(idOrCode: string, payload: Record<str
 
 export async function softDeleteProductService(idOrCode: string) {
   const id = await resolveProductId(idOrCode);
-  const deleted = await prisma.product.update({
-    where: { id },
-    data: { deletedAt: new Date() },
+  const now = new Date();
+  const affectedLinks = await prisma.contractProduct.findMany({
+    where: { productId: id, deletedAt: null },
     select: { contractId: true },
   });
-  await syncContractProductCounts([deleted.contractId]);
+  await prisma.$transaction([
+    prisma.product.update({ where: { id }, data: { deletedAt: now } }),
+    prisma.contractProduct.updateMany({
+      where: { productId: id, deletedAt: null },
+      data: { deletedAt: now },
+    }),
+  ]);
+  await syncContractProductCounts(affectedLinks.map((item) => item.contractId));
   return { id };
+}
+
+export async function upsertProductBomService(
+  idOrCode: string,
+  payload: { materialId: string; quantity: number; serialNumbers?: string[] | undefined },
+) {
+  const productId = await resolveProductId(idOrCode);
+  const materialId = await resolveMaterialId(payload.materialId);
+  const row = await prisma.productBom.upsert({
+    where: { productId_materialId: { productId, materialId } },
+    update: {
+      quantity: payload.quantity,
+      serialNumbers: payload.serialNumbers ?? [],
+    },
+    create: {
+      productId,
+      materialId,
+      quantity: payload.quantity,
+      serialNumbers: payload.serialNumbers ?? [],
+    },
+    select: {
+      materialId: true,
+      quantity: true,
+      serialNumbers: true,
+      createdAt: true,
+      updatedAt: true,
+      material: { select: { code: true, name: true, unit: true, serial: true } },
+    },
+  });
+  return {
+    materialId: row.material.code,
+    materialName: row.material.name,
+    quantity: row.quantity,
+    unit: row.material.unit,
+    serialNumbers:
+      row.serialNumbers.length > 0
+        ? row.serialNumbers
+        : row.material.serial
+          ? [row.material.serial]
+          : [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export async function updateProductBomService(
+  idOrCode: string,
+  materialIdOrCode: string,
+  payload: { quantity?: number | undefined; serialNumbers?: string[] | undefined },
+) {
+  const productId = await resolveProductId(idOrCode);
+  const materialId = await resolveMaterialId(materialIdOrCode);
+  const existing = await prisma.productBom.findUnique({
+    where: { productId_materialId: { productId, materialId } },
+    select: { id: true },
+  });
+  if (!existing) throw new HttpError(404, "Product BOM item not found");
+  const row = await prisma.productBom.update({
+    where: { productId_materialId: { productId, materialId } },
+    data: {
+      ...(payload.quantity !== undefined ? { quantity: payload.quantity } : {}),
+      ...(payload.serialNumbers !== undefined ? { serialNumbers: payload.serialNumbers } : {}),
+    },
+    select: {
+      materialId: true,
+      quantity: true,
+      serialNumbers: true,
+      createdAt: true,
+      updatedAt: true,
+      material: { select: { code: true, name: true, unit: true, serial: true } },
+    },
+  });
+  return {
+    materialId: row.material.code,
+    materialName: row.material.name,
+    quantity: row.quantity,
+    unit: row.material.unit,
+    serialNumbers:
+      row.serialNumbers.length > 0
+        ? row.serialNumbers
+        : row.material.serial
+          ? [row.material.serial]
+          : [],
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export async function removeProductBomService(idOrCode: string, materialIdOrCode: string) {
+  const productId = await resolveProductId(idOrCode);
+  const materialId = await resolveMaterialId(materialIdOrCode);
+  const existing = await prisma.productBom.findUnique({
+    where: { productId_materialId: { productId, materialId } },
+    select: { id: true },
+  });
+  if (!existing) throw new HttpError(404, "Product BOM item not found");
+  await prisma.productBom.delete({
+    where: { productId_materialId: { productId, materialId } },
+  });
+  return { productId, materialId };
 }
 
 export async function createProductService(payload: CreateProductInput) {
@@ -148,7 +338,6 @@ export async function createProductService(payload: CreateProductInput) {
   if (dup) throw new HttpError(409, "Product code already exists");
 
   const customerId = await resolveCustomerIdOptional(payload.customerId);
-  const contractId = await resolveContractIdOptional(payload.contractId);
 
   try {
     const created = await prisma.product.create({
@@ -156,6 +345,7 @@ export async function createProductService(payload: CreateProductInput) {
         code: payload.code,
         name: payload.name,
         category: payload.category,
+        specs: (payload.specs ?? []) as unknown as Prisma.InputJsonValue,
         status: (payload.status ?? "developing") as "developing" | "producing" | "equipped" | "stopped",
         version: payload.version ?? null,
         description: payload.description ?? null,
@@ -164,12 +354,10 @@ export async function createProductService(payload: CreateProductInput) {
         yearReleased: payload.yearReleased ?? null,
         totalProduced: payload.totalProduced ?? 0,
         customerId,
-        contractId,
       },
       select: listSelect,
     });
-    await syncContractProductCounts([created.contractId]);
-    return created;
+    return formatProductWithBom(created);
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");

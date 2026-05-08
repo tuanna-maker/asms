@@ -53,7 +53,7 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
-  const { data, liveContracts, liveHandovers, liveTrainings, liveMaterials, isLoading: dashboardLoading, isError: dashboardError } =
+  const { data, liveContracts, liveHandovers, liveTrainings, liveProducts, liveWarranties, liveMaterials, isLoading: dashboardLoading, isError: dashboardError } =
     useDashboardData(year);
 
   const activeFilters = [year !== DEFAULT_YEAR, quarter !== "all", customer !== "all"].filter(Boolean).length;
@@ -100,9 +100,9 @@ const Index = () => {
   };
 
   return (
-    <div ref={dashboardRef} className={`space-y-4 ${isFullscreen ? "bg-background p-6 overflow-y-auto h-screen" : ""}`}>
+    <div ref={dashboardRef} className={`space-y-4 sm:space-y-5 ${isFullscreen ? "bg-background p-4 sm:p-6 overflow-y-auto h-screen" : ""}`}>
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
@@ -164,7 +164,7 @@ const Index = () => {
         </div>
 
         {/* Auto-rotate controls */}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="w-full sm:w-auto sm:ml-auto flex items-center justify-end gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5 h-8">
@@ -214,14 +214,14 @@ const Index = () => {
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setAutoRotate(false); }} className="w-full">
         <div className="relative">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto gap-0.5 bg-muted/50 p-1 no-scrollbar">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">CEO Dashboard</TabsTrigger>
-            <TabsTrigger value="customer" className="text-xs sm:text-sm">Khách hàng</TabsTrigger>
-            <TabsTrigger value="revenue" className="text-xs sm:text-sm">Doanh thu</TabsTrigger>
-            <TabsTrigger value="project" className="text-xs sm:text-sm">Dự án</TabsTrigger>
-            <TabsTrigger value="product" className="text-xs sm:text-sm">Sản phẩm</TabsTrigger>
-            <TabsTrigger value="warranty" className="text-xs sm:text-sm">Bảo hành</TabsTrigger>
-            <TabsTrigger value="material" className="text-xs sm:text-sm">Vật tư</TabsTrigger>
-            <TabsTrigger value="alerts" className="text-xs sm:text-sm">Cảnh báo</TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">CEO Dashboard</TabsTrigger>
+            <TabsTrigger value="customer" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Khách hàng</TabsTrigger>
+            <TabsTrigger value="revenue" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Doanh thu</TabsTrigger>
+            <TabsTrigger value="project" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Dự án</TabsTrigger>
+            <TabsTrigger value="product" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Sản phẩm</TabsTrigger>
+            <TabsTrigger value="warranty" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Bảo hành</TabsTrigger>
+            <TabsTrigger value="material" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Vật tư</TabsTrigger>
+            <TabsTrigger value="alerts" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Cảnh báo</TabsTrigger>
           </TabsList>
           {autoRotate && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted overflow-hidden rounded-full">
@@ -248,12 +248,12 @@ const Index = () => {
           <OverviewTab data={data} contractsTableData={liveContracts} />
         </TabsContent>
         <TabsContent value="customer"><CustomerTab data={data} /></TabsContent>
-        <TabsContent value="revenue"><RevenueTab data={data} /></TabsContent>
+        <TabsContent value="revenue"><RevenueTab data={data} contracts={liveContracts} /></TabsContent>
         <TabsContent value="project">
           <ProjectTab data={data} contracts={liveContracts} handovers={liveHandovers} trainings={liveTrainings} />
         </TabsContent>
-        <TabsContent value="product"><ProductTab data={data} /></TabsContent>
-        <TabsContent value="warranty"><WarrantyTab data={data} /></TabsContent>
+        <TabsContent value="product"><ProductTab data={data} products={liveProducts} /></TabsContent>
+        <TabsContent value="warranty"><WarrantyTab data={data} complaints={liveWarranties} /></TabsContent>
         <TabsContent value="material">
           <MaterialTab data={data} materials={liveMaterials} />
         </TabsContent>
