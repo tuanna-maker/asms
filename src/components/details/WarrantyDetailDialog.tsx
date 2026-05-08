@@ -71,6 +71,24 @@ const typeMap: Record<string, { label: string; variant: "default" | "secondary" 
 
 const NO_PRODUCT = "__none__";
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error !== null) {
+    const maybe = error as {
+      response?: { data?: { message?: string; data?: { fieldErrors?: Record<string, string[]> } } };
+      message?: string;
+    };
+    const fieldErrors = maybe.response?.data?.data?.fieldErrors;
+    if (fieldErrors && typeof fieldErrors === "object") {
+      const firstKey = Object.keys(fieldErrors)[0];
+      const firstValue = firstKey ? fieldErrors[firstKey]?.[0] : undefined;
+      if (firstValue) return firstValue;
+    }
+    if (maybe.response?.data?.message) return maybe.response.data.message;
+    if (maybe.message) return maybe.message;
+  }
+  return fallback;
+}
+
 const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [], mode = "edit", open, onOpenChange }: Props) => {
   const isViewMode = mode === "view";
   const isCreateMode = mode === "create";
@@ -134,10 +152,10 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
           workflowStep,
           ...(productId && productId !== NO_PRODUCT ? { productId } : {}),
         });
-        toast.success("Đã tạo ticket");
+        toast.success("Đã tạo phiếu");
         onOpenChange(false);
-      } catch {
-        toast.error("Không thể tạo ticket");
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Không thể tạo phiếu"));
       }
       return;
     }
@@ -153,10 +171,10 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
           status,
         },
       });
-      toast.success("Đã cập nhật ticket");
+      toast.success("Đã cập nhật phiếu");
       onOpenChange(false);
-    } catch {
-      toast.error("Không lưu được ticket");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Không lưu được phiếu"));
     }
   };
 
@@ -164,11 +182,11 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
     if (!ticket) return;
     try {
       await deleteW.mutateAsync(ticket.apiId);
-      toast.success("Đã xóa ticket");
+      toast.success("Đã xóa phiếu");
       setConfirmDelete(false);
       onOpenChange(false);
-    } catch {
-      toast.error("Không xóa được ticket");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Không xóa được phiếu"));
     }
   };
 
@@ -184,61 +202,65 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
-              {isCreateMode ? "Tạo ticket mới" : `Ticket ${ticket?.code ?? ""}`}
+              {isCreateMode ? "Tạo phiếu mới" : `Phiếu ${ticket?.code ?? ""}`}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 pt-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant={tCfg.variant}>{tCfg.label}</Badge>
-              <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${pCfg.className}`}>{pCfg.label}</span>
-              {displayStatus === "completed" ? (
-                <Badge variant="secondary" className="gap-1"><CheckCircle className="h-3 w-3" /> Hoàn thành</Badge>
-              ) : (
-                <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> Đang xử lý</Badge>
-              )}
-            </div>
+            {!isCreateMode && (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={tCfg.variant}>{tCfg.label}</Badge>
+                  <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${pCfg.className}`}>{pCfg.label}</span>
+                  {displayStatus === "completed" ? (
+                    <Badge variant="secondary" className="gap-1"><CheckCircle className="h-3 w-3" /> Hoàn thành</Badge>
+                  ) : (
+                    <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" /> Đang xử lý</Badge>
+                  )}
+                </div>
 
-            <Separator />
+                <Separator />
 
-            <div>
-              <h4 className="text-sm font-semibold text-card-foreground mb-3">Tiến trình xử lý</h4>
-              <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1">
-                {workflowSteps.map((step, i) => (
-                  <div key={step.key} className="flex items-center shrink-0">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                          i < workflowStep
-                            ? displayStatus === "completed"
-                              ? "bg-success text-success-foreground"
-                              : "bg-primary text-primary-foreground"
-                            : "bg-secondary text-muted-foreground"
-                        }`}
-                      >
-                        {i + 1}
+                <div>
+                  <h4 className="text-sm font-semibold text-card-foreground mb-3">Tiến trình xử lý</h4>
+                  <div className="flex items-center justify-between overflow-x-auto pb-2 gap-1">
+                    {workflowSteps.map((step, i) => (
+                      <div key={step.key} className="flex items-center shrink-0">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <div
+                            className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                              i < workflowStep
+                                ? displayStatus === "completed"
+                                  ? "bg-success text-success-foreground"
+                                  : "bg-primary text-primary-foreground"
+                                : "bg-secondary text-muted-foreground"
+                            }`}
+                          >
+                            {i + 1}
+                          </div>
+                          <span className="text-[10px] font-medium text-card-foreground text-center max-w-[70px]">{step.label}</span>
+                        </div>
+                        {i < workflowSteps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground mx-1 mt-[-16px]" />}
                       </div>
-                      <span className="text-[10px] font-medium text-card-foreground text-center max-w-[70px]">{step.label}</span>
-                    </div>
-                    {i < workflowSteps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground mx-1 mt-[-16px]" />}
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <Separator />
+                <Separator />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket?.customer ?? "—"} />
-              <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket?.device ?? "—"} />
-              <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket?.source ?? "—"} />
-              <InfoItem icon={<User className="h-4 w-4" />} label="Đơn vị xử lý" value={ticket?.assignee || "—"} />
-              <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA" value={ticket?.sla ?? "—"} />
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket?.customer ?? "—"} />
+                  <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket?.device ?? "—"} />
+                  <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket?.source ?? "—"} />
+                  <InfoItem icon={<User className="h-4 w-4" />} label="Đơn vị xử lý" value={ticket?.assignee || "—"} />
+                  <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA" value={ticket?.sla ?? "—"} />
+                </div>
+              </>
+            )}
 
             <div className="space-y-4 rounded-lg border border-border p-4">
               <h4 className="text-sm font-semibold text-card-foreground">
-                {isViewMode ? "Chi tiết ticket" : "Chỉnh sửa (lưu DB)"}
+                {isViewMode ? "Chi tiết phiếu" : "Chỉnh sửa (lưu DB)"}
               </h4>
               <div className="space-y-2">
                 <Label htmlFor="wi-issue">Mô tả sự cố</Label>
@@ -337,12 +359,15 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
               </div>
             </div>
 
-            <Separator />
-
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              Ngày tạo: {ticket?.createdAt ?? "—"}
-            </div>
+            {!isCreateMode && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  Ngày tạo: {ticket?.createdAt ?? "—"}
+                </div>
+              </>
+            )}
           </div>
 
           <DialogFooter className="flex flex-wrap gap-2 sm:justify-between">
@@ -355,7 +380,7 @@ const WarrantyDetailDialog = ({ ticket, customerOptions = [], productOptions = [
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Đóng</Button>
               {!isViewMode ? (
                 <Button type="button" onClick={() => void handleSave()} disabled={updateW.isPending || createW.isPending}>
-                  {(updateW.isPending || createW.isPending) ? "Đang lưu…" : (isCreateMode ? "Tạo ticket" : "Lưu")}
+                  {(updateW.isPending || createW.isPending) ? "Đang lưu…" : (isCreateMode ? "Tạo phiếu" : "Lưu")}
                 </Button>
               ) : null}
             </div>

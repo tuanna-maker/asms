@@ -42,6 +42,24 @@ function formatShortDate(iso: string) {
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (typeof error === "object" && error !== null) {
+    const maybe = error as {
+      response?: { data?: { message?: string; data?: { fieldErrors?: Record<string, string[]> } } };
+      message?: string;
+    };
+    const fieldErrors = maybe.response?.data?.data?.fieldErrors;
+    if (fieldErrors && typeof fieldErrors === "object") {
+      const firstKey = Object.keys(fieldErrors)[0];
+      const firstValue = firstKey ? fieldErrors[firstKey]?.[0] : undefined;
+      if (firstValue) return firstValue;
+    }
+    if (maybe.response?.data?.message) return maybe.response.data.message;
+    if (maybe.message) return maybe.message;
+  }
+  return fallback;
+}
+
 const statusBadge = (status: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     active: { label: "Đang thực hiện", variant: "default" },
@@ -53,7 +71,7 @@ const statusBadge = (status: string) => {
     cancelled: { label: "Đã hủy", variant: "destructive" },
   };
   const cfg = map[status] || map.pending;
-  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
+  return <Badge variant={cfg.variant} className="px-3 py-1 text-xs leading-tight rounded-full">{cfg.label}</Badge>;
 };
 
 const Handover = () => {
@@ -74,6 +92,8 @@ const Handover = () => {
   const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
   const [trainingCreateOpen, setTrainingCreateOpen] = useState(false);
   const [trainingSubmitting, setTrainingSubmitting] = useState(false);
+  const [trainingEditingId, setTrainingEditingId] = useState<string | null>(null);
+  const [deletingTrainingId, setDeletingTrainingId] = useState<string | null>(null);
   const [trainingForm, setTrainingForm] = useState({
     title: "",
     contractId: "",
@@ -107,14 +127,36 @@ const Handover = () => {
       description: "",
     });
 
-  const handleCreateTraining = async () => {
+  const openCreateTraining = () => {
+    setTrainingEditingId(null);
+    resetTrainingForm();
+    setTrainingCreateOpen(true);
+  };
+
+  const openEditTraining = (course: (typeof syncedTrainingRows)[number]) => {
+    setTrainingEditingId(course.id);
+    setTrainingForm({
+      title: course.title ?? "",
+      contractId: course.contractId ?? "",
+      type: course.type ?? "internal",
+      status: course.status ?? "planned",
+      startDate: course.startDate ?? "",
+      endDate: course.endDate ?? "",
+      participants: Number(course.participants ?? 0),
+      location: course.location ?? "",
+      description: course.description ?? "",
+    });
+    setTrainingCreateOpen(true);
+  };
+
+  const handleSaveTraining = async () => {
     if (!trainingForm.title.trim() || !trainingForm.startDate) {
       toast.error("Vui lòng nhập tiêu đề và ngày bắt đầu");
       return;
     }
     try {
       setTrainingSubmitting(true);
-      await api.post("/api/v1/training", {
+      const payload = {
         title: trainingForm.title.trim(),
         type: trainingForm.type,
         status: trainingForm.status,
@@ -124,15 +166,42 @@ const Handover = () => {
         contractId: trainingForm.contractId || undefined,
         location: trainingForm.location.trim() || undefined,
         description: trainingForm.description.trim() || undefined,
-      });
+      };
+      if (trainingEditingId) {
+        await api.put(`/api/v1/training/${trainingEditingId}`, payload);
+      } else {
+        await api.post("/api/v1/training", payload);
+      }
       await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
-      toast.success("Đã tạo bài huấn luyện");
+      if (trainingEditingId) {
+        await qc.invalidateQueries({ queryKey: ["trainingCourse", trainingEditingId] });
+      }
+      toast.success(trainingEditingId ? "Đã cập nhật bài huấn luyện" : "Đã tạo bài huấn luyện");
       setTrainingCreateOpen(false);
+      setTrainingEditingId(null);
       resetTrainingForm();
-    } catch {
-      toast.error("Không thể tạo bài huấn luyện");
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(
+          error,
+          trainingEditingId ? "Không thể cập nhật bài huấn luyện" : "Không thể tạo bài huấn luyện",
+        ),
+      );
     } finally {
       setTrainingSubmitting(false);
+    }
+  };
+
+  const handleDeleteTraining = async () => {
+    if (!deletingTrainingId) return;
+    try {
+      await api.delete(`/api/v1/training/${deletingTrainingId}`);
+      await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+      await qc.invalidateQueries({ queryKey: ["trainingCourse", deletingTrainingId] });
+      toast.success("Đã xóa bài huấn luyện");
+      setDeletingTrainingId(null);
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Không thể xóa bài huấn luyện"));
     }
   };
 
@@ -231,14 +300,14 @@ const Handover = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Mã</TableHead>
-                  <TableHead>Hợp đồng</TableHead>
-                  <TableHead>Khách hàng</TableHead>
-                  <TableHead className="text-center">SP</TableHead>
-                  <TableHead>Bước hiện tại</TableHead>
-                  <TableHead>Thời gian</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right w-28">Thao tác</TableHead>
+                  <TableHead className="px-4 py-3">Mã</TableHead>
+                  <TableHead className="px-4 py-3 text-center lg:text-left">Hợp đồng</TableHead>
+                  <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
+                  <TableHead className="px-4 py-3 text-center">SP</TableHead>
+                  <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
+                  <TableHead className="px-4 py-3">Thời gian</TableHead>
+                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-right w-28">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -257,12 +326,12 @@ const Handover = () => {
                 ) : (
                   syncedHandoverRows.map((h) => (
                     <TableRow key={h.id}>
-                      <TableCell className="font-medium text-primary">{h.code}</TableCell>
-                      <TableCell className="text-muted-foreground">{h.contract.code}</TableCell>
-                      <TableCell>{h.customer.name}</TableCell>
-                      <TableCell className="text-center">{h.products}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{h.contract.code}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{h.customer.name}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-center align-middle">{h.products}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1.5">
                           <div className="flex gap-0.5">
                             {steps.map((_, i) => (
                               <div key={i} className={`h-2 w-5 rounded-sm ${i < h.currentStep ? "bg-primary" : "bg-secondary"}`} />
@@ -273,11 +342,11 @@ const Handover = () => {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
                       </TableCell>
-                      <TableCell>{statusBadge(h.status)}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="px-4 py-3.5 align-middle">{statusBadge(h.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"
@@ -308,10 +377,7 @@ const Handover = () => {
             <Button
               size="sm"
               className="gap-1.5"
-              onClick={() => {
-                resetTrainingForm();
-                setTrainingCreateOpen(true);
-              }}
+              onClick={openCreateTraining}
             >
               <Plus className="h-4 w-4" />
               Tạo huấn luyện
@@ -321,38 +387,49 @@ const Handover = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Mã</TableHead>
-                  <TableHead>Khóa học</TableHead>
-                  <TableHead>Khách hàng</TableHead>
-                  <TableHead className="text-center">Học viên</TableHead>
-                  <TableHead>Thời gian</TableHead>
-                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3">Mã</TableHead>
+                  <TableHead className="px-4 py-3 text-center lg:text-left">Khóa học</TableHead>
+                  <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
+                  <TableHead className="px-4 py-3 text-center">Học viên</TableHead>
+                  <TableHead className="px-4 py-3">Thời gian</TableHead>
+                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isTrainingLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : syncedTrainingRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                       Chưa có dữ liệu huấn luyện.
                     </TableCell>
                   </TableRow>
                 ) : (
                   syncedTrainingRows.map((t) => (
                     <TableRow key={t.id}>
-                      <TableCell className="font-medium text-primary">{t.id}</TableCell>
-                      <TableCell className="text-muted-foreground">{t.title}</TableCell>
-                      <TableCell>{t.customer || "-"}</TableCell>
-                      <TableCell className="text-center">{t.participants}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
+                      <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.id}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{t.title}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{t.customer || "-"}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-center align-middle">{t.participants}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
-                      <TableCell>{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-right align-middle">
+                        <div className="flex justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingTrainingId(t.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -365,7 +442,7 @@ const Handover = () => {
       <Dialog open={trainingCreateOpen} onOpenChange={setTrainingCreateOpen}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Tạo bài huấn luyện</DialogTitle>
+            <DialogTitle>{trainingEditingId ? "Sửa bài huấn luyện" : "Tạo bài huấn luyện"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -439,12 +516,27 @@ const Handover = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTrainingCreateOpen(false)}>Hủy</Button>
-            <Button onClick={() => void handleCreateTraining()} disabled={trainingSubmitting}>
-              {trainingSubmitting ? "Đang tạo..." : "Tạo huấn luyện"}
+            <Button onClick={() => void handleSaveTraining()} disabled={trainingSubmitting}>
+              {trainingSubmitting ? "Đang lưu..." : trainingEditingId ? "Cập nhật huấn luyện" : "Tạo huấn luyện"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deletingTrainingId} onOpenChange={(o) => !o && setDeletingTrainingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xóa bài huấn luyện?</AlertDialogTitle>
+            <AlertDialogDescription>Hành động này không thể hoàn tác.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => void handleDeleteTraining()}>
+              Xóa
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <HandoverUpsertDialog
         open={upsertOpen}
