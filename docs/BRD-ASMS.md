@@ -1,7 +1,8 @@
-# BRD - Tài liệu Yêu cầu Nghiệp vụ Tổng thể (ASMS)
+# BRD — Yêu cầu nghiệp vụ tổng thể (ASMS)
 
-> **Business Requirements Document - After-Sales Management System (ASMS)**
-> Phiên bản: 1.0 - Soạn theo trạng thái mã nguồn hiện tại của workspace `D:/PJ/asms`.
+> **Tài liệu yêu cầu nghiệp vụ — Hệ thống quản lý hậu mãi (ASMS)**  
+> Phiên bản: 1.2 — Khớp với cách hệ thống đang vận hành. Phần kỹ thuật chi tiết xem [SRS-ASMS.md](SRS-ASMS.md).  
+> **Cách đọc:** Ưu tiên **tiếng Việt dễ hiểu**. Tên trong `code` (mã màn, tên trường, API) giữ nguyên vì trùng với chương trình.
 
 ## Mục lục
 
@@ -35,18 +36,18 @@
 | Thuộc tính | Giá trị |
 |------------|---------|
 | Tên tài liệu | BRD - Tài liệu Yêu cầu Nghiệp vụ Tổng thể (ASMS) |
-| Mã tài liệu | BRD-ASMS-v1.0 |
-| Phiên bản | 1.0 |
-| Loại tài liệu | Business Requirements Document |
-| Phạm vi | Toàn bộ hệ thống ASMS (frontend + backend) |
+| Mã tài liệu | BRD-ASMS-v1.2 |
+| Phiên bản | 1.2 |
+| Loại tài liệu | Tài liệu yêu cầu nghiệp vụ |
+| Phạm vi | Toàn bộ hệ thống ASMS (giao diện + máy chủ) |
 | Tài liệu liên quan | [docs/SRS-ASMS.md](SRS-ASMS.md), [docs/BRD-chuc-nang-tung-man-ASMS.md](BRD-chuc-nang-tung-man-ASMS.md), [docs/data-model.md](data-model.md), [docs/ra-soat-chuc-nang-he-thong.md](ra-soat-chuc-nang-he-thong.md), [docs/frontend-backend-mapping.md](frontend-backend-mapping.md), [docs/uat-checklist.md](uat-checklist.md) |
-| Mục tiêu | Chuẩn hóa yêu cầu nghiệp vụ tổng thể hệ thống quản lý hậu mãi cho ngành quốc phòng, làm nền tảng cho phát triển, kiểm thử và nghiệm thu UAT |
-| Phạm vi loại trừ | Hạ tầng triển khai, kế hoạch dự án, kế hoạch đào tạo người dùng cuối |
+| Mục tiêu | Ghi rõ nghiệp vụ hệ thống quản lý hậu mãi (ngành quốc phòng) để lập trình, kiểm thử và nghiệm thu với người dùng |
+| Phạm vi loại trừ | Chi tiết máy chủ production, kế hoạch dự án, kế hoạch đào tạo người dùng cuối |
 
 ### 1.1 Cách đọc tài liệu
 
-- Mỗi nhóm màn được mô tả theo bố cục: **Mục tiêu nghiệp vụ → User story chính → Quy trình thao tác → Đầu vào / Đầu ra → Ràng buộc nghiệp vụ → Biểu mẫu liên quan**.
-- Yêu cầu được đánh mã `BR-<MODULE>-<số thứ tự>` để dễ tham chiếu trong [SRS](SRS-ASMS.md) và checklist UAT.
+- Mỗi nhóm màn gồm: **Mục tiêu → Nhu cầu người dùng → Cách thao tác → Đầu vào / Đầu ra → Ràng buộc → Biểu mẫu liên quan**.
+- Yêu cầu có mã `BR-<MODULE>-<số>` để tra cứu trong [SRS](SRS-ASMS.md) và [checklist nghiệm thu](uat-checklist.md).
 - Tài liệu sử dụng tiếng Việt có dấu, các thuật ngữ chuyên ngành quân đội tham khảo trong mục [9.1 Thuật ngữ và viết tắt](#91-thuật-ngữ-và-viết-tắt).
 
 ---
@@ -55,7 +56,7 @@
 
 ### 2.1 Bối cảnh
 
-ASMS được xây dựng để hỗ trợ đơn vị quân đội/đối tác quốc phòng quản lý toàn bộ vòng đời sản phẩm sau khi bàn giao cho khách hàng (after-sales): từ lúc ký hợp đồng, tổ chức bàn giao, huấn luyện sử dụng, bảo hành, sửa chữa, đến khi thanh lý hoặc đưa vào trang bị ổn định. Hệ thống thay thế phương thức quản lý phân tán bằng văn bản giấy, Excel rời rạc bằng một nền tảng tập trung, có dữ liệu liên thông và phân quyền theo vai trò.
+ASMS giúp đơn vị quân đội và đối tác quốc phòng quản lý **sau khi bàn giao sản phẩm**: ký hợp đồng, bàn giao, huấn luyện, bảo hành, sửa chữa, thanh lý hoặc đưa vào trang bị ổn định. Thay cho giấy tờ và file Excel rời, dữ liệu nằm **một chỗ**, **nối với nhau** và **mỗi vai trò chỉ thấy / làm phần việc của mình**.
 
 ### 2.2 Mục tiêu hệ thống
 
@@ -63,14 +64,14 @@ ASMS được xây dựng để hỗ trợ đơn vị quân đội/đối tác q
 |----------|-------|
 | MT-01 | Quản lý vòng đời hợp đồng tập trung: tạo - thực hiện - bàn giao - thanh lý |
 | MT-02 | Quản lý quy trình bàn giao và huấn luyện theo 5 bước nghiệp vụ chuẩn |
-| MT-03 | Quản lý phiếu bảo hành và sửa chữa theo 6 bước SLA |
-| MT-04 | Quản lý sản phẩm quốc phòng theo BOM, thông số kỹ thuật và lịch sử thay đổi |
-| MT-05 | Quản lý vật tư, điều chuyển vật tư, hỗ trợ truy vết bằng mã serial / barcode / QR / RFID |
+| MT-03 | Quản lý phiếu bảo hành và sửa chữa theo 6 bước, có thời hạn xử lý (SLA) |
+| MT-04 | Quản lý sản phẩm: định mức vật tư (BOM), thông số kỹ thuật, lịch sử thay đổi |
+| MT-05 | Quản lý vật tư, điều chuyển kho; tra cứu bằng serial / mã vạch / QR / RFID |
 | MT-06 | Quản lý đào tạo, học viên, lịch buổi học gắn với hợp đồng |
 | MT-07 | Quản lý CRM khách hàng: hồ sơ, đầu mối, hoạt động chăm sóc, xếp hạng |
-| MT-08 | Cung cấp Dashboard và Báo cáo điều hành theo năm, theo khách hàng, theo đơn vị |
+| MT-08 | Màn tổng quan (Dashboard) và báo cáo theo năm, khách hàng, đơn vị |
 | MT-09 | Quản lý đề tài nghiên cứu khoa học và công việc tác nghiệp |
-| MT-10 | Đảm bảo phân quyền theo vai trò và bảo mật xác thực JWT |
+| MT-10 | Phân quyền theo vai trò; đăng nhập an toàn (JWT) |
 
 ### 2.3 Bốn luồng nghiệp vụ chính
 
@@ -81,23 +82,23 @@ ASMS được xây dựng để hỗ trợ đơn vị quân đội/đối tác q
 
 ### 2.4 Các nhóm hỗ trợ
 
-- **Master data**: người dùng, vai trò, danh mục dữ liệu nền (`DataDefinition`), cấu hình thông báo người dùng.
-- **Báo cáo và Dashboard**: tổng hợp đa module theo năm.
-- **Vật tư và BOM**: quản lý kho, định mức nguyên vật liệu cho sản phẩm.
+- **Danh mục gốc:** người dùng, vai trò, danh mục nền (`DataDefinition`), cài đặt thông báo.
+- **Báo cáo và Dashboard:** gộp số liệu nhiều phần theo năm.
+- **Vật tư và BOM:** kho và định mức vật tư cho từng sản phẩm.
 - **Đề tài nghiên cứu**: quản lý đề tài NCKH gắn công việc.
 
 ---
 
 ## 3. Đối tượng sử dụng và vai trò
 
-Hệ thống định nghĩa 5 vai trò người dùng. Phân quyền truy cập màn hình được quy định trong [src/hooks/use-role.tsx](../src/hooks/use-role.tsx) và phân quyền API trong các module backend.
+Hệ thống có **5 vai trò**. Ai vào được màn nào: [src/hooks/use-role.tsx](../src/hooks/use-role.tsx). Ai gọi được API nào: từng module trên máy chủ.
 
 | Vai trò (`code`) | Tên hiển thị | Mục tiêu sử dụng chính |
 |------------------|--------------|------------------------|
 | `admin` | Quản trị | Quản trị toàn hệ thống, người dùng, phân quyền, danh mục nền |
 | `manager` | Quản lý | Điều hành nghiệp vụ, theo dõi tiến độ, phê duyệt, báo cáo, quản lý khách hàng và hợp đồng |
 | `technician` | Kỹ thuật viên | Trực tiếp xử lý bảo hành, vật tư, sản phẩm, bàn giao, đào tạo, công việc tác nghiệp, đề tài |
-| `viewer` | Xem | Theo dõi dữ liệu chỉ-đọc theo lĩnh vực phụ trách (lãnh đạo, kiểm soát) |
+| `viewer` | Xem | Chỉ xem, không sửa (lãnh đạo, giám sát) |
 | `sales` | Nhân viên bán hàng | Quản lý khách hàng, hợp đồng, hoạt động chăm sóc, tài liệu, báo cáo |
 
 ### 3.1 Bản đồ truy cập màn hình theo vai trò
@@ -120,7 +121,13 @@ Hệ thống định nghĩa 5 vai trò người dùng. Phân quyền truy cập 
 | `/tai-lieu` | Tài liệu | x | x | x | x | x |
 | `/cai-dat` | Cài đặt hệ thống | x | - | - | - | - |
 
-> **Lưu ý:** `x` là cho phép truy cập, `-` là không cho phép. Quyền truy cập nội dung con (CRUD trên dữ liệu) được quy định chi tiết hơn ở backend - xem [SRS-ASMS.md mục 8](SRS-ASMS.md#8-ma-trận-rbac-chi-tiết).
+> **Lưu ý:** `x` = được vào màn; `-` = không vào. Ai được **thêm / sửa / xóa** dữ liệu chi tiết hơn ở máy chủ — xem [SRS mục 7 — Ma trận RBAC](SRS-ASMS.md#7-ma-trận-rbac).
+
+### 3.2 Quyền trên màn hình và quyền trên API
+
+- Bảng mục 3.1 theo [`ROUTE_PERMISSIONS`](../src/hooks/use-role.tsx) trên trang web (có **RoleSwitcher** thử vai trò — không thay đăng nhập thật).
+- **Đăng nhập (JWT) và phân quyền trên máy chủ** mới là chuẩn: một số API cho `viewer` **đọc** (ví dụ `GET /api/v1/handovers`) dù màn tương ứng không mở cho `viewer`. Client chính thức chỉ nên gọi API đúng vai trò trên token; chi tiết: [SRS mục 7](SRS-ASMS.md#7-ma-trận-rbac).
+- Vai trò `sales` thiếu trong vài checklist cũ; đủ năm vai trò: SRS và [uat-checklist.md](uat-checklist.md).
 
 ---
 
@@ -156,11 +163,11 @@ flowchart LR
   L --> S2
 ```
 
-### 4.2 Quan hệ chính giữa các thực thể nghiệp vụ
+### 4.2 Quan hệ chính giữa các loại dữ liệu
 
 - Một khách hàng có nhiều hợp đồng, nhiều đầu mối liên hệ và nhiều hoạt động chăm sóc.
 - Một hợp đồng có nhiều đợt bàn giao, nhiều khóa đào tạo, nhiều phiếu bảo hành, nhiều tài liệu.
-- Một hợp đồng gắn nhiều sản phẩm và một sản phẩm có thể gắn nhiều hợp đồng (quan hệ n-n thông qua `ContractProduct`), kèm `specValues` riêng theo từng hợp đồng.
+- Một hợp đồng có nhiều sản phẩm; một sản phẩm có thể nằm trên nhiều hợp đồng (bảng `ContractProduct`), mỗi hợp đồng có `specValues` riêng.
 - Một sản phẩm có nhiều vật tư cấu thành (BOM) qua bảng `ProductBom`.
 - Một phiếu bảo hành luôn gắn khách hàng, có thể gắn hợp đồng và sản phẩm.
 - Một khóa đào tạo có nhiều học viên (`Trainee`) và nhiều buổi học (`ScheduleSession`).
@@ -175,15 +182,15 @@ flowchart LR
 **Mã yêu cầu:** `BR-DSH`
 **Đường dẫn:** `/`
 **Mã màn:** `DSH`
-**File frontend:** [src/pages/Index.tsx](../src/pages/Index.tsx)
+**File giao diện:** [src/pages/Index.tsx](../src/pages/Index.tsx)
 
 #### 5.1.1 Mục tiêu nghiệp vụ
 
-Cung cấp bức tranh điều hành tổng thể theo thời gian gần thực, hỗ trợ lãnh đạo và quản lý theo dõi nhanh các chỉ số nóng: hợp đồng, bàn giao, bảo hành, sản phẩm, đào tạo, vật tư, doanh thu, khách hàng và cảnh báo.
+Cho lãnh đạo và quản lý **nhìn nhanh** hợp đồng, bàn giao, bảo hành, sản phẩm, đào tạo, vật tư, doanh thu, khách hàng và **cảnh báo** — số liệu cập nhật theo dữ liệu thật trên hệ thống.
 
-#### 5.1.2 User story chính
+#### 5.1.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-DSH-01 | Là người dùng đã đăng nhập, tôi muốn lọc số liệu theo năm, quý, khách hàng để xem dữ liệu phù hợp nhu cầu báo cáo |
 | BR-DSH-02 | Là người dùng, tôi muốn xem 8 nhóm tab dashboard (Tổng quan, Khách hàng, Doanh thu, Dự án, Sản phẩm, Bảo hành, Vật tư, Cảnh báo) |
@@ -202,7 +209,7 @@ Cung cấp bức tranh điều hành tổng thể theo thời gian gần thực,
 
 | Đầu vào | Đầu ra |
 |--------|--------|
-| Năm, quý, khách hàng (filter) | KPI card theo từng nhóm |
+| Năm, quý, khách hàng (bộ lọc) | Thẻ chỉ số theo từng nhóm |
 | Vai trò người dùng | Biểu đồ xu hướng theo tháng |
 |  | Bảng danh sách hợp đồng / sản phẩm / khiếu nại / vật tư |
 |  | Bảng tổng hợp cảnh báo |
@@ -210,21 +217,21 @@ Cung cấp bức tranh điều hành tổng thể theo thời gian gần thực,
 #### 5.1.5 Ràng buộc
 
 - Dashboard chỉ hiển thị dữ liệu mà vai trò người dùng có quyền xem.
-- Cảnh báo được suy luận từ dữ liệu tổng hợp, hiện tại chưa có API cảnh báo riêng.
+- Cảnh báo **tính trên màn hình** từ số liệu đã gộp; chưa có API cảnh báo riêng.
 - Tab `Cảnh báo` luôn hiển thị tối thiểu 1 dòng (kể cả "không có cảnh báo").
 
 #### 5.1.6 Tab Dashboard chi tiết
 
-| Tab | Mục đích | Widget chính |
-|-----|----------|--------------|
-| Tổng quan | KPI điều hành tổng thể | StatCard, ProgressWidget, PieChart, TrendChart, bảng hợp đồng |
-| Khách hàng | Theo dõi sản lượng và doanh thu theo khách hàng | CustomerProductChart, CustomerRevenueChart, PieChart, bảng tổng hợp |
-| Doanh thu | Theo dõi doanh thu theo khách hàng và xu hướng | StatCard, RevenueChart, TrendChart, bảng chi tiết doanh thu |
-| Dự án | Theo dõi tiến độ hợp đồng / bàn giao / đào tạo | ProgressWidget, PieChart, bảng hợp đồng / bàn giao / huấn luyện |
-| Sản phẩm | Theo dõi vòng đời sản phẩm | StatCard, PieChart trạng thái, bảng sản phẩm |
-| Bảo hành | Theo dõi ticket và SLA | ComplaintWidget, PieChart loại ticket, bảng khiếu nại |
-| Vật tư | Theo dõi kho và điều chuyển | StatCard, PAKDWidget, bảng vật tư |
-| Cảnh báo | Tổng hợp cảnh báo theo rule | StatCard cảnh báo, danh sách cảnh báo, bảng tổng hợp |
+| Tab | Mục đích | Khối hiển thị chính |
+|-----|----------|---------------------|
+| Tổng quan | Chỉ số điều hành tổng thể | Thẻ số, tiến độ, biểu đồ tròn / xu hướng, bảng hợp đồng |
+| Khách hàng | Sản lượng và doanh thu theo khách hàng | Biểu đồ sản phẩm / doanh thu, bảng tổng hợp |
+| Doanh thu | Doanh thu và xu hướng | Thẻ số, biểu đồ doanh thu, bảng chi tiết |
+| Dự án | Tiến độ hợp đồng, bàn giao, đào tạo | Tiến độ, biểu đồ, bảng hợp đồng / bàn giao / huấn luyện |
+| Sản phẩm | Vòng đời sản phẩm | Thẻ số, biểu đồ trạng thái, bảng sản phẩm |
+| Bảo hành | Phiếu bảo hành và thời hạn xử lý | Khối khiếu nại, biểu đồ loại phiếu, bảng khiếu nại |
+| Vật tư | Kho và điều chuyển | Thẻ số, khối PAKD, bảng vật tư |
+| Cảnh báo | Cảnh báo theo quy tắc | Thẻ cảnh báo, danh sách, bảng tổng hợp |
 
 ---
 
@@ -233,15 +240,15 @@ Cung cấp bức tranh điều hành tổng thể theo thời gian gần thực,
 **Mã yêu cầu:** `BR-HD`
 **Đường dẫn:** `/hop-dong`
 **Mã màn:** `HD`
-**File frontend:** [src/pages/Contracts.tsx](../src/pages/Contracts.tsx), [src/components/details/ContractDetailDialog.tsx](../src/components/details/ContractDetailDialog.tsx), [src/components/details/ContractEditDialog.tsx](../src/components/details/ContractEditDialog.tsx), [src/components/details/ContractProductDetailDialog.tsx](../src/components/details/ContractProductDetailDialog.tsx)
+**File giao diện:** [src/pages/Contracts.tsx](../src/pages/Contracts.tsx), [src/components/details/ContractDetailDialog.tsx](../src/components/details/ContractDetailDialog.tsx), [src/components/details/ContractEditDialog.tsx](../src/components/details/ContractEditDialog.tsx), [src/components/details/ContractProductDetailDialog.tsx](../src/components/details/ContractProductDetailDialog.tsx)
 
 #### 5.2.1 Mục tiêu nghiệp vụ
 
 Quản lý toàn bộ vòng đời hợp đồng: từ tạo mới, điều chỉnh, gắn sản phẩm, gắn tài liệu, gắn khóa đào tạo, theo dõi tiến độ đến thanh lý.
 
-#### 5.2.2 User story chính
+#### 5.2.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-HD-01 | Là nhân viên bán hàng, tôi muốn tạo mới hợp đồng với đầy đủ thông tin khách hàng, giá trị, thời gian, bảo hành và điều khoản |
 | BR-HD-02 | Là quản lý, tôi muốn xem danh sách hợp đồng theo trạng thái (`Dự thảo`, `Đang thực hiện`, `Hoàn thành`, `Trễ hạn`, `Đã thanh lý`) |
@@ -255,10 +262,10 @@ Quản lý toàn bộ vòng đời hợp đồng: từ tạo mới, điều ch�
 
 1. Người dùng truy cập `/hop-dong`.
 2. Có thể tìm kiếm theo mã, tiêu đề, lọc theo trạng thái, mở dialog tạo mới.
-3. Trong dialog tạo: nhập thông tin khách hàng (chọn từ master data), giá trị, ngày bắt đầu, ngày kết thúc, ngày hết bảo hành, điều khoản (textarea), gắn sản phẩm (chọn nhiều), gắn tài liệu, gắn khóa đào tạo.
+3. Trong dialog tạo: nhập thông tin khách hàng (chọn từ danh mục gốc), giá trị, ngày bắt đầu, ngày kết thúc, ngày hết bảo hành, điều khoản (textarea), gắn sản phẩm (chọn nhiều), gắn tài liệu, gắn khóa đào tạo.
 4. Khi lưu, hệ thống tạo hợp đồng (`POST /contracts`), sau đó đồng bộ danh sách sản phẩm gắn hợp đồng (`PUT /contracts/:id/products`).
 5. Người dùng có thể mở chi tiết để xem 5 tab và mở popup chỉnh sửa hoặc xóa.
-6. Trong tab `Danh mục sản phẩm`, người dùng nhấn `Chi tiết` để mở `ContractProductDetailDialog` xem 4 tab: Tổng quan (chỉ-đọc), Linh kiện (BOM, chỉ-đọc), Thông số (chỉnh sửa `specValues`), Tài liệu (chỉ-đọc).
+6. Trong tab `Danh mục sản phẩm`, người dùng nhấn `Chi tiết` để mở `ContractProductDetailDialog` xem 4 tab: Tổng quan (chỉ xem), Linh kiện (BOM, chỉ xem), Thông số (chỉnh sửa `specValues`), Tài liệu (chỉ xem).
 
 #### 5.2.4 Đầu vào / Đầu ra
 
@@ -289,13 +296,13 @@ Quản lý toàn bộ vòng đời hợp đồng: từ tạo mới, điều ch�
 **Mã yêu cầu:** `BR-BG`
 **Đường dẫn:** `/ban-giao`
 **Mã màn:** `BG`
-**File frontend:** [src/pages/Handover.tsx](../src/pages/Handover.tsx), [src/components/handover/HandoverUpsertDialog.tsx](../src/components/handover/HandoverUpsertDialog.tsx)
+**File giao diện:** [src/pages/Handover.tsx](../src/pages/Handover.tsx), [src/components/handover/HandoverUpsertDialog.tsx](../src/components/handover/HandoverUpsertDialog.tsx)
 
 #### 5.3.1 Mục tiêu nghiệp vụ
 
 Quản lý xuyên suốt quy trình bàn giao và huấn luyện đi kèm sản phẩm/hợp đồng theo 5 bước nghiệp vụ chuẩn của ngành quốc phòng.
 
-#### 5.3.2 Workflow chuẩn 5 bước
+#### 5.3.2 Quy trình chuẩn 5 bước
 
 ```mermaid
 flowchart LR
@@ -305,12 +312,12 @@ flowchart LR
   B4 --> B5[5. Huan luyen]
 ```
 
-#### 5.3.3 User story chính
+#### 5.3.3 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-BG-01 | Là kỹ thuật viên, tôi muốn tạo mới một đợt bàn giao gắn với hợp đồng và khách hàng |
-| BR-BG-02 | Là kỹ thuật viên, tôi muốn cập nhật bước hiện tại (1..5) bằng dropdown hiển thị tên bước thay vì số |
+| BR-BG-02 | Là kỹ thuật viên, tôi muốn cập nhật bước hiện tại (1..5) bằng danh sách chọn hiển thị tên bước thay vì số |
 | BR-BG-03 | Là quản lý, tôi muốn theo dõi đợt bàn giao theo trạng thái: `Chưa bắt đầu`, `Đang thực hiện`, `Hoàn thành`, `Trễ hạn` |
 | BR-BG-04 | Là quản lý, tôi muốn ghi nhận `completedAt` khi đợt chuyển sang `Hoàn thành` |
 | BR-BG-05 | Là kỹ thuật viên, tôi muốn quản lý nhanh các khóa huấn luyện liên quan ngay trong màn bàn giao (tạo, sửa, xóa) |
@@ -321,12 +328,12 @@ flowchart LR
 2. Hai tab chính: `Bàn giao` (HandoverRecord) và `Huấn luyện` (TrainingCourse).
 3. Trong tab `Bàn giao`:
    - Bộ lọc theo trạng thái, tìm kiếm, mở dialog tạo/sửa.
-   - Form: chọn hợp đồng (từ master), số lượng sản phẩm, bước hiện tại (dropdown), trạng thái, ngày bắt đầu, hạn hoàn thành.
+   - Form: chọn hợp đồng (từ master), số lượng sản phẩm, bước hiện tại (danh sách chọn), trạng thái, ngày bắt đầu, hạn hoàn thành.
 4. Trong tab `Huấn luyện`:
    - Bộ lọc theo trạng thái, tìm kiếm, mở dialog tạo nhanh.
    - Có nút sửa/xóa cho từng dòng đào tạo.
    - Form tạo: chọn hợp đồng, khách hàng, giảng viên, tiêu đề, loại, ngày bắt đầu / kết thúc, số người tham gia, trạng thái.
-5. Diagram workflow ở đầu trang giúp định hình bước đang ở đâu.
+5. Sơ đồ quy trình ở đầu trang giúp định hình bước đang ở đâu.
 
 #### 5.3.5 Ràng buộc
 
@@ -350,13 +357,13 @@ flowchart LR
 **Mã yêu cầu:** `BR-BH`
 **Đường dẫn:** `/bao-hanh`
 **Mã màn:** `BH`
-**File frontend:** [src/pages/Warranty.tsx](../src/pages/Warranty.tsx), [src/components/details/WarrantyDetailDialog.tsx](../src/components/details/WarrantyDetailDialog.tsx)
+**File giao diện:** [src/pages/Warranty.tsx](../src/pages/Warranty.tsx), [src/components/details/WarrantyDetailDialog.tsx](../src/components/details/WarrantyDetailDialog.tsx)
 
 #### 5.4.1 Mục tiêu nghiệp vụ
 
-Quản lý đầy đủ vòng đời phiếu bảo hành / sửa chữa / bảo trì từ lúc tiếp nhận đến đóng phiếu, có gắn SLA và phân loại ưu tiên.
+Quản lý phiếu bảo hành / sửa chữa / bảo trì từ tiếp nhận đến đóng phiếu; có **thời hạn xử lý (SLA)** và **mức ưu tiên**.
 
-#### 5.4.2 Workflow chuẩn 6 bước
+#### 5.4.2 Quy trình chuẩn 6 bước
 
 ```mermaid
 flowchart LR
@@ -368,12 +375,12 @@ flowchart LR
   W6 -. khong dat .- W4
 ```
 
-#### 5.4.3 User story chính
+#### 5.4.3 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
-| BR-BH-01 | Là kỹ thuật viên, tôi muốn tạo mới phiếu bảo hành/sửa chữa nhanh, chỉ với các trường input cần thiết (không hiển thị workflow 6 bước trong form tạo) |
-| BR-BH-02 | Là kỹ thuật viên, tôi muốn cập nhật loại phiếu (`Bảo hành`, `Sửa chữa`, `Bảo trì`), mức độ ưu tiên, bước workflow |
+| BR-BH-01 | Là kỹ thuật viên, tôi muốn tạo phiếu nhanh, chỉ các ô nhập cần thiết (form tạo **không** hiện 6 bước quy trình) |
+| BR-BH-02 | Là kỹ thuật viên, tôi muốn sửa loại phiếu (`Bảo hành`, `Sửa chữa`, `Bảo trì`), mức ưu tiên, bước quy trình |
 | BR-BH-03 | Là quản lý, tôi muốn theo dõi danh sách phiếu theo trạng thái và mức độ |
 | BR-BH-04 | Là quản lý, tôi muốn gán phiếu cho người xử lý (`assigneeId`) |
 | BR-BH-05 | Là quản lý, tôi muốn xóa phiếu lỗi (xóa mềm) |
@@ -383,8 +390,8 @@ flowchart LR
 
 1. Người dùng truy cập `/bao-hanh`.
 2. Bộ lọc theo trạng thái, tìm kiếm theo mã/khách hàng/thiết bị.
-3. Tạo phiếu mới: form chỉ chứa input (khách hàng, thiết bị, sự cố, nguồn, loại, ưu tiên, SLA giờ).
-4. Mở chi tiết phiếu: hiển thị workflow 6 bước, các info card, form chỉnh sửa.
+3. Tạo phiếu mới: form chỉ có các ô nhập (khách hàng, thiết bị, sự cố, nguồn, loại, ưu tiên, số giờ SLA).
+4. Mở chi tiết phiếu: hiện 6 bước quy trình, các thẻ thông tin, form sửa.
 5. Khi đóng phiếu: chuyển trạng thái `Hoàn thành` và ghi `resolvedAt`.
 
 #### 5.4.5 Ràng buộc
@@ -409,15 +416,15 @@ flowchart LR
 **Mã yêu cầu:** `BR-KH`
 **Đường dẫn:** `/khach-hang`
 **Mã màn:** `KH`
-**File frontend:** [src/pages/Customers.tsx](../src/pages/Customers.tsx)
+**File giao diện:** [src/pages/Customers.tsx](../src/pages/Customers.tsx)
 
 #### 5.5.1 Mục tiêu nghiệp vụ
 
 Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt động chăm sóc và xếp hạng (loyalty), phục vụ tái ký kết hợp đồng và chăm sóc lâu dài.
 
-#### 5.5.2 User story chính
+#### 5.5.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-KH-01 | Là nhân viên bán hàng, tôi muốn tạo mới khách hàng với mã, tên, liên hệ chính, điện thoại, email, địa chỉ |
 | BR-KH-02 | Là nhân viên bán hàng, tôi muốn quản lý nhiều đầu mối liên hệ (Contact) cho mỗi khách hàng và đánh dấu liên hệ chính |
@@ -428,8 +435,8 @@ Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt 
 #### 5.5.3 Quy trình thao tác
 
 1. Truy cập `/khach-hang`.
-2. 4 tab: `Hoạt động`, `Đầu mối`, `Khách hàng`, `Loyalty`.
-3. CRUD trên từng tab. Hoạt động và đầu mối có filter theo customer.
+2. 4 tab: `Hoạt động`, `Đầu mối`, `Khách hàng`, `Xếp hạng khách hàng`.
+3. thêm / sửa / xóa trên từng tab. Hoạt động và đầu mối có filter theo customer.
 
 #### 5.5.4 Ràng buộc
 
@@ -444,15 +451,15 @@ Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt 
 **Mã yêu cầu:** `BR-SP`
 **Đường dẫn:** `/san-pham`
 **Mã màn:** `SP`
-**File frontend:** [src/pages/Products.tsx](../src/pages/Products.tsx), [src/components/details/ProductDetailDialog.tsx](../src/components/details/ProductDetailDialog.tsx), [src/components/details/CreateProductDialog.tsx](../src/components/details/CreateProductDialog.tsx)
+**File giao diện:** [src/pages/Products.tsx](../src/pages/Products.tsx), [src/components/details/ProductDetailDialog.tsx](../src/components/details/ProductDetailDialog.tsx), [src/components/details/CreateProductDialog.tsx](../src/components/details/CreateProductDialog.tsx)
 
 #### 5.6.1 Mục tiêu nghiệp vụ
 
 Quản lý danh mục sản phẩm quốc phòng theo vòng đời sản xuất - nghiệm thu - trang bị, kèm BOM, thông số kỹ thuật, tài liệu và lịch sử thay đổi.
 
-#### 5.6.2 User story chính
+#### 5.6.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-SP-01 | Là kỹ thuật viên, tôi muốn tạo mới sản phẩm với mã, tên, phân loại, mô tả, đơn vị sử dụng, nhà sản xuất, năm sản xuất |
 | BR-SP-02 | Là kỹ thuật viên, tôi muốn định nghĩa thông số kỹ thuật (`specs`: danh sách `{key, label, unit?}`) như khung mẫu cho hợp đồng điền giá trị |
@@ -468,7 +475,7 @@ Quản lý danh mục sản phẩm quốc phòng theo vòng đời sản xuất 
 - `Product.code` duy nhất.
 - `Product.specs` là khung định nghĩa, không chứa giá trị.
 - `ContractProduct.specValues` chứa giá trị cụ thể theo từng hợp đồng.
-- BOM dùng quan hệ `ProductBom` với khóa `(productId, materialId)` duy nhất; sửa số lượng = upsert.
+- BOM qua bảng `ProductBom`; mỗi cặp sản phẩm–vật tư chỉ một dòng; đổi số lượng = cập nhật hoặc thêm mới.
 - Khi xóa sản phẩm (mềm), các BOM và liên kết hợp đồng vẫn giữ.
 
 #### 5.6.4 Vòng đời sản phẩm
@@ -488,15 +495,15 @@ flowchart LR
 **Mã yêu cầu:** `BR-VT`
 **Đường dẫn:** `/vat-tu`
 **Mã màn:** `VT`
-**File frontend:** [src/pages/Materials.tsx](../src/pages/Materials.tsx), [src/components/details/MaterialDetailDialog.tsx](../src/components/details/MaterialDetailDialog.tsx), [src/components/scanner/BarcodeScannerDialog.tsx](../src/components/scanner/BarcodeScannerDialog.tsx)
+**File giao diện:** [src/pages/Materials.tsx](../src/pages/Materials.tsx), [src/components/details/MaterialDetailDialog.tsx](../src/components/details/MaterialDetailDialog.tsx), [src/components/scanner/BarcodeScannerDialog.tsx](../src/components/scanner/BarcodeScannerDialog.tsx)
 
 #### 5.7.1 Mục tiêu nghiệp vụ
 
 Quản lý nhập kho, tồn kho, điều chuyển vật tư phục vụ bàn giao, sửa chữa và bảo hành. Hỗ trợ truy vết bằng barcode / QR / RFID / serial.
 
-#### 5.7.2 User story chính
+#### 5.7.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-VT-01 | Là kỹ thuật viên, tôi muốn nhập vật tư mới (loại định danh hoặc tiêu hao), nhập tên, mã, số lượng, đơn vị, kho |
 | BR-VT-02 | Là kỹ thuật viên, tôi muốn tạo phiếu điều chuyển vật tư từ kho A sang đích B, theo loại (`contract`, `warranty`, `repair`) |
@@ -522,15 +529,15 @@ Quản lý nhập kho, tồn kho, điều chuyển vật tư phục vụ bàn gi
 **Mã yêu cầu:** `BR-DT`
 **Đường dẫn:** `/dao-tao`, `/dao-tao/:id`
 **Mã màn:** `DT`
-**File frontend:** [src/pages/Training.tsx](../src/pages/Training.tsx), [src/pages/TrainingDetail.tsx](../src/pages/TrainingDetail.tsx)
+**File giao diện:** [src/pages/Training.tsx](../src/pages/Training.tsx), [src/pages/TrainingDetail.tsx](../src/pages/TrainingDetail.tsx)
 
 #### 5.8.1 Mục tiêu nghiệp vụ
 
 Quản lý các khóa huấn luyện đi kèm hợp đồng/bàn giao: kế hoạch, học viên, lịch buổi học, đánh giá kết quả.
 
-#### 5.8.2 User story chính
+#### 5.8.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-DT-01 | Là kỹ thuật viên, tôi muốn tạo mới khóa đào tạo gắn hợp đồng và khách hàng |
 | BR-DT-02 | Là kỹ thuật viên, tôi muốn quản lý danh sách học viên (`Trainee`): họ tên, đơn vị, cấp bậc, điểm danh, điểm số |
@@ -551,20 +558,20 @@ Quản lý các khóa huấn luyện đi kèm hợp đồng/bàn giao: kế ho�
 **Mã yêu cầu:** `BR-TL`
 **Đường dẫn:** `/tai-lieu`
 **Mã màn:** `TL`
-**File frontend:** [src/pages/Documents.tsx](../src/pages/Documents.tsx)
+**File giao diện:** [src/pages/Documents.tsx](../src/pages/Documents.tsx)
 
 #### 5.9.1 Mục tiêu nghiệp vụ
 
-Lưu trữ và truy xuất tài liệu vận hành hậu mãi: hợp đồng, kỹ thuật, đào tạo, chính sách, báo cáo. Hỗ trợ upload file thực sự (multipart) và liên kết theo thực thể.
+Lưu và tìm tài liệu hậu mãi: hợp đồng, kỹ thuật, đào tạo, chính sách, báo cáo. **Tải file lên** (gửi dạng multipart) và **gắn** với hợp đồng, sản phẩm, khóa đào tạo, v.v.
 
-#### 5.9.2 User story chính
+#### 5.9.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-TL-01 | Là người dùng, tôi muốn upload tài liệu (PDF/DOC/XLS/IMG) lên hệ thống |
 | BR-TL-02 | Là người dùng, tôi muốn gán tài liệu cho thực thể (hợp đồng / sản phẩm / khóa đào tạo / đề tài / khách hàng) |
 | BR-TL-03 | Là người dùng, tôi muốn lọc tài liệu theo nhóm (`Hợp đồng`, `Kỹ thuật`, `Đào tạo`, `Chính sách`, `Báo cáo`, `Khác`) |
-| BR-TL-04 | Là quản lý, tôi muốn chỉnh sửa metadata tài liệu (tên, mô tả, tag) |
+| BR-TL-04 | Là quản lý, tôi muốn chỉnh sửa thông tin mô tả tài liệu (tên, mô tả, tag) |
 | BR-TL-05 | Là quản lý, tôi muốn xóa mềm tài liệu lỗi |
 
 #### 5.9.3 Ràng buộc
@@ -580,15 +587,15 @@ Lưu trữ và truy xuất tài liệu vận hành hậu mãi: hợp đồng, k�
 **Mã yêu cầu:** `BR-BC`
 **Đường dẫn:** `/bao-cao`
 **Mã màn:** `BC`
-**File frontend:** [src/pages/Reports.tsx](../src/pages/Reports.tsx)
+**File giao diện:** [src/pages/Reports.tsx](../src/pages/Reports.tsx)
 
 #### 5.10.1 Mục tiêu nghiệp vụ
 
-Cung cấp báo cáo tổng hợp theo năm phục vụ lãnh đạo điều hành và đối chiếu KPI.
+Báo cáo **gộp theo năm** cho lãnh đạo theo dõi và so sánh chỉ số.
 
-#### 5.10.2 User story chính
+#### 5.10.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-BC-01 | Là lãnh đạo, tôi muốn chọn năm và xem các tab: theo khách hàng, theo hợp đồng, theo sản phẩm, theo đơn vị, bảo hành |
 | BR-BC-02 | Là lãnh đạo, tôi muốn xem biểu đồ doanh thu theo khách hàng (`customer_breakdown`) |
@@ -598,24 +605,24 @@ Cung cấp báo cáo tổng hợp theo năm phục vụ lãnh đạo điều hà
 
 #### 5.10.3 Đầu ra
 
-API duy nhất `GET /api/v1/reports?year=YYYY` trả về aggregate gồm: `contracts`, `products`, `handovers`, `training_courses`, `warranties`, `trends.monthly`, `customer_breakdown`, `unit_performance`, `summary_delta`, `meta`.
+Một API `GET /api/v1/reports?year=YYYY` trả về số liệu gộp: `contracts`, `products`, `handovers`, `training_courses`, `warranties`, `trends.monthly`, `customer_breakdown`, `unit_performance`, `summary_delta`, `meta`.
 
 ---
 
 ### 5.11 Đề tài Nghiên cứu Khoa học
 
-**Mã yêu cầu:** `BR-DT`
+**Mã yêu cầu:** `BR-RD`
 **Đường dẫn:** `/de-tai`, `/de-tai/:id`
 **Mã màn:** `RD`
-**File frontend:** [src/pages/ResearchProjects.tsx](../src/pages/ResearchProjects.tsx), [src/pages/ResearchProjectDetail.tsx](../src/pages/ResearchProjectDetail.tsx)
+**File giao diện:** [src/pages/ResearchProjects.tsx](../src/pages/ResearchProjects.tsx), [src/pages/ResearchProjectDetail.tsx](../src/pages/ResearchProjectDetail.tsx)
 
 #### 5.11.1 Mục tiêu nghiệp vụ
 
 Quản lý đề tài NCKH: kế hoạch, ngân sách, hội đồng, sản phẩm đầu ra, công việc, hợp tác triển khai.
 
-#### 5.11.2 User story chính
+#### 5.11.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-RD-01 | Là quản lý, tôi muốn tạo mới đề tài với mã, tên, chủ nhiệm, đơn vị, nguồn kinh phí, thời gian, mô tả |
 | BR-RD-02 | Là quản lý, tôi muốn theo dõi tiến độ và ngân sách đề tài |
@@ -636,18 +643,18 @@ Quản lý đề tài NCKH: kế hoạch, ngân sách, hội đồng, sản ph�
 **Mã yêu cầu:** `BR-CV`
 **Đường dẫn:** `/cong-viec`
 **Mã màn:** `CV`
-**File frontend:** [src/pages/Tasks.tsx](../src/pages/Tasks.tsx)
+**File giao diện:** [src/pages/Tasks.tsx](../src/pages/Tasks.tsx)
 
 #### 5.12.1 Mục tiêu nghiệp vụ
 
-Quản lý công việc tác nghiệp dạng Kanban / List / Calendar. Có thể gắn với đề tài NCKH.
+Quản lý công việc dạng **bảng cột** (Kanban), **danh sách** hoặc **lịch**. Có thể gắn đề tài NCKH.
 
-#### 5.12.2 User story chính
+#### 5.12.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-CV-01 | Là kỹ thuật viên, tôi muốn tạo công việc với tiêu đề, mô tả, ưu tiên, loại, trạng thái, ngày bắt đầu, hạn |
-| BR-CV-02 | Là kỹ thuật viên, tôi muốn xem theo Kanban 4 cột (`todo`, `in_progress`, `review`, `completed`) hoặc List, hoặc Calendar |
+| BR-CV-02 | Là kỹ thuật viên, tôi muốn xem theo bảng 4 cột (`todo`, `in_progress`, `review`, `completed`), danh sách hoặc lịch |
 | BR-CV-03 | Là kỹ thuật viên, tôi muốn lọc theo ưu tiên, loại, tìm kiếm theo tiêu đề/người nhận/mã |
 | BR-CV-04 | Là kỹ thuật viên, tôi muốn xóa công việc không còn dùng |
 
@@ -665,15 +672,15 @@ Quản lý công việc tác nghiệp dạng Kanban / List / Calendar. Có thể
 **Mã yêu cầu:** `BR-CD`
 **Đường dẫn:** `/cai-dat`
 **Mã màn:** `CD`
-**File frontend:** [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx)
+**File giao diện:** [src/pages/SettingsPage.tsx](../src/pages/SettingsPage.tsx)
 
 #### 5.13.1 Mục tiêu nghiệp vụ
 
 Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai trò, danh mục dữ liệu, cấu hình thông báo.
 
-#### 5.13.2 User story chính
+#### 5.13.2 Nhu cầu người dùng chính
 
-| Mã | User story |
+| Mã | Nhu cần |
 |----|------------|
 | BR-CD-01 | Là quản trị viên, tôi muốn tạo mới người dùng với vai trò |
 | BR-CD-02 | Là quản trị viên, tôi muốn vô hiệu hóa người dùng (`status = inactive`) hoặc xóa mềm |
@@ -706,18 +713,18 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 | Khóa đào tạo | `TrainingCourse.code` | Tự sinh, duy nhất |
 | Tài liệu | `Document.code` | Tự sinh, duy nhất |
 
-### 6.2 Soft delete
+### 6.2 Xóa mềm
 
-- Mọi bảng nghiệp vụ có cột `deleted_at` (nullable) - khi xóa, hệ thống chỉ set `deleted_at = now()`, các API list mặc định lọc bỏ.
+- Hầu hết bảng có cột `deleted_at`. Khi “xóa”, hệ thống **đánh dấu thời điểm xóa**, không xóa hẳn; danh sách mặc định **ẩn** bản ghi đã đánh dấu.
 - Ngoại lệ:
-  - `ProductBom` - xóa cứng (do đã có khóa unique và phụ thuộc cascade từ `Product`).
-  - `UserNotificationPreference` - xóa cứng / upsert theo `(userId, key)`.
+  - `ProductBom` — xóa hẳn khỏi cơ sở dữ liệu.
+  - `UserNotificationPreference` — ghi đè hoặc xóa hẳn theo cặp `(userId, key)`.
 
-### 6.3 Audit metadata
+### 6.3 Thời gian và người thao tác
 
-- Mỗi bản ghi có `createdAt`, `updatedAt`.
-- Một số thực thể có `createdById` (Contract, Handover, CrmActivity), `assigneeId` (Warranty, Task), `instructorId` (TrainingCourse), `managerId` (ResearchProject), `ownerId` (Document).
-- Hệ thống chưa có bảng audit log riêng - đề xuất bổ sung trong phiên bản tiếp theo.
+- Mỗi bản ghi có `createdAt`, `updatedAt` (tạo / sửa lần cuối).
+- Một số loại dữ liệu lưu thêm ai tạo hoặc ai phụ trách: `createdById`, `assigneeId`, `instructorId`, `managerId`, `ownerId` (tùy bảng).
+- Chưa có **nhật ký thao tác riêng** — nên bổ sung sau.
 
 ### 6.4 Quy ước trạng thái mặc định
 
@@ -733,16 +740,16 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 | Khóa đào tạo | `planned` |
 | Học viên | `pending` (điểm danh) |
 | Buổi học | `planned` |
-| CRM activity | (không default - bắt buộc nhập) |
+| Hoạt động CRM | (không mặc định — phải chọn khi nhập) |
 | User | `active` |
 
-### 6.5 SLA bảo hành / sửa chữa
+### 6.5 Thời hạn xử lý phiếu bảo hành (SLA)
 
-- `Warranty.slaHours` được nhập khi tạo phiếu (tùy chọn).
-- Hệ thống tham chiếu `slaHours` và `createdAt` để tính phiếu trễ hạn (đề xuất rule cảnh báo).
-- Phiếu `cancelled` không tính trễ hạn.
+- Khi tạo phiếu có thể nhập `slaHours` (số giờ mục tiêu).
+- Có thể so `slaHours` với `createdAt` để biết phiếu trễ (quy tắc cảnh báo — đề xuất bổ sung).
+- Phiếu `cancelled` không tính trễ.
 
-### 6.6 Quan hệ hợp đồng - sản phẩm n-n
+### 6.6 Một hợp đồng — nhiều sản phẩm (và ngược lại)
 
 - Một sản phẩm có thể gắn nhiều hợp đồng.
 - Mỗi liên kết là một bản ghi `ContractProduct` riêng, có `quantity` và `specValues` riêng theo hợp đồng.
@@ -751,13 +758,13 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 ### 6.7 Đa ngôn ngữ
 
 - Hệ thống hiện ưu tiên tiếng Việt có dấu cho toàn bộ nhãn nghiệp vụ và thông báo người dùng.
-- Mã code, mã enum trong DB sử dụng tiếng Anh không dấu để đảm bảo tương thích.
+- Mã trong cơ sở dữ liệu (code, enum) dùng tiếng Anh không dấu để đồng bộ với phần mềm.
 
-### 6.8 Bảo mật và phân quyền
+### 6.8 Đăng nhập và phân quyền
 
-- JWT bearer token cho mọi endpoint (trừ `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/logout`).
-- Refresh token có hạn, lưu hash, được rotate khi refresh.
-- Phân quyền theo vai trò (RBAC) ở cả frontend (ẩn/hiện menu) và backend (chặn 403).
+- Hầu hết API cần **token đăng nhập** (trừ đăng nhập, đăng ký, làm mới token, đăng xuất).
+- Token làm mới có hạn, lưu dạng băm; mỗi lần làm mới thì cấp token mới.
+- Phân quyền theo vai trò: giao diện **ẩn menu**; máy chủ **trả 403** nếu không đủ quyền.
 
 ---
 
@@ -769,21 +776,21 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 | Hợp đồng | Khách hàng (n-1), Sản phẩm (n-n qua `ContractProduct`), Bàn giao, Đào tạo, Tài liệu, Bảo hành |
 | Chi tiết hợp đồng | Hợp đồng + Sản phẩm trong hợp đồng (`ContractProduct`) + Tài liệu + Khóa đào tạo + Bảo hành |
 | Bàn giao | Hợp đồng (n-1), Khách hàng (n-1), Người tạo (User) |
-| Bảo hành | Khách hàng (n-1), Hợp đồng (n-1, optional), Sản phẩm (n-1, optional), Người xử lý (User) |
+| Bảo hành | Khách hàng (bắt buộc); hợp đồng, sản phẩm, người xử lý (có thể để trống) |
 | Khách hàng | Hợp đồng (1-n), Đầu mối (1-n), Hoạt động CRM (1-n), Bàn giao, Bảo hành, Sản phẩm, Đào tạo, Tài liệu |
-| Sản phẩm | Hợp đồng (n-n qua `ContractProduct`), Khách hàng (n-1, optional), Vật tư (BOM qua `ProductBom`), Bảo hành, Tài liệu |
-| Vật tư | Sản phẩm (BOM, n-n qua `ProductBom`), Phiếu điều chuyển (1-n) |
+| Sản phẩm | Hợp đồng (nhiều-nhiều qua `ContractProduct`), khách hàng (tùy chọn), vật tư (BOM), bảo hành, tài liệu |
+| Vật tư | Sản phẩm (BOM), phiếu điều chuyển (một vật tư — nhiều phiếu) |
 | Đào tạo | Hợp đồng (n-1), Khách hàng (n-1), Giảng viên (User), Học viên (1-n), Lịch buổi học (1-n), Tài liệu |
-| Tài liệu | Owner (User), Khách hàng, Hợp đồng, Sản phẩm, Đề tài, Khóa đào tạo (đa quan hệ optional) |
-| Đề tài | Chủ nhiệm (User), Công việc (1-n), Tài liệu (1-n) |
-| Công việc | Đề tài (n-1, optional), Người nhận (User) |
+| Tài liệu | Người sở hữu, khách hàng, hợp đồng, sản phẩm, đề tài, khóa đào tạo (liên kết tùy chọn) |
+| Đề tài | Chủ nhiệm, công việc, tài liệu |
+| Công việc | Đề tài (tùy chọn), người được giao |
 | Cài đặt | User, Role, DataDefinition, UserNotificationPreference |
 
 ---
 
 ## 8. Tiêu chí nghiệm thu nghiệp vụ
 
-Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-When-Then** rút gọn.
+Tiêu chí **nghiệm thu với người dùng** từng nhóm chức năng. Mỗi dòng: **điều kiện → thao tác → kết quả mong đợi** (rút gọn).
 
 ### 8.1 Hợp đồng
 
@@ -797,14 +804,14 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 ### 8.2 Bàn giao
 
 - AC-BG-01 - Có thể tạo đợt bàn giao gắn hợp đồng.
-- AC-BG-02 - Có thể đổi bước hiện tại bằng dropdown hiển thị tên bước.
-- AC-BG-03 - Diagram workflow hiển thị đúng vị trí bước hiện tại.
+- AC-BG-02 - Có thể đổi bước hiện tại bằng danh sách chọn hiển thị tên bước.
+- AC-BG-03 - Sơ đồ quy trình hiển thị đúng vị trí bước hiện tại.
 - AC-BG-04 - Khi đổi sang `Hoàn thành`, `completedAt` được ghi lại.
 
 ### 8.3 Bảo hành
 
-- AC-BH-01 - Form `Tạo phiếu mới` chỉ hiển thị input, không hiển thị workflow 6 bước.
-- AC-BH-02 - Có thể chỉnh sửa loại phiếu, ưu tiên, bước workflow trong dialog chi tiết.
+- AC-BH-01 - Form `Tạo phiếu mới` chỉ có ô nhập, không hiện 6 bước quy trình.
+- AC-BH-02 - Trong chi tiết phiếu có thể sửa loại, ưu tiên, bước quy trình.
 - AC-BH-03 - Khi đóng phiếu, `resolvedAt` được ghi lại.
 
 ### 8.4 Sản phẩm
@@ -822,13 +829,13 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 
 ### 8.6 Khách hàng và CRM
 
-- AC-KH-01 - Có thể CRUD khách hàng, đầu mối, hoạt động.
+- AC-KH-01 - Có thể thêm / sửa / xóa khách hàng, đầu mối, hoạt động.
 - AC-KH-02 - Hoạt động chăm sóc lưu đầy đủ thời điểm và người tạo.
-- AC-KH-03 - Loyalty hiển thị đúng tổng giá trị hợp đồng.
+- AC-KH-03 - Tab xếp hạng khách hàng hiển thị đúng tổng giá trị hợp đồng.
 
 ### 8.7 Đào tạo
 
-- AC-DT-01 - Có thể CRUD học viên và buổi học trong khóa đào tạo.
+- AC-DT-01 - Có thể thêm / sửa / xóa học viên và buổi học trong khóa đào tạo.
 - AC-DT-02 - Có thể đổi nhanh trạng thái buổi học và điểm danh học viên.
 
 ### 8.8 Báo cáo
@@ -838,18 +845,18 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 
 ### 8.9 Dashboard
 
-- AC-DSH-01 - 8 tab hiển thị đúng dữ liệu live, không còn mock cho `Chi tiết DT theo HĐ`, `Danh sách SP`, `Khiếu nại`.
+- AC-DSH-01 - 8 tab hiển thị dữ liệu thật, không dùng số liệu giả cho `Chi tiết DT theo HĐ`, `Danh sách SP`, `Khiếu nại`.
 - AC-DSH-02 - Tab `Cảnh báo` luôn hiển thị danh sách phù hợp với chỉ số tổng hợp.
 - AC-DSH-03 - Bộ lọc năm/quý/khách hàng cập nhật toàn bộ tab.
 
 ### 8.10 Đề tài và Công việc
 
-- AC-RD-01 - Có thể CRUD đề tài, gắn công việc, quản lý ngân sách.
-- AC-CV-01 - Có thể CRUD công việc, đổi trạng thái Kanban.
+- AC-RD-01 - Có thể thêm / sửa / xóa đề tài, gắn công việc, quản lý ngân sách.
+- AC-CV-01 - Có thể thêm / sửa / xóa công việc, đổi trạng thái trên bảng cột.
 
 ### 8.11 Tài liệu
 
-- AC-TL-01 - Có thể upload file thật (multipart) và chỉnh sửa metadata.
+- AC-TL-01 - Có thể tải file lên (multipart) và sửa thông tin mô tả.
 - AC-TL-02 - Có thể gắn tài liệu với hợp đồng / sản phẩm / khóa đào tạo / đề tài.
 
 ### 8.12 Cài đặt
@@ -860,9 +867,9 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 
 ### 8.13 Bảo mật
 
-- AC-SEC-01 - Mọi endpoint nghiệp vụ yêu cầu JWT.
-- AC-SEC-02 - Refresh token được rotate khi gọi `/auth/refresh`.
-- AC-SEC-03 - Vai trò không phù hợp nhận 403 khi gọi API ngoài phạm vi.
+- AC-SEC-01 - API nghiệp vụ phải có token đăng nhập.
+- AC-SEC-02 - Làm mới token (`/auth/refresh`) cấp bộ token mới và huỷ token cũ.
+- AC-SEC-03 - Sai vai trò nhận mã 403 khi gọi API không được phép.
 
 ---
 
@@ -870,18 +877,18 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 
 ### 9.1 Thuật ngữ và viết tắt
 
-| Thuật ngữ | Nghĩa |
-|-----------|-------|
-| ASMS | After-Sales Management System |
-| BRD | Business Requirements Document |
-| SRS | Software Requirements Specification |
-| BOM | Bill of Materials - Định mức nguyên vật liệu |
-| PAKD | Phụ kiện kinh doanh / Phương án kinh doanh (theo ngữ cảnh báo cáo) |
-| SLA | Service Level Agreement |
-| RBAC | Role-Based Access Control |
-| CRM | Customer Relationship Management |
-| KPI | Key Performance Indicator |
-| UAT | User Acceptance Test |
+| Thuật ngữ | Nghĩa bằng tiếng Việt |
+|-----------|----------------------|
+| ASMS | Hệ thống quản lý hậu mãi |
+| BRD | Tài liệu yêu cầu nghiệp vụ |
+| SRS | Tài liệu yêu cầu phần mềm (kỹ thuật) |
+| BOM | Định mức vật tư / linh kiện cho một sản phẩm |
+| PAKD | Phụ kiện hoặc phương án kinh doanh (trong báo cáo vật tư) |
+| SLA | Thời hạn xử lý đã cam kết |
+| RBAC | Phân quyền theo vai trò |
+| CRM | Chăm sóc và quản lý quan hệ khách hàng |
+| KPI | Chỉ số đo kết quả |
+| UAT | Nghiệm thu với người dùng trước khi đưa vào dùng |
 | NCKH | Nghiên cứu khoa học |
 | TTR | Tờ trình |
 | KH | Kế hoạch hoặc Khách hàng (tùy ngữ cảnh) |
@@ -924,26 +931,28 @@ Tiêu chí UAT cho mỗi nhóm chức năng. Áp dụng phương pháp **Given-W
 
 | Mã BRD | Tham chiếu SRS |
 |--------|----------------|
-| BR-DSH | SRS §3.10 + §10 |
-| BR-HD | SRS §3.5 + §7.1 |
-| BR-BG | SRS §3.6 + §7.2 |
-| BR-BH | SRS §3.7 + §7.3 |
-| BR-KH | SRS §3.2 + §3.3 + §3.4 |
-| BR-SP | SRS §3.9 + §7.5 |
-| BR-VT | SRS §3.8 + §7.6 |
-| BR-DT (đào tạo) | SRS §3.12 + §7.4 |
-| BR-TL | SRS §3.13 |
-| BR-BC | SRS §3.14 |
-| BR-RD | SRS §3.10 |
-| BR-CV | SRS §3.11 |
-| BR-CD | SRS §3.1 + §3.15 + §3.16 + §8 |
+| BR-DSH | SRS §10 + §3.15 |
+| BR-HD | SRS §3.6 + §5 + §6.1 |
+| BR-BG | SRS §3.7 + §6.2 |
+| BR-BH | SRS §3.8 + §6.3 |
+| BR-KH | SRS §3.3 + §3.4 + §3.5 |
+| BR-SP | SRS §3.10 + §4 |
+| BR-VT | SRS §3.9 + §6.5 |
+| BR-DT (đào tạo) | SRS §3.13 + §6.4 |
+| BR-TL | SRS §3.14 |
+| BR-BC | SRS §3.15 |
+| BR-RD | SRS §3.11 + §6.6 |
+| BR-CV | SRS §3.12 + §6.6 |
+| BR-CD | SRS §3.2 + §3.16 + §3.17 + §8 |
 
 ### 9.5 Lịch sử thay đổi tài liệu
 
 | Phiên bản | Ngày | Người soạn | Mô tả |
 |-----------|------|------------|-------|
 | 1.0 | (theo ngày commit) | Đội phát triển ASMS | Phát hành lần đầu, tổng hợp 13 nhóm màn |
+| 1.1 | 07/05/2026 | Đội phát triển ASMS | Đồng bộ tham chiếu chéo § SRS (cấu trúc mục 3.x), sửa anchor RBAC mục 7 |
+| 1.2 | 11/05/2026 | Đội phát triển ASMS | Rút gọn từ ngữ, thêm hướng dẫn đọc; sửa mã BR-RD cho đề tài NCKH |
 
 ---
 
-> **Kết thúc tài liệu BRD-ASMS-v1.0.** Phần đặc tả phần mềm chi tiết (kiến trúc, API, mô hình dữ liệu, RBAC, NFR) được trình bày trong [SRS-ASMS.md](SRS-ASMS.md).
+> **Kết thúc BRD-ASMS-v1.2.** Chi tiết kỹ thuật (API, cơ sở dữ liệu, phân quyền, đăng nhập, Dashboard): [SRS-ASMS.md](SRS-ASMS.md).

@@ -1,0 +1,26 @@
+# PostgreSQL chỉ dùng cho dev local — tách khỏi docker-compose.yml (deploy image).
+# Chạy: docker compose -f docker-compose.local-db.yml up -d
+services:
+  postgres:
+    # Dùng 16 để tương thích volume/data dir (14 không đọc được cluster đã init bởi 16)
+    image: postgres:16-alpine
+    container_name: asms_postgres_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-asms}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-asms_local_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-asms}
+    # Mac dinh 5433 tranh trung PostgreSQL cai tren may (5432)
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - asms_pgdata_local:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-asms} -d ${POSTGRES_DB:-asms}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  asms_pgdata_local:

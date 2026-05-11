@@ -144,7 +144,7 @@ Các module có file `routes.ts` trong `backend/src/modules/`:
 
 - Quét route: `src/App.tsx`.
 - Quét mock: import từ `src/data/*.ts` trong `pages/` và `components/dashboard/tabs/`.
-- Quét API: `src/hooks/use-*-api.ts` và `backend/src/modules/*/routes.ts`.
+- Quét API: `src/hooks/use-*-api.ts` và `backend/src/modules/*/route.ts`.
 
 **Cập nhật tài liệu này** mỗi khi thêm route mới hoặc thay mock → API.
 

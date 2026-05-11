@@ -8,6 +8,11 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+
+# Docker / export artifacts (không commit image tar vào repo)
+*.tar
+backups/
+
 dist
 dist-ssr
 *.local

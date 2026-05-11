@@ -1,6 +1,6 @@
 # Data Model Inventory
 
-Nguon phan tich: toan bo `src/data/` va `src/pages/`.
+Nguon phan tich: toan bo `src/data/` va `src/pages/`. **Chuan du lieu API/DB:** [backend/prisma/schema.prisma](../backend/prisma/schema.prisma) va [SRS-ASMS.md](SRS-ASMS.md) (muc 5).
 
 ## 1) Entities va truong du lieu
 

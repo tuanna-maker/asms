@@ -1,8 +1,8 @@
 # UAT Checklist
 
 ## Scope
-- Roles: `admin`, `manager`, `technician`, `viewer`
-- Modules: Auth, Users, Customers/CRM, Contracts, Handovers, Products, Warranty, Materials, Tasks, Documents, Reports, Training
+- Roles: `admin`, `manager`, `technician`, `viewer`, `sales` (ma trận RBAC đầy đủ: [SRS-ASMS.md §8 (Phần B — RBAC)](SRS-ASMS.md#srs-muc-8-rbac))
+- Modules: Auth, Users, Customers/CRM, Contracts, Handovers, Products, Warranty, Materials, Tasks, Documents, Reports, Training, Research projects, Definitions, Notification preferences
 
 ## Authentication
 - Login succeeds with seeded users.

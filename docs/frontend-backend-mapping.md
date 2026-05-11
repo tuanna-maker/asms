@@ -1,5 +1,7 @@
 # Frontend-Backend Mapping
 
+Tài liệu liên quan: [BRD-ASMS.md](BRD-ASMS.md) (nghiệp vụ tổng thể), [SRS-ASMS.md](SRS-ASMS.md) (đặc tả API, RBAC, traceability), [BRD-chuc-nang-tung-man-ASMS.md](BRD-chuc-nang-tung-man-ASMS.md) (theo từng màn).
+
 ## Shared Conventions
 - API prefix: `/api/v1`
 - Response envelope: `{ success, data, message? }`

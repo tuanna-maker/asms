@@ -5,6 +5,7 @@
 - Tên tài liệu: Business Requirements Document (BRD) - ASMS
 - Nguồn nghiệp vụ: `After-Sales20System%20ASMS.pdf`
 - Mục tiêu: Chuẩn hóa yêu cầu chức năng theo từng màn hình để phát triển, kiểm thử, nghiệm thu.
+- Tài liệu kèm theo: [BRD-ASMS.md](BRD-ASMS.md) (BRD tổng thể + ma trận vai trò UI), [SRS-ASMS.md](SRS-ASMS.md) (API, RBAC backend, FR/NFR), [frontend-backend-mapping.md](frontend-backend-mapping.md) (ánh xạ field FE–BE).
 
 ## 2. Mục tiêu hệ thống
 
