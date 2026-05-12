@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Users, Shield, Bell, Trash2, Database } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Users, Shield, Bell, Trash2, Database, Tags, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,7 @@ import {
   getRolePublicTitle,
   moduleAllowedForRole,
 } from "@/lib/role-matrix";
+import { ATTRIBUTE_SETTINGS_BASE_PATH } from "@/lib/attribute-settings-config";
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsersList, type UserListItem } from "@/hooks/use-users-api";
 import {
   useNotificationPreferences,
@@ -269,6 +271,21 @@ const SettingsPage = () => {
 
   return (
     <div className="space-y-6">
+      <Link
+        to={ATTRIBUTE_SETTINGS_BASE_PATH}
+        className="flex items-center justify-between rounded-xl border border-border/50 bg-card p-4 shadow-sm transition-colors hover:bg-secondary/30"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <Tags className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-semibold text-card-foreground">Thuộc tính</p>
+            <p className="text-sm text-muted-foreground">Danh mục thuộc tính theo từng module nghiệp vụ</p>
+          </div>
+        </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+      </Link>
       <Tabs defaultValue="users">
         <TabsList>
           <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Người dùng</TabsTrigger>

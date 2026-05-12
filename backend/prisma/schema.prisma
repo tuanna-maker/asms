@@ -316,6 +316,7 @@ model Contract {
   warrantyEnd  DateTime?      @map("warranty_end")
   status       ContractStatus @default(draft)
   progress     Int            @default(0)
+  contractTypeCode String?    @map("contract_type_code")
   terms        String?        @db.Text
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
@@ -333,6 +334,7 @@ model Contract {
   @@index([customerId], map: "idx_contracts_customer_id")
   @@index([createdById], map: "idx_contracts_created_by_id")
   @@index([status], map: "idx_contracts_status")
+  @@index([contractTypeCode], map: "idx_contracts_contract_type_code")
   @@index([startDate, endDate], map: "idx_contracts_date_range")
   @@index([deletedAt], map: "idx_contracts_deleted_at")
   @@map("contracts")

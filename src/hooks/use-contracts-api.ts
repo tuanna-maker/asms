@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
@@ -14,13 +14,28 @@ export type ContractPayload = {
   status?: "draft" | "active" | "completed" | "late" | "liquidated";
   progress?: number;
   terms?: string | null;
+  contractTypeCode?: string | null;
 };
 
-export function useContractsList() {
+export function invalidateContractQueries(qc: QueryClient, contractId?: string | null) {
+  void qc.invalidateQueries({ queryKey: qk.contracts.all, refetchType: "all" });
+  if (contractId) {
+    void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", contractId], refetchType: "all" });
+  }
+}
+
+export function useContractsList(filters?: { contractTypeCode?: string }) {
   return useQuery({
-    queryKey: qk.contracts.all,
+    queryKey: filters?.contractTypeCode
+      ? [...qk.contracts.all, "type", filters.contractTypeCode]
+      : qk.contracts.all,
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<unknown[]>>("/api/v1/contracts");
+      const params = new URLSearchParams();
+      if (filters?.contractTypeCode) params.set("contractTypeCode", filters.contractTypeCode);
+      const qs = params.toString();
+      const res = await api.get<ApiSuccess<unknown[]>>(
+        qs ? `/api/v1/contracts?${qs}` : "/api/v1/contracts",
+      );
       return res.data.data ?? [];
     },
   });
@@ -30,6 +45,7 @@ export function useContractDetail(id: string | null | undefined) {
   return useQuery({
     queryKey: id ? [...qk.contracts.all, "detail", id] : ["contracts", "detail", "noop"],
     enabled: !!id,
+    staleTime: 0,
     queryFn: async () => {
       const res = await api.get<ApiSuccess<Record<string, unknown>>>(`/api/v1/contracts/${id}`);
       return res.data.data ?? null;
@@ -41,7 +57,7 @@ export function useCreateContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (payload: ContractPayload) => api.post("/api/v1/contracts", payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.contracts.all }),
+    onSuccess: () => invalidateContractQueries(qc),
   });
 }
 
@@ -50,7 +66,7 @@ export function useUpdateContract() {
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<ContractPayload> }) =>
       api.put(`/api/v1/contracts/${id}`, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.contracts.all }),
+    onSuccess: (_, { id }) => invalidateContractQueries(qc, id),
   });
 }
 
@@ -58,7 +74,7 @@ export function useDeleteContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => api.delete(`/api/v1/contracts/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.contracts.all }),
+    onSuccess: () => invalidateContractQueries(qc),
   });
 }
 
@@ -74,8 +90,7 @@ export function useSetContractProducts() {
     mutationFn: async ({ id, products }: { id: string; products: SetContractProductItem[] }) =>
       api.put(`/api/v1/contracts/${id}/products`, { products }),
     onSuccess: (_, { id }) => {
-      void qc.invalidateQueries({ queryKey: qk.contracts.all });
-      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", id] });
+      invalidateContractQueries(qc, id);
       void qc.invalidateQueries({ queryKey: qk.products.all });
     },
   });
@@ -94,8 +109,7 @@ export function useUpdateContractProduct() {
       payload: { specValues?: Record<string, string>; quantity?: number };
     }) => api.put(`/api/v1/contracts/${contractId}/products/${productId}`, payload),
     onSuccess: (_, { contractId }) => {
-      void qc.invalidateQueries({ queryKey: qk.contracts.all });
-      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", contractId] });
+      invalidateContractQueries(qc, contractId);
     },
   });
 }

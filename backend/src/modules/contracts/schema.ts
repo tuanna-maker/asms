@@ -11,6 +11,7 @@ export const createContractSchema = z.object({
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
   progress: z.number().int().nonnegative().optional(),
   terms: z.string().optional().nullable(),
+  contractTypeCode: z.string().min(1).max(256).optional().nullable(),
 });
 
 export const updateContractSchema = createContractSchema
@@ -35,6 +36,7 @@ export const listContractsQuerySchema = z.object({
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
   customerId: z.string().optional(),
   search: z.string().optional(),
+  contractTypeCode: z.string().min(1).max(256).optional(),
 });
 
 export const setContractProductsSchema = z.object({

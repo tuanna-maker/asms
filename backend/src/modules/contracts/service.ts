@@ -17,14 +17,31 @@ async function resolveContractId(idOrCode: string) {
   return contract.id;
 }
 
+const CONTRACT_TYPE_CATEGORY = "contract_type";
+
+async function assertActiveContractTypeCode(code: string) {
+  const row = await prisma.dataDefinition.findFirst({
+    where: {
+      category: CONTRACT_TYPE_CATEGORY,
+      code: code.trim(),
+      deletedAt: null,
+      isActive: true,
+    },
+    select: { id: true },
+  });
+  if (!row) throw new HttpError(400, "Loại hợp đồng không hợp lệ hoặc đã ngừng sử dụng");
+}
+
 export async function listContractsService(filters: {
   status?: string;
   customerId?: string;
   search?: string;
+  contractTypeCode?: string;
 }) {
   const where: Prisma.ContractWhereInput = { deletedAt: null };
   if (filters.status) where.status = filters.status as NonNullable<Prisma.ContractWhereInput["status"]>;
   if (filters.customerId) where.customerId = filters.customerId;
+  if (filters.contractTypeCode) where.contractTypeCode = filters.contractTypeCode;
   if (filters.search) {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { title: { contains: s, mode: "insensitive" } }];
@@ -44,6 +61,7 @@ export async function listContractsService(filters: {
       warrantyEnd: true,
       status: true,
       progress: true,
+      contractTypeCode: true,
       terms: true,
       customerId: true,
       customer: { select: { id: true, code: true, name: true } },
@@ -100,8 +118,13 @@ export async function createContractService(payload: {
   status?: string;
   progress?: number;
   terms?: string | null;
+  contractTypeCode?: string | null;
   createdById: string;
 }) {
+  if (payload.contractTypeCode) {
+    await assertActiveContractTypeCode(payload.contractTypeCode);
+  }
+
   return prisma.contract.create({
     data: {
       code: genContractCode(),
@@ -116,6 +139,7 @@ export async function createContractService(payload: {
       ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractCreateInput["status"]> } : {}),
       ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
+      ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
     include: {
       customer: { select: { id: true, code: true, name: true } },
@@ -133,10 +157,15 @@ type UpdateContractPayload = Partial<{
   status: string;
   progress: number;
   terms: string | null;
+  contractTypeCode: string | null;
 }>;
 
 export async function updateContractService(id: string, payload: UpdateContractPayload) {
   const resolvedId = await resolveContractId(id);
+
+  if (payload.contractTypeCode) {
+    await assertActiveContractTypeCode(payload.contractTypeCode);
+  }
 
   return prisma.contract.update({
     where: { id: resolvedId },
@@ -150,6 +179,7 @@ export async function updateContractService(id: string, payload: UpdateContractP
       ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractUpdateInput["status"]> } : {}),
       ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
+      ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
     include: {
       customer: { select: { id: true, code: true, name: true } },

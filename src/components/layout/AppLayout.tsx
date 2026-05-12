@@ -15,11 +15,20 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   "/khach-hang": { title: "Khách hàng", subtitle: "Quản lý thông tin khách hàng" },
   "/bao-cao": { title: "Báo cáo & Thống kê", subtitle: "Báo cáo theo khách hàng, hợp đồng, sản phẩm" },
   "/cai-dat": { title: "Cài đặt", subtitle: "Quản lý người dùng và phân quyền" },
+  "/cai-dat/thuoc-tinh": { title: "Thuộc tính", subtitle: "Danh mục thuộc tính theo module" },
 };
+
+function resolvePageTitle(pathname: string) {
+  if (pageTitles[pathname]) return pageTitles[pathname];
+  if (pathname.startsWith("/cai-dat/thuoc-tinh/")) {
+    return pageTitles["/cai-dat/thuoc-tinh"];
+  }
+  return { title: "ERP", subtitle: "" };
+}
 
 const AppLayout = () => {
   const location = useLocation();
-  const page = pageTitles[location.pathname] || { title: "ERP", subtitle: "" };
+  const page = resolvePageTitle(location.pathname);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 

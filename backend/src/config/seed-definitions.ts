@@ -7,6 +7,10 @@ const SEEDS: Array<{ category: string; code: string; label: string; sortOrder: n
   { category: "material_unit", code: "cái", label: "Cái", sortOrder: 10 },
   { category: "material_unit", code: "mét", label: "Mét", sortOrder: 20 },
   { category: "material_unit", code: "kg", label: "Kilogram", sortOrder: 30 },
+  { category: "contract_type", code: "maintenance", label: "Hợp đồng bảo trì", sortOrder: 0 },
+  { category: "contract_type", code: "deployment", label: "Hợp đồng triển khai", sortOrder: 10 },
+  { category: "contract_type", code: "sales", label: "Hợp đồng mua bán", sortOrder: 20 },
+  { category: "contract_type", code: "service", label: "Hợp đồng dịch vụ", sortOrder: 30 },
 ];
 
 export async function seedDataDefinitions() {

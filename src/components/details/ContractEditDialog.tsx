@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { useProductsList } from "@/hooks/use-products-api";
 import type { ProductSpec } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
@@ -27,6 +28,7 @@ type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
   startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
   terms?: string | null;
+  contractTypeCode?: string | null;
 };
 
 type DetailProduct = {
@@ -77,6 +79,7 @@ type DetailTraining = {
 type ContractDetailData = {
   id?: string;
   terms?: string | null;
+  contractTypeCode?: string | null;
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
   trainingCourses?: DetailTraining[];
@@ -101,6 +104,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   mode?: "edit" | "create";
   customers?: Array<{ id: string; code: string; name: string }>;
+  onContractSaved?: (patch: { id: string; contractTypeCode: string | null }) => void;
 }
 
 /** DD/MM/YYYY or YYYY-MM-DD → YYYY-MM-DD for <input type="date" /> */
@@ -142,7 +146,7 @@ function joinTerms(items: string[]) {
   return text || null;
 }
 
-const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", customers = [] }: Props) => {
+const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", customers = [], onContractSaved }: Props) => {
   const isCreateMode = mode === "create";
   const queryClient = useQueryClient();
   const [form, setForm] = useState({
@@ -157,6 +161,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     status: "active",
     progress: "0",
     terms: "",
+    contractTypeCode: "",
   });
   const [termItems, setTermItems] = useState<string[]>([""]);
   const [selectedProductId, setSelectedProductId] = useState("");
@@ -173,6 +178,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
+  const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
   const detail = detailData as ContractDetailData | null;
@@ -238,23 +244,23 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   );
 
   useEffect(() => {
-    if (contract && !isCreateMode) {
-      setForm({
-        customerId: "",
-        customer: contract.customer,
-        title: "",
-        value: String(contract.value),
-        products: String(contract.products),
-        startDate: toInputDateValue(contract.startDate),
-        endDate: toInputDateValue(contract.endDate),
-        warrantyEnd: contract.warrantyEnd === "—" ? "" : toInputDateValue(contract.warrantyEnd),
-        status: contract.status,
-        progress: String(contract.progress),
-        terms: contract.terms ?? "",
-      });
-      setTermItems(splitTerms(contract.terms));
-    }
-  }, [contract, isCreateMode]);
+    if (!open || !contract || isCreateMode) return;
+    setForm({
+      customerId: "",
+      customer: contract.customer,
+      title: "",
+      value: String(contract.value),
+      products: String(contract.products),
+      startDate: toInputDateValue(contract.startDate),
+      endDate: toInputDateValue(contract.endDate),
+      warrantyEnd: contract.warrantyEnd === "—" ? "" : toInputDateValue(contract.warrantyEnd),
+      status: contract.status,
+      progress: String(contract.progress),
+      terms: contract.terms ?? "",
+      contractTypeCode: contract.contractTypeCode ?? "",
+    });
+    setTermItems(splitTerms(contract.terms));
+  }, [open, contract?.id, isCreateMode]);
 
   useEffect(() => {
     if (!open || !isCreateMode) return;
@@ -270,6 +276,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
       status: "active",
       progress: "0",
       terms: "",
+      contractTypeCode: "",
     });
     setTermItems([""]);
     setSelectedProductId("");
@@ -283,6 +290,14 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setSelectedTrainingId("");
     setSelectedProduct(null);
   }, [open, isCreateMode]);
+
+  useEffect(() => {
+    if (!open || isCreateMode || !detail) return;
+    setForm((prev) => ({
+      ...prev,
+      contractTypeCode: detail.contractTypeCode ?? "",
+    }));
+  }, [open, isCreateMode, detail?.contractTypeCode]);
 
   useEffect(() => {
     if (!open || isCreateMode) return;
@@ -399,6 +414,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
         status: "active",
         progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
         terms: joinTerms(termItems),
+        ...(form.contractTypeCode.trim() ? { contractTypeCode: form.contractTypeCode.trim() } : {}),
       });
       const createdPayload = (created as { data?: { data?: { id?: string; code?: string } } })?.data?.data;
       const createdContractId = createdPayload?.id ?? createdPayload?.code;
@@ -481,6 +497,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
       toast.error("Vui lòng nhập ngày bắt đầu và kết thúc");
       return;
     }
+    const savedTypeCode = form.contractTypeCode.trim() || null;
     try {
       await updateContract.mutateAsync({
         id: contractCode,
@@ -492,10 +509,16 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           status: form.status as "draft" | "active" | "completed" | "late" | "liquidated",
           progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
           terms: joinTerms(termItems),
+          contractTypeCode: savedTypeCode,
         },
       });
-      await syncProductsToContract(contractCode);
-      await syncDocumentsToContract(contractDbId);
+      onContractSaved?.({ id: contractCode, contractTypeCode: savedTypeCode });
+      try {
+        await syncProductsToContract(contractCode);
+        await syncDocumentsToContract(contractDbId);
+      } catch {
+        toast.warning("Đã lưu hợp đồng nhưng chưa đồng bộ xong sản phẩm hoặc tài liệu.");
+      }
       toast.success("Đã cập nhật hợp đồng");
       onOpenChange(false);
     } catch {
@@ -660,6 +683,22 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <InfoItem icon={<FileText className="h-4 w-4" />} label="Loại hợp đồng">
+                <Select
+                  value={form.contractTypeCode || "__none__"}
+                  onValueChange={(v) => setForm({ ...form, contractTypeCode: v === "__none__" ? "" : v })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Chọn loại hợp đồng" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Không chọn</SelectItem>
+                    {contractTypeOptions.map((item) => (
+                      <SelectItem key={item.id} value={item.code}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </InfoItem>
               <InfoItem icon={<Users className="h-4 w-4" />} label="Khách hàng">
                 {isCreateMode ? (
                   <Select value={form.customerId} onValueChange={(v) => setForm({ ...form, customerId: v })}>

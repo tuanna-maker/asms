@@ -18,6 +18,7 @@ import Products from "./pages/Products";
 import Customers from "./pages/Customers";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
+import AttributeSettingsPage from "./pages/AttributeSettingsPage";
 import ResearchProjects from "./pages/ResearchProjects";
 import ResearchProjectDetail from "./pages/ResearchProjectDetail";
 import Tasks from "./pages/Tasks";
@@ -64,6 +65,8 @@ const App = () => (
                   <Route path="/dao-tao/:id" element={<ProtectedRoute><TrainingDetail /></ProtectedRoute>} />
                   <Route path="/tai-lieu" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
                   <Route path="/cai-dat" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+                  <Route path="/cai-dat/thuoc-tinh" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />
+                  <Route path="/cai-dat/thuoc-tinh/:moduleKey" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

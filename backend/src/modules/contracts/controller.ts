@@ -36,6 +36,7 @@ export async function listContractsController(req: Request, res: Response) {
     ...(query.status !== undefined ? { status: query.status } : {}),
     ...(query.customerId !== undefined ? { customerId: query.customerId } : {}),
     ...(query.search !== undefined ? { search: query.search } : {}),
+    ...(query.contractTypeCode !== undefined ? { contractTypeCode: query.contractTypeCode } : {}),
   };
   const data = await listContractsService(filters);
   return sendSuccess(res, data);

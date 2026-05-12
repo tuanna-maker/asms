@@ -26,6 +26,8 @@ export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
   "/dao-tao/:id": ["admin", "manager", "technician"],
   "/tai-lieu": ["admin", "manager", "technician", "viewer", "sales"],
   "/cai-dat": ["admin"],
+  "/cai-dat/thuoc-tinh": ["admin"],
+  "/cai-dat/thuoc-tinh/:moduleKey": ["admin"],
 };
 
 interface RoleContextValue {

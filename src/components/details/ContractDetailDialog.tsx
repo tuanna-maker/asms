@@ -14,6 +14,8 @@ import {
 import ContractEditDialog from "./ContractEditDialog";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail } from "@/hooks/use-contracts-api";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import type { ProductSpec } from "@/hooks/use-products-api";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -34,6 +36,7 @@ type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
   startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
   terms?: string | null;
+  contractTypeCode?: string | null;
 };
 
 type DetailProduct = {
@@ -73,6 +76,7 @@ type DetailTraining = {
 
 type ContractDetailData = {
   terms?: string | null;
+  contractTypeCode?: string | null;
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
   trainingCourses?: DetailTraining[];
@@ -98,6 +102,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
 
   const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
+  const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
   const detail = detailData as ContractDetailData | null;
 
   const productsList = useMemo<DetailProduct[]>(
@@ -162,6 +167,11 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoItem icon={<Users className="h-4 w-4" />} label="Khách hàng" value={contract.customer} />
+              <InfoItem
+                icon={<FileText className="h-4 w-4" />}
+                label="Loại hợp đồng"
+                value={resolveDefinitionLabel(contractTypeOptions, detail?.contractTypeCode ?? contract.contractTypeCode)}
+              />
               <InfoItem icon={<DollarSign className="h-4 w-4" />} label="Giá trị hợp đồng" value={`${contract.value.toLocaleString()} triệu đồng`} />
               <InfoItem icon={<Package className="h-4 w-4" />} label="Số lượng sản phẩm" value={`${productTotal} sản phẩm`} />
               <InfoItem icon={<Shield className="h-4 w-4" />} label="Bảo hành đến" value={contract.warrantyEnd} />

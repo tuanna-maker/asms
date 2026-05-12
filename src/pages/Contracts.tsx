@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useDeleteContract } from "@/hooks/use-contracts-api";
-import { Plus, Search, Filter, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
+import { qk } from "@/lib/query-keys";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
+import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import { Plus, Search, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import ContractDetailDialog from "@/components/details/ContractDetailDialog";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
@@ -10,22 +14,27 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 
 type Contract = {
-  id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number; terms?: string | null
+  id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number; terms?: string | null;
+  contractTypeCode?: string | null;
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Đang thực hiện", variant: "default" },
-  completed: { label: "Hoàn thành", variant: "secondary" },
-  late: { label: "Chậm tiến độ", variant: "destructive" },
-  liquidated: { label: "Đã thanh lý", variant: "outline" },
+  draft: { label: CONTRACT_STATUS_LABELS.draft ?? "Nháp", variant: "outline" },
+  active: { label: CONTRACT_STATUS_LABELS.active ?? "Đang thực hiện", variant: "default" },
+  completed: { label: CONTRACT_STATUS_LABELS.completed ?? "Hoàn thành", variant: "secondary" },
+  late: { label: CONTRACT_STATUS_LABELS.late ?? "Chậm tiến độ", variant: "destructive" },
+  liquidated: { label: CONTRACT_STATUS_LABELS.liquidated ?? "Đã thanh lý", variant: "outline" },
 };
 
 const Contracts = () => {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
@@ -44,6 +53,7 @@ const Contracts = () => {
     status: string;
     progress: number;
     terms?: string | null;
+    contractTypeCode?: string | null;
     customer?: { id: string; code: string; name: string } | null;
   };
 
@@ -75,9 +85,14 @@ const Contracts = () => {
     isLoading: contractsLoading,
     isError: contractsError,
   } = useQuery({
-    queryKey: ["contracts"],
+    queryKey: ["contracts", typeFilter],
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<ApiContractRow[]>>("/api/v1/contracts");
+      const params = new URLSearchParams();
+      if (typeFilter !== "all") params.set("contractTypeCode", typeFilter);
+      const qs = params.toString();
+      const res = await api.get<ApiSuccess<ApiContractRow[]>>(
+        qs ? `/api/v1/contracts?${qs}` : "/api/v1/contracts",
+      );
       return res.data.data ?? [];
     },
     select: (rows: Array<ApiContractRow | Contract>) =>
@@ -97,6 +112,7 @@ const Contracts = () => {
             status: mapStatus(String(maybeUi.status ?? "active")),
             progress: Number(maybeUi.progress ?? 0),
             terms: typeof maybeUi.terms === "string" ? maybeUi.terms : null,
+            contractTypeCode: typeof maybeUi.contractTypeCode === "string" ? maybeUi.contractTypeCode : null,
           } satisfies Contract;
         }
 
@@ -113,9 +129,10 @@ const Contracts = () => {
           status: mapStatus(apiRow.status),
           progress: Number(apiRow.progress ?? 0),
           terms: typeof apiRow.terms === "string" ? apiRow.terms : null,
+          contractTypeCode: typeof apiRow.contractTypeCode === "string" ? apiRow.contractTypeCode : null,
         } satisfies Contract;
       }),
-    staleTime: 60_000,
+    staleTime: 0,
     refetchOnWindowFocus: false,
   });
 
@@ -133,6 +150,8 @@ const Contracts = () => {
     refetchOnWindowFocus: false,
   });
 
+  const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
+
   const deleteContractMutation = useDeleteContract();
   const contractsWithProductTotals = contracts;
 
@@ -142,6 +161,14 @@ const Contracts = () => {
     const keyword = search.toLowerCase();
     return id.includes(keyword) || customer.includes(keyword);
   });
+
+  const handleContractSaved = (patch: { id: string; contractTypeCode: string | null }) => {
+    const applyPatch = (row: Contract | null) =>
+      row && row.id === patch.id ? { ...row, contractTypeCode: patch.contractTypeCode } : row;
+    setEditingContract(applyPatch);
+    setSelectedContract(applyPatch);
+    void queryClient.invalidateQueries({ queryKey: qk.contracts.all, refetchType: "all" });
+  };
 
   const handleConfirmDeleteContract = async () => {
     const code = deletingContractId;
@@ -209,7 +236,17 @@ const Contracts = () => {
           <Input placeholder="Tìm hợp đồng..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1" /> Lọc</Button>
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Loại hợp đồng" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả loại</SelectItem>
+              {contractTypeOptions.map((item) => (
+                <SelectItem key={item.id} value={item.code}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
         </div>
       </div>
@@ -226,6 +263,7 @@ const Contracts = () => {
           <TabsContent key={tab} value={tab}>
             <ContractTable
               contracts={tab === "all" ? filtered : tab === "completed" ? filtered.filter((c) => c.status === "completed" || c.status === "liquidated") : filtered.filter((c) => c.status === tab)}
+              contractTypeOptions={contractTypeOptions}
               onView={setSelectedContract}
               onEdit={setEditingContract}
               onRequestDelete={setDeletingContractId}
@@ -235,7 +273,12 @@ const Contracts = () => {
       </Tabs>
 
       <ContractDetailDialog contract={selectedContract} open={!!selectedContract} onOpenChange={(o) => !o && setSelectedContract(null)} />
-      <ContractEditDialog contract={editingContract} open={!!editingContract} onOpenChange={(o) => !o && setEditingContract(null)} />
+      <ContractEditDialog
+        contract={editingContract}
+        open={!!editingContract}
+        onOpenChange={(o) => !o && setEditingContract(null)}
+        onContractSaved={handleContractSaved}
+      />
       <ContractEditDialog
         contract={null}
         open={showCreate}
@@ -269,11 +312,13 @@ const Contracts = () => {
 
 const ContractTable = ({
   contracts,
+  contractTypeOptions,
   onView,
   onEdit,
   onRequestDelete,
 }: {
   contracts: Contract[];
+  contractTypeOptions: Array<{ id: string; code: string; label: string }>;
   onView: (c: Contract) => void;
   onEdit: (c: Contract) => void;
   onRequestDelete: (contractCode: string) => void;
@@ -283,6 +328,7 @@ const ContractTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>Mã HĐ</TableHead>
+          <TableHead>Loại</TableHead>
           <TableHead>Khách hàng</TableHead>
           <TableHead className="text-right">Giá trị (tr)</TableHead>
           <TableHead className="text-center">SP</TableHead>
@@ -296,6 +342,9 @@ const ContractTable = ({
         {contracts.map((c) => (
           <TableRow key={c.id}>
             <TableCell className="font-medium text-primary">{c.id}</TableCell>
+            <TableCell className="text-sm text-muted-foreground">
+              {resolveDefinitionLabel(contractTypeOptions, c.contractTypeCode)}
+            </TableCell>
             <TableCell>{typeof c.customer === "string" ? c.customer : ""}</TableCell>
             <TableCell className="text-right font-semibold">{c.value.toLocaleString()}</TableCell>
             <TableCell className="text-center">{c.products}</TableCell>
