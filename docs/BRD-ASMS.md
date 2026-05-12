@@ -192,7 +192,7 @@ Cho lãnh đạo và quản lý **nhìn nhanh** hợp đồng, bàn giao, bảo 
 
 | Mã | Nhu cần |
 |----|------------|
-| BR-DSH-01 | Là người dùng đã đăng nhập, tôi muốn lọc số liệu theo năm, quý, khách hàng để xem dữ liệu phù hợp nhu cầu báo cáo |
+| BR-DSH-01 | Là người dùng đã đăng nhập, tôi muốn lọc số liệu theo                                                                                                                                                                                                                                                                                                               năm, quý, khách hàng để xem dữ liệu phù hợp nhu cầu báo cáo |
 | BR-DSH-02 | Là người dùng, tôi muốn xem 8 nhóm tab dashboard (Tổng quan, Khách hàng, Doanh thu, Dự án, Sản phẩm, Bảo hành, Vật tư, Cảnh báo) |
 | BR-DSH-03 | Là lãnh đạo trình chiếu, tôi muốn bật chế độ tự xoay tab theo chu kỳ 10/15/30/60 giây |
 | BR-DSH-04 | Là người dùng, tôi muốn vào chế độ toàn màn hình để trình bày trên màn hình lớn |
