@@ -124,6 +124,19 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  @keyframes pulse-soft {
+    0%, 100% {
+      background-color: hsl(var(--destructive) / 0.05);
+      box-shadow: 0 0 0 0 hsl(var(--destructive) / 0);
+    }
+    50% {
+      background-color: hsl(var(--destructive) / 0.18);
+      box-shadow: 0 0 0 4px hsl(var(--destructive) / 0.18);
+    }
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 1.8s ease-in-out infinite;
+  }
 }
 
 /* React Grid Layout customization */

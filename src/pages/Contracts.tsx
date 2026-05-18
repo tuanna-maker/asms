@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { lateProgressRowClass } from "@/lib/late-row-highlight";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number; terms?: string | null;
@@ -400,7 +401,7 @@ const ContractTable = ({
       </TableHeader>
       <TableBody>
         {contracts.map((c) => (
-          <TableRow key={c.id}>
+          <TableRow key={c.id} className={lateProgressRowClass(c.status)}>
             <TableCell className="font-medium text-primary">{c.id}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
               {resolveDefinitionLabel(contractTypeOptions, c.contractTypeCode)}

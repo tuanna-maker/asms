@@ -375,11 +375,7 @@ const Warranty = () => {
                         (tab === "all" ? filtered : filtered.filter((t) => t.tabStatus === tab)).map((t) => (
                           <TableRow
                             key={t.apiId}
-                            className={`cursor-pointer hover:bg-muted/50 ${
-                              t.tabStatus === "processing" && (t.priority === "urgent" || t.priority === "high")
-                                ? "bg-destructive/10"
-                                : ""
-                            }`}
+                            className="cursor-pointer hover:bg-muted/50"
                             onClick={() => {
                               setShowCreate(false);
                               setDetailMode("view");

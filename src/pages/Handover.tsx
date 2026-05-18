@@ -35,6 +35,7 @@ import {
   filterContractsEligibleForNewLink,
   NO_ELIGIBLE_CONTRACTS_HINT,
 } from "@/lib/contract-eligibility";
+import { lateProgressRowClass } from "@/lib/late-row-highlight";
 
 type NeedsProcessingRow =
   | { kind: "handover"; item: HandoverListItem }
@@ -307,7 +308,7 @@ const Handover = () => {
                   if (row.kind === "handover") {
                     const h = row.item;
                     return (
-                      <TableRow key={`h-${h.id}`}>
+                      <TableRow key={`h-${h.id}`} className={lateProgressRowClass(h.status)}>
                         <TableCell className="px-4 py-3.5">
                           <Badge variant="outline">Bàn giao</Badge>
                         </TableCell>
@@ -468,13 +469,8 @@ const Handover = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  syncedHandoverRows.map((h) => {
-                    const isOverdue =
-                      h.status !== "completed" &&
-                      !!h.dueDate &&
-                      new Date(h.dueDate).getTime() < Date.now();
-                    return (
-                    <TableRow key={h.id} className={isOverdue ? "bg-destructive/10" : undefined}>
+                  syncedHandoverRows.map((h) => (
+                    <TableRow key={h.id} className={lateProgressRowClass(h.status)}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle max-w-[140px]">
                         <span className="text-xs text-muted-foreground line-clamp-2" title={h.workflow?.workflowName ?? undefined}>
@@ -534,8 +530,7 @@ const Handover = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                    );
-                  })
+                  ))
                 )}
               </TableBody>
             </Table>

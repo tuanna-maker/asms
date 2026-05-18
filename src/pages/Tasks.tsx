@@ -322,7 +322,7 @@ const Tasks = () => {
                   return (
                     <tr
                       key={tk.id}
-                      className={`border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer ${isOverdue ? "bg-destructive/10" : ""}`}
+                      className="border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
                       onClick={() => { setEditingTask(tk); setShowDialog(true); }}
                     >
                       <td className="py-2.5 px-3">
