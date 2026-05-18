@@ -8,9 +8,13 @@ export type ContactRow = {
   customerId: string;
   fullName: string;
   title: string | null;
+  rank: string | null;
+  department: string | null;
   phone: string | null;
   email: string | null;
+  birthday: string | null;
   isPrimary: boolean;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
   customer: { id: string; code: string; name: string };
@@ -20,9 +24,13 @@ export type ContactPayload = {
   customerId: string;
   fullName: string;
   title?: string;
+  rank?: string;
+  department?: string;
   phone?: string;
   email?: string;
+  birthday?: string | null;
   isPrimary?: boolean;
+  notes?: string;
 };
 
 export function useContactsList(customerId?: string) {

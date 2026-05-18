@@ -44,7 +44,8 @@ const AlertTab = ({ data }: AlertTabProps) => {
   const overdueContracts = data.contract.late;
   const totalRevenue = data.customerRevenue.reduce((s, c) => s + c.revenue, 0);
   const lowRevenueCustomers = data.customerRevenue.filter((c) => c.revenue < totalRevenue / data.customerRevenue.length * 0.5);
-  const pakdHighRemaining = data.pakd.filter((p) => p.remaining / p.total > 0.5);
+  const pakdMaterialItems = data.pakd.materials?.items ?? data.pakd.items ?? [];
+  const pakdHighRemaining = pakdMaterialItems.filter((p) => p.total > 0 && p.remaining / p.total > 0.5);
 
   const alerts: AlertItem[] = [];
 

@@ -2,6 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DollarSign } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
+import { chartCategoryAxisWidth, chartPlotAreaClass } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -18,44 +19,60 @@ interface CustomerRevenueChartProps {
 
 const CustomerRevenueChart = ({ data }: CustomerRevenueChartProps) => {
   const isMobile = useIsMobile();
-  const truncateLabel = (name: string) => {
-    const limit = isMobile ? 14 : 20;
-    return name.length > limit ? `${name.slice(0, limit)}...` : name;
-  };
+  const yAxisWidth = chartCategoryAxisWidth(
+    data.map((d) => d.name),
+    isMobile ? 72 : 100,
+    isMobile ? 140 : 220,
+  );
+
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
-          <DollarSign className="h-5 w-5" />
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col h-full min-h-0">
+        <div className="flex items-center gap-3 mb-3 shrink-0">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
+            <DollarSign className="h-5 w-5" />
+          </div>
+          <h3 className="font-semibold text-card-foreground">Doanh thu theo khách hàng</h3>
         </div>
-        <h3 className="font-semibold text-card-foreground">Doanh thu theo khách hàng</h3>
+        <div className={chartPlotAreaClass}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 5, right: isMobile ? 10 : 20, left: 4, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis
+                type="number"
+                tick={{ fontSize: isMobile ? 10 : 11, fill: "hsl(var(--muted-foreground))" }}
+                tickFormatter={(v) => `${v}tr`}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tick={{ fontSize: isMobile ? 10 : 11, fill: "hsl(var(--muted-foreground))" }}
+                width={yAxisWidth}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: 8,
+                  fontSize: 13,
+                }}
+                labelStyle={{ color: "hsl(var(--card-foreground))", fontWeight: 600 }}
+                labelFormatter={(_, payload) => (payload?.[0]?.payload?.name as string) ?? ""}
+                formatter={(value: number) => [`${value.toLocaleString()} triệu đồng`, "Doanh thu"]}
+              />
+              <Bar dataKey="revenue" name="Doanh thu (tr)" radius={[0, 4, 4, 0]}>
+                {data.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
-      <div className={isMobile ? "h-[320px]" : "h-[400px]"}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 5, right: isMobile ? 10 : 20, left: isMobile ? -8 : 10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `${v}tr`} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tickFormatter={truncateLabel}
-              tick={{ fontSize: isMobile ? 10 : 11, fill: "hsl(var(--muted-foreground))" }}
-              width={isMobile ? 88 : 130}
-            />
-            <Tooltip
-              contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 13 }}
-              labelStyle={{ color: "hsl(var(--card-foreground))", fontWeight: 600 }}
-              labelFormatter={(_, payload) => (payload?.[0]?.payload?.name as string) ?? ""}
-              formatter={(value: number) => [`${value.toLocaleString()} triệu đồng`, "Doanh thu"]}
-            />
-            <Bar dataKey="revenue" name="Doanh thu (tr)" radius={[0, 4, 4, 0]}>
-              {data.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
     </FullscreenWrapper>
   );
 };

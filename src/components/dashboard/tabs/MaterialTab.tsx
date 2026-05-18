@@ -220,8 +220,9 @@ const MaterialTab = ({ data, materials = [] }: MaterialTabProps) => {
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const isMobile = useIsMobile();
 
-  const totalPAKD = data.pakd.reduce((sum, p) => sum + p.total, 0);
-  const remainingPAKD = data.pakd.reduce((sum, p) => sum + p.remaining, 0);
+  const pakdItems = data.pakd.materials?.items ?? data.pakd.items ?? [];
+  const totalPAKD = pakdItems.reduce((sum, p) => sum + p.total, 0);
+  const remainingPAKD = pakdItems.reduce((sum, p) => sum + p.remaining, 0);
   const usedPAKD = totalPAKD - remainingPAKD;
 
   const equipmentList = useMemo<Equipment[]>(() => materials.map(mapMaterialToEquipment), [materials]);

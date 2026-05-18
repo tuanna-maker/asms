@@ -6,10 +6,15 @@ import { useTrainingCoursesQuery } from "@/hooks/use-training";
 import { useMaterialsList, type MaterialListRow } from "@/hooks/use-materials-api";
 import { useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-api";
 import { useProductsList, type ProductListItem } from "@/hooks/use-products-api";
-import { useReportsByYear, type ReportsApi } from "@/hooks/use-reports-api";
+import {
+  useDashboardSummary,
+  useReports,
+  type DashboardSummaryApi,
+} from "@/hooks/use-reports-api";
+import type { ReportFilters } from "@/lib/report-filters";
 
 import type { ComplaintRow, ContractRow, HandoverRow, ProductRow, TrainingRow } from "@/data/tableData";
-import type { DashboardData } from "@/data/dashboardData";
+import { emptyDashboardData, type DashboardData, type PakdSummary } from "@/data/dashboardData";
 
 type ApiContractRow = {
   id?: string;
@@ -102,9 +107,18 @@ function mapTrainingRow(row: TrainingApiRow): TrainingRow {
   };
 }
 
+const INSPECTION_STATUSES = new Set([
+  "inspection_submitted",
+  "inspecting",
+  "inspection_passed",
+  "decision_approved",
+]);
+
 function mapProductRow(row: ProductListItem): ProductRow {
-  const status: ProductRow["status"] =
-    row.status === "equipped" ? "equipped" : row.status === "stopped" ? "inspecting" : "producing";
+  let status: ProductRow["status"] = "producing";
+  if (row.status === "equipped" || row.status === "equip_decided") status = "equipped";
+  else if (row.status === "stopped" || INSPECTION_STATUSES.has(row.status)) status = "inspecting";
+  else if (row.status === "produced") status = "inspecting";
   return {
     id: row.code,
     name: row.name,
@@ -132,18 +146,125 @@ function mapWarrantyRow(row: WarrantyListRow): ComplaintRow {
   };
 }
 
-function buildPakdFromMaterials(materials: MaterialListRow[]): DashboardData["pakd"] {
-  const buckets = new Map<string, { name: string; total: number; remaining: number }>();
-  for (const m of materials) {
-    const key = m.warehouse || "Kho chung";
-    const prev = buckets.get(key) ?? { name: key, total: 0, remaining: 0 };
-    prev.total += Number(m.quantity ?? 0);
-    prev.remaining += Number(m.available ?? 0);
-    buckets.set(key, prev);
-  }
-  return Array.from(buckets.values())
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 6);
+function normalizePakd(raw: DashboardSummaryApi["pakd"]): PakdSummary {
+  const materials = raw.materials ?? {
+    total: raw.total ?? 0,
+    valid: raw.valid ?? 0,
+    expired: raw.expired ?? 0,
+    items: raw.items ?? [],
+  };
+  const research = raw.research ?? { total: 0, valid: 0, expired: 0, items: [] };
+  return {
+    materials,
+    research,
+    total: materials.total,
+    valid: materials.valid,
+    expired: materials.expired,
+    items: materials.items,
+  };
+}
+
+function buildDashboardFromSummary(
+  summary: DashboardSummaryApi,
+  reportsTrend:
+    | Array<{
+        month: string;
+        contracts: number;
+        complaints: number;
+        handovers: number;
+        production?: number;
+        training?: number;
+      }>
+    | undefined,
+  completedThisMonth: number,
+): DashboardData {
+  const pp = summary.productProgress;
+  const productTotal =
+    pp.quantity.producing +
+    pp.quantity.produced +
+    pp.inspection.submitted +
+    pp.inspection.inspecting +
+    pp.inspection.passed +
+    pp.decisionApproved +
+    pp.equipped +
+    pp.equipDecided;
+
+  const customerProducts = summary.customerCare.customerBreakdown.map((c) => ({
+    name: c.name,
+    products: c.productsDelivered,
+  }));
+  const customerRevenue = summary.customerCare.customerBreakdown.map((c) => ({
+    name: c.name,
+    revenue: Math.round(c.revenue / 1_000_000),
+  }));
+
+  const trend = (reportsTrend ?? []).map((m) => ({
+    month: m.month,
+    sanXuat: Number(m.production ?? 0),
+    hopDong: Number(m.contracts ?? 0),
+    banGiao: Number(m.handovers ?? 0),
+    huanLuyen: Number(m.training ?? 0),
+  }));
+
+  return {
+    productProgress: summary.productProgress,
+    contractProgress: summary.contractProgress,
+    complaintProgress: summary.complaintProgress,
+    handoverProgress: summary.handoverProgress,
+    trainingProgress: summary.trainingProgress,
+    customerCare: summary.customerCare,
+    pakd: normalizePakd(summary.pakd),
+    stats: {
+      totalProducts: productTotal,
+      activeContracts: summary.contractProgress.active,
+      pendingComplaints: summary.complaintProgress.processing,
+      completedThisMonth,
+    },
+    product: {
+      total: productTotal,
+      producing: pp.quantity.producing,
+      inspecting:
+        pp.quantity.produced +
+        pp.inspection.submitted +
+        pp.inspection.inspecting +
+        pp.inspection.passed +
+        pp.decisionApproved,
+      equipped: pp.equipped + pp.equipDecided,
+    },
+    contract: {
+      total: summary.contractProgress.total,
+      active: summary.contractProgress.active,
+      completed: summary.contractProgress.completedOnTime + summary.contractProgress.completedLate,
+      onTime: summary.contractProgress.completedOnTime,
+      late: summary.contractProgress.completedLate,
+    },
+    handover: {
+      total: summary.handoverProgress.total,
+      active: summary.handoverProgress.active,
+      completed: summary.handoverProgress.completedOnTime + summary.handoverProgress.completedLate,
+      onTime: summary.handoverProgress.completedOnTime,
+      late: summary.handoverProgress.completedLate,
+    },
+    training: {
+      total: summary.trainingProgress.totalBatches,
+      active: summary.trainingProgress.active,
+      completed: summary.trainingProgress.completedOnTime + summary.trainingProgress.completedLate,
+      onTime: summary.trainingProgress.completedOnTime,
+      late: summary.trainingProgress.completedLate,
+    },
+    complaint: {
+      total: summary.complaintProgress.total,
+      warranty: summary.complaintProgress.warranty,
+      repair: summary.complaintProgress.repair,
+      processing: summary.complaintProgress.processing,
+      done: summary.complaintProgress.completedOnTime + summary.complaintProgress.completedLate,
+      onTime: summary.complaintProgress.completedOnTime,
+      late: summary.complaintProgress.completedLate,
+    },
+    customerProducts,
+    customerRevenue,
+    trend,
+  };
 }
 
 export type UseDashboardDataResult = {
@@ -158,14 +279,15 @@ export type UseDashboardDataResult = {
   isError: boolean;
 };
 
-export function useDashboardData(year: string): UseDashboardDataResult {
+export function useDashboardData(filters: ReportFilters): UseDashboardDataResult {
   const contractsQ = useContractsList();
   const handoversQ = useHandoversList();
   const trainingsQ = useTrainingCoursesQuery();
   const materialsQ = useMaterialsList();
   const warrantiesQ = useWarrantiesList();
   const productsQ = useProductsList();
-  const reportsQ = useReportsByYear(year);
+  const summaryQ = useDashboardSummary(filters);
+  const reportsQ = useReports(filters);
 
   const result = useMemo<UseDashboardDataResult>(() => {
     const apiContracts = (contractsQ.data ?? []).filter(isApiContractRow) as ApiContractRow[];
@@ -174,106 +296,15 @@ export function useDashboardData(year: string): UseDashboardDataResult {
     const apiMaterials = (materialsQ.data ?? []) as MaterialListRow[];
     const apiWarranties = (warrantiesQ.data ?? []) as WarrantyListRow[];
     const apiProducts = (productsQ.data ?? []) as ProductListItem[];
-    const apiReports = (reportsQ.data ?? null) as ReportsApi | null;
-
-    const contractActive = apiContracts.filter((c) => c.status === "active" || c.status === "draft").length;
-    const contractCompleted = apiContracts.filter((c) => c.status === "completed" || c.status === "liquidated").length;
-    const contractLate = apiContracts.filter((c) => c.status === "late").length;
-    const contractTotal = apiContracts.length;
-
-    const handoverActive = apiHandovers.filter((h) => h.status === "pending" || h.status === "active").length;
-    const handoverCompleted = apiHandovers.filter((h) => h.status === "completed").length;
-    const handoverLate = apiHandovers.filter((h) => h.status === "late").length;
-
-    const trainingOngoing = apiTrainings.filter((t) => t.status === "ongoing").length;
-    const trainingPlanned = apiTrainings.filter((t) => t.status === "planned").length;
-    const trainingCompleted = apiTrainings.filter((t) => t.status === "completed").length;
-    const trainingCancelled = apiTrainings.filter((t) => t.status === "cancelled").length;
-
-    const productProducing = apiProducts.filter((p) => p.status === "producing" || p.status === "developing").length;
-    const productEquipped = apiProducts.filter((p) => p.status === "equipped").length;
-    const productStopped = apiProducts.filter((p) => p.status === "stopped").length;
-
-    const warrantyOpen = apiWarranties.filter((w) => w.status === "open").length;
-    const warrantyProcessing = apiWarranties.filter((w) => w.status === "processing").length;
-    const warrantyDone = apiWarranties.filter((w) => w.status === "completed").length;
-    const warrantyCancelled = apiWarranties.filter((w) => w.status === "cancelled").length;
-    const warrantyByType = (() => {
-      const map: Record<string, number> = { warranty: 0, repair: 0, maintenance: 0 };
-      for (const w of apiWarranties) map[w.type] = (map[w.type] ?? 0) + 1;
-      return map;
-    })();
 
     const completedThisMonth =
       apiContracts.filter((c) => (c.status === "completed" || c.status === "liquidated") && isThisMonth(c.endDate)).length +
       apiHandovers.filter((h) => h.status === "completed" && isThisMonth(h.completedAt ?? h.dueDate)).length +
       apiTrainings.filter((t) => t.status === "completed" && isThisMonth(t.endDate)).length;
 
-    const customerProducts = (apiReports?.customer_breakdown ?? []).map((c) => ({
-      name: c.name,
-      products: Math.round(Number(c.contracts ?? 0)),
-    }));
-    const customerRevenue = (apiReports?.customer_breakdown ?? []).map((c) => ({
-      name: c.name,
-      revenue: Math.round(Number(c.value ?? 0) / 1_000_000),
-    }));
-
-    const trend = (apiReports?.trends?.monthly ?? []).map((m) => ({
-      month: m.month,
-      sanXuat: 0,
-      hopDong: Number(m.contracts ?? 0),
-      banGiao: Number(m.handovers ?? 0),
-      huanLuyen: 0,
-    }));
-
-    const data: DashboardData = {
-      stats: {
-        totalProducts: apiProducts.length,
-        activeContracts: contractActive,
-        pendingComplaints: warrantyOpen + warrantyProcessing,
-        completedThisMonth,
-      },
-      product: {
-        total: apiProducts.length,
-        producing: productProducing,
-        inspecting: productStopped,
-        equipped: productEquipped,
-      },
-      contract: {
-        total: contractTotal,
-        active: contractActive,
-        completed: contractCompleted,
-        onTime: contractCompleted,
-        late: contractLate,
-      },
-      handover: {
-        total: apiHandovers.length,
-        active: handoverActive,
-        completed: handoverCompleted,
-        onTime: handoverCompleted,
-        late: handoverLate,
-      },
-      training: {
-        total: apiTrainings.length,
-        active: trainingOngoing + trainingPlanned,
-        completed: trainingCompleted,
-        onTime: trainingCompleted,
-        late: trainingCancelled,
-      },
-      complaint: {
-        total: apiWarranties.length,
-        warranty: warrantyByType.warranty ?? 0,
-        repair: (warrantyByType.repair ?? 0) + (warrantyByType.maintenance ?? 0),
-        processing: warrantyOpen + warrantyProcessing,
-        done: warrantyDone,
-        onTime: warrantyDone,
-        late: warrantyCancelled,
-      },
-      pakd: buildPakdFromMaterials(apiMaterials),
-      customerProducts,
-      customerRevenue,
-      trend,
-    };
+    const data: DashboardData = summaryQ.data
+      ? buildDashboardFromSummary(summaryQ.data, reportsQ.data?.trends?.monthly, completedThisMonth)
+      : { ...emptyDashboardData, stats: { ...emptyDashboardData.stats, completedThisMonth } };
 
     return {
       data,
@@ -290,6 +321,7 @@ export function useDashboardData(year: string): UseDashboardDataResult {
         materialsQ.isLoading ||
         warrantiesQ.isLoading ||
         productsQ.isLoading ||
+        summaryQ.isLoading ||
         reportsQ.isLoading,
       isError:
         contractsQ.isError ||
@@ -298,6 +330,7 @@ export function useDashboardData(year: string): UseDashboardDataResult {
         materialsQ.isError ||
         warrantiesQ.isError ||
         productsQ.isError ||
+        summaryQ.isError ||
         reportsQ.isError,
     };
   }, [
@@ -319,6 +352,9 @@ export function useDashboardData(year: string): UseDashboardDataResult {
     productsQ.data,
     productsQ.isLoading,
     productsQ.isError,
+    summaryQ.data,
+    summaryQ.isLoading,
+    summaryQ.isError,
     reportsQ.data,
     reportsQ.isLoading,
     reportsQ.isError,

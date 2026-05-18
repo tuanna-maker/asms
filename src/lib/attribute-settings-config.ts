@@ -5,17 +5,22 @@ import {
   Truck,
   Wrench,
   Boxes,
-  Package,
   Users,
-  BarChart3,
   FlaskConical,
   ListTodo,
   GraduationCap,
   FolderOpen,
   Tags,
-  CircleDot,
   Warehouse,
   Ruler,
+  Workflow,
+  CircleDot,
+  ListChecks,
+  Package,
+  ArrowLeftRight,
+  Gauge,
+  Shield,
+  Layers,
 } from "lucide-react";
 
 export type AttributeModuleKey =
@@ -25,23 +30,27 @@ export type AttributeModuleKey =
   | "san-pham"
   | "vat-tu"
   | "khach-hang"
-  | "bao-cao"
   | "de-tai"
   | "cong-viec"
   | "dao-tao"
-  | "tai-lieu";
+  | "tai-lieu"
+  | "quy-trinh";
 
 export type AttributeRowStatus = "active" | "inactive";
 
 export type AttributeRow = {
   id: string;
+  code: string;
   name: string;
   createdAt: string;
   createdBy: string;
+  updatedAt: string;
+  updatedBy: string;
   status: AttributeRowStatus;
+  isSystem: boolean;
 };
 
-export type AttributeSectionDataSource = "definitions" | "contractStatusEnum" | "mock";
+export type AttributeSectionDataSource = "definitions";
 
 export type AttributeSectionDef = {
   id: string;
@@ -80,10 +89,11 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
       {
         id: "contract_status",
         title: "Trạng thái hợp đồng",
-        description: "Trạng thái vòng đời do hệ thống quản lý (enum), không chỉnh trên màn này.",
+        description: "Giá trị trạng thái trên danh sách / chi tiết hợp đồng (khớp mã lưu trong hệ thống).",
         icon: CircleDot,
-        iconClassName: "bg-emerald-500/15 text-emerald-600",
-        dataSource: "contractStatusEnum",
+        iconClassName: "bg-violet-500/15 text-violet-600",
+        dataSource: "definitions",
+        definitionCategory: "contract_status",
       },
     ],
   },
@@ -98,6 +108,15 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại phiếu bàn giao và huấn luyện.",
         icon: Truck,
         iconClassName: "bg-orange-500/15 text-orange-600",
+      },
+      {
+        id: "handover_status",
+        title: "Trạng thái phiếu bàn giao",
+        description: "Trạng thái tiến độ phiếu bàn giao trên màn Bàn giao.",
+        icon: ListChecks,
+        iconClassName: "bg-amber-500/15 text-amber-700",
+        dataSource: "definitions",
+        definitionCategory: "handover_status",
       },
     ],
   },
@@ -120,6 +139,15 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         icon: Tags,
         iconClassName: "bg-violet-500/15 text-violet-600",
       },
+      {
+        id: "warranty_ticket_type",
+        title: "Loại phiếu (BH / SC / bảo trì)",
+        description: "Phân loại phiếu trên màn Bảo hành (bảo hành, sửa chữa, bảo trì).",
+        icon: Shield,
+        iconClassName: "bg-fuchsia-500/15 text-fuchsia-700",
+        dataSource: "definitions",
+        definitionCategory: "warranty_ticket_type",
+      },
     ],
   },
   {
@@ -133,6 +161,15 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại sản phẩm trên danh mục.",
         icon: Boxes,
         iconClassName: "bg-sky-500/15 text-sky-600",
+      },
+      {
+        id: "product_status",
+        title: "Trạng thái sản phẩm",
+        description: "Trạng thái vòng đời sản phẩm trên danh mục / lọc.",
+        icon: Gauge,
+        iconClassName: "bg-emerald-500/15 text-emerald-700",
+        dataSource: "definitions",
+        definitionCategory: "product_status",
       },
     ],
   },
@@ -155,6 +192,33 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         icon: Ruler,
         iconClassName: "bg-teal-500/15 text-teal-600",
       },
+      {
+        id: "material_type",
+        title: "Loại vật tư (định danh / tiêu hao)",
+        description: "Phân loại vật tư trên màn Vật tư.",
+        icon: Package,
+        iconClassName: "bg-slate-500/15 text-slate-700",
+        dataSource: "definitions",
+        definitionCategory: "material_type",
+      },
+      {
+        id: "material_transfer_type",
+        title: "Loại phiếu điều chuyển",
+        description: "Liên hợp đồng, bảo hành hoặc sửa chữa.",
+        icon: ArrowLeftRight,
+        iconClassName: "bg-cyan-500/15 text-cyan-700",
+        dataSource: "definitions",
+        definitionCategory: "material_transfer_type",
+      },
+      {
+        id: "material_transfer_status",
+        title: "Trạng thái phiếu điều chuyển",
+        description: "Trạng thái xử lý phiếu điều chuyển kho.",
+        icon: CircleDot,
+        iconClassName: "bg-indigo-500/15 text-indigo-700",
+        dataSource: "definitions",
+        definitionCategory: "material_transfer_status",
+      },
     ],
   },
   {
@@ -175,20 +239,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại tổ chức khách hàng.",
         icon: Building2,
         iconClassName: "bg-blue-500/15 text-blue-600",
-      },
-    ],
-  },
-  {
-    key: "bao-cao",
-    label: "Báo cáo",
-    menuPath: "/bao-cao",
-    sections: [
-      {
-        id: "report_period",
-        title: "Kỳ báo cáo",
-        description: "Chu kỳ lọc báo cáo thống kê.",
-        icon: BarChart3,
-        iconClassName: "bg-fuchsia-500/15 text-fuchsia-600",
       },
     ],
   },
@@ -218,6 +268,24 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         icon: ListTodo,
         iconClassName: "bg-cyan-500/15 text-cyan-600",
       },
+      {
+        id: "task_status",
+        title: "Trạng thái công việc",
+        description: "Cột / thẻ trạng thái trên màn Công việc.",
+        icon: CircleDot,
+        iconClassName: "bg-blue-500/15 text-blue-700",
+        dataSource: "definitions",
+        definitionCategory: "task_status",
+      },
+      {
+        id: "task_type",
+        title: "Loại công việc",
+        description: "Phân loại nhiệm vụ (nghiên cứu, báo cáo, khảo sát…).",
+        icon: Tags,
+        iconClassName: "bg-orange-500/15 text-orange-700",
+        dataSource: "definitions",
+        definitionCategory: "task_type",
+      },
     ],
   },
   {
@@ -232,6 +300,15 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         icon: GraduationCap,
         iconClassName: "bg-pink-500/15 text-pink-600",
       },
+      {
+        id: "training_status",
+        title: "Trạng thái khóa đào tạo",
+        description: "Trạng thái khóa học trên màn Đào tạo & HL.",
+        icon: CircleDot,
+        iconClassName: "bg-rose-500/15 text-rose-700",
+        dataSource: "definitions",
+        definitionCategory: "training_status",
+      },
     ],
   },
   {
@@ -245,6 +322,31 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại tài liệu lưu trữ.",
         icon: FolderOpen,
         iconClassName: "bg-slate-500/15 text-slate-600",
+      },
+    ],
+  },
+  {
+    key: "quy-trinh",
+    label: "Quy trình",
+    menuPath: "/quy-trinh",
+    sections: [
+      {
+        id: "workflow_step_action",
+        title: "Hành động bước quy trình",
+        description: "Mã hành động khi cấu hình bước (trình ký, ký duyệt…).",
+        icon: Workflow,
+        iconClassName: "bg-purple-500/15 text-purple-700",
+        dataSource: "definitions",
+        definitionCategory: "workflow_step_action",
+      },
+      {
+        id: "workflow_phase",
+        title: "Giai đoạn bước quy trình",
+        description: "Mã giai đoạn (bàn giao, huấn luyện, bảo hành…) trong biên tập quy trình.",
+        icon: Layers,
+        iconClassName: "bg-violet-500/15 text-violet-800",
+        dataSource: "definitions",
+        definitionCategory: "workflow_phase",
       },
     ],
   },

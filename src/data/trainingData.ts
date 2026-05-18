@@ -17,8 +17,11 @@ export interface ScheduleSession {
   status: "planned" | "done" | "cancelled";
 }
 
+import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
+
 export interface TrainingCourse {
   id: string;
+  code?: string;
   contractId?: string | null;
   title: string;
   type: "internal" | "external" | "online";
@@ -30,6 +33,8 @@ export interface TrainingCourse {
   status: "planned" | "ongoing" | "completed";
   description?: string;
   location?: string;
+  workflowInstanceId?: string | null;
+  workflow?: WorkflowInstanceListSnapshot | null;
   trainees?: Trainee[];
   schedule?: ScheduleSession[];
 }

@@ -12,6 +12,7 @@ import {
   createContractController,
   deleteContractController,
   getContractDetailController,
+  getContractProductsController,
   listContractsController,
   setContractProductsController,
   updateContractController,
@@ -22,10 +23,11 @@ const router = Router();
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "viewer", "sales"];
+const readRoles = ["admin", "manager", "viewer", "sales", "technician"];
 const writeRoles = ["admin", "manager", "sales"];
 
 router.get("/", requireRoles(readRoles), listContractsController);
+router.get("/:id/products", requireRoles(readRoles), getContractProductsController);
 router.get("/:id", requireRoles(readRoles), getContractDetailController);
 
 router.post("/", requireRoles(writeRoles), validateBody(createContractSchema), createContractController);

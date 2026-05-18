@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { sendSuccess } from "../../lib/response";
+import { writeAudit } from "../../lib/audit";
 
 import {
   createMaterialTransferSchema,
@@ -65,6 +66,12 @@ export async function createMaterialController(req: Request, res: Response) {
   if (payload.available !== undefined) input.available = payload.available;
 
   const data = await createMaterialService(input);
+  await writeAudit(req, {
+    action: "create",
+    entity: "material",
+    entityId: (data as { id?: string }).id ?? null,
+    summary: `Tạo vật tư ${(data as { code?: string }).code ?? ""}`.trim(),
+  });
   return sendSuccess(res, data, "Material created");
 }
 
@@ -72,12 +79,25 @@ export async function updateMaterialController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(materialIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateMaterialSchema, req.body);
   const data = await updateMaterialService(id, payload as Parameters<typeof updateMaterialService>[1]);
+  await writeAudit(req, {
+    action: "update",
+    entity: "material",
+    entityId: id,
+    summary: `Cập nhật vật tư ${(data as { code?: string }).code ?? id}`,
+    payload: payload as Record<string, unknown>,
+  });
   return sendSuccess(res, data, "Material updated");
 }
 
 export async function deleteMaterialController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(materialIdParamSchema, req.params);
   const data = await softDeleteMaterialService(id);
+  await writeAudit(req, {
+    action: "delete",
+    entity: "material",
+    entityId: id,
+    summary: `Xoá vật tư ${id}`,
+  });
   return sendSuccess(res, data, "Material deleted");
 }
 
@@ -95,6 +115,12 @@ export async function listMaterialTransfersController(req: Request, res: Respons
 export async function createMaterialTransferController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createMaterialTransferSchema, req.body);
   const data = await createMaterialTransferService(payload);
+  await writeAudit(req, {
+    action: "create",
+    entity: "material_transfer",
+    entityId: (data as { id?: string }).id ?? null,
+    summary: `Tạo phiếu xuất vật tư ${(data as { code?: string }).code ?? ""}`.trim(),
+  });
   return sendSuccess(res, data, "Material transfer created");
 }
 
@@ -110,12 +136,25 @@ export async function updateMaterialTransferController(req: Request, res: Respon
   if (payload.status !== undefined) patch.status = payload.status;
   if (payload.type !== undefined) patch.type = payload.type;
   const data = await updateMaterialTransferService(id, patch);
+  await writeAudit(req, {
+    action: "update",
+    entity: "material_transfer",
+    entityId: id,
+    summary: `Cập nhật phiếu xuất vật tư ${id}`,
+    payload: patch as Record<string, unknown>,
+  });
   return sendSuccess(res, data, "Material transfer updated");
 }
 
 export async function deleteMaterialTransferController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(materialTransferIdParamSchema, req.params);
   const data = await softDeleteMaterialTransferService(id);
+  await writeAudit(req, {
+    action: "delete",
+    entity: "material_transfer",
+    entityId: id,
+    summary: `Huỷ phiếu xuất vật tư ${id}`,
+  });
   return sendSuccess(res, data, "Material transfer cancelled");
 }
 

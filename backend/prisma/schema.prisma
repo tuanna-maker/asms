@@ -48,6 +48,22 @@ enum WarrantyStatus {
   cancelled
 }
 
+enum WarrantyReceiptCategory {
+  incident
+  technical_support
+}
+
+enum WarrantyRootCause {
+  manufacturer
+  customer
+  unknown
+}
+
+enum WarrantyExecutionMode {
+  self
+  outsource
+}
+
 enum MaterialType {
   identified
   consumable
@@ -68,6 +84,12 @@ enum MaterialTransferStatus {
 enum ProductStatus {
   developing
   producing
+  produced
+  inspection_submitted
+  inspecting
+  inspection_passed
+  decision_approved
+  equip_decided
   equipped
   stopped
 }
@@ -144,6 +166,13 @@ enum FileType {
   other
 }
 
+enum AnniversaryType {
+  traditional_day
+  medal_day
+  leader_birthday
+  other
+}
+
 enum CrmActivityType {
   call
   email
@@ -161,6 +190,8 @@ model Role {
   code        String   @unique
   name        String
   description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  isActive    Boolean  @default(true)  @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -194,6 +225,14 @@ model User {
   crmActivities CrmActivity[] @relation("CrmActivityCreatedBy")
   refreshTokens          RefreshToken[]
   notificationPreferences UserNotificationPreference[]
+  notifications           Notification[]
+  anniversarySubscriptions AnniversarySubscription[]
+  dataDefinitionsCreated  DataDefinition[] @relation("DataDefinitionCreatedBy")
+  dataDefinitionsUpdated  DataDefinition[] @relation("DataDefinitionUpdatedBy")
+  workflowsCreated        WorkflowDefinition[] @relation("WorkflowDefinitionCreatedBy")
+  workflowsUpdated        WorkflowDefinition[] @relation("WorkflowDefinitionUpdatedBy")
+  workflowStepLogs        WorkflowStepLog[] @relation("WorkflowStepLogActor")
+  workflowDocsUploaded    WorkflowInstanceDocument[] @relation("WorkflowInstanceDocUploader")
 
   @@index([roleId], map: "idx_users_role_id")
   @@index([status], map: "idx_users_status")
@@ -202,13 +241,16 @@ model User {
 }
 
 model RefreshToken {
-  id        String    @id @default(cuid())
-  tokenHash String    @unique @map("token_hash")
-  userId    String    @map("user_id")
-  expiresAt DateTime  @map("expires_at")
-  revokedAt DateTime? @map("revoked_at")
-  createdAt DateTime  @default(now()) @map("created_at")
-  deletedAt DateTime? @map("deleted_at")
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique @map("token_hash")
+  userId      String    @map("user_id")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  userAgent   String?   @map("user_agent")
+  ip          String?
+  lastUsedAt  DateTime? @map("last_used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   user      User      @relation(fields: [userId], references: [id])
 
@@ -242,6 +284,11 @@ model Customer {
   phone           String?
   email           String?
   address         String?
+  sourceCode      String?   @map("source_code")
+  companyTypeCode String?   @map("company_type_code")
+  foundedAt       DateTime? @map("founded_at")
+  revenueTotal    Decimal?  @map("revenue_total") @db.Decimal(18, 2)
+  expenseTotal    Decimal?  @map("expense_total") @db.Decimal(18, 2)
   contractsCount  Int       @default(0) @map("contracts_count")
   activeContracts Int       @default(0) @map("active_contracts")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -256,10 +303,48 @@ model Customer {
   products        Product[]
   trainingCourses TrainingCourse[]
   documents       Document[]
+  anniversaries   CustomerAnniversary[]
 
   @@index([name], map: "idx_customers_name")
+  @@index([sourceCode], map: "idx_customers_source_code")
+  @@index([companyTypeCode], map: "idx_customers_company_type_code")
+  @@index([foundedAt], map: "idx_customers_founded_at")
   @@index([deletedAt], map: "idx_customers_deleted_at")
   @@map("customers")
+}
+
+model CustomerAnniversary {
+  id              String          @id @default(cuid())
+  customerId      String          @map("customer_id")
+  type            AnniversaryType @default(other)
+  label           String
+  occursAt        DateTime        @map("occurs_at")
+  recurringYearly Boolean         @default(true) @map("recurring_yearly")
+  reminderDays    Int             @default(7) @map("reminder_days")
+  notes           String?         @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  customer      Customer                  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptions AnniversarySubscription[]
+
+  @@index([customerId], map: "idx_customer_anniversaries_customer_id")
+  @@index([occursAt], map: "idx_customer_anniversaries_occurs_at")
+  @@map("customer_anniversaries")
+}
+
+model AnniversarySubscription {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  anniversaryId String   @map("anniversary_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  anniversary CustomerAnniversary @relation(fields: [anniversaryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, anniversaryId], map: "uniq_anniversary_subscription")
+  @@index([anniversaryId], map: "idx_anniversary_sub_ann")
+  @@map("anniversary_subscriptions")
 }
 
 model Contact {
@@ -267,9 +352,13 @@ model Contact {
   customerId String    @map("customer_id")
   fullName   String    @map("full_name")
   title      String?
+  rank       String?
+  department String?
   phone      String?
   email      String?
+  birthday   DateTime? @db.Date
   isPrimary  Boolean   @default(false) @map("is_primary")
+  notes      String?   @db.Text
   createdAt  DateTime  @default(now()) @map("created_at")
   updatedAt  DateTime  @updatedAt @map("updated_at")
   deletedAt  DateTime? @map("deleted_at")
@@ -317,6 +406,8 @@ model Contract {
   status       ContractStatus @default(draft)
   progress     Int            @default(0)
   contractTypeCode String?    @map("contract_type_code")
+  workflowId   String?        @map("workflow_id")
+  workflowInstanceId String?  @map("workflow_instance_id")
   terms        String?        @db.Text
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
@@ -324,81 +415,170 @@ model Contract {
 
   customer         Customer          @relation(fields: [customerId], references: [id])
   createdBy        User?             @relation("ContractCreatedBy", fields: [createdById], references: [id])
+  workflow         WorkflowDefinition? @relation("ContractWorkflow", fields: [workflowId], references: [id])
   handovers        Handover[]
   warranties       Warranty[]
   productsList     Product[]
   contractProducts ContractProduct[]
   trainingCourses  TrainingCourse[]
   documents        Document[]
+  stepPayloads     ContractStepPayload[]
 
   @@index([customerId], map: "idx_contracts_customer_id")
   @@index([createdById], map: "idx_contracts_created_by_id")
   @@index([status], map: "idx_contracts_status")
   @@index([contractTypeCode], map: "idx_contracts_contract_type_code")
   @@index([startDate, endDate], map: "idx_contracts_date_range")
+  @@index([workflowId], map: "idx_contracts_workflow_id")
+  @@index([workflowInstanceId], map: "idx_contracts_workflow_instance_id")
   @@index([deletedAt], map: "idx_contracts_deleted_at")
   @@map("contracts")
 }
 
-model Handover {
-  id          String         @id @default(cuid())
-  code        String         @unique
-  contractId  String         @map("contract_id")
-  customerId  String         @map("customer_id")
-  createdById String?        @map("created_by_id")
-  products    Int            @default(0)
-  currentStep Int            @default(1) @map("current_step")
-  status      HandoverStatus @default(pending)
-  startDate   DateTime       @map("start_date")
-  dueDate     DateTime       @map("due_date")
-  completedAt DateTime?      @map("completed_at")
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime       @updatedAt @map("updated_at")
-  deletedAt   DateTime?      @map("deleted_at")
+/** Nội dung form hợp đồng theo từng bước quy trình (key = workflowStepId). */
+model ContractStepPayload {
+  id             String   @id @default(cuid())
+  contractId     String   @map("contract_id")
+  workflowStepId String   @map("workflow_step_id")
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  contract    Contract       @relation(fields: [contractId], references: [id])
-  customer    Customer       @relation(fields: [customerId], references: [id])
-  createdBy   User?          @relation("HandoverCreatedBy", fields: [createdById], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@unique([contractId, workflowStepId], map: "uniq_contract_step_payload")
+  @@index([contractId], map: "idx_contract_step_payloads_contract_id")
+  @@map("contract_step_payloads")
+}
+
+model Handover {
+  id                 String         @id @default(cuid())
+  code               String         @unique
+  contractId         String         @map("contract_id")
+  customerId         String         @map("customer_id")
+  createdById        String?        @map("created_by_id")
+  products           Int            @default(0)
+  currentStep        Int            @default(1) @map("current_step")
+  status             HandoverStatus @default(pending)
+  typeCode           String?        @map("type_code")
+  workflowInstanceId String?        @map("workflow_instance_id")
+  startDate          DateTime       @map("start_date")
+  dueDate            DateTime       @map("due_date")
+  completedAt        DateTime?      @map("completed_at")
+  handoverPlan       String?        @map("handover_plan") @db.Text
+  costReportNote     String?        @map("cost_report_note") @db.Text
+  goodsCheckNote     String?        @map("goods_check_note") @db.Text
+  trainingPlanNote   String?        @map("training_plan_note") @db.Text
+  trainingCostReport String?        @map("training_cost_report") @db.Text
+  trainingReportNote String?        @map("training_report_note") @db.Text
+  trainingDecision   String?        @map("training_decision") @db.Text
+  tempHandoverNote   String?        @map("temp_handover_note") @db.Text
+  finalHandoverNote  String?        @map("final_handover_note") @db.Text
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  deletedAt          DateTime?      @map("deleted_at")
+
+  contract     Contract              @relation(fields: [contractId], references: [id])
+  customer     Customer              @relation(fields: [customerId], references: [id])
+  createdBy    User?                 @relation("HandoverCreatedBy", fields: [createdById], references: [id])
+  stepPayloads HandoverStepPayload[]
 
   @@index([contractId], map: "idx_handovers_contract_id")
   @@index([customerId], map: "idx_handovers_customer_id")
   @@index([createdById], map: "idx_handovers_created_by_id")
   @@index([status], map: "idx_handovers_status")
+  @@index([typeCode], map: "idx_handovers_type_code")
+  @@index([workflowInstanceId], map: "idx_handovers_workflow_instance_id")
   @@index([deletedAt], map: "idx_handovers_deleted_at")
   @@map("handovers")
 }
 
+/** Nội dung form bàn giao/HL theo từng bước quy trình (key = workflowStepId). */
+model HandoverStepPayload {
+  id             String   @id @default(cuid())
+  handoverId     String   @map("handover_id")
+  workflowStepId String   @map("workflow_step_id")
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  handover Handover @relation(fields: [handoverId], references: [id], onDelete: Cascade)
+
+  @@unique([handoverId, workflowStepId], map: "uniq_handover_step_payload")
+  @@index([handoverId], map: "idx_handover_step_payloads_handover_id")
+  @@map("handover_step_payloads")
+}
+
 model Warranty {
-  id             String           @id @default(cuid())
-  code           String           @unique
-  contractId     String?          @map("contract_id")
-  customerId     String           @map("customer_id")
-  productId      String?          @map("product_id")
-  assigneeId     String?          @map("assignee_id")
-  issue          String
-  source         String?
-  type           WarrantyType
-  priority       WarrantyPriority @default(medium)
-  status         WarrantyStatus   @default(open)
-  workflowStep   Int              @default(1) @map("workflow_step")
-  slaHours       Int?             @map("sla_hours")
-  createdAt      DateTime         @default(now()) @map("created_at")
-  updatedAt      DateTime         @updatedAt @map("updated_at")
-  resolvedAt     DateTime?        @map("resolved_at")
-  deletedAt      DateTime?        @map("deleted_at")
+  id                 String           @id @default(cuid())
+  code               String           @unique
+  contractId         String?          @map("contract_id")
+  customerId         String           @map("customer_id")
+  productId          String?          @map("product_id")
+  materialIds        String[]         @default([]) @map("material_ids")
+  assigneeId         String?          @map("assignee_id")
+  issue              String
+  source             String?
+  type               WarrantyType
+  priority           WarrantyPriority @default(medium)
+  status             WarrantyStatus   @default(open)
+  priorityCode       String           @default("medium") @map("priority_code")
+  statusCode         String           @default("open")   @map("status_code")
+  workflowStep       Int              @default(1) @map("workflow_step")
+  workflowInstanceId String?          @map("workflow_instance_id")
+  slaHours           Int?             @map("sla_hours")
+  receiptCategory          WarrantyReceiptCategory? @map("receipt_category")
+  occurredAt               DateTime?                @map("occurred_at")
+  productSerialSnapshot    String?                  @map("product_serial_snapshot")
+  rootCause                WarrantyRootCause?       @map("root_cause")
+  handlingPlan             String?                  @map("handling_plan") @db.Text
+  plannedHours             Int?                     @map("planned_hours")
+  costEstimate             Decimal?                 @map("cost_estimate") @db.Decimal(18, 2)
+  customerDisagreedClose   Boolean                  @default(false) @map("customer_disagreed_close")
+  executionMode            WarrantyExecutionMode?   @map("execution_mode")
+  outsourcePartner         String?                  @map("outsource_partner")
+  outsourceBudget          Decimal?                 @map("outsource_budget") @db.Decimal(18, 2)
+  outsourceTimeline        String?                  @map("outsource_timeline")
+  repairDetails            String?                  @map("repair_details") @db.Text
+  postRepairAssessment     String?                  @map("post_repair_assessment") @db.Text
+  handoverNotes            String?                  @map("handover_notes") @db.Text
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  resolvedAt         DateTime?        @map("resolved_at")
+  deletedAt          DateTime?        @map("deleted_at")
 
   contract       Contract?        @relation(fields: [contractId], references: [id])
   customer       Customer         @relation(fields: [customerId], references: [id])
   product        Product?         @relation(fields: [productId], references: [id])
   assignee       User?            @relation("WarrantyAssignee", fields: [assigneeId], references: [id])
+  documents      Document[]
+  stepPayloads   WarrantyStepPayload[]
 
   @@index([contractId], map: "idx_warranties_contract_id")
   @@index([customerId], map: "idx_warranties_customer_id")
   @@index([productId], map: "idx_warranties_product_id")
   @@index([assigneeId], map: "idx_warranties_assignee_id")
   @@index([status, priority], map: "idx_warranties_status_priority")
+  @@index([statusCode, priorityCode], map: "idx_warranties_status_priority_code")
+  @@index([workflowInstanceId], map: "idx_warranties_workflow_instance_id")
   @@index([deletedAt], map: "idx_warranties_deleted_at")
   @@map("warranties")
+}
+
+/** Nội dung form BH/SC theo từng bước quy trình (key = workflowStepId). */
+model WarrantyStepPayload {
+  id             String   @id @default(cuid())
+  warrantyId     String   @map("warranty_id")
+  workflowStepId String   @map("workflow_step_id")
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  warranty Warranty @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+
+  @@unique([warrantyId, workflowStepId], map: "uniq_warranty_step_payload")
+  @@index([warrantyId], map: "idx_warranty_step_payloads_warranty_id")
+  @@map("warranty_step_payloads")
 }
 
 model Material {
@@ -412,6 +592,7 @@ model Material {
   unit          String
   warehouse     String
   description   String?
+  expiresAt     DateTime?    @map("expires_at")
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
   deletedAt     DateTime?    @map("deleted_at")
@@ -458,7 +639,7 @@ model Product {
   name          String
   category      String
   description   String?
-  status        ProductStatus @default(developing)
+  status        ProductStatus @default(producing)
   version       String?
   manufacturer  String?
   unit          String?
@@ -533,6 +714,7 @@ model ResearchProject {
   startDate     DateTime      @map("start_date")
   endDate       DateTime      @map("end_date")
   status        ProjectStatus @default(planning)
+  stageCode     String        @default("planning") @map("stage_code")
   progress      Int           @default(0)
   budget        Decimal?      @db.Decimal(18, 2)
   budgetSpent   Decimal?      @map("budget_spent") @db.Decimal(18, 2)
@@ -547,6 +729,7 @@ model ResearchProject {
 
   @@index([managerId], map: "idx_research_projects_manager_id")
   @@index([status], map: "idx_research_projects_status")
+  @@index([stageCode], map: "idx_research_projects_stage_code")
   @@index([startDate, endDate], map: "idx_research_projects_date_range")
   @@index([deletedAt], map: "idx_research_projects_deleted_at")
   @@map("research_projects")
@@ -562,6 +745,7 @@ model Task {
   priority          TaskPriority @default(medium)
   status            TaskStatus   @default(todo)
   type              TaskType     @default(admin)
+  priorityCode      String       @default("medium") @map("priority_code")
   progress          Int          @default(0)
   startDate         DateTime?    @map("start_date")
   deadline          DateTime?    @map("deadline")
@@ -576,28 +760,31 @@ model Task {
   @@index([projectId], map: "idx_tasks_project_id")
   @@index([assigneeId], map: "idx_tasks_assignee_id")
   @@index([status, priority], map: "idx_tasks_status_priority")
+  @@index([priorityCode], map: "idx_tasks_priority_code")
   @@index([deadline], map: "idx_tasks_deadline")
   @@index([deletedAt], map: "idx_tasks_deleted_at")
   @@map("tasks")
 }
 
 model TrainingCourse {
-  id            String         @id @default(cuid())
-  code          String         @unique
-  contractId    String?        @map("contract_id")
-  customerId    String?        @map("customer_id")
-  instructorId  String?        @map("instructor_id")
-  title         String
-  type          TrainingType
-  startDate     DateTime       @map("start_date")
-  endDate       DateTime       @map("end_date")
-  participants  Int            @default(0)
-  status        TrainingStatus @default(planned)
-  location      String?
-  description   String?
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
-  deletedAt     DateTime?      @map("deleted_at")
+  id                 String         @id @default(cuid())
+  code               String         @unique
+  contractId         String?        @map("contract_id")
+  customerId         String?        @map("customer_id")
+  instructorId       String?        @map("instructor_id")
+  title              String
+  type               TrainingType
+  typeCode           String         @default("internal") @map("type_code")
+  startDate          DateTime       @map("start_date")
+  endDate            DateTime       @map("end_date")
+  participants       Int            @default(0)
+  status             TrainingStatus @default(planned)
+  location           String?
+  description        String?
+  workflowInstanceId String?        @map("workflow_instance_id")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  deletedAt          DateTime?      @map("deleted_at")
 
   contract      Contract?      @relation(fields: [contractId], references: [id])
   customer      Customer?      @relation(fields: [customerId], references: [id])
@@ -610,6 +797,8 @@ model TrainingCourse {
   @@index([customerId], map: "idx_training_courses_customer_id")
   @@index([instructorId], map: "idx_training_courses_instructor_id")
   @@index([status], map: "idx_training_courses_status")
+  @@index([typeCode], map: "idx_training_courses_type_code")
+  @@index([workflowInstanceId], map: "idx_training_courses_workflow_instance_id")
   @@index([deletedAt], map: "idx_training_courses_deleted_at")
   @@map("training_courses")
 }
@@ -664,8 +853,10 @@ model Document {
   productId         String?           @map("product_id")
   projectId         String?           @map("project_id")
   trainingCourseId  String?           @map("training_course_id")
+  warrantyId        String?           @map("warranty_id")
   name              String
   category          DocumentCategory
+  categoryCode      String            @default("other") @map("category_code")
   fileType          FileType          @map("file_type")
   fileSize          String?           @map("file_size")
   fileUrl           String?           @map("file_url")
@@ -682,6 +873,7 @@ model Document {
   product           Product?          @relation(fields: [productId], references: [id])
   project           ResearchProject?  @relation(fields: [projectId], references: [id])
   trainingCourse    TrainingCourse?   @relation(fields: [trainingCourseId], references: [id])
+  warranty          Warranty?         @relation(fields: [warrantyId], references: [id], onDelete: SetNull)
 
   @@index([ownerId], map: "idx_documents_owner_id")
   @@index([customerId], map: "idx_documents_customer_id")
@@ -689,23 +881,196 @@ model Document {
   @@index([productId], map: "idx_documents_product_id")
   @@index([projectId], map: "idx_documents_project_id")
   @@index([trainingCourseId], map: "idx_documents_training_course_id")
+  @@index([warrantyId], map: "idx_documents_warranty_id")
   @@index([category], map: "idx_documents_category")
+  @@index([categoryCode], map: "idx_documents_category_code")
   @@index([uploadedAt], map: "idx_documents_uploaded_at")
   @@index([deletedAt], map: "idx_documents_deleted_at")
   @@map("documents")
 }
 
+/// Thông báo trong ứng dụng dành cho từng người dùng. `key` khớp với `UserNotificationPreference.key`.
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  key       String
+  title     String
+  message   String?
+  link      String?
+  refType   String?   @map("ref_type")
+  refId     String?   @map("ref_id")
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt], map: "idx_notifications_user_read")
+  @@index([userId, createdAt], map: "idx_notifications_user_created")
+  @@unique([userId, key, refType, refId], map: "uniq_notifications_user_key_ref")
+  @@map("notifications")
+}
+
+/// Cấu hình hệ thống (SLA, ngưỡng cảnh báo, lịch nhắc, kênh thông báo). `value` là JSON tự do để chứa số/object.
+model SystemSetting {
+  key         String   @id
+  value       Json
+  label       String
+  description String?
+  updatedById String?  @map("updated_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+/// Bản ghi nhật ký truy vết hành động ghi (create/update/delete) cho các module nghiệp vụ chính.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?  @map("actor_id")
+  actorRole  String?  @map("actor_role")
+  action     String
+  entity     String
+  entityId   String?  @map("entity_id")
+  summary    String?
+  payload    Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId], map: "idx_audit_logs_entity")
+  @@index([actorId], map: "idx_audit_logs_actor_id")
+  @@index([createdAt], map: "idx_audit_logs_created_at")
+  @@map("audit_logs")
+}
+
+/// Workflow definition (per moduleKey: handover/warranty/training). Steps drive runtime approval.
+model WorkflowDefinition {
+  id                 String    @id @default(cuid())
+  code               String    @unique
+  name               String
+  moduleKey          String    @map("module_key")
+  description        String?   @db.Text
+  isActive           Boolean   @default(true) @map("is_active")
+  isSystem           Boolean   @default(false) @map("is_system")
+  entityFieldSchema  Json?     @map("entity_field_schema")
+  createdById        String?   @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  steps     WorkflowStep[]
+  instances WorkflowInstance[]
+  contracts Contract[] @relation("ContractWorkflow")
+  createdBy User? @relation("WorkflowDefinitionCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("WorkflowDefinitionUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([moduleKey, isActive], map: "idx_workflow_definitions_module_active")
+  @@index([deletedAt], map: "idx_workflow_definitions_deleted_at")
+  @@map("workflow_definitions")
+}
+
+model WorkflowStep {
+  id              String   @id @default(cuid())
+  workflowId      String   @map("workflow_id")
+  order           Int
+  name            String
+  actionCode      String   @default("approve") @map("action_code")
+  roleCode        String   @map("role_code")
+  slaHours        Int?     @map("sla_hours")
+  description     String?  @db.Text
+  phaseCode       String   @default("other") @map("phase_code")
+  requireDocument Boolean  @default(false) @map("require_document")
+  fieldSchema     Json?    @map("field_schema")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  workflow             WorkflowDefinition @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  currentInstances     WorkflowInstance[] @relation("WorkflowInstanceCurrentStep")
+  logs                 WorkflowStepLog[]
+  documents            WorkflowInstanceDocument[]
+
+  @@unique([workflowId, order], map: "uniq_workflow_step_order")
+  @@index([workflowId], map: "idx_workflow_steps_workflow_id")
+  @@index([phaseCode], map: "idx_workflow_steps_phase_code")
+  @@map("workflow_steps")
+}
+
+model WorkflowInstance {
+  id            String    @id @default(cuid())
+  workflowId    String    @map("workflow_id")
+  moduleKey     String    @map("module_key")
+  entityId      String    @map("entity_id")
+  currentStepId String?   @map("current_step_id")
+  status        String    @default("running")
+  startedAt     DateTime  @default(now()) @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  workflow    WorkflowDefinition @relation(fields: [workflowId], references: [id])
+  currentStep WorkflowStep?      @relation("WorkflowInstanceCurrentStep", fields: [currentStepId], references: [id])
+  logs        WorkflowStepLog[]
+  documents   WorkflowInstanceDocument[]
+
+  @@index([moduleKey, entityId], map: "idx_workflow_instances_entity")
+  @@index([workflowId], map: "idx_workflow_instances_workflow_id")
+  @@map("workflow_instances")
+}
+
+model WorkflowInstanceDocument {
+  id           String   @id @default(cuid())
+  instanceId   String   @map("instance_id")
+  stepId       String?  @map("step_id")
+  fileName     String   @map("file_name")
+  fileSize     Int      @map("file_size")
+  mimeType     String   @map("mime_type")
+  storagePath  String   @map("storage_path")
+  uploadedById String?  @map("uploaded_by_id")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at")
+
+  instance   WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  step       WorkflowStep?    @relation(fields: [stepId], references: [id])
+  uploadedBy User?            @relation("WorkflowInstanceDocUploader", fields: [uploadedById], references: [id])
+
+  @@index([instanceId, stepId], map: "idx_workflow_instance_documents_instance_step")
+  @@map("workflow_instance_documents")
+}
+
+model WorkflowStepLog {
+  id         String   @id @default(cuid())
+  instanceId String   @map("instance_id")
+  stepId     String?  @map("step_id")
+  actorId    String?  @map("actor_id")
+  action     String
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  step     WorkflowStep?    @relation(fields: [stepId], references: [id])
+  actor    User?            @relation("WorkflowStepLogActor", fields: [actorId], references: [id])
+
+  @@index([instanceId], map: "idx_workflow_step_logs_instance_id")
+  @@map("workflow_step_logs")
+}
+
 /// User-configurable picklists (warehouse names, units, …). `code` is the value stored on domain records; `label` is display text.
 model DataDefinition {
-  id        String    @id @default(cuid())
-  category  String    @map("category")
-  code      String    @map("code")
-  label     String
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
+  id          String    @id @default(cuid())
+  category    String    @map("category")
+  code        String    @map("code")
+  label       String
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  isSystem    Boolean   @default(false) @map("is_system")
+  createdById String?   @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  createdBy User? @relation("DataDefinitionCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("DataDefinitionUpdatedBy", fields: [updatedById], references: [id])
 
   @@index([category], map: "idx_data_definitions_category")
   @@index([category, code], map: "idx_data_definitions_category_code")

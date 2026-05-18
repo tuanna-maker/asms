@@ -3,6 +3,8 @@ import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 
+export type DefinitionPersonRef = { id: string; fullName: string } | null;
+
 export type DefinitionItem = {
   id: string;
   category: string;
@@ -10,8 +12,11 @@ export type DefinitionItem = {
   label: string;
   sortOrder: number;
   isActive: boolean;
+  isSystem: boolean;
   createdAt: string;
   updatedAt: string;
+  createdBy: DefinitionPersonRef;
+  updatedBy: DefinitionPersonRef;
 };
 
 export type CreateDefinitionPayload = {
@@ -23,6 +28,16 @@ export type CreateDefinitionPayload = {
 };
 
 export type UpdateDefinitionPayload = Partial<Pick<CreateDefinitionPayload, "code" | "label" | "sortOrder" | "isActive">>;
+
+export type DefinitionUsage = {
+  id: string;
+  category: string;
+  code: string;
+  label: string;
+  isSystem: boolean;
+  count: number;
+  breakdown: Array<{ entity: string; count: number }>;
+};
 
 export function useDefinitionsList(
   category: string,
@@ -38,6 +53,19 @@ export function useDefinitionsList(
       if (includeInactive) params.set("includeInactive", "1");
       const res = await api.get<ApiSuccess<DefinitionItem[]>>(`/api/v1/definitions?${params.toString()}`);
       return res.data.data ?? [];
+    },
+  });
+}
+
+export function useDefinitionUsage(id: string | null, opts?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: qk.definitions.usage(id ?? ""),
+    enabled: Boolean(id) && (opts?.enabled !== false),
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<DefinitionUsage>>(
+        `/api/v1/definitions/${encodeURIComponent(id as string)}/usage`,
+      );
+      return res.data.data;
     },
   });
 }
@@ -69,6 +97,22 @@ export function useDeleteDefinition() {
   return useMutation({
     mutationFn: async (id: string) =>
       api.delete<ApiSuccess<{ id: string }>>(`/api/v1/definitions/${encodeURIComponent(id)}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: qk.definitions.all });
+    },
+  });
+}
+
+export type ReorderDefinitionsPayload = {
+  category: string;
+  items: Array<{ id: string; sortOrder: number }>;
+};
+
+export function useReorderDefinitions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: ReorderDefinitionsPayload) =>
+      api.put<ApiSuccess<{ count: number }>>("/api/v1/definitions/reorder", payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: qk.definitions.all });
     },

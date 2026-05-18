@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 import { prisma } from "../../utils/prisma";
 
 import type { z } from "zod";
@@ -62,6 +63,8 @@ export async function createMaterialService(payload: {
   warehouse: string;
   description?: string | null;
 }) {
+  await assertActiveDefinitionCode("material_unit", payload.unit, "Đơn vị");
+  await assertActiveDefinitionCode("warehouse", payload.warehouse, "Kho");
   return prisma.material.create({
     data: {
       code: payload.code ?? genMaterialCode(),
@@ -92,6 +95,13 @@ type UpdateMaterialPayload = Partial<{
 export async function updateMaterialService(id: string, payload: UpdateMaterialPayload) {
   const existing = await prisma.material.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
   if (!existing) throw new HttpError(404, "Material not found");
+
+  if (payload.unit !== undefined) {
+    await assertActiveDefinitionCode("material_unit", payload.unit, "Đơn vị");
+  }
+  if (payload.warehouse !== undefined) {
+    await assertActiveDefinitionCode("warehouse", payload.warehouse, "Kho");
+  }
 
   return prisma.material.update({
     where: { id },

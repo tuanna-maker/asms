@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,27 +9,23 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, GraduationCap, Download, Edit,
+  Info, ListChecks, Boxes, Files, Download, Edit,
 } from "lucide-react";
 import ContractEditDialog from "./ContractEditDialog";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
+import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useContractDetail } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import type { ProductSpec } from "@/hooks/use-products-api";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  active: { label: "Đang thực hiện", variant: "default" },
-  completed: { label: "Hoàn thành", variant: "secondary" },
-  late: { label: "Chậm tiến độ", variant: "destructive" },
-  liquidated: { label: "Đã thanh lý", variant: "outline" },
-};
-
-const trainingStatusLabel: Record<string, string> = {
-  planned: "Lên kế hoạch",
-  ongoing: "Đang diễn ra",
-  completed: "Hoàn thành",
-  cancelled: "Đã hủy",
+  draft: { label: CONTRACT_STATUS_LABELS.draft ?? "Nháp", variant: "outline" },
+  active: { label: CONTRACT_STATUS_LABELS.active ?? "Đang thực hiện", variant: "default" },
+  completed: { label: CONTRACT_STATUS_LABELS.completed ?? "Hoàn thành", variant: "secondary" },
+  late: { label: CONTRACT_STATUS_LABELS.late ?? "Chậm tiến độ", variant: "destructive" },
+  liquidated: { label: CONTRACT_STATUS_LABELS.liquidated ?? "Đã thanh lý", variant: "outline" },
 };
 
 type Contract = {
@@ -62,24 +58,29 @@ type DetailDocument = {
   category?: string | null;
 };
 
-type DetailTraining = {
-  id?: string;
-  code?: string;
-  title?: string;
-  type?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  participants?: number | null;
-  status?: string | null;
-  location?: string | null;
-};
-
 type ContractDetailData = {
+  id?: string;
   terms?: string | null;
   contractTypeCode?: string | null;
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
-  trainingCourses?: DetailTraining[];
+  linkedHandover?: {
+    id: string;
+    code: string;
+    status: string;
+    workflowId?: string | null;
+    workflowName?: string | null;
+  } | null;
+  linkedTraining?: {
+    id: string;
+    code: string;
+    title: string;
+    status: string;
+    workflowId?: string | null;
+    workflowName?: string | null;
+    startDate?: string;
+    endDate?: string;
+  } | null;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -99,11 +100,21 @@ interface Props {
 
 const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [editing, setEditing] = useState(false);
+  const [editTab, setEditTab] = useState("info");
   const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
 
   const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
   const detail = detailData as ContractDetailData | null;
+  const contractDbId =
+    typeof detail?.id === "string" && detail.id.trim()
+      ? detail.id
+      : contract?.dbId ?? contract?.id ?? null;
+
+  const { data: contractAudit } = useAuditLogs(
+    { entity: "contract", entityId: contractDbId ?? "", pageSize: 20 },
+    open && Boolean(contractDbId),
+  );
 
   const productsList = useMemo<DetailProduct[]>(
     () => (detail?.productsList ?? []) as DetailProduct[],
@@ -117,15 +128,15 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
     () => (detail?.documents ?? []) as DetailDocument[],
     [detail],
   );
-  const trainingList = useMemo<DetailTraining[]>(
-    () => (detail?.trainingCourses ?? []) as DetailTraining[],
-    [detail],
-  );
+
+  const openEdit = (tab: string) => {
+    setEditTab(tab);
+    setEditing(true);
+  };
 
   if (!contract) return null;
   const cfg = statusConfig[contract.status] || statusConfig.active;
   const termsText = (detail?.terms ?? contract.terms ?? "").trim();
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -137,7 +148,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
             <span className="truncate leading-6">Chi tiết hợp đồng {contract.id}</span>
           </SheetTitle>
-          <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="shrink-0">
+          <Button variant="outline" size="sm" onClick={() => openEdit("info")} className="shrink-0">
             <Edit className="h-4 w-4" /> Chỉnh sửa
           </Button>
         </SheetHeader>
@@ -149,11 +160,9 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản chính" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
-              <TabTrigger value="training" icon={<GraduationCap className="h-4 w-4" />} label="Đào tạo & Huấn luyện" />
             </TabsList>
           </div>
 
-          {/* Thông tin chung */}
           <TabsContent value="info" className="flex-1 overflow-y-auto p-6 space-y-6 mt-0">
             <div className="flex items-center justify-between">
               <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
@@ -184,25 +193,25 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             <div>
               <h4 className="text-sm font-semibold text-card-foreground mb-3">Lịch sử hoạt động</h4>
               <div className="space-y-3">
-                {[
-                  { date: contract.startDate, text: "Ký hợp đồng", done: true },
-                  { date: "—", text: "Sản xuất & kiểm tra", done: contract.progress >= 40 },
-                  { date: "—", text: "Bàn giao sản phẩm", done: contract.progress >= 70 },
-                  { date: contract.endDate, text: "Nghiệm thu & thanh lý", done: contract.progress === 100 },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className={`mt-0.5 h-3 w-3 rounded-full shrink-0 ${item.done ? "bg-primary" : "bg-secondary"}`} />
-                    <div>
-                      <p className={`text-sm ${item.done ? "text-card-foreground font-medium" : "text-muted-foreground"}`}>{item.text}</p>
-                      <p className="text-xs text-muted-foreground">{item.date}</p>
+                {(contractAudit?.rows ?? []).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Chưa có bản ghi nhật ký cho hợp đồng này.</p>
+                ) : (
+                  (contractAudit?.rows ?? []).map((row) => (
+                    <div key={row.id} className="flex items-start gap-3">
+                      <div className="mt-0.5 h-3 w-3 rounded-full shrink-0 bg-primary" />
+                      <div>
+                        <p className="text-sm text-card-foreground font-medium">{row.summary ?? row.action}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[row.actorName ?? row.actorEmail, formatDate(row.createdAt)].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </TabsContent>
 
-          {/* Điều khoản chính */}
           <TabsContent value="terms" className="flex-1 overflow-y-auto p-6 space-y-4 mt-0">
             {detailLoading && !termsText ? (
               <div className="text-sm text-muted-foreground">Đang tải điều khoản hợp đồng...</div>
@@ -215,7 +224,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             )}
           </TabsContent>
 
-          {/* Danh mục sản phẩm */}
           <TabsContent value="products" className="flex-1 overflow-y-auto p-6 mt-0">
             {detailLoading && productsList.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải danh mục sản phẩm...</div>
@@ -262,7 +270,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             )}
           </TabsContent>
 
-          {/* Tài liệu */}
           <TabsContent value="docs" className="flex-1 overflow-y-auto p-6 mt-0">
             {detailLoading && documentsList.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải tài liệu...</div>
@@ -300,42 +307,16 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             )}
           </TabsContent>
 
-          {/* Đào tạo & Huấn luyện */}
-          <TabsContent value="training" className="flex-1 overflow-y-auto p-6 space-y-3 mt-0">
-            {detailLoading && trainingList.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Đang tải khóa đào tạo...</div>
-            ) : trainingList.length === 0 ? (
-              <EmptyHint text="Hợp đồng chưa có khóa đào tạo nào." />
-            ) : (
-              trainingList.map((t, i) => {
-                const statusKey = String(t.status ?? "planned");
-                return (
-                  <div key={t.id ?? t.code ?? i} className="rounded-lg border border-border/60 bg-card p-4">
-                    <div className="flex items-start justify-between gap-3 mb-2">
-                      <h4 className="text-sm font-semibold text-card-foreground">{t.title ?? "Khóa đào tạo"}</h4>
-                      <Badge variant={statusKey === "completed" ? "secondary" : "default"}>
-                        {trainingStatusLabel[statusKey] ?? statusKey}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                      <p><span className="text-card-foreground font-medium">Mã khóa:</span> {t.code ?? "—"}</p>
-                      <p><span className="text-card-foreground font-medium">Bắt đầu:</span> {formatDate(t.startDate)}</p>
-                      <p><span className="text-card-foreground font-medium">Kết thúc:</span> {formatDate(t.endDate)}</p>
-                      <p><span className="text-card-foreground font-medium">Hình thức:</span> {t.type ?? "—"}</p>
-                      <p><span className="text-card-foreground font-medium">Học viên:</span> {t.participants ?? 0}</p>
-                      <p><span className="text-card-foreground font-medium">Địa điểm:</span> {t.location ?? "—"}</p>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </TabsContent>
         </Tabs>
       </SheetContent>
       <ContractEditDialog
         contract={contract}
         open={editing}
-        onOpenChange={setEditing}
+        initialTab={editTab}
+        onOpenChange={(next) => {
+          setEditing(next);
+          if (!next) setEditTab("info");
+        }}
       />
       <ContractProductDetailDialog
         contractId={(detailData as { id?: string } | null)?.id ?? contract.dbId ?? contract.id}

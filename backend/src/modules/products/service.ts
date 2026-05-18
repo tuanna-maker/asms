@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 import { syncContractProductCounts } from "../contracts/product-count";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 
 import { createProductSchema } from "./schema";
 import type { z } from "zod";
@@ -80,6 +81,7 @@ function formatProductWithBom(row: ProductRow) {
   return {
     ...row,
     bom: row.productBoms.map((item) => ({
+      materialDbId: item.materialId,
       materialId: item.material.code,
       materialName: item.material.name,
       quantity: item.quantity,
@@ -171,7 +173,10 @@ export async function updateProductService(idOrCode: string, payload: Record<str
   const data: Record<string, unknown> = {};
   if (payload.code !== undefined) data.code = payload.code;
   if (payload.name !== undefined) data.name = payload.name;
-  if (payload.category !== undefined) data.category = payload.category;
+  if (payload.category !== undefined) {
+    await assertActiveDefinitionCode("product_category", String(payload.category), "Nhóm sản phẩm");
+    data.category = payload.category;
+  }
   if (payload.specs !== undefined) data.specs = payload.specs;
   if (payload.status !== undefined) data.status = payload.status;
   if (payload.version !== undefined) data.version = payload.version;
@@ -337,6 +342,8 @@ export async function createProductService(payload: CreateProductInput) {
   });
   if (dup) throw new HttpError(409, "Product code already exists");
 
+  await assertActiveDefinitionCode("product_category", payload.category, "Nhóm sản phẩm");
+
   const customerId = await resolveCustomerIdOptional(payload.customerId);
 
   try {
@@ -346,7 +353,7 @@ export async function createProductService(payload: CreateProductInput) {
         name: payload.name,
         category: payload.category,
         specs: (payload.specs ?? []) as unknown as Prisma.InputJsonValue,
-        status: (payload.status ?? "developing") as "developing" | "producing" | "equipped" | "stopped",
+        status: payload.status ?? "producing",
         version: payload.version ?? null,
         description: payload.description ?? null,
         manufacturer: payload.manufacturer ?? null,

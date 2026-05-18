@@ -5,6 +5,10 @@ export const NOTIFICATION_PREF_KEYS = [
   "new_ticket",
   "task_late",
   "material_low",
+  "warranty_expiry",
+  "training_upcoming",
+  "repair_scheduled",
+  "customer_anniversary",
 ] as const;
 
 export type NotificationPrefKey = (typeof NOTIFICATION_PREF_KEYS)[number];

@@ -14,7 +14,17 @@ export type ProductListItem = {
   code: string;
   name: string;
   category: string;
-  status: "developing" | "producing" | "equipped" | "stopped";
+  status:
+    | "developing"
+    | "producing"
+    | "produced"
+    | "inspection_submitted"
+    | "inspecting"
+    | "inspection_passed"
+    | "decision_approved"
+    | "equip_decided"
+    | "equipped"
+    | "stopped";
   version: string | null;
   description: string | null;
   manufacturer: string | null;
@@ -24,6 +34,8 @@ export type ProductListItem = {
   customerId: string | null;
   specs?: ProductSpec[];
   bom?: Array<{
+    /** UUID vật tư trong DB — dùng khi gửi materialIds (phiếu BH/SC, bàn giao) */
+    materialDbId?: string;
     materialId: string;
     materialName: string;
     quantity: number;
@@ -58,6 +70,18 @@ export function useProductsList(enabled = true) {
     queryFn: async () => {
       const res = await api.get<ApiSuccess<ProductListItem[]>>("/api/v1/products");
       return res.data.data ?? [];
+    },
+  });
+}
+
+export function useProductDetail(id: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.products.detail(id ?? ""),
+    enabled: Boolean(enabled && id),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<ProductListItem>>(`/api/v1/products/${encodeURIComponent(id as string)}`);
+      return res.data.data ?? null;
     },
   });
 }

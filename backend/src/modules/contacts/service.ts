@@ -40,37 +40,32 @@ export async function listContactsService(filters: z.infer<typeof listContactsQu
   return prisma.contact.findMany({
     where,
     orderBy: [{ isPrimary: "desc" }, { fullName: "asc" }],
-    select: {
-      id: true,
-      customerId: true,
-      fullName: true,
-      title: true,
-      phone: true,
-      email: true,
-      isPrimary: true,
-      createdAt: true,
-      updatedAt: true,
-      customer: { select: { id: true, code: true, name: true } },
-    },
+    select: contactSelect,
   });
 }
+
+const contactSelect = {
+  id: true,
+  customerId: true,
+  fullName: true,
+  title: true,
+  rank: true,
+  department: true,
+  phone: true,
+  email: true,
+  birthday: true,
+  isPrimary: true,
+  notes: true,
+  createdAt: true,
+  updatedAt: true,
+  customer: { select: { id: true, code: true, name: true } },
+} as const;
 
 export async function getContactDetailService(id: string) {
   const resolvedId = await resolveContactId(id);
   const row = await prisma.contact.findFirst({
     where: { id: resolvedId, deletedAt: null },
-    select: {
-      id: true,
-      customerId: true,
-      fullName: true,
-      title: true,
-      phone: true,
-      email: true,
-      isPrimary: true,
-      createdAt: true,
-      updatedAt: true,
-      customer: { select: { id: true, code: true, name: true } },
-    },
+    select: contactSelect,
   });
   if (!row) throw new HttpError(404, "Contact not found");
   return row;
@@ -92,22 +87,15 @@ export async function createContactService(payload: z.infer<typeof createContact
         customerId,
         fullName: payload.fullName,
         title: payload.title ?? null,
+        rank: payload.rank ?? null,
+        department: payload.department ?? null,
         phone: payload.phone ?? null,
         email: payload.email ?? null,
+        birthday: payload.birthday ?? null,
         isPrimary,
+        notes: payload.notes ?? null,
       },
-      select: {
-        id: true,
-        customerId: true,
-        fullName: true,
-        title: true,
-        phone: true,
-        email: true,
-        isPrimary: true,
-        createdAt: true,
-        updatedAt: true,
-        customer: { select: { id: true, code: true, name: true } },
-      },
+      select: contactSelect,
     });
   });
 }
@@ -122,17 +110,25 @@ export async function updateContactService(id: string, payload: Partial<z.infer<
     const data: {
       fullName?: string;
       title?: string | null;
+      rank?: string | null;
+      department?: string | null;
       phone?: string | null;
       email?: string | null;
+      birthday?: Date | null;
       isPrimary?: boolean;
+      notes?: string | null;
       customerId?: string;
     } = {};
 
     if (payload.fullName !== undefined) data.fullName = payload.fullName;
     if (payload.title !== undefined) data.title = payload.title ?? null;
+    if (payload.rank !== undefined) data.rank = payload.rank ?? null;
+    if (payload.department !== undefined) data.department = payload.department ?? null;
     if (payload.phone !== undefined) data.phone = payload.phone ?? null;
     if (payload.email !== undefined) data.email = payload.email ?? null;
+    if (payload.birthday !== undefined) data.birthday = payload.birthday ?? null;
     if (payload.isPrimary !== undefined) data.isPrimary = payload.isPrimary;
+    if (payload.notes !== undefined) data.notes = payload.notes ?? null;
     if (newCustomerId !== undefined) data.customerId = newCustomerId;
 
     if (Object.keys(data).length > 0) {
@@ -153,18 +149,7 @@ export async function updateContactService(id: string, payload: Partial<z.infer<
 
     const out = await tx.contact.findFirst({
       where: { id: resolvedId, deletedAt: null },
-      select: {
-        id: true,
-        customerId: true,
-        fullName: true,
-        title: true,
-        phone: true,
-        email: true,
-        isPrimary: true,
-        createdAt: true,
-        updatedAt: true,
-        customer: { select: { id: true, code: true, name: true } },
-      },
+      select: contactSelect,
     });
     if (!out) throw new HttpError(404, "Contact not found");
     return out;

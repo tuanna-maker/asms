@@ -10,14 +10,49 @@ export type CustomerPayload = {
   phone?: string;
   email?: string;
   address?: string;
+  sourceCode?: string;
+  companyTypeCode?: string;
+  foundedAt?: string | null;
 };
 
-export function useCustomersList() {
+export type CustomerListFilters = {
+  search?: string;
+  sourceCode?: string;
+  companyTypeCode?: string;
+  createdFrom?: string;
+  createdTo?: string;
+};
+
+export function useCustomersList(filters?: CustomerListFilters) {
   return useQuery({
-    queryKey: qk.customers.all,
+    queryKey: filters && Object.values(filters).some(Boolean)
+      ? [...qk.customers.all, filters]
+      : qk.customers.all,
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<unknown[]>>("/api/v1/customers");
+      const params = new URLSearchParams();
+      if (filters?.search) params.set("search", filters.search);
+      if (filters?.sourceCode) params.set("sourceCode", filters.sourceCode);
+      if (filters?.companyTypeCode) params.set("companyTypeCode", filters.companyTypeCode);
+      if (filters?.createdFrom) params.set("createdFrom", filters.createdFrom);
+      if (filters?.createdTo) params.set("createdTo", filters.createdTo);
+      const qs = params.toString();
+      const res = await api.get<ApiSuccess<unknown[]>>(
+        qs ? `/api/v1/customers?${qs}` : "/api/v1/customers",
+      );
       return res.data.data ?? [];
+    },
+  });
+}
+
+export function useCustomerDetail(id: string | null | undefined) {
+  return useQuery({
+    queryKey: id ? [...qk.customers.all, "detail", id] : ["customers", "detail", "noop"],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<Record<string, unknown>>>(
+        `/api/v1/customers/${encodeURIComponent(id as string)}`,
+      );
+      return res.data.data ?? null;
     },
   });
 }

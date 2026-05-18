@@ -18,15 +18,26 @@ const colorMap = {
 };
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle }: StatCardProps) => {
+  const valueStr = String(value);
+  const isLongText = valueStr.length > 14;
+
   return (
-    <div className="flex items-center gap-3 sm:gap-4 rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50">
+    <div className="flex items-center gap-3 sm:gap-4 rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-[5.5rem]">
       <div className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg ${colorMap[color]}`}>
         <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
       </div>
-      <div className="min-w-0">
-        <p className="text-xs sm:text-sm text-muted-foreground truncate">{title}</p>
-        <p className="text-xl sm:text-2xl font-bold text-card-foreground leading-tight mt-0.5">{value}</p>
-        {subtitle && <p className="text-[10px] sm:text-xs text-muted-foreground truncate mt-1">{subtitle}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-xs sm:text-sm text-muted-foreground">{title}</p>
+        <p
+          className={
+            isLongText
+              ? "text-sm sm:text-base font-semibold text-card-foreground leading-snug mt-1 line-clamp-2 break-words"
+              : "text-xl sm:text-2xl font-bold text-card-foreground leading-tight mt-0.5 tabular-nums"
+          }
+        >
+          {value}
+        </p>
+        {subtitle && <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{subtitle}</p>}
       </div>
     </div>
   );

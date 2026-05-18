@@ -21,7 +21,7 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full flex flex-col">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" />
@@ -32,7 +32,7 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-y-auto">
           {stats.map((s) => (
             <div key={s.label} className="flex items-center gap-3 rounded-lg bg-secondary/50 p-3">
               <div className={`flex h-8 w-8 items-center justify-center rounded-md ${s.color}`}>
@@ -53,9 +53,9 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
             <span className="font-semibold text-card-foreground">{onTime}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="h-2.5 w-2.5 rounded-full bg-warning" />
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
             <span className="text-muted-foreground">Chậm tiến độ:</span>
-            <span className="font-semibold text-card-foreground">{late}</span>
+            <span className="font-semibold text-destructive">{late}</span>
           </div>
         </div>
       </div>

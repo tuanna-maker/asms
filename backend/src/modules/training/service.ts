@@ -9,6 +9,11 @@ import type {
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 import { getContractProductCount, getContractProductCounts } from "../contracts/product-count";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
+import { loadWorkflowSnapshotsByInstanceIds } from "../workflows/instance-snapshot";
+import { attachWorkflowToEntity, startInstanceForEntity } from "../workflows/runtime";
+
+const TRAINING_TYPE_ENUMS = new Set(["internal", "external", "online"]);
 
 function genTrainingCode() {
   return `TC-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -24,14 +29,31 @@ async function resolveContractIdOptional(idOrCode: string | undefined) {
   return contract.id;
 }
 
+async function assertSingleTrainingPerContract(contractId: string, excludeCourseId?: string) {
+  const existing = await prisma.trainingCourse.findFirst({
+    where: {
+      contractId,
+      deletedAt: null,
+      ...(excludeCourseId ? { id: { not: excludeCourseId } } : {}),
+    },
+    select: { id: true, code: true },
+  });
+  if (existing) {
+    throw new HttpError(
+      400,
+      `Hợp đồng đã có khóa huấn luyện ${existing.code}. Mỗi hợp đồng chỉ được một khóa HL.`,
+    );
+  }
+}
+
 export async function listTrainingCoursesService(filters: {
   status?: string;
-  type?: string;
+  typeCode?: string;
   contractId?: string;
 }) {
   const where: Prisma.TrainingCourseWhereInput = { deletedAt: null };
   if (filters.status) where.status = filters.status as TrainingStatus;
-  if (filters.type) where.type = filters.type as TrainingType;
+  if (filters.typeCode) where.typeCode = filters.typeCode;
   if (filters.contractId) {
     const resolvedContractId = await resolveContractIdOptional(filters.contractId);
     if (resolvedContractId) where.contractId = resolvedContractId;
@@ -45,20 +67,24 @@ export async function listTrainingCoursesService(filters: {
       code: true,
       title: true,
       type: true,
+      typeCode: true,
       startDate: true,
       endDate: true,
       participants: true,
       status: true,
       location: true,
       contractId: true,
+      workflowInstanceId: true,
       customer: { select: { id: true, code: true, name: true } },
       contract: { select: { id: true, code: true } },
     },
   });
   const counts = await getContractProductCounts(rows.map((row) => row.contractId).filter(Boolean) as string[]);
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds(rows.map((row) => row.workflowInstanceId));
   return rows.map((row) => ({
     ...row,
     participants: row.contractId ? counts.get(row.contractId) ?? 0 : row.participants,
+    workflow: row.workflowInstanceId ? workflowMap.get(row.workflowInstanceId) ?? null : null,
   }));
 }
 
@@ -89,18 +115,25 @@ export async function createTrainingCourseService(payload: {
   customerId?: string;
   instructorId?: string;
   title: string;
-  type: string;
+  typeCode: string;
   startDate: Date;
   endDate: Date;
   participants?: number;
   status?: string;
   location?: string;
   description?: string;
+  workflowId?: string;
+  actorId?: string | null;
 }) {
   const resolvedContractId = await resolveContractIdOptional(payload.contractId);
+  if (resolvedContractId) {
+    await assertSingleTrainingPerContract(resolvedContractId);
+  }
   const participants = resolvedContractId
     ? await getContractProductCount(resolvedContractId)
     : payload.participants ?? 0;
+
+  await assertActiveDefinitionCode("training_type", payload.typeCode, "Loại đào tạo");
 
   const created = await prisma.trainingCourse.create({
     data: {
@@ -109,7 +142,10 @@ export async function createTrainingCourseService(payload: {
       customerId: payload.customerId ?? null,
       instructorId: payload.instructorId ?? null,
       title: payload.title,
-      type: payload.type as TrainingType,
+      typeCode: payload.typeCode,
+      ...(TRAINING_TYPE_ENUMS.has(payload.typeCode)
+        ? { type: payload.typeCode as TrainingType }
+        : { type: "internal" as TrainingType }),
       startDate: payload.startDate,
       endDate: payload.endDate,
       participants,
@@ -122,6 +158,7 @@ export async function createTrainingCourseService(payload: {
       code: true,
       title: true,
       type: true,
+      typeCode: true,
       startDate: true,
       endDate: true,
       participants: true,
@@ -136,7 +173,30 @@ export async function createTrainingCourseService(payload: {
     },
   });
 
-  return created;
+  const actorId = payload.actorId ?? payload.instructorId ?? null;
+  try {
+    if (payload.workflowId) {
+      await attachWorkflowToEntity({
+        moduleKey: "training",
+        entityId: created.id,
+        workflowId: payload.workflowId,
+        actorId,
+      });
+    } else {
+      const init = await startInstanceForEntity("training", created.id, actorId);
+      if (init) {
+        await prisma.trainingCourse.update({
+          where: { id: created.id },
+          data: { workflowInstanceId: init.instanceId },
+        });
+      }
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[training] workflow init failed", e);
+  }
+
+  return getTrainingCourseDetailService(created.id);
 }
 
 type UpdateTrainingCoursePayload = Partial<{
@@ -145,28 +205,46 @@ type UpdateTrainingCoursePayload = Partial<{
   customerId: string | null;
   instructorId: string | null;
   title: string;
-  type: string;
+  typeCode: string;
   startDate: Date;
   endDate: Date;
   participants: number;
   status: string;
   location: string | null;
   description: string | null;
+  workflowId: string;
+  actorId: string | null;
 }>;
 
 export async function updateTrainingCourseService(id: string, payload: UpdateTrainingCoursePayload) {
   const existing = await prisma.trainingCourse.findFirst({
     where: { id, deletedAt: null },
-    select: { id: true },
+    select: { id: true, contractId: true },
   });
   if (!existing) throw new HttpError(404, "Training course not found");
+
+  if (payload.typeCode !== undefined) {
+    await assertActiveDefinitionCode("training_type", payload.typeCode, "Loại đào tạo");
+  }
 
   const resolvedContractId = await resolveContractIdOptional(
     payload.contractId === null ? undefined : payload.contractId ?? undefined,
   );
+  if (resolvedContractId) {
+    await assertSingleTrainingPerContract(resolvedContractId, id);
+  }
   const participants = resolvedContractId
     ? await getContractProductCount(resolvedContractId)
     : payload.participants;
+
+  if (payload.workflowId) {
+    await attachWorkflowToEntity({
+      moduleKey: "training",
+      entityId: id,
+      workflowId: payload.workflowId,
+      actorId: payload.actorId ?? payload.instructorId ?? null,
+    });
+  }
 
   const updated = await prisma.trainingCourse.update({
     where: { id },
@@ -176,7 +254,14 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
       ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
       ...(payload.instructorId !== undefined ? { instructorId: payload.instructorId } : {}),
       ...(payload.title !== undefined ? { title: payload.title } : {}),
-      ...(payload.type !== undefined ? { type: payload.type as TrainingType } : {}),
+      ...(payload.typeCode !== undefined
+        ? {
+            typeCode: payload.typeCode,
+            ...(TRAINING_TYPE_ENUMS.has(payload.typeCode)
+              ? { type: payload.typeCode as TrainingType }
+              : {}),
+          }
+        : {}),
       ...(payload.startDate !== undefined ? { startDate: payload.startDate } : {}),
       ...(payload.endDate !== undefined ? { endDate: payload.endDate } : {}),
       ...(participants !== undefined ? { participants } : {}),
@@ -189,6 +274,7 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
       code: true,
       title: true,
       type: true,
+      typeCode: true,
       startDate: true,
       endDate: true,
       participants: true,

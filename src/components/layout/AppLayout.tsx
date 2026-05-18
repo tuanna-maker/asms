@@ -14,21 +14,13 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   "/vat-tu": { title: "Quản lý vật tư", subtitle: "Nhập, xuất và điều chuyển vật tư" },
   "/khach-hang": { title: "Khách hàng", subtitle: "Quản lý thông tin khách hàng" },
   "/bao-cao": { title: "Báo cáo & Thống kê", subtitle: "Báo cáo theo khách hàng, hợp đồng, sản phẩm" },
+  "/quy-trinh": { title: "Quy trình", subtitle: "Cấu hình luồng xử lý theo từng module nghiệp vụ" },
   "/cai-dat": { title: "Cài đặt", subtitle: "Quản lý người dùng và phân quyền" },
-  "/cai-dat/thuoc-tinh": { title: "Thuộc tính", subtitle: "Danh mục thuộc tính theo module" },
 };
-
-function resolvePageTitle(pathname: string) {
-  if (pageTitles[pathname]) return pageTitles[pathname];
-  if (pathname.startsWith("/cai-dat/thuoc-tinh/")) {
-    return pageTitles["/cai-dat/thuoc-tinh"];
-  }
-  return { title: "ERP", subtitle: "" };
-}
 
 const AppLayout = () => {
   const location = useLocation();
-  const page = resolvePageTitle(location.pathname);
+  const page = pageTitles[location.pathname] || { title: "ERP", subtitle: "" };
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 

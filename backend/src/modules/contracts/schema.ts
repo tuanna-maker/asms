@@ -34,9 +34,21 @@ export const contractProductParamSchema = z.object({
 
 export const listContractsQuerySchema = z.object({
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
+  statuses: z
+    .union([
+      z.array(z.enum(["draft", "active", "completed", "late", "liquidated"])),
+      z.enum(["draft", "active", "completed", "late", "liquidated"]),
+    ])
+    .optional(),
   customerId: z.string().optional(),
   search: z.string().optional(),
   contractTypeCode: z.string().min(1).max(256).optional(),
+  signedFrom: z.coerce.date().optional(),
+  signedTo: z.coerce.date().optional(),
+  createdFrom: z.coerce.date().optional(),
+  createdTo: z.coerce.date().optional(),
+  /** Chỉ HĐ chưa có bàn giao và chưa có khóa huấn luyện active (dùng cho dropdown tạo mới). */
+  eligibleFor: z.enum(["handover", "training"]).optional(),
 });
 
 export const setContractProductsSchema = z.object({

@@ -35,11 +35,11 @@ const revenueColumns: Column<ContractRow>[] = [
 ];
 
 const widgetTemplates = [
-  { id: "stats", title: "Thống kê DT", description: "4 thẻ thống kê", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
-  { id: "chart-revenue", title: "DT theo KH", description: "Biểu đồ ngang", icon: BarChart3, category: "Biểu đồ", defaultSize: { w: 12, h: 5 } },
-  { id: "pie-revenue", title: "Phân bổ DT", description: "Biểu đồ tròn", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "trend", title: "Xu hướng", description: "Biểu đồ đường", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "table", title: "Bảng DT HĐ", description: "Chi tiết", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
+  { id: "stats", title: "Thống kê DT", description: "4 thẻ thống kê", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 1 } },
+  { id: "chart-revenue", title: "DT theo KH", description: "Biểu đồ ngang", icon: BarChart3, category: "Biểu đồ", defaultSize: { w: 12, h: 4 } },
+  { id: "pie-revenue", title: "Phân bổ DT", description: "Biểu đồ tròn", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "trend", title: "Xu hướng", description: "Biểu đồ đường", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "table", title: "Bảng DT HĐ", description: "Chi tiết", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 4 } },
 ];
 
 const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
@@ -68,7 +68,7 @@ const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {
       const tpl = widgetTemplates.find(t => t.id === id);
-      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 } };
+      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: id === "stats" ? 1 : 2 } };
     }), [activeWidgetIds, widgetComponents]);
 
   return (

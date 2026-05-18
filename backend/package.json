@@ -28,14 +28,20 @@
   "version": "1.0.0",
   "main": "dist/main.js",
   "scripts": {
+    "predev": "prisma generate && prisma migrate deploy",
     "dev": "tsx watch src/main.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "bootstrap:auth": "tsx scripts/bootstrap-auth.ts",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "db:status": "tsx scripts/db-status.ts",
+    "db:check": "tsx scripts/db-check.ts",
+    "smoke:handover": "tsx scripts/smoke-handover-api.ts",
+    "seed:step-fields": "tsx scripts/seed-step-field-schemas.ts"
   },
   "keywords": [],
   "author": "",

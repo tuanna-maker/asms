@@ -12,10 +12,12 @@ import { loginSchema, registerSchema } from "./schema";
 type LoginPayload = z.infer<typeof loginSchema>;
 type RegisterPayload = z.infer<typeof registerSchema>;
 
+type SessionMeta = { userAgent?: string | null; ip?: string | null };
+
 const ACCESS_TOKEN_EXPIRES_IN = "7d";
 const REFRESH_TOKEN_TTL_DAYS = 30;
 
-function hashToken(token: string) {
+export function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
@@ -37,8 +39,8 @@ async function ensureRole(roleCode: string) {
   const seed = ROLE_SEED[roleCode] ?? VIEWER_ROLE;
   const role = await prisma.role.upsert({
     where: { code: seed.code },
-    update: { name: seed.name },
-    create: { code: seed.code, name: seed.name },
+    update: { name: seed.name, isSystem: true, isActive: true },
+    create: { code: seed.code, name: seed.name, isSystem: true, isActive: true },
   });
   return role;
 }
@@ -55,7 +57,7 @@ function signToken(args: { userId: string; roleCode: string }) {
   );
 }
 
-export async function loginService(payload: LoginPayload) {
+export async function loginService(payload: LoginPayload, meta: SessionMeta = {}) {
   const user = await prisma.user.findFirst({
     where: { email: payload.email, deletedAt: null },
     select: {
@@ -72,6 +74,11 @@ export async function loginService(payload: LoginPayload) {
   const ok = await bcrypt.compare(payload.password, user.passwordHash);
   if (!ok) throw new HttpError(401, "Invalid email or password");
 
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLoginAt: new Date() },
+  });
+
   const token = signToken({ userId: user.id, roleCode: user.role.code });
   const refreshTokenRaw = generateRefreshTokenRaw();
   const refreshTokenHash = hashToken(refreshTokenRaw);
@@ -82,6 +89,9 @@ export async function loginService(payload: LoginPayload) {
       tokenHash: refreshTokenHash,
       userId: user.id,
       expiresAt,
+      userAgent: meta.userAgent ?? null,
+      ip: meta.ip ?? null,
+      lastUsedAt: new Date(),
     },
   });
 
@@ -144,7 +154,7 @@ export async function registerService(payload: RegisterPayload) {
   };
 }
 
-export async function refreshService(payload: { refreshToken: string }) {
+export async function refreshService(payload: { refreshToken: string }, meta: SessionMeta = {}) {
   const now = new Date();
   const tokenHash = hashToken(payload.refreshToken);
 
@@ -162,7 +172,6 @@ export async function refreshService(payload: { refreshToken: string }) {
 
   if (!stored?.user) throw new HttpError(401, "Invalid or expired refresh token");
 
-  // Rotate refresh token: revoke old and issue new.
   await prisma.refreshToken.update({ where: { id: stored.id }, data: { revokedAt: now } });
 
   const refreshTokenRaw = generateRefreshTokenRaw();
@@ -170,7 +179,14 @@ export async function refreshService(payload: { refreshToken: string }) {
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000);
 
   await prisma.refreshToken.create({
-    data: { tokenHash: refreshTokenHash, userId: stored.user.id, expiresAt },
+    data: {
+      tokenHash: refreshTokenHash,
+      userId: stored.user.id,
+      expiresAt,
+      userAgent: meta.userAgent ?? stored.userAgent ?? null,
+      ip: meta.ip ?? stored.ip ?? null,
+      lastUsedAt: new Date(),
+    },
   });
 
   const accessToken = signToken({ userId: stored.user.id, roleCode: stored.user.role.code });
@@ -185,6 +201,74 @@ export async function refreshService(payload: { refreshToken: string }) {
       role: stored.user.role.code,
     },
   };
+}
+
+export type SessionDTO = {
+  id: string;
+  userAgent: string | null;
+  ip: string | null;
+  createdAt: Date;
+  expiresAt: Date;
+  lastUsedAt: Date | null;
+  current: boolean;
+};
+
+export async function listSessionsService(
+  userId: string,
+  currentTokenHash: string | null = null,
+): Promise<SessionDTO[]> {
+  const now = new Date();
+  const rows = await prisma.refreshToken.findMany({
+    where: {
+      userId,
+      deletedAt: null,
+      revokedAt: null,
+      expiresAt: { gt: now },
+    },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      tokenHash: true,
+      userAgent: true,
+      ip: true,
+      createdAt: true,
+      expiresAt: true,
+      lastUsedAt: true,
+    },
+  });
+  return rows.map((row) => ({
+    id: row.id,
+    userAgent: row.userAgent,
+    ip: row.ip,
+    createdAt: row.createdAt,
+    expiresAt: row.expiresAt,
+    lastUsedAt: row.lastUsedAt,
+    current: currentTokenHash ? row.tokenHash === currentTokenHash : false,
+  }));
+}
+
+export async function revokeSessionService(userId: string, sessionId: string): Promise<{ id: string }> {
+  const row = await prisma.refreshToken.findFirst({
+    where: { id: sessionId, userId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!row) throw new HttpError(404, "Không tìm thấy phiên");
+  await prisma.refreshToken.update({ where: { id: row.id }, data: { revokedAt: new Date() } });
+  return { id: row.id };
+}
+
+export async function logoutAllService(userId: string, exceptTokenHash?: string | null): Promise<{ count: number }> {
+  const now = new Date();
+  const res = await prisma.refreshToken.updateMany({
+    where: {
+      userId,
+      revokedAt: null,
+      deletedAt: null,
+      ...(exceptTokenHash ? { NOT: { tokenHash: exceptTokenHash } } : {}),
+    },
+    data: { revokedAt: now },
+  });
+  return { count: res.count };
 }
 
 export async function logoutService(payload: { refreshToken: string }) {

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { Responsive, useContainerWidth, verticalCompactor } from "react-grid-layout";
+import { packWidgetLayouts, type GridLayoutItem } from "./dashboardLayouts";
 import { Plus, Lock, Unlock, RotateCcw, GripVertical, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,15 +9,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
-interface LayoutItem {
-  i: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  minW?: number;
-  minH?: number;
-}
+export type LayoutItem = GridLayoutItem;
 
 export interface WidgetConfig {
   id: string;
@@ -24,6 +17,8 @@ export interface WidgetConfig {
   title: string;
   component: React.ReactNode;
   defaultLayout: { w: number; h: number; minW?: number; minH?: number };
+  /** Mặc định auto; stats/charts thường dùng visible để tránh scrollbar thừa */
+  contentOverflow?: "auto" | "visible";
 }
 
 interface DashboardGridProps {
@@ -31,34 +26,17 @@ interface DashboardGridProps {
   availableWidgets?: WidgetConfig[];
   storageKey: string;
   onAddWidget?: () => void;
+  /** Tuỳ chỉnh hàm tạo layout mặc định (vd. overview có preset cố định) */
+  buildDefaultLayouts?: (widgets: WidgetConfig[]) => LayoutItem[];
 }
 
 const COLS = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
-const ROW_HEIGHT_DESKTOP = 96;
-const ROW_HEIGHT_MOBILE = 82;
-
-function generateLayouts(widgets: WidgetConfig[]): LayoutItem[] {
-  let x = 0;
-  let y = 0;
-  return widgets.map((w) => {
-    const layout: LayoutItem = {
-      i: w.id,
-      x: x,
-      y: y,
-      w: w.defaultLayout.w,
-      h: w.defaultLayout.h,
-      minW: w.defaultLayout.minW || 2,
-      minH: w.defaultLayout.minH || 2,
-    };
-    x += w.defaultLayout.w;
-    if (x >= 12) {
-      x = 0;
-      y += w.defaultLayout.h;
-    }
-    return layout;
-  });
-}
-const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps) => {
+const ROW_HEIGHT_DESKTOP = 88;
+const ROW_HEIGHT_MOBILE = 76;
+const LAYOUT_VERSION_SUFFIX = "-layout-v3";
+const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }: DashboardGridProps) => {
+  const layoutStorageKey = `${storageKey}${LAYOUT_VERSION_SUFFIX}`;
+  const makeDefaultLayouts = buildDefaultLayouts ?? packWidgetLayouts;
   const isMobile = useIsMobile();
   const containerHook = useContainerWidth as unknown as (
     opts: { initialWidth: number },
@@ -73,21 +51,19 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
   });
   const [layouts, setLayouts] = useState<LayoutItem[]>(() => {
     try {
-      const saved = localStorage.getItem(`${storageKey}-layouts`);
+      const saved = localStorage.getItem(layoutStorageKey);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        // Merge saved positions with current widgets
-        const widgetIds = widgets.map(w => w.id);
-        const validLayouts = parsed.filter((l: LayoutItem) => widgetIds.includes(l.i));
-        // Add layouts for new widgets not in saved
-        const savedIds = validLayouts.map((l: LayoutItem) => l.i);
-        const newWidgets = widgets.filter(w => !savedIds.includes(w.id));
-        return [...validLayouts, ...generateLayouts(newWidgets)];
+        const parsed = JSON.parse(saved) as LayoutItem[];
+        const widgetIds = widgets.map((w) => w.id);
+        const validLayouts = parsed.filter((l) => widgetIds.includes(l.i));
+        const savedIds = validLayouts.map((l) => l.i);
+        const newWidgets = widgets.filter((w) => !savedIds.includes(w.id));
+        return [...validLayouts, ...makeDefaultLayouts(newWidgets)];
       }
     } catch {
       // ignore parse errors and fall through to defaults
     }
-    return generateLayouts(widgets);
+    return makeDefaultLayouts(widgets);
   });
 
   const visibleWidgets = useMemo(
@@ -105,14 +81,14 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
     const currentIds = layouts.map(l => l.i);
     const newWidgets = widgets.filter(w => !currentIds.includes(w.id));
     if (newWidgets.length > 0) {
-      setLayouts(prev => [...prev, ...generateLayouts(newWidgets)]);
+      setLayouts((prev) => [...prev, ...makeDefaultLayouts(newWidgets)]);
     }
-  }, [widgets]);
+  }, [widgets, makeDefaultLayouts]);
 
   const handleLayoutChange = useCallback((newLayout: LayoutItem[]) => {
     setLayouts(newLayout);
-    localStorage.setItem(`${storageKey}-layouts`, JSON.stringify(newLayout));
-  }, [storageKey]);
+    localStorage.setItem(layoutStorageKey, JSON.stringify(newLayout));
+  }, [layoutStorageKey]);
 
   const handleRemoveWidget = useCallback((widgetId: string) => {
     setRemovedWidgets(prev => {
@@ -131,12 +107,13 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
   }, [storageKey]);
 
   const handleReset = useCallback(() => {
-    const defaultLayouts = generateLayouts(widgets);
+    const defaultLayouts = makeDefaultLayouts(widgets);
     setLayouts(defaultLayouts);
     setRemovedWidgets([]);
-    localStorage.removeItem(`${storageKey}-layouts`);
+    localStorage.removeItem(layoutStorageKey);
     localStorage.removeItem(`${storageKey}-removed`);
-  }, [widgets, storageKey]);
+    localStorage.removeItem(`${storageKey}-layouts`);
+  }, [widgets, storageKey, layoutStorageKey, makeDefaultLayouts]);
 
   const hiddenWidgets = widgets.filter(w => removedWidgets.includes(w.id));
 
@@ -200,11 +177,11 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
         resizeConfig={{ enabled: isEditing }}
         onLayoutChange={handleLayoutChange}
         compactor={verticalCompactor}
-        margin={isMobile ? ([12, 12] as const) : ([16, 16] as const)}
+        margin={isMobile ? ([10, 10] as const) : ([12, 12] as const)}
         containerPadding={[0, 0] as const}
       >
         {visibleWidgets.map(widget => (
-          <div key={widget.id} className="relative group/widget overflow-visible">
+          <div key={widget.id} className="relative group/widget h-full min-h-0">
             {isEditing && (
               <>
                 <div className="drag-handle absolute top-2 left-2 z-20 cursor-grab active:cursor-grabbing p-1 rounded bg-muted/80 opacity-0 group-hover/widget:opacity-100 transition-opacity">
@@ -218,7 +195,11 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget }: DashboardGridProps)
                 </button>
               </>
             )}
-            <div className={`h-full w-full overflow-hidden ${isEditing ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}>
+            <div
+              className={`h-full w-full min-h-0 flex flex-col ${
+                widget.contentOverflow === "visible" ? "overflow-visible" : "overflow-auto"
+              } ${isEditing ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}
+            >
               {widget.component}
             </div>
           </div>

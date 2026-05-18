@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type { ScheduleSession, TrainingCourse, Trainee } from "@/data/trainingData";
+import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 
 function toDateInputValue(iso: unknown) {
   if (!iso) return "";
@@ -33,6 +34,8 @@ type TrainingCourseListRow = {
   status: string;
   location?: string | null;
   description?: string | null;
+  workflowInstanceId?: string | null;
+  workflow?: WorkflowInstanceListSnapshot | null;
   customer?: { id: string; code: string; name: string } | null;
   contract?: { id: string; code: string } | null;
 };
@@ -79,6 +82,7 @@ function mapCourseListItem(item: unknown): TrainingCourse {
   const row = item as TrainingCourseListRow;
   return {
     id: row.id,
+    code: row.code,
     contractId: row.contract?.id ?? row.contractId ?? null,
     title: row.title,
     type: row.type,
@@ -90,6 +94,8 @@ function mapCourseListItem(item: unknown): TrainingCourse {
     status: mapTrainingStatus(row.status),
     description: row.description ?? undefined,
     location: row.location ?? undefined,
+    workflowInstanceId: row.workflowInstanceId ?? null,
+    workflow: row.workflow ?? null,
     trainees: [],
     schedule: [],
   };
@@ -137,7 +143,7 @@ async function fetchTrainingCourseDetail(id: string): Promise<TrainingCourseDeta
 export function useTrainingCoursesQuery() {
   return useQuery({
     queryKey: ["trainingCourses"],
-    queryFn: fetchTrainingCourses,
+    queryFn: () => fetchTrainingCourses(),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: 1,

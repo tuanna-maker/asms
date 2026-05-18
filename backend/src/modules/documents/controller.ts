@@ -28,7 +28,7 @@ function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
 export async function listDocumentsController(req: Request, res: Response) {
   const query = zodParseOrThrow(listDocumentsQuerySchema, req.query);
   const input: Record<string, unknown> = {};
-  if (query.category !== undefined) input.category = query.category;
+  if (query.categoryCode !== undefined) input.categoryCode = query.categoryCode;
   if (query.fileType !== undefined) input.fileType = query.fileType;
   if (query.ownerId !== undefined) input.ownerId = query.ownerId;
   if (query.customerId !== undefined) input.customerId = query.customerId;
@@ -36,6 +36,7 @@ export async function listDocumentsController(req: Request, res: Response) {
   if (query.productId !== undefined) input.productId = query.productId;
   if (query.projectId !== undefined) input.projectId = query.projectId;
   if (query.trainingCourseId !== undefined) input.trainingCourseId = query.trainingCourseId;
+  if (query.warrantyId !== undefined) input.warrantyId = query.warrantyId;
   if (query.name !== undefined) input.name = query.name;
 
   const data = await listDocumentsService(input as Parameters<typeof listDocumentsService>[0]);
@@ -57,6 +58,7 @@ export async function createDocumentController(req: Request, res: Response) {
   if (payload.productId === undefined) delete input.productId;
   if (payload.projectId === undefined) delete input.projectId;
   if (payload.trainingCourseId === undefined) delete input.trainingCourseId;
+  if (payload.warrantyId === undefined) delete input.warrantyId;
   if (payload.fileSize === undefined) delete input.fileSize;
   if (payload.fileUrl === undefined) delete input.fileUrl;
 
@@ -80,7 +82,7 @@ export async function uploadDocumentController(req: Request, res: Response) {
   const body = req.body as Record<string, string | undefined>;
   const input: Parameters<typeof createDocumentService>[0] = {
     name: body.name?.trim() || file.originalname,
-    category: body.category ?? "contract",
+    categoryCode: body.categoryCode ?? body.category ?? "contract",
     fileType: body.fileType ?? fileTypeFromName(file.originalname),
     tags: [],
     fileSize: `${Math.max(1, Math.round(file.size / 1024))} KB`,
@@ -92,6 +94,7 @@ export async function uploadDocumentController(req: Request, res: Response) {
   if (body.productId) input.productId = body.productId;
   if (body.projectId) input.projectId = body.projectId;
   if (body.trainingCourseId) input.trainingCourseId = body.trainingCourseId;
+  if (body.warrantyId) input.warrantyId = body.warrantyId;
   if (body.description?.trim()) input.description = body.description.trim();
 
   const data = await createDocumentService(input);
@@ -105,7 +108,7 @@ export async function updateDocumentController(req: Request, res: Response) {
 
   const data = await updateDocumentService(id, {
     ...(payload.name !== undefined ? { name: payload.name } : {}),
-    ...(payload.category !== undefined ? { category: payload.category } : {}),
+    ...(payload.categoryCode !== undefined ? { categoryCode: payload.categoryCode } : {}),
     ...(payload.fileType !== undefined ? { fileType: payload.fileType } : {}),
     ...(payload.ownerId !== undefined ? { ownerId: payload.ownerId } : {}),
     ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
@@ -113,6 +116,7 @@ export async function updateDocumentController(req: Request, res: Response) {
     ...(payload.productId !== undefined ? { productId: payload.productId } : {}),
     ...(payload.projectId !== undefined ? { projectId: payload.projectId } : {}),
     ...(payload.trainingCourseId !== undefined ? { trainingCourseId: payload.trainingCourseId } : {}),
+    ...(payload.warrantyId !== undefined ? { warrantyId: payload.warrantyId } : {}),
     ...(payload.description !== undefined ? { description: payload.description } : {}),
     ...(payload.tags !== undefined ? { tags: payload.tags } : {}),
     ...(payload.fileSize !== undefined ? { fileSize: payload.fileSize } : {}),

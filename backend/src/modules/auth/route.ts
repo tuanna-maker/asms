@@ -6,7 +6,15 @@ import { env } from "../../config/env";
 import { requireAuth, requireRoles } from "../../middleware/authJwt";
 
 import { loginSchema, registerSchema, refreshTokenSchema, logoutSchema } from "./schema";
-import { loginController, registerController, refreshController, logoutController } from "./controller";
+import {
+  listSessionsController,
+  loginController,
+  logoutAllController,
+  logoutController,
+  refreshController,
+  registerController,
+  revokeSessionController,
+} from "./controller";
 import { notImplementedHandler } from "../_shared/notImplemented";
 
 const router = Router();
@@ -61,6 +69,11 @@ if (env.NODE_ENV === "production") {
 
 router.post("/refresh", refreshRateLimiter, validateBody(refreshTokenSchema), refreshController);
 router.post("/logout", validateBody(logoutSchema), logoutController);
+
+router.get("/sessions", requireAuth, listSessionsController);
+router.post("/sessions/list", requireAuth, listSessionsController);
+router.delete("/sessions/:id", requireAuth, revokeSessionController);
+router.post("/logout-all", requireAuth, logoutAllController);
 
 router.all(/.*/, notImplementedHandler);
 

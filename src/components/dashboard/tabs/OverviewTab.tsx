@@ -6,11 +6,14 @@ import StatCard from "@/components/dashboard/StatCard";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
 import PAKDWidget from "@/components/dashboard/PAKDWidget";
+import ProductManufacturingWidget from "@/components/dashboard/ProductManufacturingWidget";
+import CustomerCareWidget from "@/components/dashboard/CustomerCareWidget";
 import CustomerProductChart from "@/components/dashboard/CustomerProductChart";
 import CustomerRevenueChart from "@/components/dashboard/CustomerRevenueChart";
 import TrendChart from "@/components/dashboard/TrendChart";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
+import { buildOverviewLayouts } from "@/components/dashboard/dashboardLayouts";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
@@ -48,26 +51,27 @@ const contractColumns: Column<ContractRow>[] = [
 
 const allWidgetTemplates = [
   { id: "stats", title: "Thống kê tổng quan", description: "4 thẻ thống kê chính", icon: Package, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
-  { id: "progress-product", title: "Tiến độ sản phẩm", description: "Thanh tiến độ sản phẩm", icon: Layers, category: "Sản phẩm", defaultSize: { w: 6, h: 4 } },
-  { id: "progress-contract", title: "Tiến độ hợp đồng", description: "Thanh tiến độ hợp đồng", icon: FileText, category: "Hợp đồng", defaultSize: { w: 6, h: 4 } },
-  { id: "progress-handover", title: "Tiến độ bàn giao", description: "Thanh tiến độ bàn giao", icon: Truck, category: "Hợp đồng", defaultSize: { w: 6, h: 4 } },
-  { id: "progress-training", title: "Tiến độ huấn luyện", description: "Thanh tiến độ huấn luyện", icon: GraduationCap, category: "Hợp đồng", defaultSize: { w: 6, h: 4 } },
-  { id: "pie-product", title: "Phân loại sản phẩm", description: "Biểu đồ tròn phân loại SP", icon: Layers, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "pie-contract", title: "Trạng thái hợp đồng", description: "Biểu đồ tròn HĐ", icon: FileText, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "chart-customer-product", title: "SP theo khách hàng", description: "Biểu đồ cột SP/KH", icon: Package, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "chart-customer-revenue", title: "DT theo khách hàng", description: "Biểu đồ ngang DT/KH", icon: FileText, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
-  { id: "trend", title: "Xu hướng theo tháng", description: "Biểu đồ đường xu hướng", icon: Clock, category: "Biểu đồ", defaultSize: { w: 12, h: 5 } },
+  { id: "product-manufacturing", title: "Tiến độ sản xuất SP", description: "Chi tiết theo sơ đồ SX", icon: Layers, category: "Sản phẩm", defaultSize: { w: 12, h: 5 } },
+  { id: "progress-product", title: "Tiến độ sản phẩm (tóm tắt)", description: "Thanh tiến độ sản phẩm", icon: Layers, category: "Sản phẩm", defaultSize: { w: 6, h: 4 } },
+  { id: "progress-contract", title: "Tiến độ hợp đồng", description: "Thanh tiến độ hợp đồng", icon: FileText, category: "Hợp đồng", defaultSize: { w: 4, h: 4 } },
+  { id: "progress-handover", title: "Tiến độ bàn giao", description: "Thanh tiến độ bàn giao", icon: Truck, category: "Hợp đồng", defaultSize: { w: 4, h: 4 } },
+  { id: "progress-training", title: "Tiến độ huấn luyện", description: "Thanh tiến độ huấn luyện", icon: GraduationCap, category: "Hợp đồng", defaultSize: { w: 4, h: 4 } },
+  { id: "pie-product", title: "Phân loại sản phẩm", description: "Biểu đồ tròn phân loại SP", icon: Layers, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "pie-contract", title: "Trạng thái hợp đồng", description: "Biểu đồ tròn HĐ", icon: FileText, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "chart-customer-product", title: "SP theo khách hàng", description: "Biểu đồ cột SP/KH", icon: Package, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "chart-customer-revenue", title: "DT theo khách hàng", description: "Biểu đồ ngang DT/KH", icon: FileText, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
+  { id: "trend", title: "Xu hướng theo tháng", description: "Biểu đồ đường xu hướng", icon: Clock, category: "Biểu đồ", defaultSize: { w: 6, h: 4 } },
   { id: "complaint", title: "Phản ánh & Khiếu nại", description: "Widget khiếu nại", icon: Clock, category: "Tổng hợp", defaultSize: { w: 6, h: 4 } },
-  { id: "pakd", title: "Theo dõi PAKD", description: "Tiến độ PAKD", icon: Package, category: "Vật tư", defaultSize: { w: 6, h: 4 } },
+  { id: "customer-care", title: "Chăm sóc KH", description: "DT, SP, kỷ niệm", icon: Package, category: "Khách hàng", defaultSize: { w: 12, h: 5 } },
+  { id: "pakd", title: "Theo dõi PAKD", description: "Vật tư + Đề tài NC", icon: Package, category: "Vật tư", defaultSize: { w: 6, h: 6 } },
   { id: "table-contracts", title: "Bảng hợp đồng", description: "Danh sách hợp đồng", icon: FileText, category: "Tổng hợp", defaultSize: { w: 12, h: 5 } },
 ];
 
 const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
-    "stats", "progress-product", "progress-contract", "progress-handover", "progress-training",
-    "pie-product", "pie-contract", "chart-customer-product", "chart-customer-revenue",
-    "trend", "complaint", "pakd", "table-contracts",
+    "stats", "product-manufacturing", "progress-contract", "complaint", "progress-handover",
+    "progress-training", "customer-care", "pakd", "chart-customer-revenue", "trend", "table-contracts",
   ]);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
@@ -79,6 +83,8 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
         <StatCard title="Hoàn thành tháng này" value={data.stats.completedThisMonth} icon={CheckCircle} color="success" />
       </div>
     ),
+    "product-manufacturing": <ProductManufacturingWidget data={data.productProgress} />,
+    "customer-care": <CustomerCareWidget customerCare={data.customerCare} />,
     "progress-product": (
       <ProgressWidget title="Tiến độ sản phẩm" icon={Layers} total={data.product.total}
         items={[
@@ -155,7 +161,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
             w: tpl?.defaultSize.w || 6,
             h: tpl?.defaultSize.h || 4,
             minW: 3,
-            minH: 2,
+            minH: tpl?.defaultSize.h ? Math.max(2, tpl.defaultSize.h - 1) : 2,
           },
         };
       }),
@@ -173,6 +179,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
       <DashboardGrid
         widgets={widgets}
         storageKey="overview-dashboard"
+        buildDefaultLayouts={buildOverviewLayouts}
         onAddWidget={() => setShowAddWidget(true)}
       />
       <AddWidgetDialog

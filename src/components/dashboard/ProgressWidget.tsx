@@ -19,7 +19,7 @@ interface ProgressWidgetProps {
 const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, completedLate }: ProgressWidgetProps) => {
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full flex flex-col">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Icon className="h-5 w-5" />
@@ -28,7 +28,7 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
           <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
         </div>
 
-        <div className="space-y-3 flex-1">
+        <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
           {items.map((item, i) => {
             const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
             return (
@@ -61,9 +61,9 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
             )}
             {completedLate !== undefined && (
               <div className="flex items-center gap-2 text-sm">
-                <span className="h-2.5 w-2.5 rounded-full bg-warning" />
+                <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
                 <span className="text-muted-foreground">Chậm tiến độ:</span>
-                <span className="font-semibold text-card-foreground">{completedLate}</span>
+                <span className="font-semibold text-destructive">{completedLate}</span>
               </div>
             )}
           </div>

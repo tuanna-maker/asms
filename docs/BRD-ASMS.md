@@ -24,6 +24,7 @@
    - 5.11 Đề tài Nghiên cứu Khoa học
    - 5.12 Công việc
    - 5.13 Cài đặt hệ thống
+   - 5.14 Quy trình nghiệp vụ (Workflow)
 6. [Quy tắc nghiệp vụ chung](#6-quy-tắc-nghiệp-vụ-chung)
 7. [Ma trận liên kết dữ liệu giữa các màn](#7-ma-trận-liên-kết-dữ-liệu-giữa-các-màn)
 8. [Tiêu chí nghiệm thu nghiệp vụ](#8-tiêu-chí-nghiệm-thu-nghiệp-vụ)
@@ -676,23 +677,65 @@ Quản lý công việc dạng **bảng cột** (Kanban), **danh sách** hoặc 
 
 #### 5.13.1 Mục tiêu nghiệp vụ
 
-Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai trò, danh mục dữ liệu, cấu hình thông báo.
+Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai trò, danh mục thuộc tính, cấu hình hệ thống (SLA, ngưỡng, lịch nhắc), thông báo, nhật ký truy vết và phiên đăng nhập.
 
 #### 5.13.2 Nhu cầu người dùng chính
 
-| Mã | Nhu cần |
-|----|------------|
+| Mã | Nhu cầu |
+|----|---------|
 | BR-CD-01 | Là quản trị viên, tôi muốn tạo mới người dùng với vai trò |
 | BR-CD-02 | Là quản trị viên, tôi muốn vô hiệu hóa người dùng (`status = inactive`) hoặc xóa mềm |
-| BR-CD-03 | Là quản trị viên / quản lý, tôi muốn quản lý danh mục `DataDefinition` (kho, đơn vị tính, …) |
+| BR-CD-03 | Là quản trị viên / quản lý, tôi muốn quản lý danh mục `DataDefinition` (kho, đơn vị tính, loại hợp đồng, mức ưu tiên, trạng thái bảo hành, loại bàn giao, nguồn khách, loại công ty, nhóm sản phẩm, loại tài liệu, loại đào tạo, giai đoạn đề tài, độ ưu tiên công việc) qua màn Thuộc tính, có khả năng tìm theo mã/tên, lọc Hoạt động/Ngừng, kéo thả sắp xếp và xem lịch sử chỉnh sửa |
+| BR-CD-03a | Là quản trị viên / quản lý, tôi muốn được cảnh báo trước khi tắt/xoá một định nghĩa đang được record sử dụng, và bị chặn nếu định nghĩa là `isSystem = true` |
 | BR-CD-04 | Là người dùng, tôi muốn cấu hình thông báo cá nhân theo `key` (`contract_expiry`, `new_ticket`, `task_late`, `material_low`) |
-| BR-CD-05 | Là quản trị viên, tôi muốn xem ma trận phân quyền theo module |
+| BR-CD-05 | Là quản trị viên, tôi muốn xem ma trận phân quyền theo module (cố định ở mã nguồn) |
+| BR-CD-06 | Là quản trị viên, tôi muốn tạo / sửa / vô hiệu hoá vai trò tuỳ biến và xem nhãn của vai trò hệ thống |
+| BR-CD-07 | Là quản trị viên, tôi muốn cấu hình `SystemSetting` (SLA mặc định, ngưỡng tồn kho, số ngày nhắc hết hạn hợp đồng, ân hạn nhiệm vụ trễ, giờ chạy cron, kênh thông báo) |
+| BR-CD-08 | Là quản trị viên, tôi muốn xem nhật ký hoạt động (`AuditLog`) với lọc theo module / hành động / người thực hiện / khoảng ngày |
+| BR-CD-09 | Là người dùng, tôi muốn xem danh sách phiên đăng nhập của mình và thu hồi từng phiên hoặc đăng xuất tất cả thiết bị khác |
+| BR-CD-10 | Là người dùng, tôi muốn nhận thông báo trong ứng dụng (chuông trên header) và đánh dấu đã đọc |
 
 #### 5.13.3 Ràng buộc
 
-- Chỉ `admin` mới ghi/xóa người dùng.
-- `admin` và `manager` ghi/xóa `DataDefinition`.
+- Chỉ `admin` mới ghi/xóa người dùng, vai trò, `SystemSetting`; chỉ `admin` xem `AuditLog`.
+- `admin` và `manager` đọc `Role` và `SystemSetting`; ghi/xóa `DataDefinition`.
+- `DataDefinition.isSystem = true` (do seed `seed-definitions.ts` tạo) không thể đổi `code` và không thể xoá; chỉ có thể đổi `label`, `sortOrder`, `isActive`.
+- Trước khi cho xoá một `DataDefinition`, hệ thống đếm số bản ghi đang tham chiếu (`Warranty.priorityCode`, `Task.priorityCode`, `Material.warehouse`, …) qua endpoint `GET /api/v1/definitions/:id/usage`; nếu `count > 0` hoặc `isSystem` thì chỉ cho phép "Tắt", không cho "Xoá".
+- Sắp xếp lại các định nghĩa trong cùng `category` được thực hiện qua `PUT /api/v1/definitions/reorder` và ghi `AuditLog` với hành động `reorder`.
+- Mọi danh mục mềm dùng cho lọc/hiển thị (loại hợp đồng, loại bàn giao, mức ưu tiên/trạng thái bảo hành, độ ưu tiên công việc, loại đào tạo, loại tài liệu, giai đoạn đề tài, nguồn khách, loại công ty, nhóm sản phẩm, kho, đơn vị vật tư) lưu dưới dạng `<entity>.<field>Code` trỏ vào `DataDefinition`; các enum Prisma cũ (nếu còn) đứng song song để tương thích nhưng không phải nguồn chính.
+- Không cho phép đổi `code` hoặc xoá vai trò hệ thống (`admin`, `manager`, `technician`, `viewer`, `sales`).
+- Không cho phép xoá vai trò vẫn còn người dùng đang gán.
 - `User.email` duy nhất.
+- Lịch nhắc tự động (cron) chạy mỗi 24 giờ với 3 luật: `contract_expiry`, `material_low`, `task_late`; phiếu bảo hành mới phát thông báo `new_ticket` ngay khi tạo.
+
+---
+
+### 5.14 Quy trình nghiệp vụ (Workflow)
+
+#### 5.14.1 Mục tiêu nghiệp vụ
+
+- Cho phép admin/manager cấu hình các **quy trình phê duyệt** cho 3 module: Bàn giao, Bảo hành, Huấn luyện thay vì hard-code trong source.
+- Khi tạo mới một bàn giao / phiếu bảo hành / khoá đào tạo, hệ thống tự gắn workflow active mặc định và khởi tạo `WorkflowInstance` ở bước đầu.
+- Cán bộ có vai trò khớp `WorkflowStep.roleCode` (hoặc `admin`) có thể bấm "Phê duyệt" / "Trả lại" để tiến hoặc đóng tiến trình.
+
+#### 5.14.2 Nhu cầu người dùng chính
+
+- BR-QT-01: Người dùng vào `/quy-trinh` thấy 3 thẻ nhóm (Bàn giao / Bảo hành / Huấn luyện) với số lượng quy trình của mỗi nhóm.
+- BR-QT-02: Trong mỗi nhóm có danh sách workflow (Tên, Mã, Số bước, Tổng SLA, Trạng thái, ngày cập nhật). Mỗi workflow có nút Sửa / Xoá / Lịch sử.
+- BR-QT-03: Trang chỉnh sửa workflow theo bố cục 2 cột: cột trái «Thông tin cấu hình» + «Tổng quát»; cột phải «Thiết kế luồng xử lý» liệt kê các bước với badge hành động, vai trò, SLA và 4 nút thao tác (lên, xuống, sửa, xoá).
+- BR-QT-04: Thêm/sửa bước qua dialog `StepUpsertDialog` với 4 thông tin: tên, hành động (`workflow_step_action`), vai trò (`Role.code`), SLA (giờ), mô tả.
+- BR-QT-05: Mỗi tạo mới Handover/Warranty/TrainingCourse → tự khởi tạo `WorkflowInstance` (status `running`, currentStep = step đầu) và ghi `WorkflowStepLog(action="start")`.
+- BR-QT-06: Trên dialog/chi tiết của 3 module có panel «Tiến trình xử lý» hiển thị danh sách bước (đánh dấu bước hiện tại / đã qua), nút «Phê duyệt»/«Trả lại» chỉ enable khi `currentRole === step.roleCode || currentRole === "admin"`. Người sai vai trò bấm advance bị 403.
+- BR-QT-07: Mỗi hành động advance ghi `WorkflowStepLog` và `AuditLog(action="advance", entity="workflow_instance")`; instance ở bước cuối khi approve → status `completed`, đóng entity (handover.completed, warranty.completed, training.completed); reject → instance `cancelled`.
+
+#### 5.14.3 Ràng buộc
+
+- `WorkflowDefinition.isSystem = true` không thể đổi `code`, đổi `moduleKey`, hoặc xoá; chỉ có thể đổi `name`/`isActive`/`description` và thêm/sửa/xoá step.
+- Mỗi workflow chỉ có một workflow `isActive = true` mặc định cho mỗi `moduleKey`; nhiều workflow active cùng module được phép nhưng hệ thống chỉ chọn workflow `isSystem` mặc định khi tạo entity mới (ưu tiên `isSystem desc` rồi `createdAt asc`).
+- Không thể xoá `WorkflowDefinition` còn `WorkflowInstance` đang `running`.
+- Không thể xoá `WorkflowStep` còn `WorkflowInstance` đang đứng tại bước đó.
+- `WorkflowStep.roleCode` bắt buộc trỏ tới một `Role.code` còn hoạt động; `actionCode` bắt buộc thuộc category `workflow_step_action`.
+- RBAC: read `/api/v1/workflows*` cho `admin/manager/technician/sales/viewer`; write/reorder/advance cho `admin/manager`; advance cũng cho phép người có role khớp step.
 
 ---
 
@@ -784,7 +827,7 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 | Tài liệu | Người sở hữu, khách hàng, hợp đồng, sản phẩm, đề tài, khóa đào tạo (liên kết tùy chọn) |
 | Đề tài | Chủ nhiệm, công việc, tài liệu |
 | Công việc | Đề tài (tùy chọn), người được giao |
-| Cài đặt | User, Role, DataDefinition, UserNotificationPreference |
+| Cài đặt | User, Role, DataDefinition, UserNotificationPreference, SystemSetting, AuditLog, Notification, RefreshToken (phiên đăng nhập) |
 
 ---
 

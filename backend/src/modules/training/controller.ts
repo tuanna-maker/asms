@@ -41,7 +41,7 @@ export async function listTrainingCoursesController(req: Request, res: Response)
   const query = zodParseOrThrow(listTrainingQuerySchema, req.query);
   const filters = {
     ...(query.status !== undefined ? { status: query.status } : {}),
-    ...(query.type !== undefined ? { type: query.type } : {}),
+    ...(query.typeCode !== undefined ? { typeCode: query.typeCode } : {}),
     ...(query.contractId !== undefined ? { contractId: query.contractId } : {}),
   };
 
@@ -63,13 +63,15 @@ export async function createTrainingCourseController(req: Request, res: Response
     ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
     ...(payload.instructorId !== undefined ? { instructorId: payload.instructorId } : {}),
     title: payload.title,
-    type: payload.type,
+    typeCode: payload.typeCode,
     startDate: payload.startDate,
     endDate: payload.endDate,
     ...(payload.participants !== undefined ? { participants: payload.participants } : {}),
     ...(payload.status !== undefined ? { status: payload.status } : {}),
     ...(payload.location !== undefined ? { location: payload.location } : {}),
     ...(payload.description !== undefined ? { description: payload.description } : {}),
+    ...(payload.workflowId !== undefined ? { workflowId: payload.workflowId } : {}),
+    actorId: (req as { user?: { id?: string } }).user?.id ?? null,
   };
 
   const data = await createTrainingCourseService(normalizedPayload);
@@ -80,7 +82,10 @@ export async function updateTrainingCourseController(req: Request, res: Response
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateTrainingCourseSchema, req.body);
   if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
-  const data = await updateTrainingCourseService(id, payload as Parameters<typeof updateTrainingCourseService>[1]);
+  const data = await updateTrainingCourseService(id, {
+    ...(payload as Parameters<typeof updateTrainingCourseService>[1]),
+    actorId: (req as { user?: { id?: string } }).user?.id ?? null,
+  });
   return sendSuccess(res, data, "Training course updated");
 }
 

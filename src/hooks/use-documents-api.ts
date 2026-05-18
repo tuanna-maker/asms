@@ -8,10 +8,11 @@ export type DocumentPayload = {
   customerId?: string;
   contractId?: string;
   productId?: string;
+  warrantyId?: string;
   projectId?: string;
   trainingCourseId?: string;
   name: string;
-  category: "contract" | "technical" | "policy" | "training" | "report" | "other";
+  categoryCode: string;
   fileType: "pdf" | "doc" | "xls" | "img" | "other";
   tags?: string[];
   description?: string;
@@ -40,12 +41,13 @@ export function useCreateDocument() {
 export type UploadDocumentPayload = {
   file: File;
   name: string;
-  category: DocumentPayload["category"];
+  categoryCode: string;
   fileType: DocumentPayload["fileType"];
   ownerId?: string;
   contractId?: string;
   customerId?: string;
   productId?: string;
+  warrantyId?: string;
   projectId?: string;
   trainingCourseId?: string;
   description?: string;
@@ -58,7 +60,7 @@ export function useUploadDocument() {
       const form = new FormData();
       form.append("file", payload.file);
       form.append("name", payload.name);
-      form.append("category", payload.category);
+      form.append("categoryCode", payload.categoryCode);
       form.append("fileType", payload.fileType);
       if (payload.ownerId) form.append("ownerId", payload.ownerId);
       if (payload.contractId) form.append("contractId", payload.contractId);
@@ -66,6 +68,7 @@ export function useUploadDocument() {
       if (payload.productId) form.append("productId", payload.productId);
       if (payload.projectId) form.append("projectId", payload.projectId);
       if (payload.trainingCourseId) form.append("trainingCourseId", payload.trainingCourseId);
+      if (payload.warrantyId) form.append("warrantyId", payload.warrantyId);
       if (payload.description) form.append("description", payload.description);
       return api.post("/api/v1/documents/upload", form);
     },

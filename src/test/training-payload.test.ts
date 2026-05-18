@@ -18,7 +18,7 @@ describe("training payload helpers", () => {
 
     expect(payload).toMatchObject({
       title: "Course",
-      type: "internal",
+      typeCode: "internal",
       startDate: "2026-01-01",
       endDate: "2026-01-01",
       participants: 3,

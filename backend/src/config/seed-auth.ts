@@ -26,8 +26,8 @@ export async function seedAuthUsers() {
     ROLE_SEEDS.map(async (r) => {
       return prisma.role.upsert({
         where: { code: r.code },
-        update: { name: r.name },
-        create: { code: r.code, name: r.name },
+        update: { name: r.name, isSystem: true, isActive: true },
+        create: { code: r.code, name: r.name, isSystem: true, isActive: true },
       });
     })
   );

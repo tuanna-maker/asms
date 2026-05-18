@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Users, Shield, Bell, Trash2, Database, Tags, ChevronRight } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Users, Shield, Bell, Trash2, Tags, ChevronRight, KeyRound, Sliders, ScrollText, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole, type Role } from "@/hooks/use-role";
-import { DataDefinitionsTab } from "@/components/settings/DataDefinitionsTab";
 import {
   ROLE_MATRIX_MODULES,
   SETTINGS_ROLE_ORDER,
@@ -38,6 +37,10 @@ import {
   useUpdateNotificationPreferences,
   type NotificationPrefKey,
 } from "@/hooks/use-notification-preferences-api";
+import { RolesTab } from "@/components/settings/RolesTab";
+import { AuditLogsTab } from "@/components/settings/AuditLogsTab";
+import { SystemSettingsTab } from "@/components/settings/SystemSettingsTab";
+import { SessionsTab } from "@/components/settings/SessionsTab";
 
 const roleBadge = (roleCode: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -164,12 +167,49 @@ function NotificationPrefsPanel({ enabled }: { enabled: boolean }) {
   );
 }
 
+const VALID_TABS = new Set([
+  "users",
+  "roles",
+  "permissions",
+  "notifications",
+  "system",
+  "sessions",
+  "audit",
+]);
+
 const SettingsPage = () => {
   const { isAuthenticated, isLoading: authLoading, user: authUser } = useAuth();
   const { role } = useRole();
   const canWriteUsers = role === "admin";
-  const canWriteDefinitions = role === "admin" || role === "manager";
   const { data: users = [], isLoading, isError, error, refetch } = useUsersList(!authLoading && isAuthenticated);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const urlParams = new URLSearchParams(location.search);
+  const tabParam = urlParams.get("tab");
+  const entityParam = urlParams.get("entity");
+  const entityIdParam = urlParams.get("entityId");
+  const initialTab = tabParam && VALID_TABS.has(tabParam) ? tabParam : "users";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    if (tabParam && VALID_TABS.has(tabParam) && tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, activeTab]);
+
+  const handleTabChange = (next: string) => {
+    setActiveTab(next);
+    const params = new URLSearchParams(location.search);
+    if (next === "audit") {
+      params.set("tab", "audit");
+    } else {
+      params.delete("tab");
+      params.delete("entity");
+      params.delete("entityId");
+    }
+    const search = params.toString();
+    navigate({ pathname: location.pathname, search: search ? `?${search}` : "" }, { replace: true });
+  };
 
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -286,12 +326,17 @@ const SettingsPage = () => {
         </div>
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
       </Link>
-      <Tabs defaultValue="users">
-        <TabsList>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="users"><Users className="h-4 w-4 mr-1" /> Người dùng</TabsTrigger>
-          <TabsTrigger value="roles"><Shield className="h-4 w-4 mr-1" /> Phân quyền</TabsTrigger>
+          <TabsTrigger value="roles"><KeyRound className="h-4 w-4 mr-1" /> Vai trò</TabsTrigger>
+          <TabsTrigger value="permissions"><Shield className="h-4 w-4 mr-1" /> Phân quyền</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="h-4 w-4 mr-1" /> Thông báo</TabsTrigger>
-          <TabsTrigger value="definitions"><Database className="h-4 w-4 mr-1" /> Định nghĩa dữ liệu</TabsTrigger>
+          <TabsTrigger value="system"><Sliders className="h-4 w-4 mr-1" /> Hệ thống</TabsTrigger>
+          <TabsTrigger value="sessions"><Smartphone className="h-4 w-4 mr-1" /> Phiên đăng nhập</TabsTrigger>
+          {role === "admin" ? (
+            <TabsTrigger value="audit"><ScrollText className="h-4 w-4 mr-1" /> Nhật ký</TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent value="users">
@@ -373,11 +418,15 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="roles">
+          <RolesTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
+        </TabsContent>
+
+        <TabsContent value="permissions">
           <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50 space-y-4">
             <div className="space-y-1">
               <h3 className="font-semibold text-card-foreground">Phân quyền theo vai trò</h3>
               <p className="text-sm text-muted-foreground">
-                Danh sách truy cập trang được lấy từ cấu hình hệ thống (khớp với menu và API). Để gán vai trò cho từng người, dùng tab{" "}
+                Ma trận quyền cố định trong mã nguồn (route + API), khớp với menu chính. Để gán vai trò cho từng người, dùng tab{" "}
                 <span className="font-medium text-foreground">Người dùng</span> → <span className="font-medium text-foreground">Sửa</span>.
               </p>
             </div>
@@ -400,18 +449,32 @@ const SettingsPage = () => {
               );
             })}
             <p className="text-xs text-muted-foreground pt-1">
-              Trong Cài đặt, tab «Định nghĩa dữ liệu» chỉ Quản trị và Quản lý được chỉnh sửa; Quản trị duy nhất quản lý người dùng.
+              Quản trị và Quản lý được chỉnh sửa danh mục Thuộc tính; chỉ Quản trị quản lý người dùng.
             </p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="definitions">
-          <DataDefinitionsTab canWrite={canWriteDefinitions} />
         </TabsContent>
 
         <TabsContent value="notifications">
           <NotificationPrefsPanel enabled={!authLoading && isAuthenticated} />
         </TabsContent>
+
+        <TabsContent value="system">
+          <SystemSettingsTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
+        </TabsContent>
+
+        <TabsContent value="sessions">
+          <SessionsTab enabled={!authLoading && isAuthenticated} />
+        </TabsContent>
+
+        {role === "admin" ? (
+          <TabsContent value="audit">
+            <AuditLogsTab
+              enabled={!authLoading && isAuthenticated}
+              initialEntity={entityParam}
+              initialEntityId={entityIdParam}
+            />
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       <Dialog open={permissionsDetailRole !== null} onOpenChange={(o) => !o && setPermissionsDetailRole(null)}>

@@ -55,6 +55,25 @@ export type CreateMaterialTransferPayload = {
   transferDate?: string;
 };
 
+export type MaterialDetailRow = MaterialListRow & {
+  createdAt?: string;
+  updatedAt?: string;
+  products?: Array<{ id: string; code: string; name: string; category: string | null }>;
+};
+
+export function useMaterialDetail(id: string | null | undefined, opts?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: qk.materials.detail(id ?? ""),
+    enabled: Boolean(id) && opts?.enabled !== false,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<MaterialDetailRow>>(
+        `/api/v1/materials/${encodeURIComponent(id as string)}`,
+      );
+      return res.data.data ?? null;
+    },
+  });
+}
+
 export function useMaterialsList() {
   return useQuery({
     queryKey: qk.materials.all,

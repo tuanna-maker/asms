@@ -12,7 +12,7 @@ export const createResearchProjectSchema = z.object({
 });
 
 export const updateResearchProjectSchema = createResearchProjectSchema.partial().extend({
-  status: z.enum(["planning", "active", "completed", "suspended"]).optional(),
+  stageCode: z.string().min(1).optional(),
   progress: z.number().int().min(0).max(100).optional(),
   budget: z.number().optional(),
   budgetSpent: z.number().optional(),
@@ -24,5 +24,5 @@ export const researchProjectIdParamSchema = z.object({
 
 export const listResearchProjectsQuerySchema = z.object({
   search: z.string().optional(),
-  status: z.enum(["planning", "active", "completed", "suspended"]).optional(),
+  stageCode: z.string().optional(),
 });

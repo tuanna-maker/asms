@@ -24,19 +24,60 @@ export function invalidateContractQueries(qc: QueryClient, contractId?: string |
   }
 }
 
-export function useContractsList(filters?: { contractTypeCode?: string }) {
+export type ContractListRow = {
+  id: string;
+  code: string;
+  title: string;
+  products: number;
+  customerId: string;
+};
+
+export function useContractsList(filters?: {
+  contractTypeCode?: string;
+  customerId?: string;
+  eligibleFor?: "handover" | "training";
+}) {
   return useQuery({
-    queryKey: filters?.contractTypeCode
-      ? [...qk.contracts.all, "type", filters.contractTypeCode]
-      : qk.contracts.all,
+    queryKey: [
+      ...qk.contracts.all,
+      "list",
+      filters?.contractTypeCode ?? "",
+      filters?.customerId ?? "",
+      filters?.eligibleFor ?? "",
+    ],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters?.contractTypeCode) params.set("contractTypeCode", filters.contractTypeCode);
+      if (filters?.customerId) params.set("customerId", filters.customerId);
+      if (filters?.eligibleFor) params.set("eligibleFor", filters.eligibleFor);
       const qs = params.toString();
-      const res = await api.get<ApiSuccess<unknown[]>>(
+      const res = await api.get<ApiSuccess<ContractListRow[]>>(
         qs ? `/api/v1/contracts?${qs}` : "/api/v1/contracts",
       );
       return res.data.data ?? [];
+    },
+  });
+}
+
+export type ContractProductRow = {
+  contractProductId: string;
+  productId: string;
+  code: string;
+  name: string;
+  quantity: number;
+};
+
+export function useContractProducts(contractId: string | null | undefined, enabled: boolean) {
+  return useQuery({
+    queryKey: [...qk.contracts.all, "products", contractId ?? ""],
+    enabled: Boolean(enabled && contractId),
+    staleTime: 30_000,
+    queryFn: async () => {
+      const id = contractId as string;
+      const res = await api.get<ApiSuccess<{ items: ContractProductRow[] }>>(
+        `/api/v1/contracts/${encodeURIComponent(id)}/products`,
+      );
+      return res.data.data?.items ?? [];
     },
   });
 }
@@ -92,6 +133,7 @@ export function useSetContractProducts() {
     onSuccess: (_, { id }) => {
       invalidateContractQueries(qc, id);
       void qc.invalidateQueries({ queryKey: qk.products.all });
+      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "products", id] });
     },
   });
 }
@@ -110,6 +152,7 @@ export function useUpdateContractProduct() {
     }) => api.put(`/api/v1/contracts/${contractId}/products/${productId}`, payload),
     onSuccess: (_, { contractId }) => {
       invalidateContractQueries(qc, contractId);
+      void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "products", contractId] });
     },
   });
 }

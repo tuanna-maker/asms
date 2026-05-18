@@ -2,6 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { LucideIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
+import { chartPlotAreaClass } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -26,8 +27,8 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col">
-        <div className="flex items-center gap-3 mb-3">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col h-full min-h-0">
+        <div className="flex items-center gap-3 mb-3 shrink-0">
           <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconColor}`}>
             <Icon className="h-5 w-5" />
           </div>
@@ -36,7 +37,7 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
         {total === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Không có dữ liệu</p>
         ) : (
-          <div className={isMobile ? "h-[340px]" : "h-[480px]"}>
+          <div className={chartPlotAreaClass}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -55,7 +56,12 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
                   ))}
                 </Pie>
                 <Tooltip
-                  contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 13 }}
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: 8,
+                    fontSize: 13,
+                  }}
                   formatter={(value: number, name: string) => [value, name]}
                 />
                 <Legend
@@ -64,7 +70,7 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
                   align="center"
                   wrapperStyle={{ fontSize: isMobile ? 11 : 12, lineHeight: 1.6 }}
                   formatter={(value: string) => {
-                    const item = compactData.find(d => d.name === value);
+                    const item = compactData.find((d) => d.name === value);
                     if (item && total > 0) {
                       return `${value} ${Math.round((item.value / total) * 100)}%`;
                     }

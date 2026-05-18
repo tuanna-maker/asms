@@ -8,7 +8,7 @@ export type TaskPayload = {
   code?: string;
   title: string;
   description?: string;
-  priority?: "low" | "medium" | "high" | "urgent";
+  priorityCode?: string;
   status?: "todo" | "in_progress" | "review" | "completed" | "delayed";
   type?: "research" | "report" | "fieldwork" | "admin" | "review";
   assigneeId?: string;
@@ -23,6 +23,7 @@ export type TaskListRow = {
   title: string;
   description: string | null;
   priority: "low" | "medium" | "high" | "urgent";
+  priorityCode: string;
   assignee: { fullName: string } | null;
   startDate: string | null;
   deadline: string | null;

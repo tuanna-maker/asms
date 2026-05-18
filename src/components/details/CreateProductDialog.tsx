@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { z } from "zod";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -7,17 +7,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { DefenseProduct, ProductSpecField } from "@/data/productsData";
 import type { CreateProductPayload, ProductSpec } from "@/hooks/use-products-api";
 import { Plus, Trash2 } from "lucide-react";
 
-const CATEGORIES = ["Vô tuyến", "Mã hóa", "Trinh sát", "Ra đa", "Chỉ huy", "Vệ tinh", "Chuyển tiếp", "Truyền dẫn"];
+const FALLBACK_CATEGORIES = ["Vô tuyến", "Mã hóa", "Trinh sát", "Ra đa", "Chỉ huy", "Vệ tinh", "Chuyển tiếp", "Truyền dẫn"];
 
 const productSchema = z.object({
   id: z.string().trim().regex(/^SP-\d{3,}$/, { message: "Mã SP phải có dạng SP-001" }).max(20),
   code: z.string().trim().nonempty({ message: "Mã quân sự là bắt buộc" }).max(50, { message: "Tối đa 50 ký tự" }),
   name: z.string().trim().nonempty({ message: "Tên sản phẩm là bắt buộc" }).max(150, { message: "Tối đa 150 ký tự" }),
-  category: z.enum(CATEGORIES as [string, ...string[]], { errorMap: () => ({ message: "Chọn phân loại" }) }),
+  category: z.string().trim().min(1, { message: "Chọn phân loại" }),
   status: z.enum(["developing", "producing", "equipped", "stopped"]),
   version: z.string().trim().nonempty({ message: "Phiên bản là bắt buộc" }).max(20),
   unit: z.string().trim().nonempty({ message: "Đơn vị là bắt buộc" }).max(100),
@@ -59,7 +60,7 @@ const initial = {
   code: "",
   name: "",
   category: "",
-  status: "developing" as DefenseProduct["status"],
+  status: "producing" as DefenseProduct["status"],
   version: "v1.0",
   unit: "",
   manufacturer: "",
@@ -91,6 +92,12 @@ const CreateProductDialog = ({
   const [submitting, setSubmitting] = useState(false);
   const [specs, setSpecs] = useState<ProductSpecField[]>([]);
   const { toast } = useToast();
+  const { data: categoryDefs = [] } = useDefinitionsList("product_category");
+  const categoryOptions = useMemo(() => {
+    const fromApi = categoryDefs.filter((d) => d.isActive).map((d) => ({ value: d.code, label: d.name }));
+    if (fromApi.length > 0) return fromApi;
+    return FALLBACK_CATEGORIES.map((c) => ({ value: c, label: c }));
+  }, [categoryDefs]);
 
   const update = <K extends keyof typeof initial>(k: K, v: (typeof initial)[K]) => {
     setForm((prev) => ({ ...prev, [k]: v }));
@@ -277,7 +284,9 @@ const CreateProductDialog = ({
             <Select value={form.category} onValueChange={(v) => update("category", v)}>
               <SelectTrigger><SelectValue placeholder="Chọn phân loại" /></SelectTrigger>
               <SelectContent>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {categoryOptions.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </Field>

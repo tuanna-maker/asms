@@ -37,3 +37,15 @@ export const updateDefinitionSchema = z.object({
   sortOrder: z.coerce.number().int().optional(),
   isActive: z.coerce.boolean().optional(),
 });
+
+export const reorderDefinitionsSchema = z.object({
+  category: categorySchema,
+  items: z
+    .array(
+      z.object({
+        id: z.string().min(1),
+        sortOrder: z.coerce.number().int().nonnegative(),
+      }),
+    )
+    .min(1),
+});

@@ -1,302 +1,123 @@
-import { useMemo, useState } from "react";
-import { BarChart3, Users, FileText, Package, Building2, TrendingUp, TrendingDown } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from "recharts";
-import { useReportsByYear } from "@/hooks/use-reports-api";
-
-const EmptyState = ({ text }: { text: string }) => (
-  <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed border-border/60 bg-muted/30 text-sm text-muted-foreground">
-    {text}
-  </div>
-);
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { ReportsPageShell, type MainReportTab } from "@/components/reports/ReportsPageShell";
+import {
+  useReports,
+  useReportsByProductLine,
+  useReportsFeedbackByCustomer,
+  useReportsFeedbackByProductLine,
+} from "@/hooks/use-reports-api";
+import { useMaterialDefects } from "@/hooks/use-material-defects";
+import { buildExportSheets, type FeedbackSubTab } from "@/lib/report-export-data";
+import { exportSheetsToExcel, printReportArea } from "@/lib/report-export";
+import { parseReportFiltersFromSearch, type ReportFilters } from "@/lib/report-filters";
 
 const Reports = () => {
-  const [year, setYear] = useState("2026");
-  const { data: apiReports, isLoading, isError, error } = useReportsByYear(year);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const appliedFilters = useMemo(() => parseReportFiltersFromSearch(searchParams), [searchParams]);
+  const [draftFilters, setDraftFilters] = useState<ReportFilters>(appliedFilters);
+  const [activeTab, setActiveTab] = useState<MainReportTab>(
+    (searchParams.get("tab") as MainReportTab) || "customer",
+  );
+  const [feedbackSubTab, setFeedbackSubTab] = useState(
+    searchParams.get("feedbackTab") ?? "customer",
+  );
 
-  const contractsTotal = apiReports?.contracts.total ?? 0;
-  const deliveredTotal = apiReports?.products.deliveredTotal ?? 0;
-  const warrantiesTotal = apiReports?.warranties.total ?? 0;
-  const customersTotal = apiReports?.customers.total ?? 0;
-  const delta = apiReports?.summary_delta;
+  useEffect(() => {
+    setDraftFilters(appliedFilters);
+  }, [appliedFilters]);
 
-  const contractStatusPie = useMemo(() => {
-    const byStatus = apiReports?.contracts.byStatus ?? {};
-    const active = (byStatus.active ?? 0) + (byStatus.draft ?? 0);
-    const completed = byStatus.completed ?? 0;
-    const late = byStatus.late ?? 0;
-    const liquidated = byStatus.liquidated ?? 0;
-    return [
-      { name: "Đang thực hiện", value: active, fill: "hsl(215, 90%, 50%)" },
-      { name: "Hoàn thành", value: completed, fill: "hsl(150, 60%, 45%)" },
-      { name: "Chậm tiến độ", value: late, fill: "hsl(38, 92%, 55%)" },
-      { name: "Đã thanh lý", value: liquidated, fill: "hsl(220, 15%, 70%)" },
-    ];
-  }, [apiReports]);
-  const hasContractStatus = contractStatusPie.some((p) => p.value > 0);
-  const contractByCustomer = apiReports?.customer_breakdown ?? [];
-  const monthlyTrend = apiReports?.trends?.monthly ?? [];
-  const unitPerformance = apiReports?.unit_performance ?? [];
+  const { data: reports, isLoading, isError, error } = useReports(appliedFilters);
+  const { data: productLine = [] } = useReportsByProductLine(appliedFilters);
+  const { data: feedbackCustomer = [] } = useReportsFeedbackByCustomer(appliedFilters);
+  const { data: feedbackProductLine = [] } = useReportsFeedbackByProductLine(appliedFilters);
+  const { data: materialData } = useMaterialDefects({ ...appliedFilters, limit: 50 });
+  const materialItems = materialData?.items ?? [];
+  const materialTotalWarranties = materialData?.totalWarranties ?? 0;
 
-  const productByLine = useMemo(() => {
-    const byType = apiReports?.warranties.byType ?? {};
-    const delivered = apiReports?.products.deliveredTotal ?? 0;
-    return [
-      {
-        name: "Bảo hành",
-        produced: delivered,
-        delivered,
-        warranty: byType.warranty ?? 0,
-      },
-      {
-        name: "Sửa chữa",
-        produced: delivered,
-        delivered,
-        warranty: byType.repair ?? 0,
-      },
-      {
-        name: "Bảo trì",
-        produced: delivered,
-        delivered,
-        warranty: byType.maintenance ?? 0,
-      },
-    ];
-  }, [apiReports]);
+  const applyFilters = useCallback(() => {
+    const next = new URLSearchParams();
+    if (draftFilters.year) next.set("year", draftFilters.year);
+    if (draftFilters.from) next.set("from", draftFilters.from);
+    if (draftFilters.to) next.set("to", draftFilters.to);
+    if (activeTab) next.set("tab", activeTab);
+    if (feedbackSubTab) next.set("feedbackTab", feedbackSubTab);
+    setSearchParams(next);
+  }, [draftFilters, activeTab, feedbackSubTab, setSearchParams]);
+
+  const handleTabChange = (tab: MainReportTab) => {
+    setActiveTab(tab);
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tab);
+    setSearchParams(next);
+  };
+
+  const handleFeedbackSubTab = (v: string) => {
+    setFeedbackSubTab(v);
+    const next = new URLSearchParams(searchParams);
+    next.set("feedbackTab", v);
+    setSearchParams(next);
+  };
+
+  const exportContext = useMemo(
+    () => ({
+      tab: activeTab,
+      feedbackSubTab: feedbackSubTab as FeedbackSubTab,
+      filters: appliedFilters,
+      reports,
+      productLine,
+      feedbackCustomer,
+      feedbackProductLine,
+      materialItems,
+    }),
+    [
+      activeTab,
+      feedbackSubTab,
+      appliedFilters,
+      reports,
+      productLine,
+      feedbackCustomer,
+      feedbackProductLine,
+      materialItems,
+    ],
+  );
+
+  const handleExportExcel = () => {
+    const sheets = buildExportSheets(exportContext);
+    const label =
+      appliedFilters.from || appliedFilters.to
+        ? `${appliedFilters.from ?? ""}_${appliedFilters.to ?? ""}`
+        : appliedFilters.year ?? "bao-cao";
+    exportSheetsToExcel(sheets, `bao-cao-${activeTab}-${label}`);
+  };
+
+  const handleExportPdf = () => {
+    printReportArea("report-print-area");
+  };
 
   const loadError = error instanceof Error ? error.message : "Không tải được dữ liệu báo cáo.";
 
   return (
-    <div className="space-y-6">
-      {/* Filter */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <span className="font-semibold text-card-foreground">Báo cáo & Thống kê</span>
-        </div>
-        <Select value={year} onValueChange={setYear}>
-          <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="2026">Năm 2026</SelectItem>
-            <SelectItem value="2025">Năm 2025</SelectItem>
-            <SelectItem value="2024">Năm 2024</SelectItem>
-            <SelectItem value="2023">Năm 2023</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {isLoading ? (
-        <div className="rounded-xl bg-card p-4 shadow-sm border border-border/50 text-sm text-muted-foreground">
-          Đang tải dữ liệu báo cáo...
-        </div>
-      ) : null}
-
-      {isError ? (
-        <div className="rounded-xl bg-destructive/10 border border-destructive/30 p-4 text-sm text-destructive">
-          {loadError}
-        </div>
-      ) : null}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary"><FileText className="h-6 w-6" /></div>
-          <div>
-            <p className="text-sm text-muted-foreground">Tổng HĐ</p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-card-foreground">{contractsTotal}</p>
-              <span className={`flex items-center text-xs ${(delta?.contractsPct ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
-                {(delta?.contractsPct ?? 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {" "}{Math.abs(delta?.contractsPct ?? 0)}%
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10 text-success"><Package className="h-6 w-6" /></div>
-          <div>
-            <p className="text-sm text-muted-foreground">SP đã giao</p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-card-foreground">{deliveredTotal}</p>
-              <span className={`flex items-center text-xs ${(delta?.deliveredPct ?? 0) >= 0 ? "text-success" : "text-destructive"}`}>
-                {(delta?.deliveredPct ?? 0) >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {" "}{Math.abs(delta?.deliveredPct ?? 0)}%
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10 text-warning"><Users className="h-6 w-6" /></div>
-          <div>
-            <p className="text-sm text-muted-foreground">Khiếu nại</p>
-            <div className="flex items-center gap-2">
-              <p className="text-2xl font-bold text-card-foreground">{warrantiesTotal}</p>
-              <span className={`flex items-center text-xs ${(delta?.warrantiesPct ?? 0) <= 0 ? "text-success" : "text-destructive"}`}>
-                {(delta?.warrantiesPct ?? 0) <= 0 ? <TrendingDown className="h-3 w-3" /> : <TrendingUp className="h-3 w-3" />}
-                {" "}{Math.abs(delta?.warrantiesPct ?? 0)}%
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 text-accent"><Building2 className="h-6 w-6" /></div>
-          <div>
-            <p className="text-sm text-muted-foreground">Khách hàng</p>
-            <p className="text-2xl font-bold text-card-foreground">{customersTotal}</p>
-          </div>
-        </div>
-      </div>
-
-      <Tabs defaultValue="customer">
-        <TabsList>
-          <TabsTrigger value="customer">Theo khách hàng</TabsTrigger>
-          <TabsTrigger value="contract">Theo hợp đồng</TabsTrigger>
-          <TabsTrigger value="product">Theo sản phẩm</TabsTrigger>
-          <TabsTrigger value="unit">Theo đơn vị</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="customer">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-              <h3 className="font-semibold text-card-foreground mb-4">Số hợp đồng theo khách hàng</h3>
-              {contractByCustomer.length === 0 ? (
-                <EmptyState text="Chưa có dữ liệu hợp đồng theo khách hàng." />
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={contractByCustomer}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="contracts" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-              <h3 className="font-semibold text-card-foreground mb-4">Giá trị HĐ theo khách hàng (triệu đ)</h3>
-              {contractByCustomer.length === 0 ? (
-                <EmptyState text="Chưa có dữ liệu giá trị hợp đồng theo khách hàng." />
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={contractByCustomer}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="hsl(170, 60%, 45%)" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="contract">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-              <h3 className="font-semibold text-card-foreground mb-4">Trạng thái hợp đồng</h3>
-              {!hasContractStatus ? (
-                <EmptyState text="Chưa có dữ liệu trạng thái hợp đồng." />
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie data={contractStatusPie} cx="50%" cy="50%" outerRadius={100} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
-                      {contractStatusPie.map((entry, i) => (
-                        <Cell key={i} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-              <h3 className="font-semibold text-card-foreground mb-4">Xu hướng theo tháng</h3>
-              {monthlyTrend.length === 0 ? (
-                <EmptyState text="Chưa có dữ liệu xu hướng theo tháng trong năm đã chọn." />
-              ) : (
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                    <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="contracts" name="Hợp đồng" stroke="hsl(215, 90%, 50%)" strokeWidth={2} />
-                    <Line type="monotone" dataKey="complaints" name="Khiếu nại" stroke="hsl(38, 92%, 55%)" strokeWidth={2} />
-                    <Line type="monotone" dataKey="handovers" name="Bàn giao" stroke="hsl(150, 60%, 45%)" strokeWidth={2} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="product">
-          <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-            <h3 className="font-semibold text-card-foreground mb-4">Thống kê theo dòng sản phẩm</h3>
-            {productByLine.every((p) => p.warranty === 0 && p.delivered === 0) ? (
-              <EmptyState text="Chưa có dữ liệu theo nhóm sản phẩm." />
-            ) : (
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={productByLine}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 15%, 90%)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="produced" name="Sản xuất" fill="hsl(215, 90%, 50%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="delivered" name="Đã giao" fill="hsl(150, 60%, 45%)" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="warranty" name="BH/SC" fill="hsl(38, 92%, 55%)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="unit">
-          <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-            <h3 className="font-semibold text-card-foreground mb-4">Hiệu suất đơn vị thực hiện</h3>
-            {unitPerformance.length === 0 ? (
-              <EmptyState text="Chưa có dữ liệu hiệu suất đơn vị trong năm đã chọn." />
-            ) : (
-              <div className="space-y-4">
-                {unitPerformance.map((u) => (
-                  <div key={u.unit} className="rounded-lg bg-secondary/30 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-medium text-card-foreground">{u.unit}</span>
-                      <span className="text-sm text-muted-foreground">Hài lòng: <span className="font-bold text-success">{u.satisfaction}%</span></span>
-                    </div>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-xs text-muted-foreground">Nhiệm vụ</p>
-                        <p className="text-lg font-bold text-card-foreground">{u.tasks}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Hoàn thành</p>
-                        <p className="text-lg font-bold text-success">{u.completed}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Đúng hạn</p>
-                        <p className="text-lg font-bold text-primary">{u.onTime}</p>
-                      </div>
-                    </div>
-                    <div className="mt-2 h-2 rounded-full bg-secondary">
-                      <div
-                        className="h-2 rounded-full bg-success"
-                        style={{ width: `${u.tasks > 0 ? (u.completed / u.tasks) * 100 : 0}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+    <ReportsPageShell
+      draftFilters={draftFilters}
+      onDraftFiltersChange={setDraftFilters}
+      onApplyFilters={applyFilters}
+      activeTab={activeTab}
+      onActiveTabChange={handleTabChange}
+      feedbackSubTab={feedbackSubTab}
+      onFeedbackSubTabChange={handleFeedbackSubTab}
+      reports={reports}
+      productLine={productLine}
+      feedbackCustomer={feedbackCustomer}
+      feedbackProductLine={feedbackProductLine}
+      materialItems={materialItems}
+      materialTotalWarranties={materialTotalWarranties}
+      isLoading={isLoading}
+      isError={isError}
+      errorMessage={loadError}
+      onExportExcel={handleExportExcel}
+      onExportPdf={handleExportPdf}
+    />
   );
 };
 

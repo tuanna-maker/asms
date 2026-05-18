@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 export const trainingStatusSchema = z.enum(["planned", "ongoing", "completed", "cancelled"]);
-export const trainingTypeSchema = z.enum(["internal", "external", "online"]);
 
 export const createTrainingCourseSchema = z.object({
   code: z.string().optional(),
@@ -9,24 +8,24 @@ export const createTrainingCourseSchema = z.object({
   customerId: z.string().optional(),
   instructorId: z.string().optional(),
   title: z.string().min(1),
-  type: trainingTypeSchema,
+  typeCode: z.string().min(1),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   participants: z.number().int().nonnegative().optional(),
   status: trainingStatusSchema.optional(),
   location: z.string().optional(),
   description: z.string().optional(),
+  workflowId: z.string().min(1).optional(),
 });
 
 export const updateTrainingCourseSchema = createTrainingCourseSchema.partial().extend({
-  // Allow update status/type too, but keep enum typing
   status: trainingStatusSchema.optional(),
-  type: trainingTypeSchema.optional(),
+  typeCode: z.string().min(1).optional(),
 });
 
 export const listTrainingQuerySchema = z.object({
   status: trainingStatusSchema.optional(),
-  type: trainingTypeSchema.optional(),
+  typeCode: z.string().optional(),
   contractId: z.string().optional(),
 });
 

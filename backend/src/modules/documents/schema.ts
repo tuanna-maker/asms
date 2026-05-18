@@ -5,10 +5,11 @@ export const createDocumentSchema = z.object({
   customerId: z.string().optional(),
   contractId: z.string().optional(),
   productId: z.string().optional(),
+  warrantyId: z.string().optional(),
   projectId: z.string().optional(),
   trainingCourseId: z.string().optional(),
   name: z.string().min(1),
-  category: z.enum(["contract", "technical", "policy", "training", "report", "other"]),
+  categoryCode: z.string().min(1),
   fileType: z.enum(["pdf", "doc", "xls", "img", "other"]),
   tags: z.array(z.string()).optional(),
   description: z.string().optional(),
@@ -23,7 +24,7 @@ export const documentIdParamSchema = z.object({
 });
 
 export const listDocumentsQuerySchema = z.object({
-  category: z.enum(["contract", "technical", "policy", "training", "report", "other"]).optional(),
+  categoryCode: z.string().optional(),
   fileType: z.enum(["pdf", "doc", "xls", "img", "other"]).optional(),
   ownerId: z.string().optional(),
   customerId: z.string().optional(),
@@ -31,6 +32,7 @@ export const listDocumentsQuerySchema = z.object({
   productId: z.string().optional(),
   projectId: z.string().optional(),
   trainingCourseId: z.string().optional(),
+  warrantyId: z.string().optional(),
   name: z.string().optional(),
 });
 

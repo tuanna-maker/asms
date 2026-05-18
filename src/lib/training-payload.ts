@@ -3,7 +3,7 @@ import type { ScheduleSession, Trainee, TrainingCourse } from "@/data/trainingDa
 export function buildTrainingCoursePayload(form: Omit<TrainingCourse, "id">) {
   return {
     title: form.title,
-    type: form.type,
+    typeCode: form.type,
     contractId: form.contractId || undefined,
     instructorId: form.instructor || undefined,
     customerId: form.customer || undefined,

@@ -13,24 +13,34 @@ import {
   ListTodo,
   GraduationCap,
   FolderOpen,
+  Workflow,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useRole } from "@/hooks/use-role";
+import { useSidebarBadges, type SidebarBadges } from "@/hooks/use-sidebar-badges";
 
-const menuItems = [
+type BadgeKey = keyof SidebarBadges;
+
+const menuItems: Array<{
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+  badge?: BadgeKey;
+}> = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: FileText, label: "Hợp đồng", path: "/hop-dong" },
-  { icon: Truck, label: "Bàn giao & HL", path: "/ban-giao" },
-  { icon: Wrench, label: "Bảo hành / SC", path: "/bao-hanh" },
+  { icon: FileText, label: "Hợp đồng", path: "/hop-dong", badge: "overdueContracts" },
+  { icon: Truck, label: "Bàn giao & HL", path: "/ban-giao", badge: "overdueHandovers" },
+  { icon: Wrench, label: "Bảo hành / SC", path: "/bao-hanh", badge: "openWarranties" },
   { icon: Boxes, label: "Sản phẩm", path: "/san-pham" },
   { icon: Package, label: "Vật tư", path: "/vat-tu" },
   { icon: Users, label: "CRM", path: "/khach-hang" },
   { icon: BarChart3, label: "Báo cáo", path: "/bao-cao" },
   { icon: FlaskConical, label: "Đề tài NC", path: "/de-tai" },
-  { icon: ListTodo, label: "Công việc", path: "/cong-viec" },
-  { icon: GraduationCap, label: "Đào tạo & HL", path: "/dao-tao" },
+  { icon: ListTodo, label: "Công việc", path: "/cong-viec", badge: "lateTasks" },
+  { icon: GraduationCap, label: "Đào tạo & HL", path: "/dao-tao", badge: "upcomingTrainings" },
   { icon: FolderOpen, label: "Tài liệu", path: "/tai-lieu" },
+  { icon: Workflow, label: "Quy trình", path: "/quy-trinh" },
   { icon: Settings, label: "Cài đặt", path: "/cai-dat" },
 ];
 
@@ -44,6 +54,7 @@ const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
   const navigate = useNavigate();
   const { canAccess } = useRole();
   const visibleItems = menuItems.filter((m) => canAccess(m.path));
+  const { data: badges } = useSidebarBadges();
 
   const handleNav = (path: string) => {
     navigate(path);
@@ -70,18 +81,35 @@ const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
         {visibleItems.map((item) => {
           const isActive = location.pathname === item.path;
+          const badgeCount = item.badge ? badges?.[item.badge] ?? 0 : 0;
           return (
             <button
               key={item.path}
               onClick={() => handleNav(item.path)}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+              className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                 isActive
                   ? "bg-sidebar-accent text-sidebar-primary"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               }`}
             >
-              <item.icon className="h-5 w-5 shrink-0" />
-              {!isCollapsed && <span>{item.label}</span>}
+              <span className="relative shrink-0">
+                <item.icon className="h-5 w-5" />
+                {badgeCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold leading-none text-destructive-foreground shadow">
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </span>
+              {!isCollapsed && (
+                <span className="flex flex-1 items-center justify-between gap-2">
+                  <span>{item.label}</span>
+                  {badgeCount > 0 && (
+                    <span className="rounded-full bg-destructive/10 px-1.5 text-[10px] font-medium text-destructive">
+                      {badgeCount > 99 ? "99+" : badgeCount}
+                    </span>
+                  )}
+                </span>
+              )}
             </button>
           );
         })}

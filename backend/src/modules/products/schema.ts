@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-const productStatusEnum = z.enum(["developing", "producing", "equipped", "stopped"]);
+const productStatusEnum = z.enum([
+  "developing",
+  "producing",
+  "produced",
+  "inspection_submitted",
+  "inspecting",
+  "inspection_passed",
+  "decision_approved",
+  "equip_decided",
+  "equipped",
+  "stopped",
+]);
 
 export const productSpecSchema = z.object({
   key: z.string().min(1).max(64),

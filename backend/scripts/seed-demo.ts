@@ -11,11 +11,13 @@ import "dotenv/config";
 
 import { seedAuthUsers } from "../src/config/seed-auth";
 import { seedDataDefinitions } from "../src/config/seed-definitions";
+import { seedWorkflows } from "../src/config/seed-workflows";
 import { seedDemoBusinessData } from "../src/config/seed-demo-data";
 
 void (async () => {
   await seedAuthUsers();
   await seedDataDefinitions();
+  await seedWorkflows();
   await seedDemoBusinessData();
   // eslint-disable-next-line no-console
   console.log("seed:demo — hoàn tất (auth + định nghĩa dữ liệu + bộ dữ liệu trình diễn).");

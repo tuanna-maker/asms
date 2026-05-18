@@ -123,6 +123,7 @@
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
 }
 
 /* React Grid Layout customization */
@@ -149,4 +150,11 @@
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top, width, height;
+}
+.dashboard-grid .react-grid-item {
+  display: flex;
+  flex-direction: column;
+}
+.dashboard-grid .react-grid-item > .react-resizable-handle {
+  flex-shrink: 0;
 }

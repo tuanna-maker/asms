@@ -7,12 +7,14 @@
 import "dotenv/config";
 import { seedDataDefinitions } from "../src/config/seed-definitions";
 import { seedAuthUsers } from "../src/config/seed-auth";
+import { seedWorkflows } from "../src/config/seed-workflows";
 
 void (async () => {
   await seedAuthUsers();
   await seedDataDefinitions();
+  await seedWorkflows();
   // eslint-disable-next-line no-console
-  console.log("Bootstrap complete (auth + baseline data definitions).");
+  console.log("Bootstrap complete (auth + baseline data definitions + workflows).");
   process.exit(0);
 })().catch((e) => {
   // eslint-disable-next-line no-console

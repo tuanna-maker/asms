@@ -25,6 +25,7 @@ import { api } from "@/lib/api";
 import { typeLabel, statusLabel, statusColor, Trainee, ScheduleSession } from "@/data/trainingData";
 import { useTrainingCourse } from "@/hooks/use-training";
 import { buildSessionPayload, buildTraineePayload } from "@/lib/training-payload";
+import { WorkflowInstancePanel } from "@/components/workflow/WorkflowInstancePanel";
 
 const attendanceLabel = { present: "Có mặt", absent: "Vắng", pending: "Chưa điểm danh" };
 const attendanceColor = {
@@ -332,6 +333,7 @@ const TrainingDetail = () => {
 
         {/* Overview */}
         <TabsContent value="overview" className="mt-4 space-y-4">
+          <WorkflowInstancePanel moduleKey="training" entityId={course?.id ?? null} />
           <Card className="p-4">
             <h3 className="font-semibold mb-2">Mô tả khóa học</h3>
             <p className="text-sm text-muted-foreground">{course.description || "Chưa có mô tả."}</p>

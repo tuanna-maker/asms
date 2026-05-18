@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Package, Layers, CheckCircle, Clock } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
+import ProductManufacturingWidget from "@/components/dashboard/ProductManufacturingWidget";
 import CustomerProductChart from "@/components/dashboard/CustomerProductChart";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import TrendChart from "@/components/dashboard/TrendChart";
@@ -40,6 +41,7 @@ const productCols: Column<ProductRow>[] = [
 
 const widgetTemplates = [
   { id: "stats", title: "Thống kê SP", description: "4 thẻ", icon: Package, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
+  { id: "manufacturing", title: "Tiến độ SX chi tiết", description: "Theo sơ đồ", icon: Layers, category: "Tiến độ", defaultSize: { w: 12, h: 4 } },
   { id: "progress", title: "Tiến độ SP", description: "Thanh tiến độ", icon: Layers, category: "Tiến độ", defaultSize: { w: 6, h: 4 } },
   { id: "pie", title: "Phân loại SP", description: "Biểu đồ tròn", icon: Layers, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
   { id: "chart-customer", title: "SP theo KH", description: "Biểu đồ cột", icon: Package, category: "Biểu đồ", defaultSize: { w: 12, h: 5 } },
@@ -60,6 +62,7 @@ const ProductTab = ({ data, products = [] }: ProductTabProps) => {
         <StatCard title="Đã trang bị" value={data.product.equipped} icon={CheckCircle} color="success" />
       </div>
     ),
+    "manufacturing": <ProductManufacturingWidget data={data.productProgress} />,
     "progress": (
       <ProgressWidget title="Tiến độ sản phẩm" icon={Layers} total={data.product.total}
         items={[

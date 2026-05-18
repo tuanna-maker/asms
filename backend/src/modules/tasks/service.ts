@@ -2,6 +2,9 @@ import type { Prisma, TaskPriority, TaskStatus, TaskType } from "@prisma/client"
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
+
+const TASK_PRIORITY_ENUMS = new Set(["low", "medium", "high", "urgent"]);
 
 function genTaskCode() {
   return `TK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -18,13 +21,13 @@ async function resolveTaskId(idOrCode: string) {
 
 export async function listTasksService(filters: {
   status?: string;
-  priority?: string;
+  priorityCode?: string;
   type?: string;
   projectId?: string;
 }) {
   const where: Prisma.TaskWhereInput = { deletedAt: null };
   if (filters.status) where.status = filters.status as TaskStatus;
-  if (filters.priority) where.priority = filters.priority as TaskPriority;
+  if (filters.priorityCode) where.priorityCode = filters.priorityCode;
   if (filters.type) where.type = filters.type as TaskType;
   if (filters.projectId) where.projectId = filters.projectId;
 
@@ -38,6 +41,7 @@ export async function listTasksService(filters: {
       description: true,
       status: true,
       priority: true,
+      priorityCode: true,
       type: true,
       progress: true,
       startDate: true,
@@ -70,12 +74,15 @@ export async function createTaskService(payload: {
   description?: string;
   startDate?: Date;
   deadline?: Date;
-  priority?: string;
+  priorityCode?: string;
   status?: string;
   type?: string;
   assigneeId?: string;
   progress?: number;
 }) {
+  const priorityCode = payload.priorityCode ?? "medium";
+  await assertActiveDefinitionCode("task_priority", priorityCode, "Độ ưu tiên");
+
   return prisma.task.create({
     data: {
       code: payload.code ?? genTaskCode(),
@@ -85,7 +92,8 @@ export async function createTaskService(payload: {
       description: payload.description ?? null,
       startDate: payload.startDate ?? null,
       deadline: payload.deadline ?? null,
-      ...(payload.priority ? { priority: payload.priority as TaskPriority } : {}),
+      priorityCode,
+      ...(TASK_PRIORITY_ENUMS.has(priorityCode) ? { priority: priorityCode as TaskPriority } : {}),
       ...(payload.status ? { status: payload.status as TaskStatus } : {}),
       ...(payload.type ? { type: payload.type as TaskType } : {}),
       ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
@@ -100,7 +108,7 @@ type UpdateTaskPayload = Partial<{
   description: string | null;
   startDate: Date | null;
   deadline: Date | null;
-  priority: string;
+  priorityCode: string;
   status: string;
   type: string;
   assigneeId: string | null;
@@ -109,6 +117,10 @@ type UpdateTaskPayload = Partial<{
 
 export async function updateTaskService(id: string, payload: UpdateTaskPayload) {
   const resolvedId = await resolveTaskId(id);
+
+  if (payload.priorityCode !== undefined) {
+    await assertActiveDefinitionCode("task_priority", payload.priorityCode, "Độ ưu tiên");
+  }
 
   return prisma.task.update({
     where: { id: resolvedId },
@@ -119,7 +131,14 @@ export async function updateTaskService(id: string, payload: UpdateTaskPayload) 
       ...(payload.description !== undefined ? { description: payload.description } : {}),
       ...(payload.startDate !== undefined ? { startDate: payload.startDate } : {}),
       ...(payload.deadline !== undefined ? { deadline: payload.deadline } : {}),
-      ...(payload.priority !== undefined ? { priority: payload.priority as TaskPriority } : {}),
+      ...(payload.priorityCode !== undefined
+        ? {
+            priorityCode: payload.priorityCode,
+            ...(TASK_PRIORITY_ENUMS.has(payload.priorityCode)
+              ? { priority: payload.priorityCode as TaskPriority }
+              : {}),
+          }
+        : {}),
       ...(payload.status !== undefined ? { status: payload.status as TaskStatus } : {}),
       ...(payload.type !== undefined ? { type: payload.type as TaskType } : {}),
       ...(payload.assigneeId !== undefined ? { assigneeId: payload.assigneeId } : {}),
@@ -133,4 +152,3 @@ export async function softDeleteTaskService(id: string) {
   await prisma.task.update({ where: { id: resolvedId }, data: { deletedAt: new Date() } });
   return { id: resolvedId };
 }
-

@@ -10,10 +10,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User, Trash2 } from "lucide-react";
 import { DefenseProduct, BOMItem, productCategoryColors, ProductSpecField } from "@/data/productsData";
+import { useDefinitionOptions } from "@/hooks/use-definition-options";
 import { useNavigate } from "react-router-dom";
 import ProductImageGallery from "./ProductImageGallery";
 import type { UpdateProductPayload } from "@/hooks/use-products-api";
 import { useMaterialsList } from "@/hooks/use-materials-api";
+import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,9 +33,15 @@ interface Props {
   onSaveEdits?: (id: string, payload: UpdateProductPayload) => Promise<void>;
 }
 
-const statusMap: Record<DefenseProduct["status"], { label: string; cls: string }> = {
+const statusMap: Record<string, { label: string; cls: string }> = {
   developing: { label: "Đang phát triển", cls: "bg-warning/10 text-warning border-warning/30" },
   producing: { label: "Đang sản xuất", cls: "bg-info/10 text-info border-info/30" },
+  produced: { label: "Sản xuất xong", cls: "bg-info/10 text-info border-info/30" },
+  inspection_submitted: { label: "Đã trình nghiệm thu", cls: "bg-warning/10 text-warning border-warning/30" },
+  inspecting: { label: "Đang nghiệm thu", cls: "bg-warning/10 text-warning border-warning/30" },
+  inspection_passed: { label: "Nghiệm thu xong", cls: "bg-success/10 text-success border-success/30" },
+  decision_approved: { label: "QĐ phê duyệt KQ", cls: "bg-success/10 text-success border-success/30" },
+  equip_decided: { label: "Có QĐ trang bị", cls: "bg-success/10 text-success border-success/30" },
   equipped: { label: "Đã trang bị", cls: "bg-success/10 text-success border-success/30" },
   stopped: { label: "Dừng SX", cls: "bg-muted text-muted-foreground border-border" },
 };
@@ -80,11 +88,20 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { data: materials = [] } = useMaterialsList();
+  const categoryOptions = useDefinitionOptions("product_category");
+  const statusOptions = useDefinitionOptions("product_status");
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
+  const categorySelectOptions = useMemo(() => {
+    const values = new Set(categoryOptions.map((o) => o.value));
+    if (category && !values.has(category)) {
+      return [{ value: category, label: category }, ...categoryOptions];
+    }
+    return categoryOptions;
+  }, [category, categoryOptions]);
   const [status, setStatus] = useState<DefenseProduct["status"]>("developing");
   const [version, setVersion] = useState("");
   const [unit, setUnit] = useState("");
@@ -251,7 +268,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
         productId: product.id,
         ownerId: user?.id,
         name: docName.trim(),
-        category: "technical",
+        categoryCode: "technical",
         fileType: toDocType(docFile),
       });
       await queryClient.invalidateQueries({ queryKey: ["product-documents", product.id] });
@@ -279,9 +296,22 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
     return materials.filter((material) => !existingMaterialIds.has(material.code));
   }, [materials, product?.bom]);
   const productContracts = useMemo(() => productDetail?.contracts ?? [], [productDetail?.contracts]);
+  const { data: productAudit } = useAuditLogs(
+    { entity: "product", entityId: product?.id ?? "", pageSize: 30 },
+    open && Boolean(product?.id),
+  );
+
   const historyEvents = useMemo(() => {
     if (!product) return [];
     const events: Array<{ id: string; user: string; at: string; title: string; description?: string }> = [];
+    for (const row of productAudit?.rows ?? []) {
+      events.push({
+        id: `audit-${row.id}`,
+        user: row.actorName ?? row.actorEmail ?? "Hệ thống",
+        at: row.createdAt,
+        title: row.summary ?? row.action,
+      });
+    }
     if (productDetail?.createdAt) {
       events.push({
         id: "created",
@@ -309,7 +339,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
       });
     }
     return events.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
-  }, [product, productDetail, productDocuments]);
+  }, [product, productDetail, productDocuments, productAudit?.rows]);
 
   if (!product) return null;
 
@@ -376,16 +406,22 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
                     <Input value={version} onChange={(e) => setVersion(e.target.value)} />
                   </EditableInfoCard>
                   <EditableInfoCard label="Phân loại">
-                    <Input value={category} onChange={(e) => setCategory(e.target.value)} />
+                    <Select value={category} onValueChange={setCategory}>
+                      <SelectTrigger><SelectValue placeholder="Chọn phân loại" /></SelectTrigger>
+                      <SelectContent>
+                        {categorySelectOptions.map((c) => (
+                          <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </EditableInfoCard>
                   <EditableInfoCard label="Trạng thái">
                     <Select value={status} onValueChange={(v) => setStatus(v as DefenseProduct["status"])}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="developing">Đang phát triển</SelectItem>
-                        <SelectItem value="producing">Đang sản xuất</SelectItem>
-                        <SelectItem value="equipped">Đã trang bị</SelectItem>
-                        <SelectItem value="stopped">Dừng SX</SelectItem>
+                        {statusOptions.map((row) => (
+                          <SelectItem key={row.value} value={row.value}>{row.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </EditableInfoCard>

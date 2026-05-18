@@ -36,12 +36,16 @@ Tài liệu liên quan: [BRD-ASMS.md](BRD-ASMS.md) (nghiệp vụ tổng thể),
 - FE `ActivityItem`: `customerId <- customer.code`, `user <- createdBy.fullName`, time hiển thị từ `activityAt`
 
 ### Contracts
-- Endpoint: `GET /api/v1/contracts`
+- List: `GET /api/v1/contracts` — query `eligibleFor=handover|training`: chỉ HĐ chưa có handover/training active (cùng điều kiện cho cả hai)
+- Detail: `GET /api/v1/contracts/:id` — thêm `linkedHandover`, `linkedTraining` (summary: id, code, status, workflowName); không dùng `workflowId` / `stepPayloads` trên create/update UI mới
+- Create/Update: `POST/PUT /api/v1/contracts` — body không gửi `workflowId`, `stepPayloads` (cột DB legacy giữ read-only)
+- Ràng buộc: tối đa 1 handover + 1 training course active (`deletedAt` null) / `contractId`
 - FE list row:
   - `id <- code`
   - `customer <- customer.name`
   - `value <- Number(value)`
   - `status: draft -> active` (UI compatibility)
+- FE sheet HĐ: tab Bàn giao → `ContractHandoverSection` (`POST/PUT handovers`, `workflowId`); tab Huấn luyện → `ContractTrainingSection` (`POST/PUT training`, `workflowId`)
 
 ### Users (Settings)
 - List: `GET /api/v1/users`
@@ -57,7 +61,7 @@ Tài liệu liên quan: [BRD-ASMS.md](BRD-ASMS.md) (nghiệp vụ tổng thể),
 ### Handovers
 - List: `GET /api/v1/handovers` (`status`, `customerId`, `contractId`, `search`)
 - Detail: `GET /api/v1/handovers/:id` (`id` or `code`)
-- Create/Update/Delete: `POST/PUT/DELETE /api/v1/handovers`
+- Create/Update/Delete: `POST/PUT/DELETE /api/v1/handovers` — body có `workflowId`, `stepPayloads`; tối đa 1 handover active / `contractId`
 - FE handover row:
   - `id <- code`
   - `contract <- contract.code`
@@ -113,23 +117,21 @@ Tài liệu liên quan: [BRD-ASMS.md](BRD-ASMS.md) (nghiệp vụ tổng thể),
   - `uploadedAt <- ISO date sliced to YYYY-MM-DD`
 
 ### Reports
-- Endpoint: `GET /api/v1/reports?year=YYYY`
-- FE summary cards:
-  - `contractsTotal <- contracts.total`
-  - `deliveredTotal <- products.deliveredTotal`
-  - `warrantiesTotal <- warranties.total`
-  - `customersTotal <- customers.total`
-- FE dynamic sections:
-  - `contractByCustomer <- customer_breakdown`
-  - `monthlyTrend <- trends.monthly`
-  - `unitPerformance <- unit_performance`
-  - `delta badges <- summary_delta`
+- Query chung: `year` (tương thích cũ) hoặc `from`/`to` (ISO date; ưu tiên khoảng ngày nếu có).
+- Endpoints:
+  - `GET /api/v1/reports` — summary, `customer_breakdown`, `contracts_list`, `trends`, `unit_performance`, `summary_delta`
+  - `GET /api/v1/reports/by-product-line` — `{ items: [{ category, produced, delivered, warrantyCount }] }`
+  - `GET /api/v1/reports/feedback/by-customer` — Warranty group theo KH
+  - `GET /api/v1/reports/feedback/by-product-line` — Warranty group theo `Product.category`
+  - `GET /api/v1/reports/material-defects` — heuristic BOM; hỗ trợ `year`/`from`/`to`, `limit`
+- FE `/bao-cao`: `ReportsPageShell`, filter bar, 5 tab + sub-tab Phản ánh; hooks `useReports`, `useReportsByProductLine`, `useReportsFeedbackByCustomer`, `useReportsFeedbackByProductLine`, `useMaterialDefects`
+- Export FE: `src/lib/report-export.ts` (xlsx + print PDF) theo tab active
 
 ### Training
 - Courses:
   - List: `GET /api/v1/training`
   - Detail: `GET /api/v1/training/:id`
-  - CRUD: `POST/PUT/DELETE /api/v1/training`
+  - CRUD: `POST/PUT/DELETE /api/v1/training` — create/update có `workflowId`; tối đa 1 course active / `contractId`
 - Trainees:
   - `POST /api/v1/training/:id/trainees`
   - `PUT /api/v1/training/:id/trainees/:traineeId`

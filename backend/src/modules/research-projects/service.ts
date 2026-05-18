@@ -1,11 +1,14 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma, ProjectStatus } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 
 import type { z } from "zod";
 
 import { createResearchProjectSchema, listResearchProjectsQuerySchema } from "./schema";
+
+const RESEARCH_STAGE_ENUMS = new Set(["planning", "active", "completed", "suspended"]);
 
 async function resolveResearchProjectId(idOrCode: string) {
   const row = await prisma.researchProject.findFirst({
@@ -25,6 +28,7 @@ const listSelect = {
   startDate: true,
   endDate: true,
   status: true,
+  stageCode: true,
   progress: true,
   budget: true,
   budgetSpent: true,
@@ -37,7 +41,7 @@ const listSelect = {
 
 export async function listResearchProjectsService(filters: z.infer<typeof listResearchProjectsQuerySchema>) {
   const where: Prisma.ResearchProjectWhereInput = { deletedAt: null };
-  if (filters.status) where.status = filters.status;
+  if (filters.stageCode) where.stageCode = filters.stageCode;
   if (filters.search) {
     const s = filters.search;
     where.OR = [
@@ -108,7 +112,14 @@ export async function updateResearchProjectService(idOrCode: string, payload: Re
   if (payload.startDate !== undefined) data.startDate = payload.startDate;
   if (payload.endDate !== undefined) data.endDate = payload.endDate;
   if (payload.description !== undefined) data.description = payload.description;
-  if (payload.status !== undefined) data.status = payload.status;
+  if (payload.stageCode !== undefined) {
+    const stageCode = String(payload.stageCode);
+    await assertActiveDefinitionCode("research_stage", stageCode, "Giai đoạn đề tài");
+    data.stageCode = stageCode;
+    if (RESEARCH_STAGE_ENUMS.has(stageCode)) {
+      data.status = stageCode as ProjectStatus;
+    }
+  }
   if (payload.progress !== undefined) data.progress = payload.progress;
   if (payload.managerId !== undefined) data.managerId = payload.managerId;
   if (payload.budget !== undefined) data.budget = payload.budget;

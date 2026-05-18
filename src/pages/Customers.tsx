@@ -22,7 +22,6 @@ import {
   Calendar as CalendarIcon, CheckCircle2, Star, Crown, Medal, Award,
 } from "lucide-react";
 import CustomerDetailDialog from "@/components/details/CustomerDetailDialog";
-import CustomerEditDialog from "@/components/details/CustomerEditDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +35,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-type Customer = { id: string; name: string; contact: string; phone: string; email: string; address: string; contracts: number; activeContracts: number };
+type Customer = {
+  id: string;
+  dbId?: string;
+  name: string;
+  contact: string;
+  phone: string;
+  email: string;
+  address: string;
+  contracts: number;
+  activeContracts: number;
+};
 
 type ApiSuccess<T> = { success: true; data: T; message?: string };
 type ApiCustomerRow = {
@@ -49,11 +58,13 @@ type ApiCustomerRow = {
   address: string | null;
   contractsCount: number;
   activeContracts: number;
+  createdAt?: string;
 };
 
 function mapCustomerRow(row: ApiCustomerRow): Customer {
   return {
     id: row.code,
+    dbId: row.id,
     name: row.name,
     contact: row.contactName ?? "",
     phone: row.phone ?? "",
@@ -115,18 +126,22 @@ const activityMeta: Record<ActivityType, { icon: typeof PhoneCall; label: string
 };
 
 // ---------- Contacts ----------
-type ContactItem = { id: string; name: string; title: string; customerId: string; customerName: string; phone: string; email: string; isPrimary: boolean };
+type ContactItem = { id: string; name: string; title: string; rank: string; department: string; customerId: string; customerName: string; phone: string; email: string; birthday: string; isPrimary: boolean; notes: string };
 
 function mapContactRow(row: ContactRow): ContactItem {
   return {
     id: row.id,
     name: row.fullName,
     title: row.title ?? "",
+    rank: row.rank ?? "",
+    department: row.department ?? "",
     customerId: row.customer.code,
     customerName: row.customer.name,
     phone: row.phone ?? "",
     email: row.email ?? "",
+    birthday: row.birthday ?? "",
     isPrimary: row.isPrimary,
+    notes: row.notes ?? "",
   };
 }
 
@@ -161,11 +176,19 @@ const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
+  const [createdFrom, setCreatedFrom] = useState<string>("");
+  const [createdTo, setCreatedTo] = useState<string>("");
 
   const { data: apiCustomers } = useQuery({
-    queryKey: ["customers"],
+    queryKey: ["customers", createdFrom, createdTo],
     queryFn: async () => {
-      const res = await api.get<ApiSuccess<ApiCustomerRow[]>>("/api/v1/customers");
+      const params = new URLSearchParams();
+      if (createdFrom) params.set("createdFrom", createdFrom);
+      if (createdTo) params.set("createdTo", createdTo);
+      const qs = params.toString();
+      const res = await api.get<ApiSuccess<ApiCustomerRow[]>>(
+        qs ? `/api/v1/customers?${qs}` : "/api/v1/customers",
+      );
       return (res.data.data ?? []).map(mapCustomerRow);
     },
     staleTime: 60_000,
@@ -204,8 +227,8 @@ const Customers = () => {
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [deletingContactId, setDeletingContactId] = useState<string | null>(null);
-  const [contactForm, setContactForm] = useState<{ name: string; title: string; customerId: string; phone: string; email: string; isPrimary: boolean }>({
-    name: "", title: "", customerId: "", phone: "", email: "", isPrimary: false,
+  const [contactForm, setContactForm] = useState<{ name: string; title: string; rank: string; department: string; customerId: string; phone: string; email: string; birthday: string; isPrimary: boolean; notes: string }>({
+    name: "", title: "", rank: "", department: "", customerId: "", phone: "", email: "", birthday: "", isPrimary: false, notes: "",
   });
 
   // Loyalty edit
@@ -214,13 +237,13 @@ const Customers = () => {
 
   const openCreateContact = () => {
     setEditingContactId(null);
-    setContactForm({ name: "", title: "", customerId: "", phone: "", email: "", isPrimary: false });
+    setContactForm({ name: "", title: "", rank: "", department: "", customerId: "", phone: "", email: "", birthday: "", isPrimary: false, notes: "" });
     setContactDialogOpen(true);
   };
 
   const openEditContact = (c: ContactItem) => {
     setEditingContactId(c.id);
-    setContactForm({ name: c.name, title: c.title, customerId: c.customerId, phone: c.phone, email: c.email, isPrimary: c.isPrimary });
+    setContactForm({ name: c.name, title: c.title, rank: c.rank, department: c.department, customerId: c.customerId, phone: c.phone, email: c.email, birthday: c.birthday, isPrimary: c.isPrimary, notes: c.notes });
     setContactDialogOpen(true);
   };
 
@@ -233,28 +256,23 @@ const Customers = () => {
       return;
     }
     try {
+      const payload = {
+        customerId: contactForm.customerId,
+        fullName: contactForm.name.trim(),
+        title: contactForm.title.trim() || undefined,
+        rank: contactForm.rank.trim() || undefined,
+        department: contactForm.department.trim() || undefined,
+        phone: contactForm.phone.trim() || undefined,
+        email: contactForm.email.trim() || undefined,
+        birthday: contactForm.birthday || null,
+        isPrimary: contactForm.isPrimary,
+        notes: contactForm.notes.trim() || undefined,
+      };
       if (editingContactId) {
-        await updateCustomerContactMutation.mutateAsync({
-          id: editingContactId,
-          payload: {
-            customerId: contactForm.customerId,
-            fullName: contactForm.name.trim(),
-            title: contactForm.title.trim() || undefined,
-            phone: contactForm.phone.trim() || undefined,
-            email: contactForm.email.trim() || undefined,
-            isPrimary: contactForm.isPrimary,
-          },
-        });
+        await updateCustomerContactMutation.mutateAsync({ id: editingContactId, payload });
         toast.success("Đã cập nhật liên hệ");
       } else {
-        await createCustomerContactMutation.mutateAsync({
-          customerId: contactForm.customerId,
-          fullName: contactForm.name.trim(),
-          title: contactForm.title.trim() || undefined,
-          phone: contactForm.phone.trim() || undefined,
-          email: contactForm.email.trim() || undefined,
-          isPrimary: contactForm.isPrimary,
-        });
+        await createCustomerContactMutation.mutateAsync(payload);
         toast.success("Đã thêm liên hệ");
       }
       setContactDialogOpen(false);
@@ -643,7 +661,9 @@ const Customers = () => {
                       <p className="font-medium text-card-foreground truncate">{c.name}</p>
                       {c.isPrimary && <Badge variant="default" className="text-[10px] px-1.5 py-0">Chính</Badge>}
                     </div>
-                    <p className="text-xs text-muted-foreground">{(c.title || "—")} · {c.customerName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {[c.title, c.rank, c.department].filter(Boolean).join(" · ") || "—"} · {c.customerName}
+                    </p>
                     <div className="mt-2 space-y-1 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1.5"><Phone className="h-3 w-3" />{c.phone || "—"}</div>
                       <div className="flex items-center gap-1.5"><Mail className="h-3 w-3" />{c.email || "—"}</div>
@@ -677,18 +697,30 @@ const Customers = () => {
                   <Label>Họ tên</Label>
                   <Input value={contactForm.name} onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Chức danh</Label>
-                  <Input value={contactForm.title} onChange={(e) => setContactForm((p) => ({ ...p, title: e.target.value }))} />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Chức danh</Label>
+                    <Input value={contactForm.title} onChange={(e) => setContactForm((p) => ({ ...p, title: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cấp bậc</Label>
+                    <Input value={contactForm.rank} onChange={(e) => setContactForm((p) => ({ ...p, rank: e.target.value }))} />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Khách hàng</Label>
-                  <Select value={contactForm.customerId} onValueChange={(v) => setContactForm((p) => ({ ...p, customerId: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Chọn khách hàng" /></SelectTrigger>
-                    <SelectContent>
-                      {customers.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Phòng ban</Label>
+                    <Input value={contactForm.department} onChange={(e) => setContactForm((p) => ({ ...p, department: e.target.value }))} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Khách hàng</Label>
+                    <Select value={contactForm.customerId} onValueChange={(v) => setContactForm((p) => ({ ...p, customerId: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Chọn khách hàng" /></SelectTrigger>
+                      <SelectContent>
+                        {customers.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
@@ -700,15 +732,22 @@ const Customers = () => {
                     <Input type="email" value={contactForm.email} onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))} />
                   </div>
                 </div>
-                <label className="flex items-center gap-2 text-sm text-foreground">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-input"
-                    checked={contactForm.isPrimary}
-                    onChange={(e) => setContactForm((p) => ({ ...p, isPrimary: e.target.checked }))}
-                  />
-                  Liên hệ chính
-                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Sinh nhật</Label>
+                    <Input type="date" value={contactForm.birthday} onChange={(e) => setContactForm((p) => ({ ...p, birthday: e.target.value }))} />
+                  </div>
+                  <div className="flex items-end">
+                    <label className="flex items-center gap-2 text-sm text-foreground">
+                      <input type="checkbox" className="h-4 w-4 rounded border-input" checked={contactForm.isPrimary} onChange={(e) => setContactForm((p) => ({ ...p, isPrimary: e.target.checked }))} />
+                      Liên hệ chính
+                    </label>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Ghi chú</Label>
+                  <Textarea rows={2} value={contactForm.notes} onChange={(e) => setContactForm((p) => ({ ...p, notes: e.target.value }))} />
+                </div>
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={() => { setContactDialogOpen(false); setEditingContactId(null); }}>Hủy</Button>
                   <Button
@@ -747,9 +786,39 @@ const Customers = () => {
         {/* ---------------- Customers ---------------- */}
         <TabsContent value="customers" className="mt-4 space-y-3">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-full sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Tìm khách hàng..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+              <div className="relative flex-1 max-w-full sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input placeholder="Tìm khách hàng..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">Tạo từ</span>
+                <Input
+                  type="date"
+                  value={createdFrom}
+                  onChange={(e) => setCreatedFrom(e.target.value)}
+                  className="w-[140px]"
+                />
+                <span className="text-xs text-muted-foreground">đến</span>
+                <Input
+                  type="date"
+                  value={createdTo}
+                  onChange={(e) => setCreatedTo(e.target.value)}
+                  className="w-[140px]"
+                />
+                {(createdFrom || createdTo) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setCreatedFrom("");
+                      setCreatedTo("");
+                    }}
+                  >
+                    Xoá
+                  </Button>
+                )}
+              </div>
             </div>
             <Dialog open={showCreate} onOpenChange={setShowCreate}>
               <DialogTrigger asChild>
@@ -944,8 +1013,19 @@ const Customers = () => {
         </TabsContent>
       </Tabs>
 
-      <CustomerDetailDialog customer={selectedCustomer} open={!!selectedCustomer} onOpenChange={(o) => !o && setSelectedCustomer(null)} />
-      <CustomerEditDialog customer={editingCustomer} open={!!editingCustomer} onOpenChange={(o) => !o && setEditingCustomer(null)} onSave={handleSave} />
+      <CustomerDetailDialog
+        customer={selectedCustomer}
+        open={!!selectedCustomer}
+        mode="view"
+        onOpenChange={(o) => !o && setSelectedCustomer(null)}
+      />
+      <CustomerDetailDialog
+        customer={editingCustomer}
+        open={!!editingCustomer}
+        mode="edit"
+        onSave={handleSave}
+        onOpenChange={(o) => !o && setEditingCustomer(null)}
+      />
 
       <AlertDialog open={!!deletingCustomer} onOpenChange={(o) => !o && setDeletingCustomer(null)}>
         <AlertDialogContent>

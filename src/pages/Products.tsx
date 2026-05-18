@@ -7,6 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { productCategoryColors, DefenseProduct } from "@/data/productsData";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
+import { useDefinitionOptions } from "@/hooks/use-definition-options";
 import ProductDetailDialog from "@/components/details/ProductDetailDialog";
 import CreateProductDialog from "@/components/details/CreateProductDialog";
 import StatCard from "@/components/dashboard/StatCard";
@@ -78,6 +81,8 @@ const Products = () => {
   const updateProductBom = useUpdateProductBom();
   const deleteProductBom = useDeleteProductBom();
 
+  const { data: categoryDefs = [] } = useDefinitionsList("product_category");
+  const statusOptions = useDefinitionOptions("product_status");
   const [products, setProducts] = useState<DefenseProduct[]>([]);
 
   useEffect(() => {
@@ -94,7 +99,21 @@ const Products = () => {
   const [productToEdit, setProductToEdit] = useState<DefenseProduct | null>(null);
   const [productToDelete, setProductToDelete] = useState<DefenseProduct | null>(null);
 
-  const categories = useMemo(() => Array.from(new Set(products.map(p => p.category))), [products]);
+  const categories = useMemo(() => Array.from(new Set(products.map((p) => p.category))), [products]);
+  const categoryFilterOptions = useMemo(() => {
+    const fromDefs = categoryDefs.map((d) => ({ value: d.code, label: d.label }));
+    const known = new Set(fromDefs.map((d) => d.value));
+    const extras = categories
+      .filter((c) => !known.has(c))
+      .map((c) => ({ value: c, label: resolveDefinitionLabel(categoryDefs, c) }));
+    return [...fromDefs, ...extras];
+  }, [categoryDefs, categories]);
+
+  const categoryLabel = (code: string) => resolveDefinitionLabel(categoryDefs, code);
+  const categoryColor = (code: string) => {
+    const label = categoryLabel(code);
+    return productCategoryColors[label] ?? productCategoryColors[code] ?? "bg-muted text-muted-foreground border-border";
+  };
 
   const filtered = useMemo(() => products.filter(p => {
     const q = search.toLowerCase();
@@ -145,17 +164,16 @@ const Products = () => {
               <SelectTrigger className="w-full md:w-48"><SelectValue placeholder="Phân loại" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả phân loại</SelectItem>
-                {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                {categoryFilterOptions.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="w-full md:w-44"><SelectValue placeholder="Trạng thái" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                <SelectItem value="developing">Đang phát triển</SelectItem>
-                <SelectItem value="producing">Đang sản xuất</SelectItem>
-                <SelectItem value="equipped">Đã trang bị</SelectItem>
-                <SelectItem value="stopped">Dừng SX</SelectItem>
+                {statusOptions.map((row) => (
+                  <SelectItem key={row.value} value={row.value}>{row.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -187,7 +205,7 @@ const Products = () => {
                     <TableCell className="font-mono font-semibold text-primary">{p.code}</TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{p.id.slice(0, 12)}…</TableCell>
-                    <TableCell><Badge variant="outline" className={productCategoryColors[p.category]}>{p.category}</Badge></TableCell>
+                    <TableCell><Badge variant="outline" className={categoryColor(p.category)}>{categoryLabel(p.category)}</Badge></TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="gap-1"><Layers className="h-3 w-3" />{p.bom.length}</Badge>
                     </TableCell>
@@ -235,7 +253,7 @@ const Products = () => {
                     </Badge>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="outline" className={productCategoryColors[p.category]}>{p.category}</Badge>
+                    <Badge variant="outline" className={categoryColor(p.category)}>{categoryLabel(p.category)}</Badge>
                     <Badge variant="outline" className="gap-1"><Layers className="h-3 w-3" />{p.bom.length} linh kiện</Badge>
                     <Badge variant="outline">SX: {p.totalProduced}</Badge>
                   </div>

@@ -25,6 +25,9 @@ import Tasks from "./pages/Tasks";
 import Training from "./pages/Training";
 import TrainingDetail from "./pages/TrainingDetail";
 import Documents from "./pages/Documents";
+import WorkflowOverviewPage from "./pages/WorkflowOverviewPage";
+import WorkflowListPage from "./pages/WorkflowListPage";
+import WorkflowEditorPage from "./pages/WorkflowEditorPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -64,6 +67,9 @@ const App = () => (
                   <Route path="/dao-tao" element={<ProtectedRoute><Training /></ProtectedRoute>} />
                   <Route path="/dao-tao/:id" element={<ProtectedRoute><TrainingDetail /></ProtectedRoute>} />
                   <Route path="/tai-lieu" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+                  <Route path="/quy-trinh" element={<ProtectedRoute><WorkflowOverviewPage /></ProtectedRoute>} />
+                  <Route path="/quy-trinh/:moduleKey" element={<ProtectedRoute><WorkflowListPage /></ProtectedRoute>} />
+                  <Route path="/quy-trinh/:moduleKey/:workflowId" element={<ProtectedRoute><WorkflowEditorPage /></ProtectedRoute>} />
                   <Route path="/cai-dat" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                   <Route path="/cai-dat/thuoc-tinh" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />
                   <Route path="/cai-dat/thuoc-tinh/:moduleKey" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />

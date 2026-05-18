@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Truck, ClipboardCheck, Package, GraduationCap, FileCheck, CheckCircle, Clock, ArrowRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { Truck, GraduationCap, CheckCircle, Clock, Plus, Pencil, Trash2, Inbox } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,16 +25,20 @@ import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 import { useDeleteHandover, useHandoversList, type HandoverListItem } from "@/hooks/use-handovers-api";
+import { useRole } from "@/hooks/use-role";
 import { useTrainingCoursesQuery } from "@/hooks/use-training";
+import { useWorkflowsList } from "@/hooks/use-workflows-api";
+import type { TrainingCourse } from "@/data/trainingData";
 import { HandoverUpsertDialog } from "@/components/handover/HandoverUpsertDialog";
+import {
+  buildAssignedContractSets,
+  filterContractsEligibleForNewLink,
+  NO_ELIGIBLE_CONTRACTS_HINT,
+} from "@/lib/contract-eligibility";
 
-const steps = [
-  { icon: ClipboardCheck, label: "Lập & phê duyệt kế hoạch", key: "plan" },
-  { icon: FileCheck, label: "Lập & phê duyệt tờ trình", key: "ttr" },
-  { icon: Package, label: "Chuẩn bị hàng hóa", key: "prepare" },
-  { icon: Truck, label: "Bàn giao", key: "handover" },
-  { icon: GraduationCap, label: "Huấn luyện", key: "training" },
-];
+type NeedsProcessingRow =
+  | { kind: "handover"; item: HandoverListItem }
+  | { kind: "training"; item: TrainingCourse };
 
 function formatShortDate(iso: string) {
   const d = new Date(iso);
@@ -76,8 +80,10 @@ const statusBadge = (status: string) => {
 
 const Handover = () => {
   const qc = useQueryClient();
+  const { role } = useRole();
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
   const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } = useTrainingCoursesQuery();
+  const { data: trainingWorkflows = [] } = useWorkflowsList("training");
   const { data: contractOptions = [] } = useQuery({
     queryKey: qk.contracts.all,
     queryFn: async () => {
@@ -97,6 +103,7 @@ const Handover = () => {
   const [trainingForm, setTrainingForm] = useState({
     title: "",
     contractId: "",
+    workflowId: "",
     type: "internal" as "internal" | "external" | "online",
     status: "planned" as "planned" | "ongoing" | "completed",
     startDate: "",
@@ -107,9 +114,68 @@ const Handover = () => {
   });
   const deleteHandover = useDeleteHandover();
 
-  const syncedContractOptions = contractOptions;
   const syncedHandoverRows = handoverRows;
   const syncedTrainingRows = trainingRows;
+
+  const assignedContractSets = useMemo(
+    () => buildAssignedContractSets(syncedHandoverRows, syncedTrainingRows),
+    [syncedHandoverRows, syncedTrainingRows],
+  );
+
+  const handoverDialogContracts = useMemo(
+    () =>
+      filterContractsEligibleForNewLink(
+        contractOptions,
+        assignedContractSets,
+        editingHandover?.contractId,
+      ),
+    [contractOptions, assignedContractSets, editingHandover?.contractId],
+  );
+
+  const trainingDialogContracts = useMemo(
+    () =>
+      filterContractsEligibleForNewLink(
+        contractOptions,
+        assignedContractSets,
+        trainingEditingId ? trainingForm.contractId || null : null,
+      ),
+    [contractOptions, assignedContractSets, trainingEditingId, trainingForm.contractId],
+  );
+
+  const trainingCreateBlocked =
+    !trainingEditingId && trainingDialogContracts.length === 0;
+
+  const trainingWorkflowOptions = useMemo(
+    () =>
+      trainingWorkflows.filter(
+        (w) =>
+          w.isActive ||
+          w.id === trainingForm.workflowId,
+      ),
+    [trainingWorkflows, trainingForm.workflowId],
+  );
+
+  const needsProcessingRows = useMemo<NeedsProcessingRow[]>(() => {
+    const matchRole = (roleCode: string | null | undefined) => roleCode === role;
+
+    const handovers: NeedsProcessingRow[] = syncedHandoverRows
+      .filter(
+        (h) =>
+          h.workflow?.status === "running" &&
+          matchRole(h.workflow.currentStepRoleCode),
+      )
+      .map((h) => ({ kind: "handover", item: h }));
+
+    const trainings: NeedsProcessingRow[] = syncedTrainingRows
+      .filter(
+        (t) =>
+          t.workflow?.status === "running" &&
+          matchRole(t.workflow.currentStepRoleCode),
+      )
+      .map((t) => ({ kind: "training", item: t }));
+
+    return [...handovers, ...trainings];
+  }, [syncedHandoverRows, syncedTrainingRows, role]);
 
   const activeCount = syncedHandoverRows.filter((h) => h.status === "active").length;
   const completedCount = syncedHandoverRows.filter((h) => h.status === "completed").length;
@@ -118,6 +184,7 @@ const Handover = () => {
     setTrainingForm({
       title: "",
       contractId: "",
+      workflowId: "",
       type: "internal",
       status: "planned",
       startDate: "",
@@ -138,6 +205,7 @@ const Handover = () => {
     setTrainingForm({
       title: course.title ?? "",
       contractId: course.contractId ?? "",
+      workflowId: course.workflow?.workflowId ?? "",
       type: course.type ?? "internal",
       status: course.status ?? "planned",
       startDate: course.startDate ?? "",
@@ -154,6 +222,10 @@ const Handover = () => {
       toast.error("Vui lòng nhập tiêu đề và ngày bắt đầu");
       return;
     }
+    if (!trainingEditingId && !trainingForm.contractId) {
+      toast.error("Chọn hợp đồng chưa có bàn giao và huấn luyện");
+      return;
+    }
     try {
       setTrainingSubmitting(true);
       const payload = {
@@ -164,6 +236,7 @@ const Handover = () => {
         endDate: trainingForm.endDate || trainingForm.startDate,
         participants: Number(trainingForm.participants || 0),
         contractId: trainingForm.contractId || undefined,
+        workflowId: trainingForm.workflowId || undefined,
         location: trainingForm.location.trim() || undefined,
         description: trainingForm.description.trim() || undefined,
       };
@@ -207,24 +280,94 @@ const Handover = () => {
 
   return (
     <div className="space-y-6">
-      {/* Workflow Steps */}
+      {!isLoading && !isTrainingLoading && needsProcessingRows.length > 0 ? (
       <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
-        <h3 className="font-semibold text-card-foreground mb-4">Quy trình bàn giao & huấn luyện</h3>
-        <div className="flex items-center justify-start overflow-x-auto pb-2 gap-2 sm:gap-3">
-          {steps.map((step, i) => (
-            <div key={step.key} className="flex items-center shrink-0">
-              <div className="flex flex-col items-center gap-1.5 min-w-[88px] sm:min-w-[110px]">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <step.icon className="h-4 w-4 sm:h-5 sm:w-5" />
-                </div>
-                <span className="text-[10px] sm:text-xs font-medium text-card-foreground text-center leading-tight max-w-[88px] sm:max-w-[110px]">{step.label}</span>
-              </div>
-              {i < steps.length - 1 && <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground mx-1 sm:mx-2 mt-[-16px]" />}
-            </div>
-          ))}
+        <div className="flex items-center gap-2 mb-4">
+          <Inbox className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-card-foreground">Cần xử lí</h3>
+          <Badge variant="secondary" className="ml-1">
+            {needsProcessingRows.length}
+          </Badge>
         </div>
+          <div className="rounded-lg border border-border/50 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="px-4 py-3">Loại</TableHead>
+                  <TableHead className="px-4 py-3">Mã</TableHead>
+                  <TableHead className="px-4 py-3">Quy trình</TableHead>
+                  <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
+                  <TableHead className="px-4 py-3">Thời gian</TableHead>
+                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-right w-24">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {needsProcessingRows.map((row) => {
+                  if (row.kind === "handover") {
+                    const h = row.item;
+                    return (
+                      <TableRow key={`h-${h.id}`}>
+                        <TableCell className="px-4 py-3.5">
+                          <Badge variant="outline">Bàn giao</Badge>
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 font-medium text-primary">{h.code}</TableCell>
+                        <TableCell className="px-4 py-3.5 text-xs text-muted-foreground">
+                          {h.workflow?.workflowName ?? "—"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-sm">
+                          {h.workflow?.currentStepName ?? "—"}
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
+                          {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3.5">{statusBadge(h.status)}</TableCell>
+                        <TableCell className="px-4 py-3.5 text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setEditingHandover(h);
+                              setUpsertOpen(true);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  const t = row.item;
+                  return (
+                    <TableRow key={`t-${t.id}`}>
+                      <TableCell className="px-4 py-3.5">
+                        <Badge variant="outline">Huấn luyện</Badge>
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 font-medium text-primary">{t.code ?? t.id}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-xs text-muted-foreground">
+                        {t.workflow?.workflowName ?? "—"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 text-sm">
+                        {t.workflow?.currentStepName ?? "—"}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
+                        {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
+                      </TableCell>
+                      <TableCell className="px-4 py-3.5">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
       </div>
-
+      ) : null}
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
@@ -301,6 +444,7 @@ const Handover = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="px-4 py-3">Mã</TableHead>
+                  <TableHead className="px-4 py-3">Quy trình</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Hợp đồng</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
                   <TableHead className="px-4 py-3 text-center">SP</TableHead>
@@ -313,33 +457,58 @@ const Handover = () => {
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : syncedHandoverRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Chưa có bàn giao. Nhấn «Thêm bàn giao» để tạo mới.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  syncedHandoverRows.map((h) => (
-                    <TableRow key={h.id}>
+                  syncedHandoverRows.map((h) => {
+                    const isOverdue =
+                      h.status !== "completed" &&
+                      !!h.dueDate &&
+                      new Date(h.dueDate).getTime() < Date.now();
+                    return (
+                    <TableRow key={h.id} className={isOverdue ? "bg-destructive/10" : undefined}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle max-w-[140px]">
+                        <span className="text-xs text-muted-foreground line-clamp-2" title={h.workflow?.workflowName ?? undefined}>
+                          {h.workflow?.workflowName ?? "—"}
+                        </span>
+                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{h.contract.code}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{h.customer.name}</TableCell>
                       <TableCell className="px-4 py-3.5 text-center align-middle">{h.products}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1.5">
-                          <div className="flex gap-0.5">
-                            {steps.map((_, i) => (
-                              <div key={i} className={`h-2 w-5 rounded-sm ${i < h.currentStep ? "bg-primary" : "bg-secondary"}`} />
-                            ))}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {steps[Math.min(Math.max(h.currentStep, 1) - 1, steps.length - 1)].label}
-                          </span>
+                          {h.workflow && h.workflow.totalSteps > 0 ? (
+                            <>
+                              <div className="flex gap-0.5">
+                                {Array.from({ length: h.workflow.totalSteps }, (_, i) => (
+                                  <div
+                                    key={i}
+                                    className={`h-2 w-5 rounded-sm ${
+                                      i < h.workflow!.currentStepIndex ? "bg-primary" : "bg-secondary"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {h.workflow.currentStepIndex > 0
+                                  ? `${h.workflow.currentStepIndex}/${h.workflow.totalSteps} · ${h.workflow.currentStepName ?? "—"}`
+                                  : h.workflow.status === "completed"
+                                    ? "Hoàn tất"
+                                    : "Đã đóng"}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
@@ -365,7 +534,8 @@ const Handover = () => {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
@@ -388,9 +558,11 @@ const Handover = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="px-4 py-3">Mã</TableHead>
+                  <TableHead className="px-4 py-3">Quy trình</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khóa học</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
                   <TableHead className="px-4 py-3 text-center">Học viên</TableHead>
+                  <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
                   <TableHead className="px-4 py-3">Thời gian</TableHead>
                   <TableHead className="px-4 py-3">Trạng thái</TableHead>
                   <TableHead className="px-4 py-3 text-right">Thao tác</TableHead>
@@ -399,23 +571,31 @@ const Handover = () => {
               <TableBody>
                 {isTrainingLoading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : syncedTrainingRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Chưa có dữ liệu huấn luyện.
                     </TableCell>
                   </TableRow>
                 ) : (
                   syncedTrainingRows.map((t) => (
                     <TableRow key={t.id}>
-                      <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.id}</TableCell>
+                      <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.code ?? t.id}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle max-w-[140px]">
+                        <span className="text-xs text-muted-foreground line-clamp-2" title={t.workflow?.workflowName ?? undefined}>
+                          {t.workflow?.workflowName ?? "—"}
+                        </span>
+                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{t.title}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{t.customer || "-"}</TableCell>
                       <TableCell className="px-4 py-3.5 text-center align-middle">{t.participants}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-sm align-middle">
+                        {t.workflow?.currentStepName ?? (t.workflow ? "—" : "Chưa gắn quy trình")}
+                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
@@ -453,18 +633,50 @@ const Handover = () => {
                 placeholder="Nhập tên khóa huấn luyện"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label>Quy trình áp dụng</Label>
+              <Select
+                value={trainingForm.workflowId || undefined}
+                onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, workflowId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn quy trình huấn luyện" />
+                </SelectTrigger>
+                <SelectContent>
+                  {trainingWorkflowOptions.map((w) => (
+                    <SelectItem key={w.id} value={w.id}>
+                      {w.name} ({w.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label>Hợp đồng liên kết</Label>
-                <Select value={trainingForm.contractId || "__none__"} onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, contractId: v === "__none__" ? "" : v }))}>
-                  <SelectTrigger><SelectValue placeholder="Chọn hợp đồng" /></SelectTrigger>
+                <Label>Hợp đồng liên kết *</Label>
+                <Select
+                  value={trainingForm.contractId || undefined}
+                  onValueChange={(v) => setTrainingForm((prev) => ({ ...prev, contractId: v }))}
+                  disabled={Boolean(trainingEditingId) || trainingCreateBlocked}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        trainingCreateBlocked
+                          ? "Không có HĐ khả dụng"
+                          : "Chọn hợp đồng"
+                      }
+                    />
+                  </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Không liên kết</SelectItem>
-                    {syncedContractOptions.map((c) => (
+                    {trainingDialogContracts.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.code} — {c.title || "—"}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {trainingCreateBlocked ? (
+                  <p className="text-xs text-muted-foreground">{NO_ELIGIBLE_CONTRACTS_HINT}</p>
+                ) : null}
               </div>
               <div className="space-y-1.5">
                 <Label>Loại</Label>
@@ -516,7 +728,10 @@ const Handover = () => {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTrainingCreateOpen(false)}>Hủy</Button>
-            <Button onClick={() => void handleSaveTraining()} disabled={trainingSubmitting}>
+            <Button
+              onClick={() => void handleSaveTraining()}
+              disabled={trainingSubmitting || trainingCreateBlocked}
+            >
               {trainingSubmitting ? "Đang lưu..." : trainingEditingId ? "Cập nhật huấn luyện" : "Tạo huấn luyện"}
             </Button>
           </DialogFooter>
@@ -544,7 +759,7 @@ const Handover = () => {
           setUpsertOpen(o);
           if (!o) setEditingHandover(null);
         }}
-        contracts={syncedContractOptions}
+        contracts={handoverDialogContracts}
         editing={editingHandover}
       />
 

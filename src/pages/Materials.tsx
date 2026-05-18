@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import MaterialDetailDialog, { getMaterialDetail, materialDetails, type MaterialDetail } from "@/components/details/MaterialDetailDialog";
+import MaterialDetailDialog from "@/components/details/MaterialDetailDialog";
 import BarcodeScannerDialog from "@/components/scanner/BarcodeScannerDialog";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import {
@@ -131,7 +131,7 @@ const Materials = () => {
   const [showImport, setShowImport] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
   const [transferSearch, setTransferSearch] = useState("");
-  const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [transferForm, setTransferForm] = useState({
@@ -173,21 +173,17 @@ const Materials = () => {
 
   const handleScanResult = (code: string, format: string) => {
     // Search by serial, barcode, qrCode, rfid, or id
-    const found = materials.find(m => {
+    const found = materials.find((m) => {
       const lower = code.toLowerCase();
-      if (m.id.toLowerCase() === lower || m.code.toLowerCase() === lower) return true;
-      if (m.serial?.toLowerCase() === lower) return true;
-      // Check detailed identifiers
-      const detail = materialDetails.find(d => d.id === m.code);
-      if (detail) {
-        const ids = detail.identifiers;
-        if (ids.barcode === code || ids.qrCode === code || ids.rfid === code) return true;
-      }
-      return false;
+      return (
+        m.id.toLowerCase() === lower ||
+        m.code.toLowerCase() === lower ||
+        (m.serial?.toLowerCase() === lower)
+      );
     });
 
     if (found) {
-      setSelectedMaterial(getMaterialDetail(found.code, found.name));
+      setSelectedMaterialId(found.id);
       setShowDetail(true);
     } else {
       // Fall back to search
@@ -476,7 +472,7 @@ const Materials = () => {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                          setSelectedMaterial(getMaterialDetail(m.code, m.name));
+                          setSelectedMaterialId(m.id);
                           setShowDetail(true);
                         }}><Eye className="h-4 w-4" /></Button>
                         <Button
@@ -651,8 +647,11 @@ const Materials = () => {
 
       <MaterialDetailDialog
         open={showDetail}
-        onClose={() => setShowDetail(false)}
-        material={selectedMaterial}
+        onClose={() => {
+          setShowDetail(false);
+          setSelectedMaterialId(null);
+        }}
+        materialId={selectedMaterialId}
       />
 
       <BarcodeScannerDialog

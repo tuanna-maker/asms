@@ -1,11 +1,23 @@
 import type { HandoverStatus, Prisma } from "@prisma/client";
-import type { z } from "zod";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 import { getContractProductCount, getContractProductCounts } from "../contracts/product-count";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
+import { attachWorkflowToEntity, startInstanceForEntity } from "../workflows/runtime";
+import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
 
-import { createHandoverSchema } from "./schema";
+import type { CreateHandoverBody, UpdateHandoverBody } from "./schema";
+import {
+  enrichHandoverWithStepPayloads,
+  flatRowToStepPayloadsByIndex,
+  getOrderedStepIdsForHandover,
+  loadStepPayloadsMap,
+  mergeStepPayloadsToFlat,
+  pruneStepPayloadsNotIn,
+  upsertStepPayloads,
+  type HandoverStepPayloadJson,
+} from "./step-payload";
 
 function genHandoverCode() {
   return `BG-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -38,6 +50,18 @@ async function resolveHandoverId(idOrCode: string) {
   return row.id;
 }
 
+const flatSelect = {
+  handoverPlan: true,
+  costReportNote: true,
+  goodsCheckNote: true,
+  trainingPlanNote: true,
+  trainingCostReport: true,
+  trainingReportNote: true,
+  trainingDecision: true,
+  tempHandoverNote: true,
+  finalHandoverNote: true,
+} as const;
+
 const listSelect = {
   id: true,
   code: true,
@@ -46,6 +70,8 @@ const listSelect = {
   products: true,
   currentStep: true,
   status: true,
+  typeCode: true,
+  workflowInstanceId: true,
   startDate: true,
   dueDate: true,
   completedAt: true,
@@ -56,16 +82,108 @@ const listSelect = {
   createdBy: { select: { id: true, fullName: true } },
 } satisfies Prisma.HandoverSelect;
 
+type HandoverFlatBody = Pick<
+  CreateHandoverBody,
+  | "handoverPlan"
+  | "costReportNote"
+  | "goodsCheckNote"
+  | "trainingPlanNote"
+  | "trainingCostReport"
+  | "trainingReportNote"
+  | "trainingDecision"
+  | "tempHandoverNote"
+  | "finalHandoverNote"
+>;
+
+function flatFieldsFromBody(body: Partial<HandoverFlatBody>): Prisma.HandoverUpdateInput {
+  const data: Prisma.HandoverUpdateInput = {};
+  if (body.handoverPlan !== undefined) data.handoverPlan = body.handoverPlan;
+  if (body.costReportNote !== undefined) data.costReportNote = body.costReportNote;
+  if (body.goodsCheckNote !== undefined) data.goodsCheckNote = body.goodsCheckNote;
+  if (body.trainingPlanNote !== undefined) data.trainingPlanNote = body.trainingPlanNote;
+  if (body.trainingCostReport !== undefined) data.trainingCostReport = body.trainingCostReport;
+  if (body.trainingReportNote !== undefined) data.trainingReportNote = body.trainingReportNote;
+  if (body.trainingDecision !== undefined) data.trainingDecision = body.trainingDecision;
+  if (body.tempHandoverNote !== undefined) data.tempHandoverNote = body.tempHandoverNote;
+  if (body.finalHandoverNote !== undefined) data.finalHandoverNote = body.finalHandoverNote;
+  return data;
+}
+
+async function dualWriteStepPayloadsFromFlat(handoverId: string) {
+  const row = await prisma.handover.findFirst({
+    where: { id: handoverId },
+    select: flatSelect,
+  });
+  if (!row) return;
+  const stepIds = await getOrderedStepIdsForHandover(handoverId);
+  if (stepIds.length === 0) return;
+  const map = flatRowToStepPayloadsByIndex(row, stepIds);
+  await upsertStepPayloads(handoverId, map);
+}
+
+async function applyStepPayloadsInput(
+  handoverId: string,
+  stepPayloads: Record<string, HandoverStepPayloadJson> | undefined,
+  pruneOrphan?: boolean,
+): Promise<Partial<HandoverFlatBody>> {
+  if (!stepPayloads || Object.keys(stepPayloads).length === 0) {
+    if (pruneOrphan) {
+      const stepIds = await getOrderedStepIdsForHandover(handoverId);
+      await pruneStepPayloadsNotIn(handoverId, stepIds);
+    }
+    return {};
+  }
+  const existing = await loadStepPayloadsMap(handoverId);
+  const merged: Record<string, HandoverStepPayloadJson> = { ...existing };
+  for (const [stepId, patch] of Object.entries(stepPayloads)) {
+    merged[stepId] = { ...(merged[stepId] ?? {}), ...patch };
+  }
+  const toUpsert: Record<string, HandoverStepPayloadJson> = {};
+  for (const stepId of Object.keys(stepPayloads)) {
+    toUpsert[stepId] = merged[stepId] ?? {};
+  }
+  await upsertStepPayloads(handoverId, toUpsert);
+  const ordered = await getOrderedStepIdsForHandover(handoverId);
+  if (pruneOrphan) await pruneStepPayloadsNotIn(handoverId, ordered);
+  const flat = mergeStepPayloadsToFlat(merged, ordered);
+  const out: Partial<HandoverFlatBody> = {};
+  if (flat.handoverPlan !== undefined) out.handoverPlan = flat.handoverPlan;
+  if (flat.costReportNote !== undefined) out.costReportNote = flat.costReportNote;
+  if (flat.goodsCheckNote !== undefined) out.goodsCheckNote = flat.goodsCheckNote;
+  if (flat.trainingPlanNote !== undefined) out.trainingPlanNote = flat.trainingPlanNote;
+  if (flat.trainingCostReport !== undefined) out.trainingCostReport = flat.trainingCostReport;
+  if (flat.tempHandoverNote !== undefined) out.tempHandoverNote = flat.tempHandoverNote;
+  if (flat.trainingReportNote !== undefined) out.trainingReportNote = flat.trainingReportNote;
+  if (flat.trainingDecision !== undefined) out.trainingDecision = flat.trainingDecision;
+  if (flat.finalHandoverNote !== undefined) out.finalHandoverNote = flat.finalHandoverNote;
+  return out;
+}
+
 export async function listHandoversService(filters: {
   status?: string;
   customerId?: string;
   contractId?: string;
   search?: string;
+  workflowCode?: string;
 }) {
   const where: Prisma.HandoverWhereInput = {
     deletedAt: null,
     ...(filters.status ? { status: filters.status as HandoverStatus } : {}),
   };
+
+  if (filters.workflowCode) {
+    const code = filters.workflowCode.trim();
+    const instanceRows = await prisma.workflowInstance.findMany({
+      where: {
+        moduleKey: "handover",
+        workflow: { code: { equals: code, mode: "insensitive" }, deletedAt: null },
+      },
+      select: { id: true },
+    });
+    const instanceIds = instanceRows.map((r) => r.id);
+    if (instanceIds.length === 0) return [];
+    where.workflowInstanceId = { in: instanceIds };
+  }
 
   if (filters.customerId) {
     where.customerId = await resolveCustomerId(filters.customerId);
@@ -90,7 +208,12 @@ export async function listHandoversService(filters: {
     select: listSelect,
   });
   const counts = await getContractProductCounts(rows.map((row) => row.contractId));
-  return rows.map((row) => ({ ...row, products: counts.get(row.contractId) ?? 0 }));
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds(rows.map((row) => row.workflowInstanceId));
+  return rows.map((row) => ({
+    ...row,
+    products: counts.get(row.contractId) ?? 0,
+    workflow: row.workflowInstanceId ? workflowMap.get(row.workflowInstanceId) ?? null : null,
+  }));
 }
 
 export async function getHandoverDetailService(idOrCode: string) {
@@ -105,12 +228,32 @@ export async function getHandoverDetailService(idOrCode: string) {
   });
   if (!row) throw new HttpError(404, "Handover not found");
   const products = await getContractProductCount(row.contractId);
-  return { ...row, products };
+  const enriched = await enrichHandoverWithStepPayloads(row);
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds([row.workflowInstanceId]);
+  const workflow: WorkflowSnapshot | null = row.workflowInstanceId
+    ? workflowMap.get(row.workflowInstanceId) ?? null
+    : null;
+  return { ...enriched, products, workflow };
 }
 
-type CreateHandoverInput = z.infer<typeof createHandoverSchema>;
+async function assertSingleHandoverPerContract(contractId: string, excludeHandoverId?: string) {
+  const existing = await prisma.handover.findFirst({
+    where: {
+      contractId,
+      deletedAt: null,
+      ...(excludeHandoverId ? { id: { not: excludeHandoverId } } : {}),
+    },
+    select: { id: true, code: true },
+  });
+  if (existing) {
+    throw new HttpError(
+      400,
+      `Hợp đồng đã có bàn giao ${existing.code}. Mỗi hợp đồng chỉ được một phiếu bàn giao.`,
+    );
+  }
+}
 
-export async function createHandoverService(payload: CreateHandoverInput, actorId?: string | null) {
+export async function createHandoverService(payload: CreateHandoverBody, actorId?: string | null) {
   const resolvedContractId = await resolveContractId(payload.contractId);
   const contract = await prisma.contract.findFirst({
     where: { id: resolvedContractId, deletedAt: null },
@@ -118,12 +261,18 @@ export async function createHandoverService(payload: CreateHandoverInput, actorI
   });
   if (!contract) throw new HttpError(404, "Contract not found");
 
+  await assertSingleHandoverPerContract(contract.id);
+
   const startDate = payload.startDate ?? new Date();
   const dueDate =
     payload.dueDate ?? new Date(startDate.getTime() + 90 * 24 * 60 * 60 * 1000);
   const products = await getContractProductCount(contract.id);
 
-  return prisma.handover.create({
+  if (payload.typeCode !== undefined) {
+    await assertActiveDefinitionCode("handover_type", payload.typeCode, "Loại bàn giao");
+  }
+
+  const created = await prisma.handover.create({
     data: {
       code: genHandoverCode(),
       contractId: contract.id,
@@ -131,35 +280,147 @@ export async function createHandoverService(payload: CreateHandoverInput, actorI
       createdById: actorId ?? null,
       products,
       currentStep: payload.currentStep ?? 1,
-      status: (payload.status ?? "pending") as "pending" | "active" | "completed" | "late",
+      status: (payload.status ?? "pending") as HandoverStatus,
+      typeCode: payload.typeCode ?? null,
       startDate,
       dueDate,
+      handoverPlan: payload.handoverPlan ?? null,
+      costReportNote: payload.costReportNote ?? null,
+      goodsCheckNote: payload.goodsCheckNote ?? null,
+      trainingPlanNote: payload.trainingPlanNote ?? null,
+      trainingCostReport: payload.trainingCostReport ?? null,
+      trainingReportNote: payload.trainingReportNote ?? null,
+      trainingDecision: payload.trainingDecision ?? null,
+      tempHandoverNote: payload.tempHandoverNote ?? null,
+      finalHandoverNote: payload.finalHandoverNote ?? null,
     },
     select: listSelect,
   });
+
+  let workflowStarted = false;
+  try {
+    if (payload.workflowId) {
+      await attachWorkflowToEntity({
+        moduleKey: "handover",
+        entityId: created.id,
+        workflowId: payload.workflowId,
+        actorId: actorId ?? null,
+      });
+      workflowStarted = true;
+    } else {
+      const init = await startInstanceForEntity("handover", created.id, actorId ?? null);
+      if (init) {
+        await prisma.handover.update({
+          where: { id: created.id },
+          data: {
+            workflowInstanceId: init.instanceId,
+            currentStep: init.firstStepIndex,
+          },
+        });
+        workflowStarted = true;
+      }
+    }
+    if (workflowStarted) {
+      if (payload.stepPayloads && Object.keys(payload.stepPayloads).length > 0) {
+        await upsertStepPayloads(created.id, payload.stepPayloads as Record<string, HandoverStepPayloadJson>);
+        const fromPayloads = await applyStepPayloadsInput(created.id, payload.stepPayloads as Record<string, HandoverStepPayloadJson>);
+        await prisma.handover.update({
+          where: { id: created.id },
+          data: flatFieldsFromBody(fromPayloads),
+        });
+      } else {
+        await dualWriteStepPayloadsFromFlat(created.id);
+      }
+      return getHandoverDetailService(created.id);
+    }
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[handover] workflow init failed", e);
+  }
+
+  if (payload.stepPayloads && Object.keys(payload.stepPayloads).length > 0) {
+    await upsertStepPayloads(created.id, payload.stepPayloads as Record<string, HandoverStepPayloadJson>);
+    const fromPayloads = await applyStepPayloadsInput(created.id, payload.stepPayloads as Record<string, HandoverStepPayloadJson>);
+    await prisma.handover.update({
+      where: { id: created.id },
+      data: flatFieldsFromBody(fromPayloads),
+    });
+  } else {
+    await dualWriteStepPayloadsFromFlat(created.id);
+  }
+  return getHandoverDetailService(created.id);
 }
 
-export async function updateHandoverService(idOrCode: string, payload: Record<string, unknown>) {
+export async function updateHandoverService(idOrCode: string, payload: UpdateHandoverBody) {
   const resolvedId = await resolveHandoverId(idOrCode);
 
-  const data: Record<string, unknown> = {};
-  if (payload.currentStep !== undefined) data.currentStep = payload.currentStep;
-  if (payload.status !== undefined) data.status = payload.status;
+  const existing = await prisma.handover.findFirst({
+    where: { id: resolvedId, deletedAt: null },
+    select: { workflowInstanceId: true, contractId: true },
+  });
+  if (!existing) throw new HttpError(404, "Handover not found");
+
+  if (payload.contractId !== undefined) {
+    const nextContractId = await resolveContractId(payload.contractId);
+    if (nextContractId !== existing.contractId) {
+      await assertSingleHandoverPerContract(nextContractId, resolvedId);
+    }
+  }
+
+  let ignoreClientCurrentStep = false;
+  if (payload.currentStep !== undefined && existing.workflowInstanceId) {
+    const wi = await prisma.workflowInstance.findFirst({
+      where: { id: existing.workflowInstanceId },
+      select: { status: true },
+    });
+    if (wi?.status === "running") ignoreClientCurrentStep = true;
+  }
+
+  const fromStepPayloads = await applyStepPayloadsInput(
+    resolvedId,
+    payload.stepPayloads as Record<string, HandoverStepPayloadJson> | undefined,
+    payload.pruneOrphanStepPayloads,
+  );
+
+  const mergedFlat: Partial<HandoverFlatBody> = {
+    ...(payload.handoverPlan !== undefined ? { handoverPlan: payload.handoverPlan } : {}),
+    ...(payload.costReportNote !== undefined ? { costReportNote: payload.costReportNote } : {}),
+    ...(payload.goodsCheckNote !== undefined ? { goodsCheckNote: payload.goodsCheckNote } : {}),
+    ...(payload.trainingPlanNote !== undefined ? { trainingPlanNote: payload.trainingPlanNote } : {}),
+    ...(payload.trainingCostReport !== undefined ? { trainingCostReport: payload.trainingCostReport } : {}),
+    ...(payload.tempHandoverNote !== undefined ? { tempHandoverNote: payload.tempHandoverNote } : {}),
+    ...(payload.trainingReportNote !== undefined ? { trainingReportNote: payload.trainingReportNote } : {}),
+    ...(payload.trainingDecision !== undefined ? { trainingDecision: payload.trainingDecision } : {}),
+    ...(payload.finalHandoverNote !== undefined ? { finalHandoverNote: payload.finalHandoverNote } : {}),
+    ...fromStepPayloads,
+  };
+
+  const data: Prisma.HandoverUpdateInput = {
+    ...flatFieldsFromBody(mergedFlat),
+  };
+  if (payload.currentStep !== undefined && !ignoreClientCurrentStep) {
+    data.currentStep = payload.currentStep;
+  }
+  if (payload.status !== undefined) data.status = payload.status as HandoverStatus;
+  if (payload.typeCode !== undefined) {
+    if (payload.typeCode !== null) {
+      await assertActiveDefinitionCode("handover_type", String(payload.typeCode), "Loại bàn giao");
+    }
+    data.typeCode = payload.typeCode;
+  }
   if (payload.startDate !== undefined) data.startDate = payload.startDate;
   if (payload.dueDate !== undefined) data.dueDate = payload.dueDate;
   if (payload.completedAt !== undefined) data.completedAt = payload.completedAt;
 
   if (Object.keys(data).length > 0) {
-    await prisma.handover.update({ where: { id: resolvedId }, data: data as object });
+    await prisma.handover.update({ where: { id: resolvedId }, data });
   }
 
-  const row = await prisma.handover.findFirst({
-    where: { id: resolvedId, deletedAt: null },
-    select: listSelect,
-  });
-  if (!row) throw new HttpError(404, "Handover not found");
-  const products = await getContractProductCount(row.contractId);
-  return { ...row, products };
+  if (payload.stepPayloads === undefined && Object.keys(fromStepPayloads).length === 0) {
+    await dualWriteStepPayloadsFromFlat(resolvedId);
+  }
+
+  return getHandoverDetailService(resolvedId);
 }
 
 export async function softDeleteHandoverService(idOrCode: string) {

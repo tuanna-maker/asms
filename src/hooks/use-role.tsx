@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 export type Role = "admin" | "manager" | "technician" | "viewer" | "sales";
 
@@ -25,9 +26,12 @@ export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
   "/dao-tao": ["admin", "manager", "technician"],
   "/dao-tao/:id": ["admin", "manager", "technician"],
   "/tai-lieu": ["admin", "manager", "technician", "viewer", "sales"],
-  "/cai-dat": ["admin"],
-  "/cai-dat/thuoc-tinh": ["admin"],
-  "/cai-dat/thuoc-tinh/:moduleKey": ["admin"],
+  "/quy-trinh": ["admin", "manager", "technician"],
+  "/quy-trinh/:moduleKey": ["admin", "manager", "technician"],
+  "/quy-trinh/:moduleKey/:workflowId": ["admin", "manager", "technician"],
+  "/cai-dat": ["admin", "manager"],
+  "/cai-dat/thuoc-tinh": ["admin", "manager"],
+  "/cai-dat/thuoc-tinh/:moduleKey": ["admin", "manager"],
 };
 
 interface RoleContextValue {
@@ -40,15 +44,33 @@ const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
 const STORAGE_KEY = "erp-current-role";
 
+function readStoredRole(): Role {
+  const saved = localStorage.getItem(STORAGE_KEY) as Role | null;
+  if (saved && saved in ROLE_LABELS) return saved;
+  return "admin";
+}
+
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const [role, setRoleState] = useState<Role>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY) as Role | null;
-    return saved || "admin";
-  });
+  const { user, isAuthenticated } = useAuth();
+  /** Chỉ dùng khi chưa đăng nhập (demo / màn login bọc RoleProvider). */
+  const [guestRole, setGuestRole] = useState<Role>(readStoredRole);
+
+  const role = useMemo<Role>(() => {
+    if (isAuthenticated && user) return user.role;
+    return guestRole;
+  }, [isAuthenticated, user, guestRole]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, role);
-  }, [role]);
+    if (!isAuthenticated) localStorage.setItem(STORAGE_KEY, guestRole);
+  }, [guestRole, isAuthenticated]);
+
+  const setRole = useCallback(
+    (r: Role) => {
+      if (isAuthenticated && user) return;
+      setGuestRole(r);
+    },
+    [isAuthenticated, user],
+  );
 
   const canAccess = (path: string) => {
     // Tìm rule khớp chính xác trước
@@ -65,7 +87,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <RoleContext.Provider value={{ role, setRole: setRoleState, canAccess }}>
+    <RoleContext.Provider value={{ role, setRole, canAccess }}>
       {children}
     </RoleContext.Provider>
   );

@@ -7,7 +7,7 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   startDate: z.coerce.date().optional(),
   deadline: z.coerce.date().optional(),
-  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  priorityCode: z.string().min(1).optional(),
   status: z.enum(["todo", "in_progress", "review", "completed", "delayed"]).optional(),
   type: z.enum(["research", "report", "fieldwork", "admin", "review"]).optional(),
   assigneeId: z.string().optional(),
@@ -18,7 +18,7 @@ export const updateTaskSchema = createTaskSchema.partial();
 
 export const listTasksQuerySchema = z.object({
   status: z.enum(["todo", "in_progress", "review", "completed", "delayed"]).optional(),
-  priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
+  priorityCode: z.string().optional(),
   type: z.enum(["research", "report", "fieldwork", "admin", "review"]).optional(),
   projectId: z.string().optional(),
 });

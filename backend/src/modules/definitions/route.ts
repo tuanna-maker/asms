@@ -6,10 +6,12 @@ import { validateBody } from "../../middleware/validate";
 import {
   createDefinitionController,
   deleteDefinitionController,
+  getDefinitionUsageController,
   listDefinitionsController,
+  reorderDefinitionsController,
   updateDefinitionController,
 } from "./controller";
-import { createDefinitionSchema, updateDefinitionSchema } from "./schema";
+import { createDefinitionSchema, reorderDefinitionsSchema, updateDefinitionSchema } from "./schema";
 
 const router = Router();
 
@@ -19,6 +21,8 @@ const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
 const writeRoles = ["admin", "manager"];
 
 router.get("/", requireRoles(readRoles), listDefinitionsController);
+router.put("/reorder", requireRoles(writeRoles), validateBody(reorderDefinitionsSchema), reorderDefinitionsController);
+router.get("/:id/usage", requireRoles(readRoles), getDefinitionUsageController);
 router.post("/", requireRoles(writeRoles), validateBody(createDefinitionSchema), createDefinitionController);
 router.put("/:id", requireRoles(writeRoles), validateBody(updateDefinitionSchema), updateDefinitionController);
 router.delete("/:id", requireRoles(writeRoles), deleteDefinitionController);

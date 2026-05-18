@@ -1,7 +1,9 @@
-import { Bell, Search, User, Menu, Sun, Moon } from "lucide-react";
+import { Search, Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import RoleSwitcher from "@/components/layout/RoleSwitcher";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { UserAccountMenu } from "@/components/layout/UserAccountMenu";
 
 interface DashboardHeaderProps {
   title?: string;
@@ -44,14 +46,9 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Tổng quan hệ th�
           {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </Button>
 
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-secondary transition-colors">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-destructive" />
-        </button>
+        <NotificationBell />
 
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <User className="h-4 w-4" />
-        </div>
+        <UserAccountMenu />
       </div>
     </header>
   );

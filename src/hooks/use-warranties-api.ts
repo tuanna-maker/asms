@@ -1,21 +1,52 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
+import type { WorkflowInstanceListSnapshot } from "./use-workflows-api";
 import { qk } from "@/lib/query-keys";
 
 export type WarrantyPayload = {
-  contractId?: string;
+  contractId?: string | null;
   customerId: string;
-  productId?: string;
+  productId?: string | null;
+  materialIds?: string[];
   assigneeId?: string;
   issue: string;
   type: "warranty" | "repair" | "maintenance";
-  priority?: "low" | "medium" | "high" | "urgent";
+  priorityCode?: string;
   source?: string;
-  status?: "open" | "processing" | "completed" | "cancelled";
+  statusCode?: string;
   workflowStep?: number;
+  /** Quy trình áp dụng khi tạo phiếu */
+  workflowId?: string;
   slaHours?: number;
   resolvedAt?: string;
+  receiptCategory?: "incident" | "technical_support" | null;
+  occurredAt?: string | null;
+  productSerialSnapshot?: string | null;
+  rootCause?: "manufacturer" | "customer" | "unknown" | null;
+  handlingPlan?: string | null;
+  plannedHours?: number | null;
+  costEstimate?: number | string | null;
+  customerDisagreedClose?: boolean;
+  executionMode?: "self" | "outsource" | null;
+  outsourcePartner?: string | null;
+  outsourceBudget?: number | string | null;
+  outsourceTimeline?: string | null;
+  repairDetails?: string | null;
+  postRepairAssessment?: string | null;
+  handoverNotes?: string | null;
+  stepPayloads?: Record<string, Record<string, unknown>>;
+  pruneOrphanStepPayloads?: boolean;
+};
+
+export type WarrantyDocumentRow = {
+  id: string;
+  code: string;
+  name: string;
+  categoryCode: string;
+  fileType: string;
+  fileUrl: string | null;
+  uploadedAt: string;
 };
 
 export type WarrantyListRow = {
@@ -25,13 +56,50 @@ export type WarrantyListRow = {
   source: string | null;
   type: "warranty" | "repair" | "maintenance";
   priority: "low" | "medium" | "high" | "urgent";
+  priorityCode: string;
   workflowStep: number;
+  workflowInstanceId?: string | null;
+  workflow?: WorkflowInstanceListSnapshot | null;
   status: "open" | "processing" | "completed" | "cancelled";
+  statusCode: string;
   slaHours: number | null;
   createdAt: string;
+  receiptCategory: "incident" | "technical_support" | null;
+  occurredAt: string | null;
+  productSerialSnapshot: string | null;
+  rootCause: "manufacturer" | "customer" | "unknown" | null;
+  handlingPlan: string | null;
+  plannedHours: number | null;
+  costEstimate: unknown;
+  customerDisagreedClose: boolean;
+  executionMode: "self" | "outsource" | null;
+  outsourcePartner: string | null;
+  outsourceBudget: unknown;
+  outsourceTimeline: string | null;
+  repairDetails: string | null;
+  postRepairAssessment: string | null;
+  handoverNotes: string | null;
+  materialIds?: string[];
   customer: { id: string; code: string; name: string } | null;
   product: { id: string; code: string; name: string } | null;
-  assignee: { id: string; fullName: string } | null;
+  assignee: { id: string; fullName: string; role: { code: string } | null } | null;
+};
+
+export type WarrantyDetail = Omit<WarrantyListRow, "customer" | "product" | "assignee"> & {
+  contractId: string | null;
+  customerId: string;
+  productId: string | null;
+  materialIds: string[];
+  assigneeId: string | null;
+  updatedAt: string;
+  workflowInstanceId: string | null;
+  customer: { id: string; code: string; name: string; phone: string | null; email: string | null };
+  product: { id: string; code: string; name: string } | null;
+  contract: unknown;
+  assignee: { id: string; fullName: string; role: { code: string } | null } | null;
+  documents: WarrantyDocumentRow[];
+  stepPayloads?: Record<string, Record<string, unknown>>;
+  orphanStepPayloads?: Array<{ workflowStepId: string; payload: Record<string, unknown> }>;
 };
 
 export function useWarrantiesList() {
@@ -41,6 +109,17 @@ export function useWarrantiesList() {
       const res = await api.get<ApiSuccess<WarrantyListRow[]>>("/api/v1/warranties");
       return res.data.data ?? [];
     },
+  });
+}
+
+export function useWarrantyDetail(id: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.warranties.detail(id ?? ""),
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<WarrantyDetail>>(`/api/v1/warranties/${id}`);
+      return res.data.data;
+    },
+    enabled: Boolean(enabled && id),
   });
 }
 
@@ -57,7 +136,10 @@ export function useUpdateWarranty() {
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<WarrantyPayload> }) =>
       api.put(`/api/v1/warranties/${id}`, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.warranties.all }),
+    onSuccess: (_data, variables) => {
+      void qc.invalidateQueries({ queryKey: qk.warranties.all });
+      void qc.invalidateQueries({ queryKey: qk.warranties.detail(variables.id) });
+    },
   });
 }
 
@@ -65,6 +147,27 @@ export function useDeleteWarranty() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => api.delete(`/api/v1/warranties/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.warranties.all }),
+    onSuccess: (_data, id) => {
+      void qc.invalidateQueries({ queryKey: qk.warranties.all });
+      void qc.invalidateQueries({ queryKey: qk.warranties.detail(id) });
+    },
+  });
+}
+
+export type WarrantyStatsResponse = {
+  topProducts: Array<{ productId: string; ticketCount: number; code: string; name: string }>;
+  topMaterials: Array<{ materialId: string; ticketCount: number; code: string; name: string }>;
+};
+
+export function useWarrantyStats(params: { from: string; to: string; types?: string }, enabled = true) {
+  return useQuery({
+    queryKey: [...qk.warranties.all, "stats", params.from, params.to, params.types ?? "all"],
+    enabled,
+    queryFn: async () => {
+      const sp = new URLSearchParams({ from: params.from, to: params.to });
+      if (params.types) sp.set("types", params.types);
+      const res = await api.get<ApiSuccess<WarrantyStatsResponse>>(`/api/v1/warranties/stats?${sp.toString()}`);
+      return res.data.data ?? { topProducts: [], topMaterials: [] };
+    },
   });
 }

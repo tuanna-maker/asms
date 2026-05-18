@@ -34,17 +34,43 @@ async function assertActiveContractTypeCode(code: string) {
 
 export async function listContractsService(filters: {
   status?: string;
+  statuses?: string[];
   customerId?: string;
   search?: string;
   contractTypeCode?: string;
+  signedFrom?: Date;
+  signedTo?: Date;
+  createdFrom?: Date;
+  createdTo?: Date;
+  eligibleFor?: "handover" | "training";
 }) {
   const where: Prisma.ContractWhereInput = { deletedAt: null };
-  if (filters.status) where.status = filters.status as NonNullable<Prisma.ContractWhereInput["status"]>;
+  if (filters.statuses && filters.statuses.length > 0) {
+    where.status = { in: filters.statuses as NonNullable<Prisma.ContractWhereInput["status"]>[] } as NonNullable<Prisma.ContractWhereInput["status"]>;
+  } else if (filters.status) {
+    where.status = filters.status as NonNullable<Prisma.ContractWhereInput["status"]>;
+  }
   if (filters.customerId) where.customerId = filters.customerId;
   if (filters.contractTypeCode) where.contractTypeCode = filters.contractTypeCode;
+  if (filters.signedFrom || filters.signedTo) {
+    where.startDate = {
+      ...(filters.signedFrom ? { gte: filters.signedFrom } : {}),
+      ...(filters.signedTo ? { lte: filters.signedTo } : {}),
+    };
+  }
+  if (filters.createdFrom || filters.createdTo) {
+    where.createdAt = {
+      ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+      ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+    };
+  }
   if (filters.search) {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { title: { contains: s, mode: "insensitive" } }];
+  }
+  if (filters.eligibleFor) {
+    where.handovers = { none: { deletedAt: null } };
+    where.trainingCourses = { none: { deletedAt: null } };
   }
 
   const rows = await prisma.contract.findMany({
@@ -62,9 +88,13 @@ export async function listContractsService(filters: {
       status: true,
       progress: true,
       contractTypeCode: true,
+      workflowId: true,
       terms: true,
       customerId: true,
       customer: { select: { id: true, code: true, name: true } },
+      workflow: {
+        select: { id: true, code: true, name: true, moduleKey: true },
+      },
     },
   });
   const counts = await getContractProductCounts(rows.map((row) => row.id));
@@ -95,6 +125,7 @@ export async function getContractDetailService(id: string) {
       },
       trainingCourses: { where: { deletedAt: null } },
       documents: { where: { deletedAt: null } },
+      workflow: { select: { id: true, code: true, name: true, moduleKey: true } },
     },
   });
   if (!contract) throw new HttpError(404, "Contract not found");
@@ -104,7 +135,71 @@ export async function getContractDetailService(id: string) {
     specValues: toSpecValues(item.specValues),
   }));
   const products = productsList.reduce((sum, product) => sum + product.totalProduced, 0);
-  return { ...contract, productsList, products };
+
+  const handoverRow = contract.handovers[0] ?? null;
+  const trainingRow = contract.trainingCourses[0] ?? null;
+
+  const linkedHandover = handoverRow
+    ? {
+        id: handoverRow.id,
+        code: handoverRow.code,
+        status: handoverRow.status,
+        startDate: handoverRow.startDate,
+        dueDate: handoverRow.dueDate,
+        ...(await workflowMetaFromInstanceId(handoverRow.workflowInstanceId)),
+      }
+    : null;
+
+  const linkedTraining = trainingRow
+    ? {
+        id: trainingRow.id,
+        code: trainingRow.code,
+        title: trainingRow.title,
+        status: trainingRow.status,
+        startDate: trainingRow.startDate,
+        endDate: trainingRow.endDate,
+        ...(await workflowMetaFromInstanceId(trainingRow.workflowInstanceId)),
+      }
+    : null;
+
+  const { handovers: _h, trainingCourses: _t, ...rest } = contract;
+  return { ...rest, productsList, products, linkedHandover, linkedTraining };
+}
+
+async function workflowMetaFromInstanceId(workflowInstanceId: string | null) {
+  if (!workflowInstanceId) {
+    return { workflowId: null as string | null, workflowName: null as string | null };
+  }
+  const inst = await prisma.workflowInstance.findFirst({
+    where: { id: workflowInstanceId },
+    select: { workflow: { select: { id: true, name: true } } },
+  });
+  return {
+    workflowId: inst?.workflow?.id ?? null,
+    workflowName: inst?.workflow?.name ?? null,
+  };
+}
+
+export async function listContractProductsService(idOrCode: string) {
+  const resolvedId = await resolveContractId(idOrCode);
+  const rows = await prisma.contractProduct.findMany({
+    where: { contractId: resolvedId, deletedAt: null, product: { deletedAt: null } },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      quantity: true,
+      product: { select: { id: true, code: true, name: true } },
+    },
+  });
+  return {
+    items: rows.map((r) => ({
+      contractProductId: r.id,
+      productId: r.product.id,
+      code: r.product.code,
+      name: r.product.name,
+      quantity: r.quantity,
+    })),
+  };
 }
 
 export async function createContractService(payload: {
@@ -120,12 +215,13 @@ export async function createContractService(payload: {
   terms?: string | null;
   contractTypeCode?: string | null;
   createdById: string;
+  actorId?: string | null;
 }) {
   if (payload.contractTypeCode) {
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
-  return prisma.contract.create({
+  const created = await prisma.contract.create({
     data: {
       code: genContractCode(),
       customerId: payload.customerId,
@@ -145,6 +241,8 @@ export async function createContractService(payload: {
       customer: { select: { id: true, code: true, name: true } },
     },
   });
+
+  return getContractDetailService(created.id);
 }
 
 type UpdateContractPayload = Partial<{
@@ -158,6 +256,7 @@ type UpdateContractPayload = Partial<{
   progress: number;
   terms: string | null;
   contractTypeCode: string | null;
+  actorId: string | null;
 }>;
 
 export async function updateContractService(id: string, payload: UpdateContractPayload) {
@@ -167,7 +266,13 @@ export async function updateContractService(id: string, payload: UpdateContractP
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
-  return prisma.contract.update({
+  const existing = await prisma.contract.findFirst({
+    where: { id: resolvedId, deletedAt: null },
+    select: { id: true },
+  });
+  if (!existing) throw new HttpError(404, "Contract not found");
+
+  await prisma.contract.update({
     where: { id: resolvedId },
     data: {
       ...(payload.customerId !== undefined ? { customerId: payload.customerId } : {}),
@@ -181,10 +286,9 @@ export async function updateContractService(id: string, payload: UpdateContractP
       ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
       ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
-    include: {
-      customer: { select: { id: true, code: true, name: true } },
-    },
   });
+
+  return getContractDetailService(resolvedId);
 }
 
 export async function softDeleteContractService(id: string) {

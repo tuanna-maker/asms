@@ -12,7 +12,6 @@ import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -39,6 +38,11 @@ const Contracts = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [signedFrom, setSignedFrom] = useState<string>("");
+  const [signedTo, setSignedTo] = useState<string>("");
+  const [createdFromContract, setCreatedFromContract] = useState<string>("");
+  const [createdToContract, setCreatedToContract] = useState<string>("");
 
   type ApiSuccess<T> = { success: true; data: T; message?: string };
   type ApiContractRow = {
@@ -68,7 +72,6 @@ const Contracts = () => {
   }
 
   function mapStatus(uiStatus: string): Contract["status"] {
-    if (uiStatus === "draft") return "active";
     return uiStatus as Contract["status"];
   }
 
@@ -85,10 +88,15 @@ const Contracts = () => {
     isLoading: contractsLoading,
     isError: contractsError,
   } = useQuery({
-    queryKey: ["contracts", typeFilter],
+    queryKey: ["contracts", typeFilter, statusFilter, signedFrom, signedTo, createdFromContract, createdToContract],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (typeFilter !== "all") params.set("contractTypeCode", typeFilter);
+      if (statusFilter !== "all") params.set("statuses", statusFilter);
+      if (signedFrom) params.set("signedFrom", signedFrom);
+      if (signedTo) params.set("signedTo", signedTo);
+      if (createdFromContract) params.set("createdFrom", createdFromContract);
+      if (createdToContract) params.set("createdTo", createdToContract);
       const qs = params.toString();
       const res = await api.get<ApiSuccess<ApiContractRow[]>>(
         qs ? `/api/v1/contracts?${qs}` : "/api/v1/contracts",
@@ -230,47 +238,99 @@ const Contracts = () => {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Tìm hợp đồng..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Tìm hợp đồng..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[180px]"><SelectValue placeholder="Loại hợp đồng" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả loại</SelectItem>
+                {contractTypeOptions.map((item) => (
+                  <SelectItem key={item.id} value={item.code}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả trạng thái</SelectItem>
+                {(["draft", "active", "completed", "late", "liquidated"] as const).map((code) => (
+                  <SelectItem key={code} value={code}>
+                    {statusConfig[code]?.label ?? code}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Loại hợp đồng" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả loại</SelectItem>
-              {contractTypeOptions.map((item) => (
-                <SelectItem key={item.id} value={item.code}>
-                  {item.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
+        <div className="flex flex-col gap-2 rounded-md border border-border/50 bg-card/40 p-3 lg:flex-row lg:items-center lg:gap-4">
+<div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Ký từ</span>
+            <Input
+              type="date"
+              value={signedFrom}
+              onChange={(e) => setSignedFrom(e.target.value)}
+              className="h-7 w-[140px]"
+            />
+            <span className="text-xs text-muted-foreground">đến</span>
+            <Input
+              type="date"
+              value={signedTo}
+              onChange={(e) => setSignedTo(e.target.value)}
+              className="h-7 w-[140px]"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">Tạo từ</span>
+            <Input
+              type="date"
+              value={createdFromContract}
+              onChange={(e) => setCreatedFromContract(e.target.value)}
+              className="h-7 w-[140px]"
+            />
+            <span className="text-xs text-muted-foreground">đến</span>
+            <Input
+              type="date"
+              value={createdToContract}
+              onChange={(e) => setCreatedToContract(e.target.value)}
+              className="h-7 w-[140px]"
+            />
+          </div>
+          {(statusFilter !== "all" || signedFrom || signedTo || createdFromContract || createdToContract) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7"
+              onClick={() => {
+                setStatusFilter("all");
+                setSignedFrom("");
+                setSignedTo("");
+                setCreatedFromContract("");
+                setCreatedToContract("");
+              }}
+            >
+              Xoá bộ lọc
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="all">
-        <TabsList className="w-full sm:w-auto overflow-x-auto flex-nowrap">
-          <TabsTrigger value="all" className="text-xs sm:text-sm">Tất cả ({contractsWithProductTotals.length})</TabsTrigger>
-          <TabsTrigger value="active" className="text-xs sm:text-sm">Đang TH ({contractsWithProductTotals.filter((c) => c.status === "active").length})</TabsTrigger>
-          <TabsTrigger value="completed" className="text-xs sm:text-sm">Hoàn thành ({contractsWithProductTotals.filter((c) => c.status === "completed" || c.status === "liquidated").length})</TabsTrigger>
-          <TabsTrigger value="late" className="text-xs sm:text-sm">Chậm TĐ ({contractsWithProductTotals.filter((c) => c.status === "late").length})</TabsTrigger>
-        </TabsList>
-        {["all", "active", "completed", "late"].map((tab) => (
-          <TabsContent key={tab} value={tab}>
-            <ContractTable
-              contracts={tab === "all" ? filtered : tab === "completed" ? filtered.filter((c) => c.status === "completed" || c.status === "liquidated") : filtered.filter((c) => c.status === tab)}
-              contractTypeOptions={contractTypeOptions}
-              onView={setSelectedContract}
-              onEdit={setEditingContract}
-              onRequestDelete={setDeletingContractId}
-            />
-          </TabsContent>
-        ))}
-      </Tabs>
+      <ContractTable
+        contracts={filtered}
+        contractTypeOptions={contractTypeOptions}
+        onView={setSelectedContract}
+        onEdit={setEditingContract}
+        onRequestDelete={setDeletingContractId}
+      />
 
       <ContractDetailDialog contract={selectedContract} open={!!selectedContract} onOpenChange={(o) => !o && setSelectedContract(null)} />
       <ContractEditDialog

@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { sendSuccess } from "../../lib/response";
+import { writeAudit } from "../../lib/audit";
 
 import {
   createUserSchema,
@@ -45,18 +46,40 @@ export async function getUserDetailController(req: Request, res: Response) {
 export async function createUserController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createUserSchema, req.body);
   const data = await createUserService(payload);
+  await writeAudit(req, {
+    action: "create",
+    entity: "user",
+    entityId: data.id,
+    summary: `Tạo người dùng ${data.email}`,
+    payload: { email: data.email, role: data.role.code },
+  });
   return sendSuccess(res, data, "User created");
 }
 
 export async function updateUserController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(userIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateUserSchema, req.body);
+  const safe = { ...(payload as Record<string, unknown>) };
+  if (safe.password) safe.password = "***";
   const data = await updateUserService(id, payload as Record<string, unknown>);
+  await writeAudit(req, {
+    action: "update",
+    entity: "user",
+    entityId: data.id,
+    summary: `Cập nhật người dùng ${data.email}`,
+    payload: safe,
+  });
   return sendSuccess(res, data, "User updated");
 }
 
 export async function deleteUserController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(userIdParamSchema, req.params);
   const data = await softDeleteUserService(id, req.user?.id ?? null);
+  await writeAudit(req, {
+    action: "delete",
+    entity: "user",
+    entityId: id,
+    summary: `Xoá người dùng ${id}`,
+  });
   return sendSuccess(res, data, "User deleted");
 }

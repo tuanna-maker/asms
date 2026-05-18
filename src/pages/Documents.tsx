@@ -145,7 +145,7 @@ const Documents = () => {
           id: editingId,
           payload: {
             name: form.name,
-            category: form.category,
+            categoryCode: form.category,
             fileType: form.fileType,
             fileSize: form.size || undefined,
             tags,
@@ -156,7 +156,7 @@ const Documents = () => {
       } else {
         await createDocumentMutation.mutateAsync({
           name: form.name,
-          category: form.category,
+          categoryCode: form.category,
           fileType: form.fileType,
           fileSize: form.size || undefined,
           tags,

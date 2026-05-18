@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 
 import type { z } from "zod";
 
@@ -20,18 +21,37 @@ async function resolveCustomerId(idOrCode: string) {
   return customer.id;
 }
 
-function buildCustomerWhere(filters: { search?: string }) {
+function buildCustomerWhere(filters: {
+  search?: string;
+  sourceCode?: string;
+  companyTypeCode?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
+}) {
   const where: Prisma.CustomerWhereInput = { deletedAt: null };
   if (filters.search) {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { name: { contains: s, mode: "insensitive" } }];
   }
+  if (filters.sourceCode) where.sourceCode = filters.sourceCode;
+  if (filters.companyTypeCode) where.companyTypeCode = filters.companyTypeCode;
+  if (filters.createdFrom || filters.createdTo) {
+    where.createdAt = {
+      ...(filters.createdFrom ? { gte: filters.createdFrom } : {}),
+      ...(filters.createdTo ? { lte: filters.createdTo } : {}),
+    };
+  }
   return where;
 }
 
 export async function listCustomersService(filters: z.infer<typeof listCustomersQuerySchema>) {
-  const search = (filters as { search?: string }).search;
-  const where = buildCustomerWhere(search !== undefined ? { search } : {});
+  const where = buildCustomerWhere({
+    ...(filters.search !== undefined ? { search: filters.search } : {}),
+    ...(filters.sourceCode !== undefined ? { sourceCode: filters.sourceCode } : {}),
+    ...(filters.companyTypeCode !== undefined ? { companyTypeCode: filters.companyTypeCode } : {}),
+    ...(filters.createdFrom !== undefined ? { createdFrom: filters.createdFrom } : {}),
+    ...(filters.createdTo !== undefined ? { createdTo: filters.createdTo } : {}),
+  });
   return prisma.customer.findMany({
     where,
     orderBy: { name: "asc" },
@@ -43,6 +63,9 @@ export async function listCustomersService(filters: z.infer<typeof listCustomers
       phone: true,
       email: true,
       address: true,
+      sourceCode: true,
+      companyTypeCode: true,
+      foundedAt: true,
       contractsCount: true,
       activeContracts: true,
     },
@@ -60,16 +83,101 @@ export async function getCustomerDetailService(id: string) {
       },
       contracts: {
         where: { deletedAt: null },
-        select: { id: true, code: true, title: true, status: true, value: true, startDate: true, endDate: true, progress: true },
+        select: {
+          id: true,
+          code: true,
+          title: true,
+          status: true,
+          value: true,
+          startDate: true,
+          endDate: true,
+          progress: true,
+        },
+      },
+      crmActivities: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      },
+      warranties: {
+        where: { deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          code: true,
+          issue: true,
+          status: true,
+          statusCode: true,
+          priority: true,
+          priorityCode: true,
+          createdAt: true,
+          resolvedAt: true,
+        },
+      },
+      anniversaries: {
+        orderBy: { occursAt: "asc" },
       },
     },
   });
 
   if (!customer) throw new HttpError(404, "Customer not found");
-  return customer;
+
+  const openWarranties = await prisma.warranty.count({
+    where: {
+      customerId: resolvedId,
+      deletedAt: null,
+      statusCode: { in: ["open", "processing"] },
+    },
+  });
+
+  const revenueAggregate = await prisma.contract.aggregate({
+    where: { customerId: resolvedId, deletedAt: null, status: { in: ["active", "completed"] } },
+    _sum: { value: true },
+  });
+  const totalActive = await prisma.contract.aggregate({
+    where: { customerId: resolvedId, deletedAt: null, status: "active" },
+    _sum: { value: true },
+  });
+  const totalAllContracts = await prisma.contract.aggregate({
+    where: { customerId: resolvedId, deletedAt: null },
+    _sum: { value: true },
+  });
+
+  const costBreakdown = customer.contracts.map((c) => ({
+    id: c.id,
+    code: c.code,
+    title: c.title,
+    status: c.status,
+    value: Number(c.value),
+    startDate: c.startDate,
+    endDate: c.endDate,
+    progress: c.progress,
+  }));
+
+  return {
+    ...customer,
+    summary: {
+      totalContracts: customer.contracts.length,
+      activeContracts: customer.contracts.filter((c) => c.status === "active").length,
+      revenueTotal: Number(revenueAggregate._sum.value ?? 0),
+      activeContractValue: Number(totalActive._sum.value ?? 0),
+      totalContractValue: Number(totalAllContracts._sum.value ?? 0),
+      openWarranties,
+      expenseTotal: customer.expenseTotal ? Number(customer.expenseTotal) : 0,
+    },
+    costBreakdown,
+  };
 }
 
 export async function createCustomerService(payload: z.infer<typeof createCustomerSchema>) {
+  if (payload.sourceCode) {
+    await assertActiveDefinitionCode("customer_source", payload.sourceCode, "Nguồn giới thiệu");
+  }
+  if (payload.companyTypeCode) {
+    await assertActiveDefinitionCode("company_type", payload.companyTypeCode, "Loại công ty");
+  }
+
   return prisma.customer.create({
     data: {
       code: payload.code ?? genCustomerCode(),
@@ -78,6 +186,9 @@ export async function createCustomerService(payload: z.infer<typeof createCustom
       phone: payload.phone ?? null,
       email: payload.email ?? null,
       address: payload.address ?? null,
+      sourceCode: payload.sourceCode ?? null,
+      companyTypeCode: payload.companyTypeCode ?? null,
+      foundedAt: payload.foundedAt ?? null,
     },
     select: {
       id: true,
@@ -87,6 +198,9 @@ export async function createCustomerService(payload: z.infer<typeof createCustom
       phone: true,
       email: true,
       address: true,
+      sourceCode: true,
+      companyTypeCode: true,
+      foundedAt: true,
       contractsCount: true,
       activeContracts: true,
       createdAt: true,
@@ -97,6 +211,14 @@ export async function createCustomerService(payload: z.infer<typeof createCustom
 
 export async function updateCustomerService(id: string, payload: Partial<z.infer<typeof updateCustomerSchema>>) {
   const resolvedId = await resolveCustomerId(id);
+
+  if (payload.sourceCode !== undefined && payload.sourceCode !== null) {
+    await assertActiveDefinitionCode("customer_source", String(payload.sourceCode), "Nguồn giới thiệu");
+  }
+  if (payload.companyTypeCode !== undefined && payload.companyTypeCode !== null) {
+    await assertActiveDefinitionCode("company_type", String(payload.companyTypeCode), "Loại công ty");
+  }
+
   const updated = await prisma.customer.updateMany({
     where: { id: resolvedId, deletedAt: null },
     data: {
@@ -106,6 +228,9 @@ export async function updateCustomerService(id: string, payload: Partial<z.infer
       ...(payload.phone !== undefined ? { phone: payload.phone } : {}),
       ...(payload.email !== undefined ? { email: payload.email } : {}),
       ...(payload.address !== undefined ? { address: payload.address } : {}),
+      ...(payload.sourceCode !== undefined ? { sourceCode: payload.sourceCode } : {}),
+      ...(payload.companyTypeCode !== undefined ? { companyTypeCode: payload.companyTypeCode } : {}),
+      ...(payload.foundedAt !== undefined ? { foundedAt: payload.foundedAt } : {}),
     },
   });
 

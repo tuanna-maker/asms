@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Filter, Calendar, Play, Pause, Timer, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useCustomersList } from "@/hooks/use-customers-api";
+import { buildDashboardReportFilters } from "@/lib/report-filters";
 import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
 import CustomerTab from "@/components/dashboard/tabs/CustomerTab";
 import RevenueTab from "@/components/dashboard/tabs/RevenueTab";
@@ -25,16 +27,6 @@ const quarters = [
 ];
 const DEFAULT_YEAR = "2026";
 
-const customers = [
-  { value: "all", label: "Tất cả khách hàng" },
-  { value: "qk1", label: "Quân khu 1" },
-  { value: "qk3", label: "Quân khu 3" },
-  { value: "qk5", label: "Quân khu 5" },
-  { value: "qk7", label: "Quân khu 7" },
-  { value: "qk9", label: "Quân khu 9" },
-  { value: "tttm", label: "Bộ TL TTTM" },
-];
-
 const tabKeys = ["overview", "customer", "revenue", "project", "product", "warranty", "material", "alerts"] as const;
 const intervalOptions = [
   { value: "10", label: "10 giây" },
@@ -53,8 +45,21 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
+  const reportFilters = useMemo(
+    () => buildDashboardReportFilters({ year, quarter, customerId: customer }),
+    [year, quarter, customer],
+  );
+  const customersQ = useCustomersList();
+  const customerOptions = useMemo(() => {
+    const rows = (customersQ.data ?? []) as Array<{ id: string; name: string }>;
+    return [
+      { value: "all", label: "Tất cả khách hàng" },
+      ...rows.map((c) => ({ value: c.id, label: c.name })),
+    ];
+  }, [customersQ.data]);
+
   const { data, liveContracts, liveHandovers, liveTrainings, liveProducts, liveWarranties, liveMaterials, isLoading: dashboardLoading, isError: dashboardError } =
-    useDashboardData(year);
+    useDashboardData(reportFilters);
 
   const activeFilters = [year !== DEFAULT_YEAR, quarter !== "all", customer !== "all"].filter(Boolean).length;
 
@@ -140,7 +145,7 @@ const Index = () => {
               <Select value={customer} onValueChange={setCustomer}>
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {customers.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  {customerOptions.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -159,7 +164,7 @@ const Index = () => {
             <Badge variant="secondary" className="text-xs">{quarters.find((q) => q.value === quarter)?.label}</Badge>
           )}
           {customer !== "all" && (
-            <Badge variant="secondary" className="text-xs">{customers.find((c) => c.value === customer)?.label}</Badge>
+            <Badge variant="secondary" className="text-xs">{customerOptions.find((c) => c.value === customer)?.label}</Badge>
           )}
         </div>
 

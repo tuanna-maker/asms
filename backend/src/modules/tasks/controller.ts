@@ -27,9 +27,9 @@ function zodParseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
 
 export async function listTasksController(req: Request, res: Response) {
   const query = zodParseOrThrow(listTasksQuerySchema, req.query);
-  const input: { status?: string; priority?: string; type?: string; projectId?: string } = {};
+  const input: { status?: string; priorityCode?: string; type?: string; projectId?: string } = {};
   if (query.status !== undefined) input.status = query.status;
-  if (query.priority !== undefined) input.priority = query.priority;
+  if (query.priorityCode !== undefined) input.priorityCode = query.priorityCode;
   if (query.type !== undefined) input.type = query.type;
   if (query.projectId !== undefined) input.projectId = query.projectId;
   const data = await listTasksService(input);
@@ -50,7 +50,7 @@ export async function createTaskController(req: Request, res: Response) {
   if (payload.description !== undefined) input.description = payload.description;
   if (payload.startDate !== undefined) input.startDate = payload.startDate;
   if (payload.deadline !== undefined) input.deadline = payload.deadline;
-  if (payload.priority !== undefined) input.priority = payload.priority;
+  if (payload.priorityCode !== undefined) input.priorityCode = payload.priorityCode;
   if (payload.status !== undefined) input.status = payload.status;
   if (payload.type !== undefined) input.type = payload.type;
   if (payload.assigneeId !== undefined) input.assigneeId = payload.assigneeId;
@@ -69,7 +69,7 @@ export async function updateTaskController(req: Request, res: Response) {
   if (payload.description !== undefined) input.description = payload.description;
   if (payload.startDate !== undefined) input.startDate = payload.startDate;
   if (payload.deadline !== undefined) input.deadline = payload.deadline;
-  if (payload.priority !== undefined) input.priority = payload.priority;
+  if (payload.priorityCode !== undefined) input.priorityCode = payload.priorityCode;
   if (payload.status !== undefined) input.status = payload.status;
   if (payload.type !== undefined) input.type = payload.type;
   if (payload.assigneeId !== undefined) input.assigneeId = payload.assigneeId;

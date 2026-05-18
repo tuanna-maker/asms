@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,12 +13,14 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, GraduationCap,
+  Info, ListChecks, Boxes, Files,
 } from "lucide-react";
+import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
 import { toast } from "sonner";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import { invalidateContractQueries } from "@/hooks/use-contracts-api";
 import { useProductsList } from "@/hooks/use-products-api";
 import type { ProductSpec } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
@@ -64,38 +66,28 @@ type DraftDocument = {
   file: File;
 };
 
-type DetailTraining = {
-  id?: string;
-  code?: string;
-  title?: string;
-  type?: string | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  participants?: number | null;
-  status?: string | null;
-  location?: string | null;
-};
-
 type ContractDetailData = {
   id?: string;
+  customerId?: string;
   terms?: string | null;
   contractTypeCode?: string | null;
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
-  trainingCourses?: DetailTraining[];
-};
-
-type TrainingCourseRow = {
-  id: string;
-  code: string;
-  title: string;
-  type: string | null;
-  startDate: string;
-  endDate: string;
-  participants: number;
-  status: string;
-  location: string | null;
-  contractId: string | null;
+  linkedHandover?: {
+    id: string;
+    code: string;
+    status: string;
+    workflowId?: string | null;
+    workflowName?: string | null;
+  } | null;
+  linkedTraining?: {
+    id: string;
+    code: string;
+    title: string;
+    status: string;
+    workflowId?: string | null;
+    workflowName?: string | null;
+  } | null;
 };
 
 interface Props {
@@ -103,6 +95,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode?: "edit" | "create";
+  initialTab?: string;
   customers?: Array<{ id: string; code: string; name: string }>;
   onContractSaved?: (patch: { id: string; contractTypeCode: string | null }) => void;
 }
@@ -146,9 +139,27 @@ function joinTerms(items: string[]) {
   return text || null;
 }
 
-const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", customers = [], onContractSaved }: Props) => {
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "response" in error) {
+    const r = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
+    if (typeof r === "string") return r;
+  }
+  if (error instanceof Error) return error.message;
+  return fallback;
+}
+
+const ContractEditDialog = ({
+  contract,
+  open,
+  onOpenChange,
+  mode = "edit",
+  initialTab = "info",
+  customers = [],
+  onContractSaved,
+}: Props) => {
   const isCreateMode = mode === "create";
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [form, setForm] = useState({
     customerId: "",
     customer: "",
@@ -172,16 +183,15 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
   const [draftExistingDocuments, setDraftExistingDocuments] = useState<DetailDocument[]>([]);
   const [draftNewDocuments, setDraftNewDocuments] = useState<DraftDocument[]>([]);
   const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
-  const [selectedTrainingId, setSelectedTrainingId] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<DraftProduct | null>(null);
   const { data: detailData, isLoading: detailLoading } = useContractDetail(!isCreateMode && open ? contract?.id ?? null : null);
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
+  const detail = detailData as ContractDetailData | null;
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
-  const detail = detailData as ContractDetailData | null;
   const productsList = useMemo<DetailProduct[]>(() => (detail?.productsList ?? []) as DetailProduct[], [detail]);
   const productMapById = useMemo(
     () => new Map(allProducts.filter((p) => !!p.id).map((p) => [p.id, p])),
@@ -204,45 +214,6 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     ],
     [draftExistingDocuments, draftNewDocuments],
   );
-  const contractIdForTraining = typeof detail?.id === "string" && detail.id ? detail.id : contract?.dbId;
-  const { data: trainingFromModule = [], isLoading: trainingLoading } = useQuery({
-    queryKey: ["training-by-contract", contractIdForTraining],
-    enabled: open && !isCreateMode && !!contractIdForTraining,
-    queryFn: async () => {
-      const res = await api.get<{ success: boolean; data: TrainingCourseRow[] }>(
-        `/api/v1/training?contractId=${encodeURIComponent(contractIdForTraining!)}`,
-      );
-      return res.data.data ?? [];
-    },
-  });
-  const { data: allTrainingCourses = [] } = useQuery({
-    queryKey: ["all-training-courses-for-contract-link"],
-    enabled: open && !isCreateMode,
-    queryFn: async () => {
-      const res = await api.get<{ success: boolean; data: TrainingCourseRow[] }>("/api/v1/training");
-      return res.data.data ?? [];
-    },
-  });
-  const trainingList = useMemo<DetailTraining[]>(
-    () =>
-      trainingFromModule.map((course) => ({
-        id: course.id,
-        code: course.code,
-        title: course.title,
-        type: course.type,
-        startDate: course.startDate,
-        endDate: course.endDate,
-        participants: course.participants,
-        status: course.status,
-        location: course.location,
-      })),
-    [trainingFromModule],
-  );
-  const trainingOptions = useMemo(
-    () => allTrainingCourses.filter((course) => !trainingList.some((linked) => linked.id === course.id)),
-    [allTrainingCourses, trainingList],
-  );
-
   useEffect(() => {
     if (!open || !contract || isCreateMode) return;
     setForm({
@@ -261,6 +232,12 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     });
     setTermItems(splitTerms(contract.terms));
   }, [open, contract?.id, isCreateMode]);
+
+  useEffect(() => {
+    if (!open) return;
+    const tab = initialTab === "handover" || initialTab === "training" ? "info" : initialTab;
+    setActiveTab(tab);
+  }, [open, initialTab]);
 
   useEffect(() => {
     if (!open || !isCreateMode) return;
@@ -287,17 +264,8 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setDraftExistingDocuments([]);
     setDraftNewDocuments([]);
     setRemovedDocumentIds([]);
-    setSelectedTrainingId("");
     setSelectedProduct(null);
   }, [open, isCreateMode]);
-
-  useEffect(() => {
-    if (!open || isCreateMode || !detail) return;
-    setForm((prev) => ({
-      ...prev,
-      contractTypeCode: detail.contractTypeCode ?? "",
-    }));
-  }, [open, isCreateMode, detail?.contractTypeCode]);
 
   useEffect(() => {
     if (!open || isCreateMode) return;
@@ -351,6 +319,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
 
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
+
   const termsText = (detail?.terms ?? form.terms ?? "").trim();
   const progressValue = Math.min(100, Math.max(0, Number(form.progress) || 0));
   const contractDbId = typeof detail?.id === "string" && detail.id.trim() ? detail.id : contract?.dbId ?? contractCode;
@@ -390,7 +359,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
         file: doc.file,
         contractId: targetContractId,
         name: doc.name.trim(),
-        category: "contract",
+        categoryCode: "contract",
         fileType: toDocType(doc.file),
       });
     }
@@ -587,40 +556,6 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
     setRemovedDocumentIds((items) => (items.includes(docId) ? items : [...items, docId]));
   };
 
-  const handleAddTrainingCourse = async () => {
-    if (isCreateMode || !contractIdForTraining) {
-      toast.error("Vui lòng tạo hợp đồng trước khi liên kết đào tạo");
-      return;
-    }
-    if (!selectedTrainingId) {
-      toast.error("Vui lòng chọn khóa đào tạo đã có");
-      return;
-    }
-    try {
-      await api.put(`/api/v1/training/${encodeURIComponent(selectedTrainingId)}`, { contractId: contractIdForTraining });
-      await queryClient.invalidateQueries({ queryKey: ["training-by-contract", contractIdForTraining] });
-      await queryClient.invalidateQueries({ queryKey: ["trainingCourses"] });
-      setSelectedTrainingId("");
-      toast.success("Đã liên kết khóa đào tạo");
-    } catch {
-      toast.error("Không thể liên kết khóa đào tạo");
-    }
-  };
-
-  const handleDetachTrainingCourse = async (trainingId?: string) => {
-    if (!trainingId) return;
-    try {
-      await api.put(`/api/v1/training/${encodeURIComponent(trainingId)}`, { contractId: null });
-      if (contractIdForTraining) {
-        await queryClient.invalidateQueries({ queryKey: ["training-by-contract", contractIdForTraining] });
-      }
-      await queryClient.invalidateQueries({ queryKey: ["trainingCourses"] });
-      toast.success("Đã bỏ liên kết khóa đào tạo");
-    } catch {
-      toast.error("Không thể bỏ liên kết khóa đào tạo");
-    }
-  };
-
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-[75vw] xl:max-w-[1140px] p-0 flex flex-col gap-0 overflow-hidden">
@@ -641,26 +576,27 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
           </Button>
         </SheetHeader>
 
-        <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="border-b border-border/50 px-6 shrink-0 overflow-x-auto">
             <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
               <TabTrigger value="info" icon={<Info className="h-4 w-4" />} label="Thông tin chung" />
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản & Điều kiện" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
-              <TabTrigger value="training" icon={<GraduationCap className="h-4 w-4" />} label="Đào tạo & Huấn luyện" />
             </TabsList>
           </div>
 
-          <TabsContent value="info" className="flex-1 overflow-y-auto p-6 space-y-6 mt-0">
+          <div className="relative min-h-0 flex-1">
+          <TabsContent value="info" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-6">
             <div className="flex items-center justify-between">
               <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
                 <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Đang thực hiện</SelectItem>
-                  <SelectItem value="completed">Hoàn thành</SelectItem>
-                  <SelectItem value="late">Chậm tiến độ</SelectItem>
-                  <SelectItem value="liquidated">Đã thanh lý</SelectItem>
+                  <SelectItem value="draft">{CONTRACT_STATUS_LABELS.draft ?? "Nháp"}</SelectItem>
+                  <SelectItem value="active">{CONTRACT_STATUS_LABELS.active ?? "Đang thực hiện"}</SelectItem>
+                  <SelectItem value="completed">{CONTRACT_STATUS_LABELS.completed ?? "Hoàn thành"}</SelectItem>
+                  <SelectItem value="late">{CONTRACT_STATUS_LABELS.late ?? "Chậm tiến độ"}</SelectItem>
+                  <SelectItem value="liquidated">{CONTRACT_STATUS_LABELS.liquidated ?? "Đã thanh lý"}</SelectItem>
                 </SelectContent>
               </Select>
               <div className="flex items-center gap-2">
@@ -734,7 +670,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
             </div>
           </TabsContent>
 
-          <TabsContent value="terms" className="flex-1 overflow-y-auto p-6 space-y-4 mt-0">
+          <TabsContent value="terms" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-4">
             {isCreateMode && (
               <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                 Bạn có thể nhập điều khoản trước; dữ liệu sẽ lưu khi bấm "Tạo hợp đồng".
@@ -764,7 +700,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
             </div>
           </TabsContent>
 
-          <TabsContent value="products" className="flex-1 overflow-y-auto p-6 mt-0">
+          <TabsContent value="products" className="absolute inset-0 mt-0 overflow-y-auto p-6">
             <>
             {detailLoading && !isCreateMode && draftProducts.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải danh mục sản phẩm...</div>
@@ -871,7 +807,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
             </>
           </TabsContent>
 
-          <TabsContent value="docs" className="flex-1 overflow-y-auto p-6 mt-0">
+          <TabsContent value="docs" className="absolute inset-0 mt-0 overflow-y-auto p-6">
             <>
             {detailLoading && !isCreateMode && combinedDraftDocuments.length === 0 ? (
               <div className="text-sm text-muted-foreground">Đang tải tài liệu...</div>
@@ -934,60 +870,7 @@ const ContractEditDialog = ({ contract, open, onOpenChange, mode = "edit", custo
             </>
           </TabsContent>
 
-          <TabsContent value="training" className="flex-1 overflow-y-auto p-6 space-y-3 mt-0">
-            {isCreateMode ? (
-              <EmptyHint text="Vui lòng tạo hợp đồng trước, sau đó quay lại để liên kết khóa đào tạo." />
-            ) : (
-              <>
-            {(detailLoading || trainingLoading) && trainingList.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Đang tải khóa đào tạo...</div>
-            ) : trainingList.length === 0 ? (
-              <EmptyHint text="Hợp đồng chưa có khóa đào tạo nào." />
-            ) : (
-              trainingList.map((t, i) => (
-                <div key={t.id ?? t.code ?? i} className="rounded-lg border border-border/60 bg-card p-4">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <h4 className="text-sm font-semibold text-card-foreground">{t.title ?? "Khóa đào tạo"}</h4>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={String(t.status) === "completed" ? "secondary" : "default"}>{t.status ?? "planned"}</Badge>
-                      <Button size="sm" variant="destructive" onClick={() => void handleDetachTrainingCourse(t.id)}>
-                        Bỏ chọn
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-muted-foreground">
-                    <p><span className="text-card-foreground font-medium">Mã khóa:</span> {t.code ?? "—"}</p>
-                    <p><span className="text-card-foreground font-medium">Bắt đầu:</span> {t.startDate ? isoToDisplay(t.startDate.slice(0, 10)) : "—"}</p>
-                    <p><span className="text-card-foreground font-medium">Kết thúc:</span> {t.endDate ? isoToDisplay(t.endDate.slice(0, 10)) : "—"}</p>
-                    <p><span className="text-card-foreground font-medium">Hình thức:</span> {t.type ?? "—"}</p>
-                    <p><span className="text-card-foreground font-medium">Học viên:</span> {t.participants ?? 0}</p>
-                    <p><span className="text-card-foreground font-medium">Địa điểm:</span> {t.location ?? "—"}</p>
-                  </div>
-                </div>
-              ))
-            )}
-            <div className="mt-3 rounded-lg border border-border/60 bg-card p-4 space-y-3">
-              <h4 className="text-sm font-semibold text-card-foreground">Chọn khóa đào tạo & huấn luyện đã có</h4>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Khóa đào tạo</p>
-                <Select value={selectedTrainingId} onValueChange={setSelectedTrainingId}>
-                  <SelectTrigger><SelectValue placeholder="Chọn khóa đào tạo có sẵn" /></SelectTrigger>
-                  <SelectContent>
-                    {trainingOptions.map((course) => (
-                      <SelectItem key={course.id} value={course.id}>
-                        {course.code} - {course.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex justify-end">
-                <Button onClick={() => void handleAddTrainingCourse()}>Thêm vào hợp đồng</Button>
-              </div>
-            </div>
-              </>
-            )}
-          </TabsContent>
+          </div>
         </Tabs>
       </SheetContent>
       <ContractProductDetailDialog

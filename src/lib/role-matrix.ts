@@ -17,6 +17,7 @@ export const ROLE_MATRIX_MODULES: ReadonlyArray<{
   { label: "Công việc", paths: ["/cong-viec"] },
   { label: "Đào tạo & HL", paths: ["/dao-tao", "/dao-tao/:id"] },
   { label: "Tài liệu", paths: ["/tai-lieu"] },
+  { label: "Quy trình", paths: ["/quy-trinh"] },
   { label: "Cài đặt", paths: ["/cai-dat"] },
 ];
 
