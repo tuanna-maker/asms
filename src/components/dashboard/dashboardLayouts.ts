@@ -53,22 +53,22 @@ export const OVERVIEW_LAYOUT_PRESETS: Record<string, { x: number; y: number; w: 
   "progress-contract": { x: 0, y: 7, w: 4, h: 4, minH: 3 },
   "progress-handover": { x: 4, y: 7, w: 4, h: 4, minH: 3 },
   "progress-training": { x: 8, y: 7, w: 4, h: 4, minH: 3 },
-  complaint: { x: 0, y: 11, w: 6, h: 4, minH: 3 },
-  pakd: { x: 6, y: 11, w: 6, h: 6, minH: 5 },
+  complaint: { x: 0, y: 11, w: 6, h: 5, minH: 4 },
+  pakd: { x: 6, y: 11, w: 6, h: 7, minH: 6 },
   "customer-care": { x: 0, y: 17, w: 12, h: 5, minH: 4 },
   "chart-customer-revenue": { x: 0, y: 22, w: 6, h: 4, minH: 3 },
   trend: { x: 6, y: 22, w: 6, h: 4, minH: 3 },
   "table-contracts": { x: 0, y: 26, w: 12, h: 5, minH: 4 },
 };
 
-/** Tab Khách hàng — đủ cao cho thẻ KPI và biểu đồ */
+/** Tab Khách hàng — KPI sát biểu đồ, tránh khoảng trống */
 export const CUSTOMER_LAYOUT_PRESETS: Record<string, { x: number; y: number; w: number; h: number; minH?: number }> = {
   stats: { x: 0, y: 0, w: 12, h: 3, minH: 3 },
   "chart-product": { x: 0, y: 3, w: 6, h: 6, minH: 5 },
   "chart-revenue": { x: 6, y: 3, w: 6, h: 6, minH: 5 },
-  "pie-product": { x: 0, y: 9, w: 6, h: 5, minH: 4 },
-  "pie-revenue": { x: 6, y: 9, w: 6, h: 5, minH: 4 },
-  "customer-care": { x: 0, y: 14, w: 12, h: 5, minH: 4 },
+  "customer-care": { x: 0, y: 9, w: 12, h: 5, minH: 4 },
+  "pie-product": { x: 0, y: 14, w: 6, h: 5, minH: 4 },
+  "pie-revenue": { x: 6, y: 14, w: 6, h: 5, minH: 4 },
   table: { x: 0, y: 19, w: 12, h: 6, minH: 5 },
 };
 

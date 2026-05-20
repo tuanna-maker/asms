@@ -19,6 +19,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MaterialDetailDialog from "@/components/details/MaterialDetailDialog";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 import BarcodeScannerDialog from "@/components/scanner/BarcodeScannerDialog";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import {
@@ -241,6 +243,9 @@ const Materials = () => {
     );
   });
 
+  const materialPagination = useListPagination(filtered, { resetDeps: [search] });
+  const transferPagination = useListPagination(filteredTransfers, { resetDeps: [transferSearch] });
+
   const handleCreateTransfer = async () => {
     if (!transferForm.materialId) {
       toast.error("Vui lòng chọn vật tư");
@@ -451,7 +456,7 @@ const Materials = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((m) => (
+                {materialPagination.pagedItems.map((m) => (
                   <TableRow key={m.id}>
                     <TableCell className="font-medium text-primary">{m.code}</TableCell>
                     <TableCell>{m.name}</TableCell>
@@ -495,6 +500,14 @@ const Materials = () => {
                 ))}
               </TableBody>
             </Table>
+            <ListPaginationBar
+              className="px-4 pb-4"
+              page={materialPagination.page}
+              totalPages={materialPagination.totalPages}
+              totalItems={materialPagination.total}
+              pageSize={materialPagination.pageSize}
+              onPageChange={materialPagination.setPage}
+            />
           </div>
         </TabsContent>
 
@@ -595,7 +608,7 @@ const Materials = () => {
                       Chưa có phiếu điều chuyển.
                     </TableCell>
                   </TableRow>
-                ) : filteredTransfers.map((t) => (
+                ) : transferPagination.pagedItems.map((t) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium text-primary">{t.code}</TableCell>
                     <TableCell>{t.material.name}</TableCell>
@@ -641,6 +654,15 @@ const Materials = () => {
                 ))}
               </TableBody>
             </Table>
+            <ListPaginationBar
+              className="px-4 pb-4"
+              page={transferPagination.page}
+              totalPages={transferPagination.totalPages}
+              totalItems={transferPagination.total}
+              pageSize={transferPagination.pageSize}
+              onPageChange={transferPagination.setPage}
+              disabled={isTransfersLoading}
+            />
           </div>
         </TabsContent>
       </Tabs>

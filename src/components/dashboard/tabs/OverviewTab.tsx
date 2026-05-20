@@ -70,8 +70,16 @@ const allWidgetTemplates = [
 const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
-    "stats", "product-manufacturing", "progress-contract", "complaint", "progress-handover",
-    "progress-training", "customer-care", "pakd", "chart-customer-revenue", "trend", "table-contracts",
+    "stats",
+    "product-manufacturing",
+    "progress-contract",
+    "progress-handover",
+    "progress-training",
+    "complaint",
+    "pakd",
+    "chart-customer-revenue",
+    "trend",
+    "table-contracts",
   ]);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
@@ -143,6 +151,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
         title="Danh sách hợp đồng"
         columns={contractColumns}
         data={contractsTableData ?? []}
+        compact
       />
     ),
   }), [contractsTableData, data]);
@@ -157,6 +166,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
           type: id,
           title: tpl?.title || id,
           component: widgetComponents[id],
+          contentOverflow: id === "stats" ? "visible" : "hidden",
           defaultLayout: {
             w: tpl?.defaultSize.w || 6,
             h: tpl?.defaultSize.h || 4,

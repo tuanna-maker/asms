@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportsEmptyState } from "@/components/reports/ReportsEmptyState";
 import type { ProductLineReportItem } from "@/hooks/use-reports-api";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 type Props = {
   items: ProductLineReportItem[];
@@ -9,6 +10,7 @@ type Props = {
 };
 
 export function ProductLineReportTab({ items, isLoading }: Props) {
+  const tablePag = usePaginatedSlice(items);
   const chartData = items.map((i) => ({
     name: i.category,
     produced: i.produced,
@@ -69,7 +71,7 @@ export function ProductLineReportTab({ items, isLoading }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((row) => (
+              {tablePag.pagedItems.map((row) => (
                 <TableRow key={row.category}>
                   <TableCell>{row.category}</TableCell>
                   <TableCell className="text-right">{row.produced}</TableCell>
@@ -80,6 +82,7 @@ export function ProductLineReportTab({ items, isLoading }: Props) {
             </TableBody>
           </Table>
         )}
+        {items.length > 0 && <PaginatedTableFooter className="mt-3" {...tablePag.footerProps} />}
       </div>
     </div>
   );

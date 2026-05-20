@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { api } from "@/lib/api";
 import { TrainingCourse, typeLabel, statusLabel, statusColor } from "@/data/trainingData";
 import { useTrainingCourse, useTrainingCourses } from "@/hooks/use-training";
@@ -118,17 +119,23 @@ const Training = () => {
     participants: courses.reduce((s, c) => s + c.participants, 0),
   };
 
-  const filtered = courses.filter((c) => {
-    if (tab !== "all" && c.status !== tab) return false;
-    if (
-      search &&
-      !c.title.toLowerCase().includes(search.toLowerCase()) &&
-      !c.id.toLowerCase().includes(search.toLowerCase())
-    ) {
-      return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(
+    () =>
+      courses.filter((c) => {
+        if (tab !== "all" && c.status !== tab) return false;
+        if (
+          search &&
+          !c.title.toLowerCase().includes(search.toLowerCase()) &&
+          !c.id.toLowerCase().includes(search.toLowerCase())
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [courses, tab, search],
+  );
+
+  const coursesPag = usePaginatedSlice(filtered, [tab, search]);
 
   useEffect(() => {
     if (!dialogOpen || !editingId || !editingDetail) return;
@@ -335,7 +342,7 @@ const Training = () => {
                 </Button>
               </div>
             ) : (
-              filtered.map((c) => (
+              coursesPag.pagedItems.map((c) => (
                 <Card
                   key={c.id}
                   className="p-4 hover:shadow-md transition-shadow cursor-pointer"
@@ -400,6 +407,9 @@ const Training = () => {
                   </div>
                 </Card>
               ))
+            )}
+            {filtered.length > 0 && (
+              <PaginatedTableFooter className="mt-4" {...coursesPag.footerProps} />
             )}
           </TabsContent>
         </Tabs>

@@ -27,6 +27,8 @@ import {
   useUpdateResearchProject,
 } from "@/hooks/use-research-projects-api";
 import { toast } from "sonner";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
 function dateToIsoStartOfDay(s: string) {
   if (!s) return new Date().toISOString();
@@ -58,6 +60,16 @@ const ResearchProjects = () => {
       ),
     [projects, search]
   );
+
+  const {
+    pagedItems: pagedProjects,
+    page: projectPage,
+    setPage: setProjectPage,
+    totalPages: projectTotalPages,
+    total: projectTotal,
+    pageSize: projectPageSize,
+    startIndex: projectStartIndex,
+  } = useListPagination(filtered, { resetDeps: [search] });
 
   const handleSave = async (data: Partial<ResearchProject>) => {
     if (!data.name?.trim() || !data.code?.trim()) {
@@ -152,7 +164,7 @@ const ResearchProjects = () => {
       {/* Card View */}
       {view === "card" && !isLoading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-          {filtered.map((p) => (
+          {pagedProjects.map((p) => (
             <div key={p.code} className="rounded-xl bg-card border border-border/50 p-4 shadow-sm group relative hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-3">
                 <span className="text-xs font-mono text-muted-foreground">{p.code}</span>
@@ -216,7 +228,7 @@ const ResearchProjects = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p) => (
+                {pagedProjects.map((p) => (
                   <tr key={p.code} className="border-b last:border-0 hover:bg-muted/20 transition-colors group">
                     <td className="py-3 px-4">
                       <Link to={`/de-tai/${encodeURIComponent(p.code)}`} className="font-mono text-xs text-primary hover:underline">{p.code}</Link>
@@ -268,6 +280,16 @@ const ResearchProjects = () => {
         <div className="text-center py-12 text-muted-foreground text-sm">
           Không tìm thấy đề tài nào phù hợp
         </div>
+      )}
+
+      {!isLoading && filtered.length > 0 && (
+        <ListPaginationBar
+          page={projectPage}
+          totalPages={projectTotalPages}
+          totalItems={projectTotal}
+          pageSize={projectPageSize}
+          onPageChange={setProjectPage}
+        />
       )}
 
       <CreateResearchDialog

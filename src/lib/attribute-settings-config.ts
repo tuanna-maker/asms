@@ -50,7 +50,10 @@ export type AttributeRow = {
   isSystem: boolean;
 };
 
-export type AttributeSectionDataSource = "definitions";
+export type AttributeSectionDataSource =
+  | "definitions"
+  | "contract_clauses"
+  | "contract_clause_groups";
 
 export type AttributeSectionDef = {
   id: string;
@@ -94,6 +97,22 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         iconClassName: "bg-violet-500/15 text-violet-600",
         dataSource: "definitions",
         definitionCategory: "contract_status",
+      },
+      {
+        id: "contract_clause_groups",
+        title: "Nhóm điều khoản và điều kiện",
+        description: "Gom các điều khoản mẫu thành nhóm để chọn nhanh trên hợp đồng.",
+        icon: Layers,
+        iconClassName: "bg-amber-500/15 text-amber-600",
+        dataSource: "contract_clause_groups",
+      },
+      {
+        id: "contract_clauses",
+        title: "Điều khoản và điều kiện",
+        description: "Nội dung mẫu điều khoản gắn vào hợp đồng khi tạo / sửa.",
+        icon: ListChecks,
+        iconClassName: "bg-emerald-500/15 text-emerald-600",
+        dataSource: "contract_clauses",
       },
     ],
   },

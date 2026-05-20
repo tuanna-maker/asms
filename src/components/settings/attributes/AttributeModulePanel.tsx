@@ -1,5 +1,7 @@
 import { getAttributeModule, type AttributeModuleKey } from "@/lib/attribute-settings-config";
 import { AttributeDefinitionSection } from "@/components/settings/attributes/AttributeDefinitionSection";
+import { AttributeContractClauseSection } from "@/components/settings/attributes/AttributeContractClauseSection";
+import { AttributeContractClauseGroupSection } from "@/components/settings/attributes/AttributeContractClauseGroupSection";
 import { useRole } from "@/hooks/use-role";
 
 type AttributeModulePanelProps = {
@@ -19,14 +21,24 @@ export function AttributeModulePanel({ moduleKey }: AttributeModulePanelProps) {
           Quản lý danh mục thuộc tính cho module {moduleDef.label.toLowerCase()}.
         </p>
       </div>
-      {moduleDef.sections.map((section) => (
-        <AttributeDefinitionSection
-          key={section.id}
-          section={section}
-          definitionCategory={section.definitionCategory ?? section.id}
-          canWrite={canWrite}
-        />
-      ))}
+      {moduleDef.sections.map((section) => {
+        if (section.dataSource === "contract_clauses") {
+          return <AttributeContractClauseSection key={section.id} section={section} canWrite={canWrite} />;
+        }
+        if (section.dataSource === "contract_clause_groups") {
+          return (
+            <AttributeContractClauseGroupSection key={section.id} section={section} canWrite={canWrite} />
+          );
+        }
+        return (
+          <AttributeDefinitionSection
+            key={section.id}
+            section={section}
+            definitionCategory={section.definitionCategory ?? section.id}
+            canWrite={canWrite}
+          />
+        );
+      })}
     </div>
   );
 }

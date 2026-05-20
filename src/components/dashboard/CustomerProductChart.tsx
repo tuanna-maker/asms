@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Package } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
-import { chartPlotAreaClass } from "./chartUtils";
+import { chartPlotAreaClass, truncateChartLabel } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -19,6 +19,7 @@ interface CustomerProductChartProps {
 
 const CustomerProductChart = ({ data }: CustomerProductChartProps) => {
   const isMobile = useIsMobile();
+  const chartData = data.filter((d) => d.products > 0);
 
   return (
     <FullscreenWrapper>
@@ -29,17 +30,21 @@ const CustomerProductChart = ({ data }: CustomerProductChartProps) => {
           </div>
           <h3 className="font-semibold text-card-foreground">Sản phẩm theo khách hàng</h3>
         </div>
+        {chartData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-10">Không có dữ liệu sản phẩm theo khách hàng</p>
+        ) : (
         <div className={chartPlotAreaClass}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: isMobile ? 56 : 48 }}>
+            <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: isMobile ? 64 : 52 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis
                 dataKey="name"
                 tick={{ fontSize: isMobile ? 9 : 10, fill: "hsl(var(--muted-foreground))" }}
                 interval={0}
-                angle={isMobile ? -32 : -24}
+                angle={isMobile ? -35 : -28}
                 textAnchor="end"
-                height={isMobile ? 72 : 60}
+                height={isMobile ? 80 : 68}
+                tickFormatter={(v: string) => truncateChartLabel(v, isMobile ? 16 : 22)}
               />
               <YAxis tick={{ fontSize: isMobile ? 10 : 11, fill: "hsl(var(--muted-foreground))" }} />
               <Tooltip
@@ -53,13 +58,14 @@ const CustomerProductChart = ({ data }: CustomerProductChartProps) => {
                 labelFormatter={(_, payload) => (payload?.[0]?.payload?.name as string) ?? ""}
               />
               <Bar dataKey="products" name="Sản phẩm" radius={[4, 4, 0, 0]}>
-                {data.map((_, i) => (
+                {chartData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
+        )}
       </div>
     </FullscreenWrapper>
   );

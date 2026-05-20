@@ -6,12 +6,14 @@
  */
 import "dotenv/config";
 import { seedDataDefinitions } from "../src/config/seed-definitions";
+import { seedContractClauses } from "../src/config/seed-contract-clauses";
 import { seedAuthUsers } from "../src/config/seed-auth";
 import { seedWorkflows } from "../src/config/seed-workflows";
 
 void (async () => {
   await seedAuthUsers();
   await seedDataDefinitions();
+  await seedContractClauses();
   await seedWorkflows();
   // eslint-disable-next-line no-console
   console.log("Bootstrap complete (auth + baseline data definitions + workflows).");

@@ -22,6 +22,7 @@ import {
   Calendar as CalendarIcon, CheckCircle2, Star, Crown, Medal, Award,
 } from "lucide-react";
 import CustomerDetailDialog from "@/components/details/CustomerDetailDialog";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -313,6 +314,10 @@ const Customers = () => {
     [customers, search]
   );
 
+  const customerListPag = usePaginatedSlice(filtered, [search]);
+  const activitiesPag = usePaginatedSlice(activities, [activities.length]);
+  const contactsPag = usePaginatedSlice(contacts, [contacts.length]);
+
   const handleSave = async (updated: Customer) => {
     try {
       await updateCustomerMutation.mutateAsync({
@@ -486,7 +491,7 @@ const Customers = () => {
             <p className="text-sm text-muted-foreground">Đang tải hoạt động…</p>
           )}
           <div className="rounded-xl border border-border/50 bg-card divide-y divide-border/50">
-            {!activitiesLoading && !activitiesError && activities.map((a) => {
+            {!activitiesLoading && !activitiesError && activitiesPag.pagedItems.map((a) => {
               const meta = activityMeta[a.type];
               const Icon = meta.icon;
               return (
@@ -527,6 +532,9 @@ const Customers = () => {
               <div className="p-8 text-center text-sm text-muted-foreground">Chưa có hoạt động nào</div>
             )}
           </div>
+          {!activitiesLoading && activities.length > 0 && (
+            <PaginatedTableFooter className="mt-2" {...activitiesPag.footerProps} />
+          )}
 
           <Dialog open={activityDialogOpen} onOpenChange={setActivityDialogOpen}>
             <DialogContent className="max-w-md">
@@ -648,7 +656,7 @@ const Customers = () => {
             <p className="text-sm text-muted-foreground">Đang tải liên hệ…</p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {!contactsLoading && !contactsError && contacts.map((c) => (
+            {!contactsLoading && !contactsError && contactsPag.pagedItems.map((c) => (
               <div key={c.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
@@ -683,6 +691,9 @@ const Customers = () => {
             <div className="rounded-xl border border-dashed border-border/60 bg-muted/20 p-8 text-center text-sm text-muted-foreground">
               Chưa có liên hệ. Nhấn &quot;Thêm liên hệ&quot; để tạo trên hệ thống.
             </div>
+          )}
+          {!contactsLoading && contacts.length > 0 && (
+            <PaginatedTableFooter className="mt-2" {...contactsPag.footerProps} />
           )}
 
           <Dialog open={contactDialogOpen} onOpenChange={(o) => { setContactDialogOpen(o); if (!o) setEditingContactId(null); }}>
@@ -857,7 +868,7 @@ const Customers = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => (
+                {customerListPag.pagedItems.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium text-primary">{c.id}</TableCell>
                     <TableCell className="font-medium">{c.name}</TableCell>
@@ -886,11 +897,12 @@ const Customers = () => {
                 ))}
               </TableBody>
             </Table>
+            <PaginatedTableFooter className="px-4 pb-4" {...customerListPag.footerProps} />
           </div>
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map((c) => (
+            {customerListPag.pagedItems.map((c) => (
               <div key={c.id} className="rounded-xl border border-border/50 bg-card p-4 shadow-sm space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
@@ -916,6 +928,7 @@ const Customers = () => {
               </div>
             ))}
           </div>
+          <PaginatedTableFooter className="md:hidden mt-2" {...customerListPag.footerProps} />
         </TabsContent>
 
         {/* ---------------- Loyalty ---------------- */}

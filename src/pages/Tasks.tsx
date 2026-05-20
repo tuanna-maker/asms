@@ -17,6 +17,8 @@ import {
 } from "@/data/taskData2";
 import TaskDialog from "@/components/tasks/TaskDialog";
 import { toast } from "sonner";
+import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/list-pagination";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 type ViewMode = "kanban" | "list" | "calendar";
 const statuses: TaskItem["status"][] = ["todo", "in_progress", "review", "completed"];
@@ -82,6 +84,8 @@ const Tasks = () => {
       const matchType = filterType === "all" || tk.type === filterType;
       return matchSearch && matchPriority && matchType;
     }), [tasks, search, filterPriority, filterType]);
+
+  const tasksListPag = usePaginatedSlice(filteredTasks, [search, filterPriority, filterType]);
 
   // Stats
   const completedCount = tasks.filter(t => t.status === "completed").length;
@@ -255,7 +259,7 @@ const Tasks = () => {
                   <span className="text-xs text-muted-foreground bg-muted rounded-full px-2 py-0.5 font-mono">{statusTasks.length}</span>
                 </div>
                 <div className="space-y-2 min-h-[60px]">
-                  {statusTasks.map(tk => (
+                  {statusTasks.slice(0, DEFAULT_LIST_PAGE_SIZE).map(tk => (
                     <div
                       key={tk.id}
                       onClick={() => { setEditingTask(tk); setShowDialog(true); }}
@@ -290,6 +294,11 @@ const Tasks = () => {
                       </div>
                     </div>
                   ))}
+                  {statusTasks.length > DEFAULT_LIST_PAGE_SIZE && (
+                    <p className="text-center py-2 text-[10px] text-muted-foreground">
+                      +{statusTasks.length - DEFAULT_LIST_PAGE_SIZE} công việc — chuyển sang chế độ Danh sách
+                    </p>
+                  )}
                   {statusTasks.length === 0 && (
                     <div className="text-center py-6 text-xs text-muted-foreground/50">Trống</div>
                   )}
@@ -317,7 +326,7 @@ const Tasks = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredTasks.map(tk => {
+                {tasksListPag.pagedItems.map(tk => {
                   const isOverdue = tk.status !== "completed" && new Date(tk.deadline) < new Date();
                   return (
                     <tr
@@ -375,6 +384,7 @@ const Tasks = () => {
           {filteredTasks.length === 0 && (
             <div className="text-center py-8 text-sm text-muted-foreground">Không có công việc nào</div>
           )}
+          <PaginatedTableFooter className="px-4 pb-4" {...tasksListPag.footerProps} />
         </div>
       )}
 

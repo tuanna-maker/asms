@@ -9,9 +9,9 @@ export function mapDefinitionToAttributeRow(item: DefinitionItem): AttributeRow 
     code: item.code,
     name: item.label,
     createdAt: item.createdAt,
-    createdBy: createdByName ?? (item.isSystem ? "Hệ thống" : "—"),
+    createdBy: createdByName ?? "—",
     updatedAt: item.updatedAt,
-    updatedBy: updatedByName ?? (item.isSystem ? "Hệ thống" : "—"),
+    updatedBy: updatedByName ?? "—",
     status: item.isActive ? "active" : "inactive",
     isSystem: item.isSystem,
   };

@@ -259,6 +259,10 @@ model User {
   anniversarySubscriptions AnniversarySubscription[]
   dataDefinitionsCreated  DataDefinition[] @relation("DataDefinitionCreatedBy")
   dataDefinitionsUpdated  DataDefinition[] @relation("DataDefinitionUpdatedBy")
+  contractClausesCreated  ContractClause[] @relation("ContractClauseCreatedBy")
+  contractClausesUpdated  ContractClause[] @relation("ContractClauseUpdatedBy")
+  contractClauseGroupsCreated ContractClauseGroup[] @relation("ContractClauseGroupCreatedBy")
+  contractClauseGroupsUpdated ContractClauseGroup[] @relation("ContractClauseGroupUpdatedBy")
   workflowsCreated        WorkflowDefinition[] @relation("WorkflowDefinitionCreatedBy")
   workflowsUpdated        WorkflowDefinition[] @relation("WorkflowDefinitionUpdatedBy")
   workflowStepLogs        WorkflowStepLog[] @relation("WorkflowStepLogActor")
@@ -470,6 +474,7 @@ model Contract {
   workflowId   String?        @map("workflow_id")
   workflowInstanceId String?  @map("workflow_instance_id")
   terms        String?        @db.Text
+  clauseIds    String[]       @default([]) @map("clause_ids")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
   deletedAt    DateTime?      @map("deleted_at")
@@ -511,6 +516,68 @@ model ContractStepPayload {
   @@unique([contractId, workflowStepId], map: "uniq_contract_step_payload")
   @@index([contractId], map: "idx_contract_step_payloads_contract_id")
   @@map("contract_step_payloads")
+}
+
+/// Mẫu điều khoản & điều kiện hợp đồng (danh mục Cài đặt → Thuộc tính).
+model ContractClause {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  title       String
+  content     String    @db.Text
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  isSystem    Boolean   @default(false) @map("is_system")
+  createdById String?   @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  groupMembers ContractClauseGroupMember[]
+  createdBy    User? @relation("ContractClauseCreatedBy", fields: [createdById], references: [id])
+  updatedBy    User? @relation("ContractClauseUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([deletedAt], map: "idx_contract_clauses_deleted_at")
+  @@index([sortOrder], map: "idx_contract_clauses_sort_order")
+  @@map("contract_clauses")
+}
+
+/// Nhóm điều khoản (gom các mẫu điều khoản khi chọn trên hợp đồng).
+model ContractClauseGroup {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  label       String
+  sortOrder   Int       @default(0) @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  isSystem    Boolean   @default(false) @map("is_system")
+  createdById String?   @map("created_by_id")
+  updatedById String?   @map("updated_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  members   ContractClauseGroupMember[]
+  createdBy User? @relation("ContractClauseGroupCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("ContractClauseGroupUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([deletedAt], map: "idx_contract_clause_groups_deleted_at")
+  @@index([sortOrder], map: "idx_contract_clause_groups_sort_order")
+  @@map("contract_clause_groups")
+}
+
+model ContractClauseGroupMember {
+  id        String @id @default(cuid())
+  groupId   String @map("group_id")
+  clauseId  String @map("clause_id")
+  sortOrder Int    @default(0) @map("sort_order")
+
+  group  ContractClauseGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  clause ContractClause      @relation(fields: [clauseId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, clauseId], map: "uniq_contract_clause_group_member")
+  @@index([groupId], map: "idx_contract_clause_group_members_group_id")
+  @@index([clauseId], map: "idx_contract_clause_group_members_clause_id")
+  @@map("contract_clause_group_members")
 }
 
 model Handover {

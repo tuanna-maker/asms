@@ -244,39 +244,70 @@ const MaterialTab = ({ data, materials = [] }: MaterialTabProps) => {
     decommissioned: equipmentList.filter(e => e.status === "decommissioned").length,
   };
 
+  const statusPieData = [
+    { name: "Đang sử dụng", value: statusCounts.active },
+    { name: "Trong kho", value: statusCounts.storage },
+    { name: "Điều chuyển", value: statusCounts.transferring },
+    { name: "Sửa chữa", value: statusCounts.maintenance },
+    { name: "Thanh lý", value: statusCounts.decommissioned },
+  ].filter((d) => d.value > 0);
+
+  const statCards = [
+    { title: "Tổng thiết bị", value: equipmentList.length, icon: Monitor, color: "primary" as const },
+    { title: "Đang sử dụng", value: statusCounts.active, icon: Package, color: "success" as const },
+    { title: "Trong kho", value: statusCounts.storage, icon: Package, color: "info" as const },
+    ...(statusCounts.transferring > 0
+      ? [{ title: "Điều chuyển", value: statusCounts.transferring, icon: TrendingDown, color: "warning" as const }]
+      : []),
+    ...(statusCounts.maintenance > 0
+      ? [{ title: "Sửa chữa", value: statusCounts.maintenance, icon: Wrench, color: "destructive" as const }]
+      : []),
+  ];
+
+  const pakdUsageData = [
+    { name: "Đã sử dụng", value: usedPAKD },
+    { name: "Còn lại", value: remainingPAKD },
+  ].filter((d) => d.value > 0);
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard title="Tổng thiết bị" value={equipmentList.length} icon={Monitor} color="primary" />
-        <StatCard title="Đang sử dụng" value={statusCounts.active} icon={Package} color="success" />
-        <StatCard title="Điều chuyển" value={statusCounts.transferring} icon={TrendingDown} color="warning" />
-        <StatCard title="Sửa chữa" value={statusCounts.maintenance} icon={Wrench} color="destructive" />
+      <div
+        className={`grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 ${
+          statCards.length >= 4 ? "lg:grid-cols-4" : statCards.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-2"
+        }`}
+      >
+        {statCards.map((s) => (
+          <StatCard key={s.title} title={s.title} value={s.value} icon={s.icon} color={s.color} />
+        ))}
       </div>
 
       {/* Charts first */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <PieChartWidget
-          title="Trạng thái thiết bị"
-          icon={Monitor}
-          iconColor="bg-primary/10 text-primary"
-          data={[
-            { name: "Đang sử dụng", value: statusCounts.active },
-            { name: "Trong kho", value: statusCounts.storage },
-            { name: "Điều chuyển", value: statusCounts.transferring },
-            { name: "Sửa chữa", value: statusCounts.maintenance },
-            { name: "Thanh lý", value: statusCounts.decommissioned },
-          ]}
-        />
-        <PieChartWidget
-          title="Sử dụng vật tư (PAKD)"
-          icon={Package}
-          iconColor="bg-accent/10 text-accent"
-          data={[
-            { name: "Đã sử dụng", value: usedPAKD },
-            { name: "Còn lại", value: remainingPAKD },
-          ]}
-        />
+        {statusPieData.length > 0 ? (
+          <PieChartWidget
+            title="Trạng thái thiết bị"
+            icon={Monitor}
+            iconColor="bg-primary/10 text-primary"
+            data={statusPieData}
+          />
+        ) : (
+          <div className="rounded-xl border border-border/50 bg-card p-6 text-center text-sm text-muted-foreground">
+            Chưa có thiết bị để thống kê trạng thái.
+          </div>
+        )}
+        {pakdUsageData.length > 0 && totalPAKD > 0 ? (
+          <PieChartWidget
+            title="Sử dụng vật tư (PAKD)"
+            icon={Package}
+            iconColor="bg-accent/10 text-accent"
+            data={pakdUsageData}
+          />
+        ) : (
+          <div className="rounded-xl border border-border/50 bg-card p-6 text-center text-sm text-muted-foreground">
+            Chưa có dữ liệu PAKD vật tư.
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">

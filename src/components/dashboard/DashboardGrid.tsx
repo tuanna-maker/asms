@@ -17,8 +17,8 @@ export interface WidgetConfig {
   title: string;
   component: React.ReactNode;
   defaultLayout: { w: number; h: number; minW?: number; minH?: number };
-  /** Mặc định auto; stats/charts thường dùng visible để tránh scrollbar thừa */
-  contentOverflow?: "auto" | "visible";
+  /** Mặc định hidden — không cuộn trong ô; stats dùng visible */
+  contentOverflow?: "hidden" | "visible";
 }
 
 interface DashboardGridProps {
@@ -33,7 +33,7 @@ interface DashboardGridProps {
 const COLS = { lg: 12, md: 12, sm: 6, xs: 4, xxs: 2 };
 const ROW_HEIGHT_DESKTOP = 88;
 const ROW_HEIGHT_MOBILE = 76;
-const LAYOUT_VERSION_SUFFIX = "-layout-v3";
+const LAYOUT_VERSION_SUFFIX = "-layout-v5";
 const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }: DashboardGridProps) => {
   const layoutStorageKey = `${storageKey}${LAYOUT_VERSION_SUFFIX}`;
   const makeDefaultLayouts = buildDefaultLayouts ?? packWidgetLayouts;
@@ -196,8 +196,8 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
               </>
             )}
             <div
-              className={`h-full w-full min-h-0 flex flex-col ${
-                widget.contentOverflow === "visible" ? "overflow-visible" : "overflow-auto"
+              className={`h-full w-full min-h-0 flex flex-col overflow-hidden ${
+                widget.contentOverflow === "visible" ? "!overflow-visible" : ""
               } ${isEditing ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}
             >
               {widget.component}

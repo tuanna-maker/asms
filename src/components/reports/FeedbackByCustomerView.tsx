@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReportsEmptyState } from "@/components/reports/ReportsEmptyState";
 import { WARRANTY_TYPE_LABELS } from "@/lib/report-filters";
 import type { FeedbackByCustomerItem } from "@/hooks/use-reports-api";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 type Props = {
   items: FeedbackByCustomerItem[];
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function FeedbackByCustomerView({ items, isLoading }: Props) {
+  const tablePag = usePaginatedSlice(items);
   const top10 = items.slice(0, 10).map((i) => ({ name: i.name, tickets: i.tickets }));
   const totalTickets = items.reduce((s, i) => s + i.tickets, 0);
 
@@ -53,7 +55,7 @@ export function FeedbackByCustomerView({ items, isLoading }: Props) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((row) => (
+              {tablePag.pagedItems.map((row) => (
                 <TableRow key={row.customerId}>
                   <TableCell>{row.name}</TableCell>
                   <TableCell className="text-right">{row.tickets}</TableCell>
@@ -67,6 +69,7 @@ export function FeedbackByCustomerView({ items, isLoading }: Props) {
             </TableBody>
           </Table>
         )}
+        {items.length > 0 && <PaginatedTableFooter className="mt-3" {...tablePag.footerProps} />}
       </div>
     </div>
   );

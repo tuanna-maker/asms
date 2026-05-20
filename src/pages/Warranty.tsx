@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
       
 const priorityBadge = (p: string) => {
   const map: Record<string, { label: string; className: string }> = {
@@ -110,6 +111,106 @@ const tabStatusBadge = (status: "processing" | "completed") =>
   ) : (
     <Badge variant="default">Đang xử lý</Badge>
   );
+
+function WarrantyTicketsTabContent({
+  tab,
+  filtered,
+  isLoading,
+  isError,
+  onOpenTicket,
+}: {
+  tab: string;
+  filtered: WarrantyTicketUi[];
+  isLoading: boolean;
+  isError: boolean;
+  onOpenTicket: (t: WarrantyTicketUi, mode: "view" | "edit") => void;
+}) {
+  const items = useMemo(
+    () => (tab === "all" ? filtered : filtered.filter((t) => t.tabStatus === tab)),
+    [tab, filtered],
+  );
+  const pag = usePaginatedSlice(items, [tab, filtered]);
+
+  return (
+    <TabsContent value={tab}>
+      <div className="rounded-lg border border-border/60 overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mã phiếu</TableHead>
+              <TableHead>Khách hàng</TableHead>
+              <TableHead>Thiết bị</TableHead>
+              <TableHead>Loại</TableHead>
+              <TableHead>Ưu tiên</TableHead>
+              <TableHead className="min-w-[200px] sm:min-w-[240px]">Tiến trình</TableHead>
+              <TableHead>Đơn vị xử lý</TableHead>
+              <TableHead>SLA</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {!isLoading &&
+              pag.pagedItems.map((t) => (
+                <TableRow
+                  key={t.apiId}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => onOpenTicket(t, "view")}
+                >
+                  <TableCell className="font-medium text-primary">{t.code}</TableCell>
+                  <TableCell>{t.customer}</TableCell>
+                  <TableCell>{t.device}</TableCell>
+                  <TableCell>{typeBadge(t.type)}</TableCell>
+                  <TableCell>{priorityBadge(t.priority)}</TableCell>
+                  <TableCell className="align-top py-3">
+                    {t.workflow ? (
+                      <WarrantyListProgressPill
+                        workflow={t.workflow}
+                        emphasis={
+                          t.tabStatus === "processing" && (t.priority === "urgent" || t.priority === "high")
+                        }
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{t.assignee}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{t.sla}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onOpenTicket(t, "view")}
+                        aria-label={`Xem ticket ${t.code}`}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => onOpenTicket(t, "edit")}
+                        aria-label={`Sửa ticket ${t.code}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+      </div>
+      {!isLoading && !isError && items.length === 0 && (
+        <p className="text-sm text-muted-foreground py-4 text-center">Không có phiếu nào.</p>
+      )}
+      {items.length > 0 && <PaginatedTableFooter className="mt-3" {...pag.footerProps} />}
+    </TabsContent>
+  );
+}
 
 const Warranty = () => {
   const { role } = useRole();
@@ -339,94 +440,18 @@ const Warranty = () => {
             </TabsList>
 
             {["all", "processing", "completed"].map((tab) => (
-              <TabsContent key={tab} value={tab}>
-                <div className="rounded-lg border border-border/60 overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mã phiếu</TableHead>
-                        <TableHead>Khách hàng</TableHead>
-                        <TableHead>Thiết bị</TableHead>
-                        <TableHead>Loại</TableHead>
-                        <TableHead>Ưu tiên</TableHead>
-                        <TableHead className="min-w-[200px] sm:min-w-[240px]">Tiến trình</TableHead>
-                        <TableHead>Đơn vị xử lý</TableHead>
-                        <TableHead>SLA</TableHead>
-                        <TableHead className="text-right">Thao tác</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {!isLoading &&
-                        (tab === "all" ? filtered : filtered.filter((t) => t.tabStatus === tab)).map((t) => (
-                          <TableRow
-                            key={t.apiId}
-                            className="cursor-pointer hover:bg-muted/50"
-                            onClick={() => {
-                              setShowCreate(false);
-                              setDetailMode("view");
-                              setSelectedTicket(t);
-                            }}
-                          >
-                            <TableCell className="font-medium text-primary">{t.code}</TableCell>
-                            <TableCell>{t.customer}</TableCell>
-                            <TableCell>{t.device}</TableCell>
-                            <TableCell>{typeBadge(t.type)}</TableCell>
-                            <TableCell>{priorityBadge(t.priority)}</TableCell>
-                            <TableCell className="align-top py-3">
-                              {t.workflow ? (
-                                <WarrantyListProgressPill
-                                  workflow={t.workflow}
-                                  emphasis={
-                                    t.tabStatus === "processing" && (t.priority === "urgent" || t.priority === "high")
-                                  }
-                                />
-                              ) : (
-                                <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{t.assignee}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{t.sla}</Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => {
-                                    setShowCreate(false);
-                                    setDetailMode("edit");
-                                    setSelectedTicket(t);
-                                  }}
-                                  aria-label={`Xem ticket ${t.code}`}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => {
-                                    setShowCreate(false);
-                                    setDetailMode("edit");
-                                    setSelectedTicket(t);
-                                  }}
-                                  aria-label={`Sửa ticket ${t.code}`}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                {!isLoading && !isError && filtered.length === 0 && (
-                  <p className="text-sm text-muted-foreground py-4 text-center">Không có phiếu nào.</p>
-                )}
-              </TabsContent>
+              <WarrantyTicketsTabContent
+                key={tab}
+                tab={tab}
+                filtered={filtered}
+                isLoading={isLoading}
+                isError={isError}
+                onOpenTicket={(t, mode) => {
+                  setShowCreate(false);
+                  setDetailMode(mode);
+                  setSelectedTicket(t);
+                }}
+              />
             ))}
           </Tabs>
         </CardContent>

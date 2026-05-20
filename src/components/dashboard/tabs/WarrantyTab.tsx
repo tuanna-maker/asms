@@ -87,13 +87,27 @@ const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
         ]} />
     ),
     "trend": <TrendChart data={data.trend} />,
-    "table": <DashboardTable title="Danh sách khiếu nại / bảo hành" columns={complaintCols} data={complaints} />,
+    "table": (
+      <DashboardTable
+        title="Danh sách khiếu nại / bảo hành"
+        columns={complaintCols}
+        data={complaints}
+        compact
+      />
+    ),
   }), [complaints, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {
       const tpl = widgetTemplates.find(t => t.id === id);
-      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 } };
+      return {
+        id,
+        type: id,
+        title: tpl?.title || id,
+        component: widgetComponents[id],
+        contentOverflow: id === "stats" ? "visible" : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 },
+      };
     }), [activeWidgetIds, widgetComponents]);
 
   return (

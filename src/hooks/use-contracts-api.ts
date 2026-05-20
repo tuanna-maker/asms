@@ -17,6 +17,7 @@ export type ContractPayload = {
   workflowId?: string;
   stepPayloads?: Record<string, Record<string, unknown>>;
   terms?: string | null;
+  clauseIds?: string[];
   contractTypeCode?: string | null;
 };
 

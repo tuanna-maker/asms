@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; displayStatus: string; progress: number; terms?: string | null;
@@ -182,11 +184,26 @@ const Contracts = () => {
   const deleteContractMutation = useDeleteContract();
   const contractsWithProductTotals = contracts;
 
-  const filtered = contractsWithProductTotals.filter((c) => {
-    const id = String(c.id ?? "").toLowerCase();
-    const customer = String(c.customer ?? "").toLowerCase();
-    const keyword = search.toLowerCase();
-    return id.includes(keyword) || customer.includes(keyword);
+  const filtered = useMemo(
+    () =>
+      contractsWithProductTotals.filter((c) => {
+        const id = String(c.id ?? "").toLowerCase();
+        const customer = String(c.customer ?? "").toLowerCase();
+        const keyword = search.toLowerCase();
+        return id.includes(keyword) || customer.includes(keyword);
+      }),
+    [contractsWithProductTotals, search],
+  );
+
+  const {
+    pagedItems: pagedContracts,
+    page: contractPage,
+    setPage: setContractPage,
+    totalPages: contractTotalPages,
+    total: contractTotal,
+    pageSize: contractPageSize,
+  } = useListPagination(filtered, {
+    resetDeps: [search, typeFilter, statusFilter, signedFrom, signedTo, createdFromContract, createdToContract],
   });
 
   const handleContractSaved = (patch: { id: string; contractTypeCode: string | null }) => {
@@ -341,13 +358,23 @@ const Contracts = () => {
         </div>
       </div>
 
-      <ContractTable
-        contracts={filtered}
-        contractTypeOptions={contractTypeOptions}
-        onView={setEditingContract}
-        onEdit={setEditingContract}
-        onRequestDelete={setDeletingContractId}
-      />
+      <div className="space-y-0">
+        <ContractTable
+          contracts={pagedContracts}
+          contractTypeOptions={contractTypeOptions}
+          onView={setEditingContract}
+          onEdit={setEditingContract}
+          onRequestDelete={setDeletingContractId}
+        />
+        <ListPaginationBar
+          className="rounded-b-xl border border-t-0 border-border/50 bg-card px-4 pb-4"
+          page={contractPage}
+          totalPages={contractTotalPages}
+          totalItems={contractTotal}
+          pageSize={contractPageSize}
+          onPageChange={setContractPage}
+        />
+      </div>
 
       <ContractEditDialog
         contract={editingContract}

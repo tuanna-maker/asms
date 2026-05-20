@@ -220,6 +220,10 @@
 .dashboard-grid .react-grid-item {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+.dashboard-grid .react-grid-item > div {
+  overflow: hidden;
 }
 .dashboard-grid .react-grid-item > .react-resizable-handle {
   flex-shrink: 0;

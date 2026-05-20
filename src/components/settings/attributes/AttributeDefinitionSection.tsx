@@ -94,7 +94,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(10);
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZE_OPTIONS)[number]>(20);
   const [createOpen, setCreateOpen] = useState(false);
   const [editRow, setEditRow] = useState<DefinitionItem | null>(null);
   const [deleteRow, setDeleteRow] = useState<DefinitionItem | null>(null);
@@ -482,7 +482,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="space-y-1.5">
-              <Label htmlFor="attr-def-code">Mã (lưu hệ thống)</Label>
+              <Label htmlFor="attr-def-code">Mã</Label>
               <Input
                 id="attr-def-code"
                 value={createForm.code}
@@ -534,18 +534,13 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
           </DialogHeader>
           <div className="space-y-3 py-1">
             <div className="space-y-1.5">
-              <Label htmlFor="attr-edit-code">Mã (lưu hệ thống)</Label>
+              <Label htmlFor="attr-edit-code">Mã</Label>
               <Input
                 id="attr-edit-code"
                 value={editForm.code}
-                disabled={editRow?.isSystem}
                 onChange={(e) => setEditForm((s) => ({ ...s, code: e.target.value }))}
               />
-              {editRow?.isSystem ? (
-                <p className="text-xs text-muted-foreground">Mục hệ thống — không đổi mã.</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">{definitionCodeHint(definitionCategory)}</p>
-              )}
+              <p className="text-xs text-muted-foreground">{definitionCodeHint(definitionCategory)}</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="attr-edit-label">Tên hiển thị</Label>
@@ -653,14 +648,7 @@ function AttributeTableRow({
       ) : null}
       <TableCell>{index + 1}</TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{row.code}</TableCell>
-      <TableCell className="font-medium">
-        <span>{row.name}</span>
-        {row.isSystem ? (
-          <Badge variant="outline" className="ml-2 border-primary/30 text-primary">
-            Hệ thống
-          </Badge>
-        ) : null}
-      </TableCell>
+      <TableCell className="font-medium">{row.name}</TableCell>
       <TableCell>{row.updatedBy || "—"}</TableCell>
       <TableCell>{formatDate(row.updatedAt)}</TableCell>
       <TableCell>

@@ -42,6 +42,12 @@ export const qk = {
     detail: (id: string) => ["materials", id] as const,
     transfers: ["materials", "transfers"] as const,
   },
+  contractClauses: {
+    all: ["contract-clauses"] as const,
+    list: (scope: "active" | "all") => ["contract-clauses", scope] as const,
+    usage: (id: string) => ["contract-clauses", "usage", id] as const,
+    groups: (scope: "active" | "all") => ["contract-clause-groups", scope] as const,
+  },
   definitions: {
     all: ["definitions"] as const,
     list: (category: string, scope: "active" | "all") => ["definitions", category, scope] as const,

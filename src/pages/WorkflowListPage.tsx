@@ -34,6 +34,8 @@ import {
   type WorkflowListItem,
   type WorkflowModuleKey,
 } from "@/hooks/use-workflows-api";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
@@ -89,6 +91,16 @@ const WorkflowListPage = () => {
   const [form, setForm] = useState({ name: "", description: "", isActive: true });
 
   const rows = useMemo(() => workflows, [workflows]);
+
+  const {
+    pagedItems: pagedRows,
+    page: wfPage,
+    setPage: setWfPage,
+    totalPages: wfTotalPages,
+    total: wfTotal,
+    pageSize: wfPageSize,
+    startIndex: wfStartIndex,
+  } = useListPagination(rows);
 
   if (!validKey) {
     return (
@@ -195,9 +207,9 @@ const WorkflowListPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row, index) => (
+              pagedRows.map((row, index) => (
                 <TableRow key={row.id}>
-                  <TableCell>{index + 1}</TableCell>
+                  <TableCell>{wfStartIndex + index + 1}</TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">{row.code}</TableCell>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
@@ -243,6 +255,15 @@ const WorkflowListPage = () => {
             )}
           </TableBody>
         </Table>
+        <ListPaginationBar
+          className="px-4 pb-4"
+          page={wfPage}
+          totalPages={wfTotalPages}
+          totalItems={wfTotal}
+          pageSize={wfPageSize}
+          onPageChange={setWfPage}
+          disabled={isLoading}
+        />
       </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

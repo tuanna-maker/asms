@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useCreateDocument, useDeleteDocument, useUpdateDocument } from "@/hooks/use-documents-api";
@@ -17,6 +17,8 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
 interface DocItem {
   id: string;
@@ -112,14 +114,27 @@ const Documents = () => {
     reports: docs.filter(d => d.category === "report").length,
   };
 
-  const filtered = docs.filter(d => {
-    if (tab !== "all" && d.category !== tab) return false;
-    if (search) {
-      const s = search.toLowerCase();
-      if (!d.name.toLowerCase().includes(s) && !d.tags.some(t => t.toLowerCase().includes(s))) return false;
-    }
-    return true;
-  });
+  const filtered = useMemo(
+    () =>
+      docs.filter((d) => {
+        if (tab !== "all" && d.category !== tab) return false;
+        if (search) {
+          const s = search.toLowerCase();
+          if (!d.name.toLowerCase().includes(s) && !d.tags.some((t) => t.toLowerCase().includes(s))) return false;
+        }
+        return true;
+      }),
+    [docs, tab, search],
+  );
+
+  const {
+    pagedItems: pagedDocs,
+    page: docPage,
+    setPage: setDocPage,
+    totalPages: docTotalPages,
+    total: docTotal,
+    pageSize: docPageSize,
+  } = useListPagination(filtered, { resetDeps: [search, tab] });
 
   const openCreate = () => {
     setEditingId(null);
@@ -222,7 +237,7 @@ const Documents = () => {
               <div className="text-center py-12 text-muted-foreground">Không có tài liệu nào</div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filtered.map((d) => (
+                {pagedDocs.map((d) => (
                   <Card key={d.id} className="p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0">{fileIcon(d.fileType)}</div>
@@ -251,6 +266,14 @@ const Documents = () => {
                 ))}
               </div>
             )}
+            <ListPaginationBar
+              className="mt-4"
+              page={docPage}
+              totalPages={docTotalPages}
+              totalItems={docTotal}
+              pageSize={docPageSize}
+              onPageChange={setDocPage}
+            />
           </TabsContent>
         </Tabs>
       </Card>

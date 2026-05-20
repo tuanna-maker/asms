@@ -28,7 +28,7 @@ const ProductManufacturingWidget = ({ data }: ProductManufacturingWidgetProps) =
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-0 flex flex-col">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Factory className="h-5 w-5" />
@@ -37,7 +37,7 @@ const ProductManufacturingWidget = ({ data }: ProductManufacturingWidgetProps) =
           <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 min-h-0 overflow-y-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-hidden">
           <div className="rounded-lg bg-secondary/40 p-3">
             <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
               <Package className="h-3.5 w-3.5" /> Số lượng

@@ -33,12 +33,14 @@ import { useProductsList } from "@/hooks/use-products-api";
 import type { ProductSpec } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { api } from "@/lib/api";
+import { ContractTermsPicker } from "@/components/contracts/ContractTermsPicker";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
   startDate: string; endDate: string; warrantyEnd: string; status: string; displayStatus?: string; progress: number;
   endReminderDays?: number;
   terms?: string | null;
+  clauseIds?: string[];
   contractTypeCode?: string | null;
 };
 
@@ -81,6 +83,7 @@ type ContractDetailData = {
   customer?: { id: string; code: string; name: string };
   title?: string;
   terms?: string | null;
+  clauseIds?: string[];
   contractTypeCode?: string | null;
   status?: string;
   displayStatus?: string;
@@ -164,17 +167,6 @@ function toDocType(file: File): "pdf" | "doc" | "xls" | "img" | "other" {
   return "other";
 }
 
-function splitTerms(value: string | null | undefined) {
-  const text = (value ?? "").replace(/\r\n/g, "\n").trim();
-  if (!text) return [""];
-  return text.split(/\n\s*\n/).map((item) => item.trim()).filter(Boolean);
-}
-
-function joinTerms(items: string[]) {
-  const text = items.map((item) => item.trim()).filter(Boolean).join("\n\n");
-  return text || null;
-}
-
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "response" in error) {
     const r = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
@@ -211,7 +203,7 @@ const ContractEditDialog = ({
     terms: "",
     contractTypeCode: "",
   });
-  const [termItems, setTermItems] = useState<string[]>([""]);
+  const [selectedClauseIds, setSelectedClauseIds] = useState<string[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [addQuantity, setAddQuantity] = useState("1");
   const [docName, setDocName] = useState("");
@@ -271,7 +263,7 @@ const ContractEditDialog = ({
       terms: contract.terms ?? "",
       contractTypeCode: contract.contractTypeCode ?? "",
     });
-    setTermItems(splitTerms(contract.terms));
+    setSelectedClauseIds(contract.clauseIds ?? []);
   }, [open, contract?.id, isCreateMode]);
 
   useEffect(() => {
@@ -297,7 +289,7 @@ const ContractEditDialog = ({
       terms: "",
       contractTypeCode: "",
     });
-    setTermItems([""]);
+    setSelectedClauseIds([]);
     setSelectedProductId("");
     setAddQuantity("1");
     setDocName("");
@@ -314,9 +306,9 @@ const ContractEditDialog = ({
 
   useEffect(() => {
     if (!open || isCreateMode) return;
-    const terms = detail?.terms ?? contract?.terms ?? "";
-    setTermItems(splitTerms(terms));
-  }, [open, detail?.terms, contract?.terms, isCreateMode]);
+    const ids = detail?.clauseIds;
+    if (Array.isArray(ids)) setSelectedClauseIds(ids);
+  }, [open, detail?.clauseIds, isCreateMode]);
 
   useEffect(() => {
     if (!open || isCreateMode || !detail) return;
@@ -476,7 +468,7 @@ const ContractEditDialog = ({
         endReminderDays: Math.max(0, Number(form.endReminderDays) || 7),
         workflowId: selectedWorkflowId,
         ...(payloadsToSend ? { stepPayloads: payloadsToSend } : {}),
-        terms: joinTerms(termItems),
+        clauseIds: selectedClauseIds,
         ...(form.contractTypeCode.trim() ? { contractTypeCode: form.contractTypeCode.trim() } : {}),
         ...(form.terminalStatus !== "__none__" ? { status: form.terminalStatus } : {}),
       });
@@ -547,14 +539,6 @@ const ContractEditDialog = ({
     setDraftProducts((items) => items.filter((item) => item.id !== productId));
   };
 
-  const handleChangeTerm = (index: number, value: string) => {
-    setTermItems((items) => items.map((item, i) => (i === index ? value : item)));
-  };
-
-  const handleAddTerm = () => {
-    setTermItems((items) => [...items, ""]);
-  };
-
   const handleSaveContract = async () => {
     if (isCreateMode || !contractCode) return;
     if (!form.startDate || !form.endDate) {
@@ -577,7 +561,7 @@ const ContractEditDialog = ({
           ...(!hasWorkflowProgress
             ? { progress: Math.min(100, Math.max(0, Number(form.progress) || 0)) }
             : {}),
-          terms: joinTerms(termItems),
+          clauseIds: selectedClauseIds,
           contractTypeCode: savedTypeCode,
           ...(form.terminalStatus === "completed" || form.terminalStatus === "liquidated"
             ? { status: form.terminalStatus }
@@ -807,30 +791,21 @@ const ContractEditDialog = ({
           <TabsContent value="terms" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-4">
             {isCreateMode && (
               <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                Bạn có thể nhập điều khoản trước; dữ liệu sẽ lưu khi bấm "Tạo hợp đồng".
+                Chọn điều khoản từ danh mục; nội dung lưu khi bấm &quot;Tạo hợp đồng&quot;.
               </div>
             )}
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h4 className="text-sm font-semibold text-card-foreground">Điều khoản & điều kiện</h4>
-                <p className="text-xs text-muted-foreground">Mỗi điều khoản được nhập trong một trường riêng.</p>
+            {!isCreateMode && (detail?.clauseIds?.length ?? 0) === 0 && termsText ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+                Hợp đồng có nội dung điều khoản cũ (nhập tay). Chọn lại từ danh mục bên dưới để đồng bộ.
+                <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{termsText}</p>
               </div>
-              <Button size="sm" onClick={handleAddTerm}>
-                Thêm điều khoản
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {termItems.map((term, index) => (
-                <div key={index} className="rounded-lg border border-border/60 bg-card p-3 space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground">Điều khoản {index + 1}</p>
-                  <Textarea
-                    rows={3}
-                    value={term}
-                    onChange={(e) => handleChangeTerm(index, e.target.value)}
-                    placeholder={termsText ? undefined : "Nhập nội dung điều khoản..."}
-                  />
-                </div>
-              ))}
+            ) : null}
+            <div>
+              <h4 className="text-sm font-semibold text-card-foreground mb-1">Điều khoản & điều kiện</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Tích nhóm hoặc từng điều khoản cần áp dụng cho hợp đồng.
+              </p>
+              <ContractTermsPicker value={selectedClauseIds} onChange={setSelectedClauseIds} />
             </div>
           </TabsContent>
 

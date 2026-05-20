@@ -28,7 +28,7 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
           <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
         </div>
 
-        <div className="space-y-3 flex-1 min-h-0 overflow-y-auto">
+        <div className="space-y-3 flex-1 min-h-0 overflow-hidden">
           {items.map((item, i) => {
             const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
             return (

@@ -1,6 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportsEmptyState } from "@/components/reports/ReportsEmptyState";
 import type { ReportsApi } from "@/hooks/use-reports-api";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 type Props = {
   reports?: ReportsApi;
@@ -9,6 +10,7 @@ type Props = {
 
 export function UnitPerformanceTab({ reports, isLoading }: Props) {
   const unitPerformance = reports?.unit_performance ?? [];
+  const listPag = usePaginatedSlice(unitPerformance);
 
   if (isLoading) {
     return <p className="text-sm text-muted-foreground py-8">Đang tải...</p>;
@@ -24,7 +26,7 @@ export function UnitPerformanceTab({ reports, isLoading }: Props) {
       ) : (
         <>
           <div className="space-y-4 lg:hidden">
-            {unitPerformance.map((u) => (
+            {listPag.pagedItems.map((u) => (
               <UnitCard key={u.unit} unit={u} />
             ))}
           </div>
@@ -40,7 +42,7 @@ export function UnitPerformanceTab({ reports, isLoading }: Props) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {unitPerformance.map((u) => (
+                {listPag.pagedItems.map((u) => (
                   <TableRow key={u.unit}>
                     <TableCell>{u.unit}</TableCell>
                     <TableCell className="text-right">{u.tasks}</TableCell>
@@ -51,7 +53,9 @@ export function UnitPerformanceTab({ reports, isLoading }: Props) {
                 ))}
               </TableBody>
             </Table>
+            <PaginatedTableFooter className="mt-3" {...listPag.footerProps} />
           </div>
+          <PaginatedTableFooter className="lg:hidden mt-3" {...listPag.footerProps} />
         </>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -9,6 +10,7 @@ import {
   useSessions,
   type SessionItem,
 } from "@/hooks/use-sessions-api";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 function errMessage(e: unknown) {
   if (e && typeof e === "object" && "response" in e) {
@@ -36,6 +38,7 @@ type Props = { enabled: boolean };
 
 export function SessionsTab({ enabled }: Props) {
   const { data: sessions = [], isLoading, isError, error, refetch, isFetching } = useSessions(enabled);
+  const sessionsPag = usePaginatedSlice(sessions);
   const revoke = useRevokeSession();
   const logoutAll = useLogoutAll();
 
@@ -101,7 +104,7 @@ export function SessionsTab({ enabled }: Props) {
               <TableCell colSpan={6} className="text-center text-muted-foreground py-8">Không có phiên đang hoạt động.</TableCell>
             </TableRow>
           ) : (
-            sessions.map((s) => (
+            sessionsPag.pagedItems.map((s) => (
               <TableRow key={s.id}>
                 <TableCell className="text-sm">
                   <div className="font-medium flex items-center gap-2">
@@ -129,6 +132,11 @@ export function SessionsTab({ enabled }: Props) {
           )}
         </TableBody>
       </Table>
+      <PaginatedTableFooter
+        className="px-4 pb-4"
+        {...sessionsPag.footerProps}
+        disabled={isLoading || isFetching}
+      />
     </div>
   );
 }

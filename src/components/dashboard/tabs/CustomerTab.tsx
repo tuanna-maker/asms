@@ -34,7 +34,12 @@ const widgetTemplates = [
 
 const CustomerTab = ({ data }: CustomerTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
+    "stats",
+    "chart-product",
+    "chart-revenue",
+    "customer-care",
+  ]);
 
   const totalCustomerProducts = data.customerProducts.reduce((s, c) => s + c.products, 0);
   const totalRevenue = data.customerRevenue.reduce((s, c) => s + c.revenue, 0);
@@ -67,9 +72,30 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
     ),
     "chart-product": <CustomerProductChart data={data.customerProducts} />,
     "chart-revenue": <CustomerRevenueChart data={data.customerRevenue} />,
-    "pie-product": <PieChartWidget title="Tỷ lệ SP theo KH" icon={Users} iconColor="bg-primary/10 text-primary" data={data.customerProducts.map(c => ({ name: c.name, value: c.products }))} />,
-    "pie-revenue": <PieChartWidget title="Tỷ lệ DT theo KH" icon={TrendingUp} iconColor="bg-success/10 text-success" data={data.customerRevenue.map(c => ({ name: c.name, value: c.revenue }))} />,
-    "table": <DashboardTable title="Chi tiết khách hàng" columns={columns} data={customerSummary} />,
+    "pie-product": (
+      <PieChartWidget
+        title="Tỷ lệ SP theo KH"
+        icon={Users}
+        iconColor="bg-primary/10 text-primary"
+        data={data.customerProducts.map((c) => ({ name: c.name, value: c.products }))}
+      />
+    ),
+    "pie-revenue": (
+      <PieChartWidget
+        title="Tỷ lệ DT theo KH"
+        icon={TrendingUp}
+        iconColor="bg-success/10 text-success"
+        data={data.customerRevenue.map((c) => ({ name: c.name, value: c.revenue }))}
+      />
+    ),
+    "table": (
+      <DashboardTable
+        title="Chi tiết khách hàng"
+        columns={columns}
+        data={customerSummary}
+        compact
+      />
+    ),
     "customer-care": <CustomerCareWidget customerCare={data.customerCare} />,
   }), [data, customerSummary, columns, topCustomer, totalCustomerProducts, totalRevenue]);
 
@@ -82,7 +108,7 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
         type: id,
         title: tpl?.title || id,
         component: widgetComponents[id],
-        contentOverflow: id === "stats" ? "visible" : undefined,
+        contentOverflow: id === "stats" ? "visible" : "hidden",
         defaultLayout: {
           w: tpl?.defaultSize.w || 6,
           h: defaultH,

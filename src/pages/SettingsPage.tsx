@@ -36,6 +36,7 @@ import { RolesTab } from "@/components/settings/RolesTab";
 import { AuditLogsTab } from "@/components/settings/AuditLogsTab";
 import { SystemSettingsTab } from "@/components/settings/SystemSettingsTab";
 import { SessionsTab } from "@/components/settings/SessionsTab";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 const roleBadge = (roleCode: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
@@ -177,6 +178,7 @@ const SettingsPage = () => {
   const { role } = useRole();
   const canWriteUsers = role === "admin";
   const { data: users = [], isLoading, isError, error, refetch } = useUsersList(!authLoading && isAuthenticated);
+  const usersPag = usePaginatedSlice(users);
   const location = useLocation();
   const navigate = useNavigate();
   const urlParams = new URLSearchParams(location.search);
@@ -376,7 +378,7 @@ const SettingsPage = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((u) => (
+                  usersPag.pagedItems.map((u) => (
                     <TableRow key={u.id}>
                       <TableCell className="font-medium">{u.fullName}</TableCell>
                       <TableCell className="text-muted-foreground">{u.email}</TableCell>
@@ -408,6 +410,7 @@ const SettingsPage = () => {
                 )}
               </TableBody>
             </Table>
+            <PaginatedTableFooter className="px-4 pb-4" {...usersPag.footerProps} disabled={isLoading} />
           </div>
         </TabsContent>
 

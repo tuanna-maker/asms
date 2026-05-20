@@ -15,6 +15,10 @@ import {
   upsertStepPayloads,
   type ContractStepPayloadJson,
 } from "./step-payload";
+import {
+  assertActiveClauseIds,
+  buildTermsFromClauseIds,
+} from "../contract-clauses/build-terms";
 
 function genContractCode() {
   return `HD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -65,6 +69,16 @@ async function initContractWorkflow(
     console.warn("[contract] workflow init failed", e);
     return false;
   }
+}
+
+async function resolveClauseFields(clauseIds: string[] | undefined): {
+  clauseIds?: string[];
+  terms?: string | null;
+} {
+  if (clauseIds === undefined) return {};
+  await assertActiveClauseIds(clauseIds);
+  const { orderedIds, terms } = await buildTermsFromClauseIds(clauseIds);
+  return { clauseIds: orderedIds, terms };
 }
 
 async function assertActiveContractTypeCode(code: string) {
@@ -149,6 +163,7 @@ export async function listContractsService(filters: {
       workflowId: true,
       workflowInstanceId: true,
       terms: true,
+      clauseIds: true,
       customerId: true,
       customer: { select: { id: true, code: true, name: true } },
       workflow: {
@@ -296,6 +311,7 @@ export async function createContractService(payload: {
   workflowId?: string;
   stepPayloads?: Record<string, ContractStepPayloadJson>;
   terms?: string | null;
+  clauseIds?: string[];
   contractTypeCode?: string | null;
   createdById: string;
   actorId?: string | null;
@@ -304,6 +320,7 @@ export async function createContractService(payload: {
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
+  const clauseFields = await resolveClauseFields(payload.clauseIds);
   const terminalStatus = sanitizeStoredContractStatus(payload.status);
   const workflowId = payload.workflowId ?? (await getContractFallbackWorkflowId());
   const created = await prisma.contract.create({
@@ -321,7 +338,11 @@ export async function createContractService(payload: {
       ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
       ...(workflowId ? { workflowId } : {}),
       ...(!workflowId && payload.progress !== undefined ? { progress: payload.progress } : {}),
-      ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
+      ...(clauseFields.clauseIds !== undefined
+        ? { clauseIds: clauseFields.clauseIds, terms: clauseFields.terms }
+        : payload.terms !== undefined
+          ? { terms: payload.terms }
+          : {}),
       ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
     include: {
@@ -357,6 +378,7 @@ type UpdateContractPayload = Partial<{
   progress: number;
   stepPayloads: Record<string, ContractStepPayloadJson>;
   terms: string | null;
+  clauseIds?: string[];
   contractTypeCode: string | null;
   actorId: string | null;
 }>;
@@ -367,6 +389,8 @@ export async function updateContractService(id: string, payload: UpdateContractP
   if (payload.contractTypeCode) {
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
+
+  const clauseFields = await resolveClauseFields(payload.clauseIds);
 
   const existing = await prisma.contract.findFirst({
     where: { id: resolvedId, deletedAt: null },
@@ -388,7 +412,11 @@ export async function updateContractService(id: string, payload: UpdateContractP
       ...(payload.endReminderDays !== undefined ? { endReminderDays: payload.endReminderDays } : {}),
       ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
       ...(!hasWorkflow && payload.progress !== undefined ? { progress: payload.progress } : {}),
-      ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
+      ...(clauseFields.clauseIds !== undefined
+        ? { clauseIds: clauseFields.clauseIds, terms: clauseFields.terms }
+        : payload.terms !== undefined
+          ? { terms: payload.terms }
+          : {}),
       ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
   });

@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { LucideIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
-import { chartPlotAreaClass } from "./chartUtils";
+import { chartPlotAreaClass, filterNonZeroChartData } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -21,9 +21,10 @@ interface PieChartWidgetProps {
 }
 
 const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetProps) => {
-  const total = data.reduce((s, d) => s + d.value, 0);
+  const chartData = filterNonZeroChartData(data);
+  const total = chartData.reduce((s, d) => s + d.value, 0);
   const isMobile = useIsMobile();
-  const compactData = data.slice(0, 8);
+  const compactData = chartData.slice(0, 8);
 
   return (
     <FullscreenWrapper>

@@ -1,6 +1,8 @@
-import { Users, Cake, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Users, Cake } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import FullscreenWrapper from "./FullscreenWrapper";
+import DashboardPagination from "./DashboardPagination";
 import type { DashboardData } from "@/data/dashboardData";
 
 const ANNIVERSARY_LABELS: Record<string, string> = {
@@ -10,7 +12,8 @@ const ANNIVERSARY_LABELS: Record<string, string> = {
   other: "Kỷ niệm khác",
 };
 
-const CARE_TYPE_ORDER = ["traditional_day", "medal_day", "leader_birthday", "other"] as const;
+const CUSTOMERS_PER_PAGE = 20;
+const ANNIVERSARIES_MAX = 20;
 
 function formatRevenueMillion(vnd: number): string {
   return `${Math.round(vnd / 1_000_000).toLocaleString()} tr`;
@@ -21,20 +24,25 @@ interface CustomerCareWidgetProps {
 }
 
 const CustomerCareWidget = ({ customerCare }: CustomerCareWidgetProps) => {
-  const customers = customerCare.customerBreakdown
-    .slice()
-    .sort((a, b) => b.revenue - a.revenue);
+  const [customerPage, setCustomerPage] = useState(1);
 
-  const anniversariesByType = CARE_TYPE_ORDER.map((type) => ({
-    type,
-    label: ANNIVERSARY_LABELS[type] ?? type,
-    items: customerCare.upcomingAnniversaries.filter((a) => a.type === type),
-  })).filter((g) => g.items.length > 0);
+  const customers = useMemo(
+    () => customerCare.customerBreakdown.slice().sort((a, b) => b.revenue - a.revenue),
+    [customerCare.customerBreakdown],
+  );
+
+  const customerTotalPages = Math.max(1, Math.ceil(customers.length / CUSTOMERS_PER_PAGE));
+  const pageCustomers = customers.slice(
+    (customerPage - 1) * CUSTOMERS_PER_PAGE,
+    customerPage * CUSTOMERS_PER_PAGE,
+  );
+
+  const anniversaries = customerCare.upcomingAnniversaries.slice(0, ANNIVERSARIES_MAX);
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full flex flex-col min-h-0">
-        <div className="flex items-center gap-3 mb-4 shrink-0">
+      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full flex flex-col min-h-0 overflow-hidden">
+        <div className="flex items-center gap-3 mb-3 shrink-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600">
             <Users className="h-5 w-5" />
           </div>
@@ -46,16 +54,16 @@ const CustomerCareWidget = ({ customerCare }: CustomerCareWidgetProps) => {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto space-y-4 min-h-0">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col gap-3">
+          <div className="min-h-0 flex flex-col">
+            <p className="text-xs font-medium text-muted-foreground mb-2 shrink-0">
               Doanh thu / chi phí / SP bàn giao (triệu đồng)
             </p>
-            <div className="rounded-lg border border-border/50 divide-y divide-border/50 max-h-48 overflow-y-auto">
-              {customers.length === 0 ? (
+            <div className="rounded-lg border border-border/50 divide-y divide-border/50 min-h-0 overflow-hidden">
+              {pageCustomers.length === 0 ? (
                 <p className="text-sm text-muted-foreground p-3 text-center">Chưa có dữ liệu</p>
               ) : (
-                customers.map((c) => (
+                pageCustomers.map((c) => (
                   <div key={c.id} className="p-2.5 text-xs grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
                     <span className="font-medium text-card-foreground truncate">{c.name}</span>
                     <span className="text-muted-foreground text-right">DT: {formatRevenueMillion(c.revenue)}</span>
@@ -82,57 +90,33 @@ const CustomerCareWidget = ({ customerCare }: CustomerCareWidgetProps) => {
                 ))
               )}
             </div>
+            {customers.length > 0 && (
+              <DashboardPagination
+                page={customerPage}
+                totalPages={customerTotalPages}
+                totalItems={customers.length}
+                pageSize={CUSTOMERS_PER_PAGE}
+                onPageChange={setCustomerPage}
+                className="mt-2"
+              />
+            )}
           </div>
 
-          {anniversariesByType.length > 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Hoạt động chăm sóc (30 ngày tới)</p>
-              <div className="space-y-3">
-                {anniversariesByType.map((group) => (
-                  <div key={group.type}>
-                    <p className="text-[11px] font-medium text-card-foreground mb-1">{group.label}</p>
-                    <ul className="space-y-1.5">
-                      {group.items.slice(0, 5).map((a, i) => (
-                        <li key={`${a.customerId}-${i}`} className="flex items-start gap-2 text-xs">
-                          <Cake className="h-3.5 w-3.5 text-violet-500 shrink-0 mt-0.5" />
-                          <span>
-                            <span className="font-medium text-card-foreground">{a.customerName}</span>
-                            {a.label && a.label !== group.label ? ` — ${a.label}` : ""}
-                            <span className="text-muted-foreground"> ({a.daysUntil} ngày)</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {customerCare.upcomingAnniversaries.length === 0 && anniversariesByType.length === 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                <Cake className="h-3.5 w-3.5" /> Kỷ niệm sắp tới
+          {anniversaries.length > 0 && (
+            <div className="shrink-0 border-t border-border/50 pt-2">
+              <p className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1">
+                <Cake className="h-3.5 w-3.5" /> Kỷ niệm (30 ngày tới)
+                {customerCare.upcomingAnniversaries.length > ANNIVERSARIES_MAX && (
+                  <span className="text-[10px]">+{customerCare.upcomingAnniversaries.length - ANNIVERSARIES_MAX} nữa</span>
+                )}
               </p>
-              <p className="text-sm text-muted-foreground">Không có kỷ niệm trong 30 ngày tới</p>
-            </div>
-          )}
-
-          {customerCare.upcomingAnniversaries.length > 0 && anniversariesByType.length === 0 && (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
-                <AlertTriangle className="h-3.5 w-3.5" /> Kỷ niệm sắp tới (30 ngày)
-              </p>
-              <ul className="space-y-2 max-h-32 overflow-y-auto">
-                {customerCare.upcomingAnniversaries.slice(0, 8).map((a, i) => (
-                  <li key={`${a.customerId}-${a.type}-${i}`} className="flex items-start gap-2 text-xs">
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
-                    <span>
-                      <span className="font-medium text-card-foreground">{a.customerName}</span>
-                      {" — "}
-                      {ANNIVERSARY_LABELS[a.type] ?? a.label}
-                      <span className="text-muted-foreground"> ({a.daysUntil} ngày)</span>
-                    </span>
+              <ul className="space-y-1">
+                {anniversaries.map((a, i) => (
+                  <li key={`${a.customerId}-${a.type}-${i}`} className="text-xs truncate">
+                    <span className="font-medium text-card-foreground">{a.customerName}</span>
+                    {" — "}
+                    {ANNIVERSARY_LABELS[a.type] ?? a.label}
+                    <span className="text-muted-foreground"> ({a.daysUntil} ngày)</span>
                   </li>
                 ))}
               </ul>

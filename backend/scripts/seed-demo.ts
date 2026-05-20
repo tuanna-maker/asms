@@ -11,12 +11,14 @@ import "dotenv/config";
 
 import { seedAuthUsers } from "../src/config/seed-auth";
 import { seedDataDefinitions } from "../src/config/seed-definitions";
+import { seedContractClauses } from "../src/config/seed-contract-clauses";
 import { seedWorkflows } from "../src/config/seed-workflows";
 import { seedDemoBusinessData } from "../src/config/seed-demo-data";
 
 void (async () => {
   await seedAuthUsers();
   await seedDataDefinitions();
+  await seedContractClauses();
   await seedWorkflows();
   await seedDemoBusinessData();
   // eslint-disable-next-line no-console

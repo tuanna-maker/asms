@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { AlertTriangle, Clock, TrendingDown, FileText, Truck, GraduationCap, DollarSign } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
+import DashboardPagination from "@/components/dashboard/DashboardPagination";
 import { DashboardData } from "@/data/dashboardData";
+
+const ALERTS_PER_PAGE = 20;
 
 interface AlertTabProps {
   data: DashboardData;
@@ -39,6 +43,7 @@ const alertCols: Column<AlertRow>[] = [
 ];
 
 const AlertTab = ({ data }: AlertTabProps) => {
+  const [alertPage, setAlertPage] = useState(1);
   const totalLate = data.contract.late + data.handover.late + data.training.late + data.complaint.late;
   const totalProcessing = data.complaint.processing;
   const overdueContracts = data.contract.late;
@@ -73,6 +78,9 @@ const AlertTab = ({ data }: AlertTabProps) => {
   const severityLabels = { critical: "Nghiêm trọng", warning: "Cảnh báo", info: "Thông tin" };
 
   // Convert alerts to table rows
+  const alertTotalPages = Math.max(1, Math.ceil(alerts.length / ALERTS_PER_PAGE));
+  const pageAlerts = alerts.slice((alertPage - 1) * ALERTS_PER_PAGE, alertPage * ALERTS_PER_PAGE);
+
   const alertRows: AlertRow[] = alerts.map((a) => ({
     category: a.icon === FileText ? "Hợp đồng" : a.icon === Truck ? "Bàn giao" : a.icon === GraduationCap ? "Huấn luyện" : a.icon === DollarSign ? "Vật tư" : a.icon === TrendingDown ? "Doanh thu" : "Chung",
     title: a.title,
@@ -92,7 +100,7 @@ const AlertTab = ({ data }: AlertTabProps) => {
       {/* Visual alert cards */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-card-foreground">Danh sách cảnh báo</h3>
-        {alerts.map((alert, i) => (
+        {pageAlerts.map((alert, i) => (
           <div key={i} className={`rounded-lg border-l-4 border bg-card p-4 ${severityStyles[alert.severity]}`}>
             <div className="flex items-start gap-3">
               <alert.icon className={`h-5 w-5 mt-0.5 shrink-0 ${iconStyles[alert.severity]}`} />
@@ -108,10 +116,21 @@ const AlertTab = ({ data }: AlertTabProps) => {
             </div>
           </div>
         ))}
+        <DashboardPagination
+          page={alertPage}
+          totalPages={alertTotalPages}
+          totalItems={alerts.length}
+          pageSize={ALERTS_PER_PAGE}
+          onPageChange={setAlertPage}
+        />
       </div>
 
-      {/* Alert summary table */}
-      <DashboardTable title="Bảng tổng hợp cảnh báo" columns={alertCols} data={alertRows} />
+      <DashboardTable
+        title="Bảng tổng hợp cảnh báo"
+        columns={alertCols}
+        data={alertRows}
+        compact={false}
+      />
     </div>
   );
 };

@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
@@ -145,6 +146,8 @@ const Handover = () => {
 
   const syncedHandoverRows = handoverRows;
   const syncedTrainingRows = trainingRows;
+  const handoverPag = usePaginatedSlice(syncedHandoverRows);
+  const trainingPag = usePaginatedSlice(syncedTrainingRows);
 
   const assignedContractSets = useMemo(
     () => buildAssignedContractSets(syncedHandoverRows, syncedTrainingRows),
@@ -513,7 +516,7 @@ const Handover = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  syncedHandoverRows.map((h) => (
+                  handoverPag.pagedItems.map((h) => (
                     <TableRow key={h.id} className={lateProgressRowClass(h.status)}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{h.contract.code}</TableCell>
@@ -567,6 +570,7 @@ const Handover = () => {
                 )}
               </TableBody>
             </Table>
+            <PaginatedTableFooter className="px-4 pb-4" {...handoverPag.footerProps} disabled={isLoading} />
           </div>
         </TabsContent>
 
@@ -609,7 +613,7 @@ const Handover = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  syncedTrainingRows.map((t) => (
+                  trainingPag.pagedItems.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.code ?? t.id}</TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{t.title}</TableCell>
@@ -646,6 +650,11 @@ const Handover = () => {
                 )}
               </TableBody>
             </Table>
+            <PaginatedTableFooter
+              className="px-4 pb-4"
+              {...trainingPag.footerProps}
+              disabled={isTrainingLoading}
+            />
           </div>
         </TabsContent>
       </Tabs>

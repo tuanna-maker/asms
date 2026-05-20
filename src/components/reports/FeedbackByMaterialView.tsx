@@ -2,6 +2,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportsEmptyState } from "@/components/reports/ReportsEmptyState";
 import type { MaterialDefectItem } from "@/hooks/use-material-defects";
+import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 type Props = {
   items: MaterialDefectItem[];
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export function FeedbackByMaterialView({ items, totalWarranties, isLoading }: Props) {
+  const tablePag = usePaginatedSlice(items);
   const chartData = items.slice(0, 12).map((i) => ({ name: i.code, defects: i.defects }));
 
   if (isLoading) {
@@ -57,7 +59,7 @@ export function FeedbackByMaterialView({ items, totalWarranties, isLoading }: Pr
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((row) => (
+              {tablePag.pagedItems.map((row) => (
                 <TableRow key={row.id}>
                   <TableCell className="font-mono text-xs">{row.code}</TableCell>
                   <TableCell>{row.name}</TableCell>
@@ -69,6 +71,7 @@ export function FeedbackByMaterialView({ items, totalWarranties, isLoading }: Pr
             </TableBody>
           </Table>
         )}
+        {items.length > 0 && <PaginatedTableFooter className="mt-3" {...tablePag.footerProps} />}
       </div>
     </div>
   );

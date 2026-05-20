@@ -14,6 +14,7 @@ export const createContractSchema = z.object({
   workflowId: z.string().min(1).optional(),
   stepPayloads: z.record(z.string().min(1), z.record(z.string(), z.unknown())).optional(),
   terms: z.string().optional().nullable(),
+  clauseIds: z.array(z.string().min(1)).optional(),
   contractTypeCode: z.string().min(1).max(256).optional().nullable(),
 });
 

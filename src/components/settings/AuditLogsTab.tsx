@@ -59,7 +59,7 @@ export function AuditLogsTab({ enabled, initialEntity, initialEntityId }: Props)
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 50;
+  const pageSize = 20;
 
   useEffect(() => {
     if (initialEntity) setEntity(initialEntity);

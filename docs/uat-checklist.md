@@ -27,11 +27,11 @@
 - Settings - Phiên đăng nhập tab: current device is marked, other sessions can be revoked, "Đăng xuất tất cả thiết bị khác" leaves the current session alive.
 - Settings - Nhật ký tab (admin only): filters by entity / action / search / date range; pagination works; entries appear after create/update/delete on users, roles, contracts, handovers, warranties, materials, definitions, system settings, login/logout/session revoke.
 - Settings - Thuộc tính (mỗi module: hop-dong, ban-giao, bao-hanh, san-pham, vat-tu, khach-hang, de-tai, cong-viec, dao-tao, tai-lieu):
-  - Bảng hiển thị đủ cột: STT, Mã, Tên, Người sửa, Ngày sửa, Trạng thái, Thao tác. Mục seed có badge "Hệ thống".
+  - Bảng hiển thị đủ cột: STT, Mã, Tên, Người sửa, Ngày sửa, Trạng thái, Thao tác (không badge "Hệ thống").
   - Tìm theo mã hoặc tên đều ra kết quả; bộ lọc trạng thái (Tất cả / Hoạt động / Ngừng) hoạt động.
   - Tạo mới: nhập mã không thuộc regex `^[A-Za-z0-9._-]+$` bị chặn ngay phía client.
-  - Sửa mục `isSystem`: input "Mã" bị khoá; lưu được `Tên`, `Thứ tự`, `Hoạt động`.
-  - Xoá mục `isSystem`: dialog hiển thị cảnh báo và chỉ cho "Tắt".
+  - Sửa mọi mục (kể cả seed): đổi được Mã, Tên, Thứ tự, Hoạt động.
+  - Xoá mục đang được dùng: dialog liệt kê breakdown và chỉ cho "Tắt"; mục không ai dùng: cho phép xoá.
   - Xoá mục thường đang được record dùng: dialog liệt kê breakdown các bảng và chỉ cho "Tắt".
   - Xoá mục thường không ai dùng: cho phép xoá; danh sách cập nhật.
   - Kéo thả (khi không filter/phân trang) → nút "Lưu thứ tự" hiện; sau khi lưu, reload trang vẫn giữ thứ tự mới.
@@ -41,6 +41,12 @@
 - Customers: create, update, delete, list refresh.
 - CRM contacts/activities: create, update, delete, customer filter works.
 - Contracts: create, update status/progress, delete, list refresh; **không** còn field/tab quy trình cấp HĐ; mỗi HĐ tối đa **1 bàn giao + 1 khóa huấn luyện** (API 400 nếu tạo thêm); tab **Bàn giao** / **Huấn luyện** trên sửa HĐ: chọn quy trình riêng, form động + `WorkflowInstancePanel`; chi tiết HĐ read-only + nút mở sửa đúng tab; `GET /contracts/:id` trả `linkedHandover` / `linkedTraining` (kèm `workflowName`); lịch sử tab Thông tin chung từ Nhật ký (`audit-logs`).
+- Contracts - Điều khoản & điều kiện:
+  - Cài đặt → Thuộc tính → Hợp đồng: CRUD **Điều khoản và điều kiện** (mã, tiêu đề, nội dung); CRUD **Nhóm điều khoản** + dialog **Gán điều khoản** (multi-select).
+  - Tạo/sửa HĐ tab **Điều khoản & Điều kiện**: tích nhóm (chọn/bỏ tất cả) hoặc từng mục; xem trước nội dung; lưu gửi `clauseIds` — BE ghép `terms` snapshot.
+  - HĐ cũ chỉ có `terms` text: vẫn xem được; khi sửa hiện cảnh báo legacy + picker để chọn lại từ danh mục.
+  - Xóa điều khoản đang có trên HĐ → API 409; seed: `npm run bootstrap:auth` hoặc `seed:demo` (mục `seedContractClauses`).
+  - Migration: `20260520130000_contract_clauses`.
 - Handovers: create/update/delete/list + filters work; tạo BG gắn HĐ đã có BG → 400; quy trình chỉ từ `workflowId` phiếu (không kế thừa HĐ). Màn **Bàn giao & Huấn luyện**: dropdown HĐ khi **tạo mới** chỉ HĐ chưa có bàn giao **và** chưa có huấn luyện (`GET /contracts?eligibleFor=handover` hoặc lọc FE); sửa giữ HĐ hiện tại; gắn HL cho HĐ đã có BG → tab Huấn luyện trên sheet Hợp đồng.
 - Products: create/list works; tạo SP dùng phân loại từ Definitions (`product_category`); ảnh SP upload qua API tài liệu (`product_image`); tab Lịch sử gộp audit log; warranty product selector loads data correctly.
 - Warranty: create ticket, update workflow/status, delete, list refresh; form động theo quy trình (không còn 5 tab legacy); đổi quy trình khi sửa (attach + xác nhận); lưu xóa orphan payload khi có cảnh báo.

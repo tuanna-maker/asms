@@ -133,15 +133,28 @@ const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: Pr
     ),
     "pakd": <PAKDWidget data={data.pakd} />,
     "trend": <TrendChart data={data.trend} />,
-    "table-contract": <DashboardTable title="Danh sách hợp đồng" columns={contractCols} data={contracts} />,
-    "table-handover": <DashboardTable title="Danh sách bàn giao" columns={handoverCols} data={handovers} />,
-    "table-training": <DashboardTable title="Danh sách huấn luyện" columns={trainingCols} data={trainings} />,
+    "table-contract": (
+      <DashboardTable title="Danh sách hợp đồng" columns={contractCols} data={contracts} compact />
+    ),
+    "table-handover": (
+      <DashboardTable title="Danh sách bàn giao" columns={handoverCols} data={handovers} compact />
+    ),
+    "table-training": (
+      <DashboardTable title="Danh sách huấn luyện" columns={trainingCols} data={trainings} compact />
+    ),
   }), [data, contracts, handovers, trainings]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {
       const tpl = widgetTemplates.find(t => t.id === id);
-      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 } };
+      return {
+        id,
+        type: id,
+        title: tpl?.title || id,
+        component: widgetComponents[id],
+        contentOverflow: id === "stats" ? "visible" : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 },
+      };
     }), [activeWidgetIds, widgetComponents]);
 
   return (

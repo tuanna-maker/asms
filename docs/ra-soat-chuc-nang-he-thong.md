@@ -55,7 +55,7 @@ Component: `src/components/details/ContractDetailDialog.tsx`, dữ liệu chi ti
 | Tab | Đọc dữ liệu thật | Ghi/Cập nhật trong tab | Trạng thái |
 |-----|-------------------|-------------------------|------------|
 | Thông tin chung | Một phần từ prop `contract` (danh sách); không load lại đủ mọi trường contract từ API detail | Nút **Chỉnh sửa** → popup `ContractEditDialog` → `PUT /contracts/:id` (qua `Contracts.tsx` handler) | ⚠️ |
-| Điều khoản chính | `terms` từ chi tiết API | Sửa qua popup chỉnh sửa (`terms` trong payload update) | ✅ |
+| Điều khoản chính | `terms` snapshot + `clauseIds` từ API | Tab Điều khoản: chọn từ danh mục (`clauseIds`); Cài đặt → Thuộc tính → HĐ quản lý mẫu & nhóm | ✅ |
 | Danh mục sản phẩm | `productsList` trong response detail | Không có thêm/sửa/xóa trong tab | ❌ (chỉ đọc) |
 | Tài liệu | `documents` trong detail (hoặc tương đương include) | Không CRUD trong tab; chỉ **Tải về** nếu có `fileUrl` | ❌ (chỉ đọc) |
 | Đào tạo & Huấn luyện | `trainingCourses` trong detail | Không CRUD trong tab | ❌ (chỉ đọc) |

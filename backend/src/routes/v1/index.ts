@@ -23,6 +23,10 @@ import crmActivitiesRoutes from "../../modules/crm-activities/route";
 import customerFeedbacksRoutes from "../../modules/customer-feedbacks/route";
 import rolePermissionsRoutes from "../../modules/role-permissions/route";
 import definitionsRoutes from "../../modules/definitions/route";
+import {
+  contractClauseGroupsRouter,
+  contractClausesRouter,
+} from "../../modules/contract-clauses/route";
 import notificationPreferencesRoutes from "../../modules/notification-preferences/route";
 import workflowsRoutes from "../../modules/workflows/route";
 import workflowDocumentsRoutes from "../../modules/workflow-documents/route";
@@ -58,6 +62,8 @@ router.use("/training-courses", trainingRoutes);
 router.use("/documents", documentsRoutes);
 router.use("/reports", reportsRoutes);
 router.use("/definitions", definitionsRoutes);
+router.use("/contract-clauses", contractClausesRouter);
+router.use("/contract-clause-groups", contractClauseGroupsRouter);
 router.use("/notification-preferences", notificationPreferencesRoutes);
 router.use("/workflows", workflowsRoutes);
 router.use("/workflow-instances", workflowDocumentsRoutes);

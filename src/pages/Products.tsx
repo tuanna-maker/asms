@@ -37,6 +37,8 @@ import {
 import { toast } from "sonner";
 import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
+import { useListPagination } from "@/hooks/use-list-pagination";
+import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
 function apiProductToDefense(p: ProductListItem): DefenseProduct {
   return {
@@ -139,6 +141,15 @@ const Products = () => {
     return matchSearch && matchCat && matchStatus;
   }), [products, search, category, status]);
 
+  const {
+    pagedItems: pagedProducts,
+    page: productPage,
+    setPage: setProductPage,
+    totalPages: productTotalPages,
+    total: productTotal,
+    pageSize: productPageSize,
+  } = useListPagination(filtered, { resetDeps: [search, category, status] });
+
   const stats = useMemo(() => ({
     total: products.length,
     developing: products.filter(p => p.status === "developing").length,
@@ -213,7 +224,7 @@ const Products = () => {
                       Đang tải…
                     </TableCell>
                   </TableRow>
-                ) : filtered.map(p => (
+                ) : pagedProducts.map(p => (
                   <TableRow key={p.id} className="cursor-pointer" onClick={() => openDetail(p)}>
                     <TableCell className="font-mono font-semibold text-primary">{p.code}</TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
@@ -275,7 +286,7 @@ const Products = () => {
 
           {/* Mobile cards */}
           <div className="md:hidden space-y-3">
-            {filtered.map(p => (
+            {pagedProducts.map(p => (
               <Card key={p.id} className="cursor-pointer" onClick={() => openDetail(p)}>
                 <CardContent className="pt-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
@@ -298,6 +309,14 @@ const Products = () => {
             ))}
             {filtered.length === 0 && <p className="text-center text-muted-foreground py-6 text-sm">Không có sản phẩm phù hợp</p>}
           </div>
+
+          <ListPaginationBar
+            page={productPage}
+            totalPages={productTotalPages}
+            totalItems={productTotal}
+            pageSize={productPageSize}
+            onPageChange={setProductPage}
+          />
         </CardContent>
       </Card>
 

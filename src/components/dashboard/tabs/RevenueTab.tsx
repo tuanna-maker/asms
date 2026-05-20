@@ -62,13 +62,22 @@ const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
     "chart-revenue": <CustomerRevenueChart data={data.customerRevenue} />,
     "pie-revenue": <PieChartWidget title="Phân bổ DT theo KH" icon={TrendingUp} iconColor="bg-success/10 text-success" data={data.customerRevenue.map(c => ({ name: c.name, value: c.revenue }))} />,
     "trend": <TrendChart data={data.trend} />,
-    "table": <DashboardTable title="Chi tiết DT theo HĐ" columns={revenueColumns} data={contracts} />,
+    "table": (
+      <DashboardTable title="Chi tiết DT theo HĐ" columns={revenueColumns} data={contracts} compact />
+    ),
   }), [contracts, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {
       const tpl = widgetTemplates.find(t => t.id === id);
-      return { id, type: id, title: tpl?.title || id, component: widgetComponents[id], defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: id === "stats" ? 1 : 2 } };
+      return {
+        id,
+        type: id,
+        title: tpl?.title || id,
+        component: widgetComponents[id],
+        contentOverflow: id === "stats" ? "visible" : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: id === "stats" ? 1 : 2 },
+      };
     }), [activeWidgetIds, widgetComponents]);
 
   return (

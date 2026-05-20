@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, Filter, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
+import DashboardPagination from "./DashboardPagination";
 
 export interface FilterOption {
   value: string;
@@ -32,6 +33,12 @@ interface DashboardTableProps<T> {
   searchable?: boolean;
   searchPlaceholder?: string;
   searchKeys?: string[];
+  /** Số dòng mỗi trang; mặc định 5 cho widget dashboard */
+  pageSize?: number;
+  /** Bật phân trang (mặc định true) */
+  paginated?: boolean;
+  /** Giao diện gọn trong ô widget */
+  compact?: boolean;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -39,6 +46,7 @@ type SortDir = "asc" | "desc" | null;
 function DashboardTable<T>({
   title, columns, data, emptyMessage = "Không có dữ liệu",
   searchable = true, searchPlaceholder = "Tìm kiếm...", searchKeys,
+  pageSize = 20, paginated = true, compact = true,
 }: DashboardTableProps<T>) {
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
@@ -46,6 +54,7 @@ function DashboardTable<T>({
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
 
   const visibleColumns = isMobile ? columns.filter(c => !c.hideOnMobile) : columns;
   const filterableColumns = columns.filter(c => c.filterable && c.filterOptions);
@@ -67,7 +76,6 @@ function DashboardTable<T>({
   const processedData = useMemo(() => {
     let result = [...data];
 
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       const keys = searchKeys || columns.map(c => c.key);
@@ -77,7 +85,6 @@ function DashboardTable<T>({
       });
     }
 
-    // Filters
     for (const [key, value] of Object.entries(filters)) {
       if (!value || value === "all") continue;
       result = result.filter(row => {
@@ -86,7 +93,6 @@ function DashboardTable<T>({
       });
     }
 
-    // Sort
     if (sortKey && sortDir) {
       const col = columns.find(c => c.key === sortKey);
       result.sort((a, b) => {
@@ -102,6 +108,22 @@ function DashboardTable<T>({
     return result;
   }, [data, search, filters, sortKey, sortDir, columns, searchKeys]);
 
+  const totalPages = paginated ? Math.max(1, Math.ceil(processedData.length / pageSize)) : 1;
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filters, sortKey, sortDir, data.length]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const pagedData = useMemo(() => {
+    if (!paginated || processedData.length <= pageSize) return processedData;
+    const start = (page - 1) * pageSize;
+    return processedData.slice(start, start + pageSize);
+  }, [processedData, page, pageSize, paginated]);
+
   const clearAll = () => {
     setSearch("");
     setFilters({});
@@ -110,11 +132,12 @@ function DashboardTable<T>({
   };
 
   const isFiltered = search.trim() || activeFilterCount > 0;
+  const pad = compact ? "p-3 sm:p-4" : "p-3 sm:p-5";
+  const gap = compact ? "space-y-2" : "space-y-3 sm:space-y-4";
 
   return (
-    <div className="rounded-xl bg-card p-3 sm:p-5 shadow-sm border border-border/50 space-y-3 sm:space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+    <div className={`rounded-xl bg-card ${pad} shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden ${gap}`}>
+      <div className="flex items-center justify-between gap-2 flex-wrap shrink-0">
         <h3 className="font-semibold text-card-foreground text-sm sm:text-base">{title}</h3>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           {isFiltered && (
@@ -129,8 +152,7 @@ function DashboardTable<T>({
         </div>
       </div>
 
-      {/* Search + Filter bar */}
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col sm:flex-row gap-2 shrink-0">
         {searchable && (
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -170,9 +192,8 @@ function DashboardTable<T>({
         )}
       </div>
 
-      {/* Filter selects */}
       {showFilters && hasFilters && (
-        <div className="flex flex-wrap gap-2 pb-1">
+        <div className="flex flex-wrap gap-2 shrink-0">
           {filterableColumns.map(col => (
             <Select key={col.key} value={filters[col.key] || "all"} onValueChange={(v) => setFilters(prev => ({ ...prev, [col.key]: v }))}>
               <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px] h-8 text-xs">
@@ -189,15 +210,14 @@ function DashboardTable<T>({
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
               {visibleColumns.map(col => (
                 <TableHead
                   key={col.key}
-                  className={`${col.className || ""} ${col.sortable ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""}`}
+                  className={`${compact ? "h-8 py-1" : ""} ${col.className || ""} ${col.sortable ? "cursor-pointer select-none hover:text-foreground transition-colors" : ""}`}
                   onClick={() => handleSort(col)}
                 >
                   <span className="flex items-center gap-1">
@@ -215,17 +235,17 @@ function DashboardTable<T>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {processedData.length === 0 ? (
+            {pagedData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground text-sm">
+                <TableCell colSpan={visibleColumns.length} className={`text-center text-muted-foreground text-sm ${compact ? "py-6" : "py-8"}`}>
                   {isFiltered ? "Không tìm thấy kết quả phù hợp" : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
-              processedData.map((row, i) => (
+              pagedData.map((row, i) => (
                 <TableRow key={i}>
                   {visibleColumns.map(col => (
-                    <TableCell key={col.key} className={`text-xs sm:text-sm ${col.className || ""}`}>
+                    <TableCell key={col.key} className={`text-xs sm:text-sm ${compact ? "py-1.5" : ""} ${col.className || ""}`}>
                       {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? "—")}
                     </TableCell>
                   ))}
@@ -235,13 +255,22 @@ function DashboardTable<T>({
           </TableBody>
         </Table>
       </div>
+
+      {paginated && processedData.length > 0 && (
+        <DashboardPagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={processedData.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   );
 }
 
 export default DashboardTable;
 
-// Utility badge for status rendering
 export const StatusBadge = ({ status, label }: { status: "success" | "warning" | "destructive" | "info" | "default"; label: string }) => {
   const styles = {
     success: "bg-success/10 text-success border-success/30",
