@@ -1,7 +1,16 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useMemo, useCallback } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useRolePermissions } from "@/hooks/use-role-permissions-api";
+import {
+  moduleAllowedForRoleFromMap,
+  moduleActionAllowedFromMap,
+  resolveModuleKeyFromPath,
+} from "@/lib/route-module-map";
+import type { CrudPermission } from "@/lib/permission-types";
 
 export type Role = "admin" | "manager" | "technician" | "viewer" | "sales";
+
+export type CrudAction = keyof CrudPermission;
 
 export const ROLE_LABELS: Record<Role, string> = {
   admin: "Quản trị",
@@ -11,7 +20,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   sales: "Nhân viên bán hàng",
 };
 
-// Quyền truy cập theo path
+// Quyền truy cập theo path (fallback khi chưa có API)
 export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
   "/": ["admin", "manager", "technician", "viewer", "sales"],
   "/hop-dong": ["admin", "manager", "viewer", "sales"],
@@ -38,6 +47,7 @@ interface RoleContextValue {
   role: Role;
   setRole: (r: Role) => void;
   canAccess: (path: string) => boolean;
+  canDo: (moduleKey: string, action: CrudAction) => boolean;
 }
 
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
@@ -52,6 +62,17 @@ function readStoredRole(): Role {
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
   const { user, isAuthenticated } = useAuth();
+  const { data: permMatrix } = useRolePermissions(isAuthenticated);
+
+  const permissionsByRole = useMemo(() => {
+    if (!permMatrix?.roles?.length) return null;
+    const map: Record<string, Record<string, CrudPermission>> = {};
+    for (const r of permMatrix.roles) {
+      map[r.code] = r.permissions;
+    }
+    return map;
+  }, [permMatrix]);
+
   /** Chỉ dùng khi chưa đăng nhập (demo / màn login bọc RoleProvider). */
   const [guestRole, setGuestRole] = useState<Role>(readStoredRole);
 
@@ -72,22 +93,42 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     [isAuthenticated, user],
   );
 
-  const canAccess = (path: string) => {
-    // Tìm rule khớp chính xác trước
-    if (ROUTE_PERMISSIONS[path]) return ROUTE_PERMISSIONS[path].includes(role);
-    // Fallback: khớp theo prefix segment cho dynamic routes (/foo/:id)
-    const segments = path.split("/").filter(Boolean);
-    for (const pattern of Object.keys(ROUTE_PERMISSIONS)) {
-      const pSegs = pattern.split("/").filter(Boolean);
-      if (pSegs.length !== segments.length) continue;
-      const match = pSegs.every((seg, i) => seg.startsWith(":") || seg === segments[i]);
-      if (match) return ROUTE_PERMISSIONS[pattern].includes(role);
-    }
-    return true;
-  };
+  const canAccess = useCallback(
+    (path: string) => {
+      if (role === "admin") return true;
+      const moduleKey = resolveModuleKeyFromPath(path);
+      if (moduleKey && permissionsByRole) {
+        return moduleAllowedForRoleFromMap(role, moduleKey, permissionsByRole);
+      }
+      if (ROUTE_PERMISSIONS[path]) return ROUTE_PERMISSIONS[path].includes(role);
+      const segments = path.split("/").filter(Boolean);
+      for (const pattern of Object.keys(ROUTE_PERMISSIONS)) {
+        const pSegs = pattern.split("/").filter(Boolean);
+        if (pSegs.length !== segments.length) continue;
+        const match = pSegs.every((seg, i) => seg.startsWith(":") || seg === segments[i]);
+        if (match) return ROUTE_PERMISSIONS[pattern].includes(role);
+      }
+      return true;
+    },
+    [role, permissionsByRole],
+  );
+
+  const canDo = useCallback(
+    (moduleKey: string, action: CrudAction) => {
+      if (role === "admin") return true;
+      if (permissionsByRole) {
+        return moduleActionAllowedFromMap(role, moduleKey, action, permissionsByRole);
+      }
+      if (action === "read") {
+        return moduleAllowedForRoleFromMap(role, moduleKey, null);
+      }
+      return role === "admin";
+    },
+    [role, permissionsByRole],
+  );
 
   return (
-    <RoleContext.Provider value={{ role, setRole, canAccess }}>
+    <RoleContext.Provider value={{ role, setRole, canAccess, canDo }}>
       {children}
     </RoleContext.Provider>
   );

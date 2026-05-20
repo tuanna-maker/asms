@@ -77,8 +77,14 @@ const SEEDS: Array<{ category: string; code: string; label: string; sortOrder: n
 
   { category: "product_status", code: "developing", label: "Đang phát triển", sortOrder: 0 },
   { category: "product_status", code: "producing", label: "Đang sản xuất", sortOrder: 10 },
-  { category: "product_status", code: "equipped", label: "Đã trang bị", sortOrder: 20 },
-  { category: "product_status", code: "stopped", label: "Ngừng / tạm dừng", sortOrder: 30 },
+  { category: "product_status", code: "produced", label: "Sản xuất xong", sortOrder: 20 },
+  { category: "product_status", code: "inspection_submitted", label: "Đã trình nghiệm thu", sortOrder: 30 },
+  { category: "product_status", code: "inspecting", label: "Đang nghiệm thu", sortOrder: 40 },
+  { category: "product_status", code: "inspection_passed", label: "Nghiệm thu xong", sortOrder: 50 },
+  { category: "product_status", code: "decision_approved", label: "QĐ phê duyệt KQ", sortOrder: 60 },
+  { category: "product_status", code: "equip_decided", label: "Có QĐ trang bị", sortOrder: 70 },
+  { category: "product_status", code: "equipped", label: "Đã trang bị", sortOrder: 80 },
+  { category: "product_status", code: "stopped", label: "Dừng SX", sortOrder: 90 },
 
   { category: "warranty_ticket_type", code: "warranty", label: "Bảo hành", sortOrder: 0 },
   { category: "warranty_ticket_type", code: "repair", label: "Sửa chữa", sortOrder: 10 },
@@ -125,9 +131,10 @@ const SEEDS: Array<{ category: string; code: string; label: string; sortOrder: n
 
   // ----- workflow phases (phase_code for steps) -----
   { category: "workflow_phase", code: "handover", label: "Bàn giao", sortOrder: 0 },
-  { category: "workflow_phase", code: "training", label: "Huấn luyện", sortOrder: 10 },
+  { category: "workflow_phase", code: "training", label: "Đào tạo / huấn luyện", sortOrder: 10 },
   { category: "workflow_phase", code: "warranty", label: "Bảo hành", sortOrder: 20 },
-  { category: "workflow_phase", code: "other", label: "Khác", sortOrder: 30 },
+  { category: "workflow_phase", code: "product", label: "Sản phẩm", sortOrder: 30 },
+  { category: "workflow_phase", code: "other", label: "Khác", sortOrder: 40 },
 ];
 
 export async function seedDataDefinitions() {

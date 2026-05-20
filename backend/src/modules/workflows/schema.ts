@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-const MODULE_KEYS = ["handover", "warranty", "training", "contract"] as const;
-const ENTITY_MODULE_KEYS = ["handover", "warranty", "training", "contract"] as const;
+const MODULE_KEYS = ["handover", "warranty", "training", "coaching", "contract", "product"] as const;
+const ENTITY_MODULE_KEYS = ["handover", "warranty", "training", "coaching", "contract", "product"] as const;
 export const moduleKeySchema = z.enum(MODULE_KEYS);
 export const entityModuleKeySchema = z.enum(ENTITY_MODULE_KEYS);
 
@@ -18,7 +18,7 @@ export const listWorkflowsQuerySchema = z.object({
 });
 
 export const createWorkflowSchema = z.object({
-  code: codeSchema,
+  code: codeSchema.optional(),
   name: z.string().min(1).max(255),
   moduleKey: moduleKeySchema,
   description: z.string().max(2000).optional(),
@@ -48,7 +48,6 @@ const fieldDefSchema = z.object({
 });
 
 export const updateWorkflowSchema = z.object({
-  code: codeSchema.optional(),
   name: z.string().min(1).max(255).optional(),
   moduleKey: moduleKeySchema.optional(),
   description: z.string().max(2000).nullable().optional(),
@@ -60,6 +59,7 @@ export const upsertStepSchema = z.object({
   name: z.string().min(1).max(255),
   actionCode: z.string().min(1).max(64),
   roleCode: z.string().min(1).max(64),
+  assigneeIds: z.array(z.string().min(1)).optional(),
   slaHours: z.coerce.number().int().nonnegative().nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
   phaseCode: z.string().min(1).max(64).optional(),

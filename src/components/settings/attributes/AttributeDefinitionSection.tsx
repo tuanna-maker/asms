@@ -44,6 +44,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AttributeRow, AttributeSectionDef } from "@/lib/attribute-settings-config";
+import { definitionCodeHint, isValidDefinitionCode } from "@/lib/attribute-code-validation";
 import { cn } from "@/lib/utils";
 import { mapDefinitionToAttributeRow } from "@/lib/attribute-definition-map";
 import {
@@ -57,7 +58,6 @@ import {
 } from "@/hooks/use-definitions-api";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
-const CODE_REGEX = /^[A-Za-z0-9._-]+$/;
 type StatusFilter = "all" | "active" | "inactive";
 
 function formatDate(iso: string | null | undefined) {
@@ -198,8 +198,8 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       toast.error("Mã và tên hiển thị là bắt buộc.");
       return;
     }
-    if (!CODE_REGEX.test(code)) {
-      toast.error("Mã chỉ chấp nhận chữ cái Latin, số và ký tự . _ -");
+    if (!isValidDefinitionCode(definitionCategory, code)) {
+      toast.error(definitionCodeHint(definitionCategory));
       return;
     }
     try {
@@ -225,8 +225,8 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       toast.error("Mã và tên hiển thị là bắt buộc.");
       return;
     }
-    if (!CODE_REGEX.test(code)) {
-      toast.error("Mã chỉ chấp nhận chữ cái Latin, số và ký tự . _ -");
+    if (!isValidDefinitionCode(definitionCategory, code)) {
+      toast.error(definitionCodeHint(definitionCategory));
       return;
     }
     try {
@@ -488,6 +488,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 value={createForm.code}
                 onChange={(e) => setCreateForm((s) => ({ ...s, code: e.target.value }))}
               />
+              <p className="text-xs text-muted-foreground">{definitionCodeHint(definitionCategory)}</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="attr-def-label">Tên hiển thị</Label>
@@ -537,8 +538,14 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
               <Input
                 id="attr-edit-code"
                 value={editForm.code}
+                disabled={editRow?.isSystem}
                 onChange={(e) => setEditForm((s) => ({ ...s, code: e.target.value }))}
               />
+              {editRow?.isSystem ? (
+                <p className="text-xs text-muted-foreground">Mục hệ thống — không đổi mã.</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">{definitionCodeHint(definitionCategory)}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="attr-edit-label">Tên hiển thị</Label>
@@ -646,7 +653,14 @@ function AttributeTableRow({
       ) : null}
       <TableCell>{index + 1}</TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{row.code}</TableCell>
-      <TableCell className="font-medium">{row.name}</TableCell>
+      <TableCell className="font-medium">
+        <span>{row.name}</span>
+        {row.isSystem ? (
+          <Badge variant="outline" className="ml-2 border-primary/30 text-primary">
+            Hệ thống
+          </Badge>
+        ) : null}
+      </TableCell>
       <TableCell>{row.updatedBy || "—"}</TableCell>
       <TableCell>{formatDate(row.updatedAt)}</TableCell>
       <TableCell>

@@ -5,16 +5,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
+  ensureUniqueFieldKey,
   FIELD_INPUT_TYPES,
+  findDuplicateFieldKeys,
   slugFieldKey,
   type FieldDef,
   type FieldInputType,
 } from "@/lib/workflow-field-schema";
-import {
-  getModuleEntityFieldTemplate,
-  getModuleStepFieldTemplate,
-} from "@/lib/workflow-field-catalog";
+import { getModuleEntityFieldTemplate } from "@/lib/workflow-field-catalog";
 import type { WorkflowModuleKey } from "@/hooks/use-workflows-api";
+import { ALL_DEFINITION_CATEGORIES } from "@/lib/attribute-settings-config";
 
 type Props = {
   value: FieldDef[];
@@ -24,15 +24,6 @@ type Props = {
   /** step = trường từng bước; entity = trường header phiếu */
   variant?: "step" | "entity";
 };
-
-const COMMON_DEFINITION_CATEGORIES = [
-  "product_category",
-  "workflow_step_action",
-  "workflow_phase",
-  "warranty_priority",
-  "warranty_status",
-  "contract_type",
-];
 
 function emptyField(): FieldDef {
   return { key: "", label: "", type: "text" };
@@ -61,6 +52,8 @@ export function FieldSchemaBuilder({
     onChange(next);
   };
 
+  const duplicateKeys = findDuplicateFieldKeys(value);
+
   return (
     <div className="space-y-3 rounded-lg border border-border/50 p-3">
       <div className="flex items-center justify-between gap-2">
@@ -83,19 +76,6 @@ export function FieldSchemaBuilder({
               Khôi phục mẫu header bàn giao
             </Button>
           ) : null}
-          {variant === "step" &&
-          moduleKey &&
-          (moduleKey === "handover" || moduleKey === "contract" || moduleKey === "warranty") ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => onChange(getModuleStepFieldTemplate(moduleKey, stepIndex))}
-              title="Gán đúng bộ field mẫu cho vị trí bước này trong quy trình chuẩn"
-            >
-              Khôi phục mẫu bước này
-            </Button>
-          ) : null}
           <Button type="button" variant="outline" size="sm" onClick={addField}>
             <Plus className="mr-1 h-4 w-4" />
             Thêm trường
@@ -107,7 +87,10 @@ export function FieldSchemaBuilder({
         <p className="text-sm text-muted-foreground py-2">Chưa có trường nào. Nhấn «Thêm trường» để bắt đầu.</p>
       ) : (
         <div className="space-y-3">
-          {value.map((field, index) => (
+          {value.map((field, index) => {
+            const otherKeys = value.filter((_, i) => i !== index).map((f) => f.key.trim()).filter(Boolean);
+            const keyDuplicate = Boolean(field.key.trim() && duplicateKeys.includes(field.key.trim()));
+            return (
             <div key={index} className="space-y-2 rounded-md border border-border/40 bg-muted/20 p-3">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-medium text-muted-foreground">Trường {index + 1}</span>
@@ -133,7 +116,7 @@ export function FieldSchemaBuilder({
                       const label = e.target.value;
                       const patch: Partial<FieldDef> = { label };
                       if (!field.key || field.key === slugFieldKey(field.label)) {
-                        patch.key = slugFieldKey(label);
+                        patch.key = ensureUniqueFieldKey(slugFieldKey(label), otherKeys);
                       }
                       updateAt(index, patch);
                     }}
@@ -146,7 +129,12 @@ export function FieldSchemaBuilder({
                     value={field.key}
                     onChange={(e) => updateAt(index, { key: e.target.value.replace(/\s/g, "_") })}
                     placeholder="contract_type"
+                    className={keyDuplicate ? "border-destructive" : undefined}
+                    aria-invalid={keyDuplicate}
                   />
+                  {keyDuplicate ? (
+                    <p className="text-xs text-destructive">Mã trường đã tồn tại trong bước này.</p>
+                  ) : null}
                 </div>
               </div>
 
@@ -184,7 +172,10 @@ export function FieldSchemaBuilder({
               {field.type === "select" ? (
                 <div className="space-y-2 rounded border border-dashed border-border/50 p-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Danh mục DataDefinition (ưu tiên)</Label>
+                    <Label className="text-xs">Danh mục hệ thống</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Chỉ dùng cho trường chọn. Lấy giá trị từ Cài đặt thuộc tính; nếu không chọn thì nhập tùy chọn bên dưới.
+                    </p>
                     <Select
                       value={field.definitionCategory ?? "__none__"}
                       onValueChange={(v) => updateAt(index, { definitionCategory: v === "__none__" ? undefined : v })}
@@ -194,7 +185,7 @@ export function FieldSchemaBuilder({
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">— Không dùng danh mục —</SelectItem>
-                        {COMMON_DEFINITION_CATEGORIES.map((c) => (
+                        {ALL_DEFINITION_CATEGORIES.map((c) => (
                           <SelectItem key={c} value={c}>
                             {c}
                           </SelectItem>
@@ -258,7 +249,8 @@ export function FieldSchemaBuilder({
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

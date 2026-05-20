@@ -2,7 +2,19 @@ import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { attachWorkflowToEntity, startInstanceForEntity } from "../workflows/runtime";
+import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
 import { getContractProductCounts } from "./product-count";
+import {
+  buildDisplayStatusesFilter,
+  sanitizeStoredContractStatus,
+  withDisplayStatus,
+} from "./display-status";
+import {
+  enrichContractWithStepPayloads,
+  upsertStepPayloads,
+  type ContractStepPayloadJson,
+} from "./step-payload";
 
 function genContractCode() {
   return `HD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -18,6 +30,42 @@ async function resolveContractId(idOrCode: string) {
 }
 
 const CONTRACT_TYPE_CATEGORY = "contract_type";
+
+async function getContractFallbackWorkflowId(): Promise<string | null> {
+  const wf = await prisma.workflowDefinition.findFirst({
+    where: { moduleKey: "contract", isActive: true, deletedAt: null },
+    orderBy: [{ isSystem: "desc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+  return wf?.id ?? null;
+}
+
+async function initContractWorkflow(
+  contractId: string,
+  options: { workflowId?: string | null; actorId?: string | null },
+): Promise<boolean> {
+  try {
+    if (options.workflowId) {
+      await prisma.contract.update({
+        where: { id: contractId },
+        data: { workflowId: options.workflowId },
+      });
+      await attachWorkflowToEntity({
+        moduleKey: "contract",
+        entityId: contractId,
+        workflowId: options.workflowId,
+        actorId: options.actorId ?? null,
+      });
+      return true;
+    }
+    const init = await startInstanceForEntity("contract", contractId, options.actorId ?? null);
+    return Boolean(init);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn("[contract] workflow init failed", e);
+    return false;
+  }
+}
 
 async function assertActiveContractTypeCode(code: string) {
   const row = await prisma.dataDefinition.findFirst({
@@ -42,13 +90,20 @@ export async function listContractsService(filters: {
   signedTo?: Date;
   createdFrom?: Date;
   createdTo?: Date;
-  eligibleFor?: "handover" | "training";
+  eligibleFor?: "handover" | "coaching";
 }) {
   const where: Prisma.ContractWhereInput = { deletedAt: null };
-  if (filters.statuses && filters.statuses.length > 0) {
-    where.status = { in: filters.statuses as NonNullable<Prisma.ContractWhereInput["status"]>[] } as NonNullable<Prisma.ContractWhereInput["status"]>;
-  } else if (filters.status) {
-    where.status = filters.status as NonNullable<Prisma.ContractWhereInput["status"]>;
+  const displayStatuses =
+    filters.statuses && filters.statuses.length > 0
+      ? filters.statuses
+      : filters.status
+        ? [filters.status]
+        : [];
+  if (displayStatuses.length > 0) {
+    const statusFilter = buildDisplayStatusesFilter(
+      displayStatuses as Parameters<typeof buildDisplayStatusesFilter>[0],
+    );
+    where.AND = [...(Array.isArray(where.AND) ? where.AND : where.AND ? [where.AND] : []), statusFilter];
   }
   if (filters.customerId) where.customerId = filters.customerId;
   if (filters.contractTypeCode) where.contractTypeCode = filters.contractTypeCode;
@@ -68,9 +123,11 @@ export async function listContractsService(filters: {
     const s = filters.search;
     where.OR = [{ code: { contains: s, mode: "insensitive" } }, { title: { contains: s, mode: "insensitive" } }];
   }
-  if (filters.eligibleFor) {
+  if (filters.eligibleFor === "handover") {
     where.handovers = { none: { deletedAt: null } };
-    where.trainingCourses = { none: { deletedAt: null } };
+  }
+  if (filters.eligibleFor === "coaching") {
+    where.trainingCourses = { none: { deletedAt: null, courseKind: "coaching" } };
   }
 
   const rows = await prisma.contract.findMany({
@@ -87,8 +144,10 @@ export async function listContractsService(filters: {
       warrantyEnd: true,
       status: true,
       progress: true,
+      endReminderDays: true,
       contractTypeCode: true,
       workflowId: true,
+      workflowInstanceId: true,
       terms: true,
       customerId: true,
       customer: { select: { id: true, code: true, name: true } },
@@ -98,7 +157,16 @@ export async function listContractsService(filters: {
     },
   });
   const counts = await getContractProductCounts(rows.map((row) => row.id));
-  return rows.map((row) => ({ ...row, products: counts.get(row.id) ?? 0 }));
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds(
+    rows.map((row) => row.workflowInstanceId),
+  );
+  return rows.map((row) => ({
+    ...withDisplayStatus(row),
+    products: counts.get(row.id) ?? 0,
+    workflow: row.workflowInstanceId
+      ? (workflowMap.get(row.workflowInstanceId) ?? null)
+      : null,
+  }));
 }
 
 function toSpecValues(value: Prisma.JsonValue | null | undefined): Record<string, string> {
@@ -123,7 +191,7 @@ export async function getContractDetailService(id: string) {
         where: { deletedAt: null, product: { deletedAt: null } },
         include: { product: true },
       },
-      trainingCourses: { where: { deletedAt: null } },
+      trainingCourses: { where: { deletedAt: null, courseKind: "coaching" } },
       documents: { where: { deletedAt: null } },
       workflow: { select: { id: true, code: true, name: true, moduleKey: true } },
     },
@@ -163,7 +231,19 @@ export async function getContractDetailService(id: string) {
     : null;
 
   const { handovers: _h, trainingCourses: _t, ...rest } = contract;
-  return { ...rest, productsList, products, linkedHandover, linkedTraining };
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds([rest.workflowInstanceId]);
+  const workflow: WorkflowSnapshot | null = rest.workflowInstanceId
+    ? (workflowMap.get(rest.workflowInstanceId) ?? null)
+    : null;
+  const enriched = await enrichContractWithStepPayloads(withDisplayStatus(rest));
+  return {
+    ...enriched,
+    productsList,
+    products,
+    linkedHandover,
+    linkedTraining,
+    workflow,
+  };
 }
 
 async function workflowMetaFromInstanceId(workflowInstanceId: string | null) {
@@ -210,8 +290,11 @@ export async function createContractService(payload: {
   startDate: Date;
   endDate: Date;
   warrantyEnd?: Date;
+  endReminderDays?: number;
   status?: string;
   progress?: number;
+  workflowId?: string;
+  stepPayloads?: Record<string, ContractStepPayloadJson>;
   terms?: string | null;
   contractTypeCode?: string | null;
   createdById: string;
@@ -221,6 +304,8 @@ export async function createContractService(payload: {
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
+  const terminalStatus = sanitizeStoredContractStatus(payload.status);
+  const workflowId = payload.workflowId ?? (await getContractFallbackWorkflowId());
   const created = await prisma.contract.create({
     data: {
       code: genContractCode(),
@@ -232,8 +317,10 @@ export async function createContractService(payload: {
       startDate: payload.startDate,
       endDate: payload.endDate,
       warrantyEnd: payload.warrantyEnd ?? null,
-      ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractCreateInput["status"]> } : {}),
-      ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(payload.endReminderDays !== undefined ? { endReminderDays: payload.endReminderDays } : {}),
+      ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
+      ...(workflowId ? { workflowId } : {}),
+      ...(!workflowId && payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
       ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
@@ -241,6 +328,19 @@ export async function createContractService(payload: {
       customer: { select: { id: true, code: true, name: true } },
     },
   });
+
+  const workflowStarted = await initContractWorkflow(created.id, {
+    workflowId: workflowId ?? null,
+    actorId: payload.actorId ?? payload.createdById,
+  });
+
+  if (
+    workflowStarted &&
+    payload.stepPayloads &&
+    Object.keys(payload.stepPayloads).length > 0
+  ) {
+    await upsertStepPayloads(created.id, payload.stepPayloads);
+  }
 
   return getContractDetailService(created.id);
 }
@@ -252,8 +352,10 @@ type UpdateContractPayload = Partial<{
   startDate: Date;
   endDate: Date;
   warrantyEnd: Date | null;
-  status: string;
+  endReminderDays?: number;
+  status?: string;
   progress: number;
+  stepPayloads: Record<string, ContractStepPayloadJson>;
   terms: string | null;
   contractTypeCode: string | null;
   actorId: string | null;
@@ -268,10 +370,12 @@ export async function updateContractService(id: string, payload: UpdateContractP
 
   const existing = await prisma.contract.findFirst({
     where: { id: resolvedId, deletedAt: null },
-    select: { id: true },
+    select: { id: true, workflowInstanceId: true },
   });
   if (!existing) throw new HttpError(404, "Contract not found");
 
+  const terminalStatus = sanitizeStoredContractStatus(payload.status);
+  const hasWorkflow = Boolean(existing.workflowInstanceId);
   await prisma.contract.update({
     where: { id: resolvedId },
     data: {
@@ -281,12 +385,17 @@ export async function updateContractService(id: string, payload: UpdateContractP
       ...(payload.startDate !== undefined ? { startDate: payload.startDate } : {}),
       ...(payload.endDate !== undefined ? { endDate: payload.endDate } : {}),
       ...(payload.warrantyEnd !== undefined ? { warrantyEnd: payload.warrantyEnd } : {}),
-      ...(payload.status !== undefined ? { status: payload.status as NonNullable<Prisma.ContractUpdateInput["status"]> } : {}),
-      ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(payload.endReminderDays !== undefined ? { endReminderDays: payload.endReminderDays } : {}),
+      ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
+      ...(!hasWorkflow && payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(payload.terms !== undefined ? { terms: payload.terms } : {}),
       ...(payload.contractTypeCode !== undefined ? { contractTypeCode: payload.contractTypeCode } : {}),
     },
   });
+
+  if (payload.stepPayloads && Object.keys(payload.stepPayloads).length > 0) {
+    await upsertStepPayloads(resolvedId, payload.stepPayloads);
+  }
 
   return getContractDetailService(resolvedId);
 }

@@ -4,5 +4,5 @@ export function isLateProgressStatus(status: string | null | undefined): boolean
 }
 
 export function lateProgressRowClass(status: string | null | undefined): string | undefined {
-  return isLateProgressStatus(status) ? "animate-pulse-soft" : undefined;
+  return isLateProgressStatus(status) ? "animate-pulse-soft isolate" : undefined;
 }

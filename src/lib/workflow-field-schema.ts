@@ -88,6 +88,29 @@ export function slugFieldKey(label: string): string {
   return base || `field_${Date.now()}`;
 }
 
+/** Đảm bảo key không trùng trong danh sách hiện có (thêm hậu tố _2, _3, …). */
+export function ensureUniqueFieldKey(key: string, existingKeys: string[]): string {
+  const base = key.trim();
+  if (!base) return base;
+  if (!existingKeys.includes(base)) return base;
+  let n = 2;
+  while (existingKeys.includes(`${base}_${n}`)) n++;
+  return `${base}_${n}`;
+}
+
+/** Trả về danh sách key bị trùng trong cùng một bước. */
+export function findDuplicateFieldKeys(fields: FieldDef[]): string[] {
+  const seen = new Set<string>();
+  const dups = new Set<string>();
+  for (const f of fields) {
+    const k = f.key.trim();
+    if (!k) continue;
+    if (seen.has(k)) dups.add(k);
+    else seen.add(k);
+  }
+  return [...dups];
+}
+
 export function isFieldVisible(def: FieldDef, values: Record<string, unknown>): boolean {
   if (!def.showWhen) return true;
   const current = values[def.showWhen.field];

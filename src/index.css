@@ -52,6 +52,9 @@
     --info: 200 80% 55%;
     --info-foreground: 0 0% 100%;
 
+    --scrollbar-thumb: 220 30% 15%;
+    --scrollbar-thumb-hover: 220 30% 15%;
+
     font-family: 'Inter', system-ui, sans-serif;
   }
 
@@ -99,6 +102,9 @@
     --warning-foreground: 0 0% 100%;
     --info: 200 75% 50%;
     --info-foreground: 0 0% 100%;
+
+    --scrollbar-thumb: 220 15% 90%;
+    --scrollbar-thumb-hover: 220 15% 90%;
   }
 }
 
@@ -109,6 +115,54 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Ẩn viền focus xanh (ring) trên input/select/button */
+  :focus {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: none !important;
+    --tw-ring-offset-shadow: 0 0 #0000 !important;
+    --tw-ring-shadow: 0 0 #0000 !important;
+    box-shadow: none !important;
+  }
+
+  /* Scrollbar trong suốt — áp dụng toàn app (trừ .no-scrollbar) */
+  *:not(.no-scrollbar) {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--scrollbar-thumb) / 0.2) transparent;
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--scrollbar-thumb) / 0.2);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--scrollbar-thumb-hover) / 0.38);
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  *:not(.no-scrollbar)::-webkit-scrollbar-button {
+    display: none;
+    height: 0;
+    width: 0;
   }
 }
 
@@ -126,16 +180,15 @@
 
   @keyframes pulse-soft {
     0%, 100% {
-      background-color: hsl(var(--destructive) / 0.05);
-      box-shadow: 0 0 0 0 hsl(var(--destructive) / 0);
+      background-color: hsl(var(--destructive) / 0.06);
     }
     50% {
-      background-color: hsl(var(--destructive) / 0.18);
-      box-shadow: 0 0 0 4px hsl(var(--destructive) / 0.18);
+      background-color: hsl(var(--destructive) / 0.16);
     }
   }
   .animate-pulse-soft {
     animation: pulse-soft 1.8s ease-in-out infinite;
+    box-shadow: inset 3px 0 0 hsl(var(--destructive) / 0.55);
   }
 }
 

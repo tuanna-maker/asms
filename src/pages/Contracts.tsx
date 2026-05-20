@@ -6,8 +6,8 @@ import { qk } from "@/lib/query-keys";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import { resolveContractDisplayStatus } from "@/lib/contract-display-status";
 import { Plus, Search, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
-import ContractDetailDialog from "@/components/details/ContractDetailDialog";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +19,9 @@ import { toast } from "sonner";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
 
 type Contract = {
-  id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number; terms?: string | null;
+  id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; displayStatus: string; progress: number; terms?: string | null;
   contractTypeCode?: string | null;
+  endReminderDays?: number;
 };
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -36,7 +37,6 @@ const Contracts = () => {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -56,7 +56,9 @@ const Contracts = () => {
     endDate: string;
     warrantyEnd: string | null;
     status: string;
+    displayStatus?: string;
     progress: number;
+    endReminderDays?: number;
     terms?: string | null;
     contractTypeCode?: string | null;
     customer?: { id: string; code: string; name: string } | null;
@@ -119,26 +121,42 @@ const Contracts = () => {
             endDate: String(maybeUi.endDate ?? "—"),
             warrantyEnd: String(maybeUi.warrantyEnd ?? "—"),
             status: mapStatus(String(maybeUi.status ?? "active")),
+            displayStatus: mapStatus(
+              String(maybeUi.displayStatus ?? maybeUi.status ?? "active"),
+            ),
             progress: Number(maybeUi.progress ?? 0),
+            ...(typeof maybeUi.endReminderDays === "number" ? { endReminderDays: maybeUi.endReminderDays } : {}),
             terms: typeof maybeUi.terms === "string" ? maybeUi.terms : null,
             contractTypeCode: typeof maybeUi.contractTypeCode === "string" ? maybeUi.contractTypeCode : null,
           } satisfies Contract;
         }
 
         const apiRow = row as ApiContractRow;
+        const startIso = apiRow.startDate;
+        const endIso = apiRow.endDate;
+        const displayStatus = mapStatus(
+          apiRow.displayStatus ??
+            resolveContractDisplayStatus({
+              status: apiRow.status,
+              startDate: startIso,
+              endDate: endIso,
+            }),
+        );
         return {
           id: apiRow.code,
           dbId: apiRow.id,
           customer: normalizeCustomer(apiRow.customer),
           value: Number(apiRow.value ?? 0),
           products: Number(apiRow.products ?? 0),
-          startDate: formatISODate(apiRow.startDate),
-          endDate: formatISODate(apiRow.endDate),
+          startDate: formatISODate(startIso),
+          endDate: formatISODate(endIso),
           warrantyEnd: apiRow.warrantyEnd ? formatISODate(apiRow.warrantyEnd) : "—",
           status: mapStatus(apiRow.status),
+          displayStatus,
           progress: Number(apiRow.progress ?? 0),
           terms: typeof apiRow.terms === "string" ? apiRow.terms : null,
           contractTypeCode: typeof apiRow.contractTypeCode === "string" ? apiRow.contractTypeCode : null,
+          ...(typeof apiRow.endReminderDays === "number" ? { endReminderDays: apiRow.endReminderDays } : {}),
         } satisfies Contract;
       }),
     staleTime: 0,
@@ -175,7 +193,6 @@ const Contracts = () => {
     const applyPatch = (row: Contract | null) =>
       row && row.id === patch.id ? { ...row, contractTypeCode: patch.contractTypeCode } : row;
     setEditingContract(applyPatch);
-    setSelectedContract(applyPatch);
     void queryClient.invalidateQueries({ queryKey: qk.contracts.all, refetchType: "all" });
   };
 
@@ -186,7 +203,6 @@ const Contracts = () => {
       await deleteContractMutation.mutateAsync(code);
       toast.success(`Đã xóa hợp đồng ${code}`);
       setDeletingContractId(null);
-      if (selectedContract?.id === code) setSelectedContract(null);
       if (editingContract?.id === code) setEditingContract(null);
     } catch {
       toast.error("Không thể xóa hợp đồng");
@@ -219,21 +235,21 @@ const Contracts = () => {
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-info/10 text-info"><Clock className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Đang thực hiện</p>
-            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "active").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.displayStatus === "active").length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-success/10 text-success"><CheckCircle className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Hoàn thành</p>
-            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "completed" || c.status === "liquidated").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.displayStatus === "completed" || c.displayStatus === "liquidated").length}</p>
           </div>
         </div>
         <div className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm border border-border/50">
           <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-warning/10 text-warning"><AlertTriangle className="h-6 w-6" /></div>
           <div>
             <p className="text-sm text-muted-foreground">Chậm tiến độ</p>
-            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.status === "late").length}</p>
+            <p className="text-2xl font-bold text-card-foreground">{contractsWithProductTotals.filter((c) => c.displayStatus === "late").length}</p>
           </div>
         </div>
       </div>
@@ -328,12 +344,11 @@ const Contracts = () => {
       <ContractTable
         contracts={filtered}
         contractTypeOptions={contractTypeOptions}
-        onView={setSelectedContract}
+        onView={setEditingContract}
         onEdit={setEditingContract}
         onRequestDelete={setDeletingContractId}
       />
 
-      <ContractDetailDialog contract={selectedContract} open={!!selectedContract} onOpenChange={(o) => !o && setSelectedContract(null)} />
       <ContractEditDialog
         contract={editingContract}
         open={!!editingContract}
@@ -391,23 +406,23 @@ const ContractTable = ({
           <TableHead>Mã HĐ</TableHead>
           <TableHead>Loại</TableHead>
           <TableHead>Khách hàng</TableHead>
-          <TableHead className="text-right">Giá trị (tr)</TableHead>
-          <TableHead className="text-center">SP</TableHead>
+          <TableHead className="text-right w-24 whitespace-nowrap">Giá trị (tr)</TableHead>
+          <TableHead className="text-center w-14">SP</TableHead>
           <TableHead>Thời gian</TableHead>
-          <TableHead>Tiến độ</TableHead>
-          <TableHead>Trạng thái</TableHead>
+          <TableHead className="w-28">Tiến độ</TableHead>
+          <TableHead className="text-center min-w-[9rem]">Trạng thái</TableHead>
           <TableHead className="text-right">Thao tác</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {contracts.map((c) => (
-          <TableRow key={c.id} className={lateProgressRowClass(c.status)}>
+          <TableRow key={c.id} className={lateProgressRowClass(c.displayStatus)}>
             <TableCell className="font-medium text-primary">{c.id}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
               {resolveDefinitionLabel(contractTypeOptions, c.contractTypeCode)}
             </TableCell>
             <TableCell>{typeof c.customer === "string" ? c.customer : ""}</TableCell>
-            <TableCell className="text-right font-semibold">{c.value.toLocaleString()}</TableCell>
+            <TableCell className="text-right font-semibold w-24 tabular-nums">{c.value.toLocaleString()}</TableCell>
             <TableCell className="text-center">{c.products}</TableCell>
             <TableCell className="text-sm text-muted-foreground">
               <div>{c.startDate} – {c.endDate}</div>
@@ -415,15 +430,15 @@ const ContractTable = ({
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
-                <div className="h-2 w-20 rounded-full bg-secondary">
-                  <div className="h-2 rounded-full bg-primary" style={{ width: `${c.progress}%` }} />
+                <div className="h-2 w-20 rounded-full bg-secondary overflow-hidden">
+                  <div className="h-full rounded-full bg-primary" style={{ width: `${c.progress}%` }} />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground">{c.progress}%</span>
+                <span className="text-xs font-medium text-foreground/80">{c.progress}%</span>
               </div>
             </TableCell>
-            <TableCell>
-              <Badge variant={(statusConfig[c.status] ?? statusConfig.active).variant}>
-                {(statusConfig[c.status] ?? statusConfig.active).label}
+            <TableCell className="text-center min-w-[9rem]">
+              <Badge variant={(statusConfig[c.displayStatus] ?? statusConfig.active).variant} className="whitespace-nowrap">
+                {(statusConfig[c.displayStatus] ?? statusConfig.active).label}
               </Badge>
             </TableCell>
             <TableCell className="text-right">

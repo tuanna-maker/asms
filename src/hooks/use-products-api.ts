@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
+import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 import { qk } from "@/lib/query-keys";
 
 export type ProductSpec = {
@@ -44,13 +45,14 @@ export type ProductListItem = {
     createdAt?: string;
     updatedAt?: string;
   }>;
+  workflow?: WorkflowInstanceListSnapshot | null;
 };
 
 export type CreateProductPayload = {
   code: string;
   name: string;
   category: string;
-  status?: "developing" | "producing" | "equipped" | "stopped";
+  status?: ProductListItem["status"];
   version?: string;
   description?: string;
   customerId?: string;
@@ -61,7 +63,9 @@ export type CreateProductPayload = {
   specs?: ProductSpec[];
 };
 
-export type UpdateProductPayload = Partial<CreateProductPayload>;
+export type UpdateProductPayload = Partial<CreateProductPayload> & {
+  stepPayloads?: Record<string, Record<string, unknown>>;
+};
 
 export function useProductsList(enabled = true) {
   return useQuery({

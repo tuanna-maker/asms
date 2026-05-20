@@ -11,7 +11,15 @@ import { prisma } from "../../utils/prisma";
 import { getContractProductCount, getContractProductCounts } from "../contracts/product-count";
 import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 import { loadWorkflowSnapshotsByInstanceIds } from "../workflows/instance-snapshot";
+import { workflowModuleForCourseKind } from "../../lib/training-course-kind";
 import { attachWorkflowToEntity, startInstanceForEntity } from "../workflows/runtime";
+import {
+  enrichTrainingCourseWithStepPayloads,
+  getOrderedStepIdsForCourse,
+  pruneStepPayloadsNotIn,
+  upsertStepPayloads,
+  type TrainingStepPayloadJson,
+} from "./step-payload";
 
 const TRAINING_TYPE_ENUMS = new Set(["internal", "external", "online"]);
 
@@ -29,10 +37,11 @@ async function resolveContractIdOptional(idOrCode: string | undefined) {
   return contract.id;
 }
 
-async function assertSingleTrainingPerContract(contractId: string, excludeCourseId?: string) {
+async function assertSingleCoachingPerContract(contractId: string, excludeCourseId?: string) {
   const existing = await prisma.trainingCourse.findFirst({
     where: {
       contractId,
+      courseKind: "coaching",
       deletedAt: null,
       ...(excludeCourseId ? { id: { not: excludeCourseId } } : {}),
     },
@@ -50,10 +59,12 @@ export async function listTrainingCoursesService(filters: {
   status?: string;
   typeCode?: string;
   contractId?: string;
+  courseKind?: string;
 }) {
   const where: Prisma.TrainingCourseWhereInput = { deletedAt: null };
   if (filters.status) where.status = filters.status as TrainingStatus;
   if (filters.typeCode) where.typeCode = filters.typeCode;
+  if (filters.courseKind) where.courseKind = filters.courseKind;
   if (filters.contractId) {
     const resolvedContractId = await resolveContractIdOptional(filters.contractId);
     if (resolvedContractId) where.contractId = resolvedContractId;
@@ -73,9 +84,11 @@ export async function listTrainingCoursesService(filters: {
       participants: true,
       status: true,
       location: true,
+      courseKind: true,
       contractId: true,
       workflowInstanceId: true,
       customer: { select: { id: true, code: true, name: true } },
+      instructor: { select: { id: true, fullName: true } },
       contract: { select: { id: true, code: true } },
     },
   });
@@ -92,6 +105,8 @@ export async function getTrainingCourseDetailService(id: string) {
   const course = await prisma.trainingCourse.findFirst({
     where: { id, deletedAt: null },
     include: {
+      customer: { select: { id: true, code: true, name: true } },
+      instructor: { select: { id: true, fullName: true } },
       trainees: {
         where: { deletedAt: null },
         orderBy: { fullName: "asc" },
@@ -104,9 +119,16 @@ export async function getTrainingCourseDetailService(id: string) {
   });
 
   if (!course) throw new HttpError(404, "Training course not found");
-  if (!course.contractId) return course;
-  const participants = await getContractProductCount(course.contractId);
-  return { ...course, participants };
+  let enriched = await enrichTrainingCourseWithStepPayloads(course);
+  if (enriched.contractId) {
+    const participants = await getContractProductCount(enriched.contractId);
+    enriched = { ...enriched, participants };
+  }
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds([enriched.workflowInstanceId]);
+  const workflow = enriched.workflowInstanceId
+    ? (workflowMap.get(enriched.workflowInstanceId) ?? null)
+    : null;
+  return { ...enriched, workflow };
 }
 
 export async function createTrainingCourseService(payload: {
@@ -123,11 +145,15 @@ export async function createTrainingCourseService(payload: {
   location?: string;
   description?: string;
   workflowId?: string;
+  courseKind?: string;
+  stepPayloads?: Record<string, TrainingStepPayloadJson>;
   actorId?: string | null;
 }) {
+  const courseKind = payload.courseKind === "coaching" ? "coaching" : "training";
+  const workflowModule = workflowModuleForCourseKind(courseKind);
   const resolvedContractId = await resolveContractIdOptional(payload.contractId);
-  if (resolvedContractId) {
-    await assertSingleTrainingPerContract(resolvedContractId);
+  if (resolvedContractId && courseKind === "coaching") {
+    await assertSingleCoachingPerContract(resolvedContractId);
   }
   const participants = resolvedContractId
     ? await getContractProductCount(resolvedContractId)
@@ -151,11 +177,13 @@ export async function createTrainingCourseService(payload: {
       participants,
       location: payload.location ?? null,
       description: payload.description ?? null,
+      courseKind,
       ...(payload.status !== undefined ? { status: payload.status as TrainingStatus } : {}),
     },
     select: {
       id: true,
       code: true,
+      courseKind: true,
       title: true,
       type: true,
       typeCode: true,
@@ -177,13 +205,13 @@ export async function createTrainingCourseService(payload: {
   try {
     if (payload.workflowId) {
       await attachWorkflowToEntity({
-        moduleKey: "training",
+        moduleKey: workflowModule,
         entityId: created.id,
         workflowId: payload.workflowId,
         actorId,
       });
     } else {
-      const init = await startInstanceForEntity("training", created.id, actorId);
+      const init = await startInstanceForEntity(workflowModule, created.id, actorId);
       if (init) {
         await prisma.trainingCourse.update({
           where: { id: created.id },
@@ -194,6 +222,12 @@ export async function createTrainingCourseService(payload: {
   } catch (e) {
     // eslint-disable-next-line no-console
     console.warn("[training] workflow init failed", e);
+  }
+
+  if (payload.stepPayloads && Object.keys(payload.stepPayloads).length > 0) {
+    await upsertStepPayloads(created.id, payload.stepPayloads);
+    const ordered = await getOrderedStepIdsForCourse(created.id);
+    if (ordered.length > 0) await pruneStepPayloadsNotIn(created.id, ordered);
   }
 
   return getTrainingCourseDetailService(created.id);
@@ -213,15 +247,17 @@ type UpdateTrainingCoursePayload = Partial<{
   location: string | null;
   description: string | null;
   workflowId: string;
+  stepPayloads: Record<string, TrainingStepPayloadJson>;
   actorId: string | null;
 }>;
 
 export async function updateTrainingCourseService(id: string, payload: UpdateTrainingCoursePayload) {
   const existing = await prisma.trainingCourse.findFirst({
     where: { id, deletedAt: null },
-    select: { id: true, contractId: true },
+    select: { id: true, contractId: true, courseKind: true },
   });
   if (!existing) throw new HttpError(404, "Training course not found");
+  const workflowModule = workflowModuleForCourseKind(existing.courseKind);
 
   if (payload.typeCode !== undefined) {
     await assertActiveDefinitionCode("training_type", payload.typeCode, "Loại đào tạo");
@@ -230,8 +266,8 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
   const resolvedContractId = await resolveContractIdOptional(
     payload.contractId === null ? undefined : payload.contractId ?? undefined,
   );
-  if (resolvedContractId) {
-    await assertSingleTrainingPerContract(resolvedContractId, id);
+  if (resolvedContractId && existing.courseKind === "coaching") {
+    await assertSingleCoachingPerContract(resolvedContractId, id);
   }
   const participants = resolvedContractId
     ? await getContractProductCount(resolvedContractId)
@@ -239,11 +275,13 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
 
   if (payload.workflowId) {
     await attachWorkflowToEntity({
-      moduleKey: "training",
+      moduleKey: workflowModule,
       entityId: id,
       workflowId: payload.workflowId,
       actorId: payload.actorId ?? payload.instructorId ?? null,
     });
+    const ordered = await getOrderedStepIdsForCourse(id);
+    await pruneStepPayloadsNotIn(id, ordered);
   }
 
   const updated = await prisma.trainingCourse.update({
@@ -289,7 +327,13 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
     },
   });
 
-  return updated;
+  if (payload.stepPayloads && Object.keys(payload.stepPayloads).length > 0) {
+    await upsertStepPayloads(id, payload.stepPayloads);
+    const ordered = await getOrderedStepIdsForCourse(id);
+    if (ordered.length > 0) await pruneStepPayloadsNotIn(id, ordered);
+  }
+
+  return getTrainingCourseDetailService(id);
 }
 
 export async function softDeleteTrainingCourseService(id: string) {

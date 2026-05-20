@@ -1,5 +1,5 @@
 import { startServer } from "./server";
-// reload trigger for route registration
+// reload trigger (customer-feedbacks routes)
 
 void startServer().catch((err) => {
   // eslint-disable-next-line no-console

@@ -10,6 +10,7 @@
 import { prisma } from "../utils/prisma";
 import { getSettingNumber } from "../modules/system-settings/service";
 import { createNotificationForUser, notifyByPreference } from "../modules/notifications/service";
+import { resolveContractDisplayStatus } from "../modules/contracts/display-status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -81,15 +82,37 @@ async function scanContractExpiry(
   const contracts = await prisma.contract.findMany({
     where: {
       deletedAt: null,
-      status: { in: ["draft", "active"] },
+      status: { notIn: ["completed", "liquidated"] },
       endDate: { gte: now, lte: horizonDate },
     },
-    select: { id: true, code: true, title: true, endDate: true, value: true },
+    select: {
+      id: true,
+      code: true,
+      title: true,
+      startDate: true,
+      endDate: true,
+      value: true,
+      status: true,
+      endReminderDays: true,
+    },
   });
   for (const c of contracts) {
+    const displayStatus = resolveContractDisplayStatus({
+      status: c.status,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      now,
+    });
+    if (displayStatus !== "draft" && displayStatus !== "active") continue;
+
     const valueNumber = Number(c.value ?? 0);
     const isHigh = valueNumber >= cfg.highThreshold;
-    const remindDays = isHigh ? cfg.daysHigh : cfg.daysLow;
+    const remindDays =
+      c.endReminderDays > 0
+        ? c.endReminderDays
+        : isHigh
+          ? cfg.daysHigh
+          : cfg.daysLow || cfg.fallbackDays;
     const remindBefore = new Date(now.getTime() + remindDays * DAY_MS);
     if (c.endDate.getTime() > remindBefore.getTime()) continue;
     const daysLeft = Math.max(0, Math.ceil((c.endDate.getTime() - now.getTime()) / DAY_MS));

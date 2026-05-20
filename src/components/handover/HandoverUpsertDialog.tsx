@@ -1,17 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { FileText, GitBranch, Loader2, Package } from "lucide-react";
+import { FileText, GitBranch, Loader2, Package, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -44,6 +38,7 @@ import {
 } from "@/lib/handover-step-payload";
 import { NO_ELIGIBLE_CONTRACTS_HINT } from "@/lib/contract-eligibility";
 import { resolveInitialWorkflowStepTabId } from "@/lib/workflow-step-tab";
+import { workflowStepTabTriggerClass } from "@/components/workflow/WorkflowStepSegments";
 import { cn } from "@/lib/utils";
 
 type ContractOption = { id: string; code: string; title: string | null; products: number };
@@ -89,6 +84,15 @@ function SummaryFieldCard({
         <p className="text-xs text-muted-foreground">{label}</p>
         {children}
       </div>
+    </div>
+  );
+}
+
+function SectionHeading({ title, description }: { title: string; description?: string }) {
+  return (
+    <div className="border-l-4 border-primary pl-3 shrink-0">
+      <h3 className="font-semibold text-card-foreground">{title}</h3>
+      {description ? <p className="text-xs text-muted-foreground mt-0.5">{description}</p> : null}
     </div>
   );
 }
@@ -270,178 +274,226 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
   };
 
   const submitting = createH.isPending || updateH.isPending;
+  const title = editing ? `Chỉnh sửa bàn giao ${editing.code}` : "Thêm bàn giao mới";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[92vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{editing ? `Bàn giao ${editing.code}` : "Thêm bàn giao"}</DialogTitle>
-        </DialogHeader>
+  <>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-[75vw] xl:max-w-[1140px] p-0 flex flex-col gap-0 overflow-hidden"
+      >
+        <SheetHeader className="flex h-16 flex-row items-center justify-between border-b border-border/50 px-6 pr-14 space-y-0 shrink-0 gap-3">
+          <SheetTitle className="flex items-center gap-2 text-left leading-6 m-0 min-w-0">
+            <Truck className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+            <span className="truncate leading-6">{title}</span>
+          </SheetTitle>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)} disabled={submitting}>
+              Hủy
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submit()}
+              disabled={submitting || (isCreateMode && (!contractId || contracts.length === 0))}
+            >
+              <Save className="mr-1.5 h-4 w-4" />
+              {submitting ? "Đang lưu…" : "Lưu"}
+            </Button>
+          </div>
+        </SheetHeader>
 
-        <div className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Hợp đồng">
-              <Select
-                value={contractId || undefined}
-                onValueChange={setContractId}
-                disabled={Boolean(editing) || (isCreateMode && contracts.length === 0)}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isCreateMode && contracts.length === 0
-                        ? "Không có HĐ khả dụng"
-                        : "Chọn HĐ"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {contracts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.code} — {c.title || "—"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {isCreateMode && contracts.length === 0 ? (
-                <p className="text-xs text-muted-foreground mt-1.5">{NO_ELIGIBLE_CONTRACTS_HINT}</p>
-              ) : null}
-            </SummaryFieldCard>
-            <SummaryFieldCard icon={<Package className="h-4 w-4" />} label="Số sản phẩm">
-              <p className="text-sm font-medium">{productCount}</p>
-            </SummaryFieldCard>
-            <SummaryFieldCard icon={<GitBranch className="h-4 w-4" />} label="Quy trình áp dụng">
-            <Select value={selectedWorkflowId || undefined} onValueChange={handleWorkflowSelect} disabled={attachWf.isPending}>
-              <SelectTrigger>
-                <SelectValue placeholder={isCreateMode ? "Chọn quy trình bàn giao" : "Chọn quy trình"} />
-              </SelectTrigger>
-              <SelectContent>
-                {workflowOptions.map((wf) => (
-                  <SelectItem key={wf.id} value={wf.id}>
-                    {wf.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {workflowDetailLoading ? (
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" /> Đang tải các bước…
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {/* Phần 1: Thông tin bàn giao */}
+          <section className="shrink-0 border-b border-border/50 bg-card/50 px-6 py-5 space-y-4 max-h-[42vh] overflow-y-auto">
+            <SectionHeading
+              title="Thông tin bàn giao"
+              description="Hợp đồng, quy trình, trạng thái và thời hạn của phiếu bàn giao."
+            />
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Hợp đồng">
+                <Select
+                  value={contractId || undefined}
+                  onValueChange={setContractId}
+                  disabled={Boolean(editing) || (isCreateMode && contracts.length === 0)}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        isCreateMode && contracts.length === 0
+                          ? "Không có HĐ khả dụng"
+                          : "Chọn HĐ"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {contracts.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.code} — {c.title || "—"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {isCreateMode && contracts.length === 0 ? (
+                  <p className="text-xs text-muted-foreground mt-1.5">{NO_ELIGIBLE_CONTRACTS_HINT}</p>
+                ) : null}
+              </SummaryFieldCard>
+
+              <SummaryFieldCard icon={<Package className="h-4 w-4" />} label="Số sản phẩm">
+                <p className="text-sm font-medium">{productCount}</p>
+              </SummaryFieldCard>
+
+              <SummaryFieldCard icon={<GitBranch className="h-4 w-4" />} label="Quy trình áp dụng">
+                <Select
+                  value={selectedWorkflowId || undefined}
+                  onValueChange={handleWorkflowSelect}
+                  disabled={attachWf.isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={isCreateMode ? "Chọn quy trình bàn giao" : "Chọn quy trình"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workflowOptions.map((wf) => (
+                      <SelectItem key={wf.id} value={wf.id}>
+                        {wf.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {workflowDetailLoading ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Đang tải các bước…
+                  </p>
+                ) : null}
+              </SummaryFieldCard>
+
+              <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Trạng thái">
+                <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Chưa bắt đầu</SelectItem>
+                    <SelectItem value="active">Đang thực hiện</SelectItem>
+                    <SelectItem value="late">Chậm tiến độ</SelectItem>
+                    <SelectItem value="completed">Hoàn thành</SelectItem>
+                  </SelectContent>
+                </Select>
+              </SummaryFieldCard>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Ngày bắt đầu</Label>
+                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Hạn hoàn thành</Label>
+                <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+              </div>
+            </div>
+
+            {detailFetching && editing ? (
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung phiếu…
               </p>
             ) : null}
-            </SummaryFieldCard>
-            <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Trạng thái">
-              <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pending">Chưa bắt đầu</SelectItem>
-                  <SelectItem value="active">Đang thực hiện</SelectItem>
-                  <SelectItem value="late">Chậm tiến độ</SelectItem>
-                  <SelectItem value="completed">Hoàn thành</SelectItem>
-                </SelectContent>
-              </Select>
-            </SummaryFieldCard>
-          </div>
+          </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Ngày bắt đầu</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Hạn hoàn thành</Label>
-              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-            </div>
-          </div>
+          {/* Phần 2: Các bước */}
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-5">
+            <SectionHeading
+              title="Các bước"
+              description="Nội dung từng bước theo quy trình bàn giao đã chọn."
+            />
 
-          {detailFetching && editing ? (
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Đang tải nội dung phiếu…
-            </p>
-          ) : null}
-
-          {!hasWorkflowSelected ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Chọn quy trình bàn giao để hiển thị các tab nội dung bước.
-            </div>
-          ) : workflowDetailLoading ? (
-            <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Đang tải các bước từ quy trình…
-            </div>
-          ) : !showDynamicTabs ? (
-            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-              Quy trình chưa có bước hoặc chưa cấu hình trường bước.
-            </div>
-          ) : (
-            <Tabs value={formTab} onValueChange={setFormTab}>
-              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
+            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden">
+              {!hasWorkflowSelected ? (
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                  Chọn quy trình bàn giao ở phần trên để hiển thị các bước.
+                </div>
+              ) : workflowDetailLoading ? (
+                <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Đang tải các bước từ quy trình…
+                </div>
+              ) : !showDynamicTabs ? (
+                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                  Quy trình chưa có bước hoặc chưa cấu hình trường bước.
+                </div>
+              ) : (
+                <Tabs
+                  value={formTab}
+                  onValueChange={setFormTab}
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                >
+                  <div className="shrink-0 border-b border-border overflow-x-auto">
+                    <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
+                      {stepsForTabs.map((step) => (
+                        <TabsTrigger key={step.id} value={step.id} className={workflowStepTabTriggerClass}>
+                          {stepTabLabel(step.order, step.name)}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+                  <div className="relative min-h-0 flex-1">
                     {stepsForTabs.map((step) => (
-                      <TabsTrigger key={step.id} value={step.id} className="text-xs">
-                        {stepTabLabel(step.order, step.name)}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  {stepsForTabs.map((step) => (
-                    <TabsContent key={step.id} value={step.id} className="mt-3 space-y-3">
-                      <DynamicStepFormFields
-                        fieldSchema={step.fieldSchema}
-                        values={stepPayloads[step.id] ?? {}}
-                        onChange={(key, value) => patchStepPayload(step.id, key, value)}
-                        stepDescription={step.description}
-                        workflowEditHref={workflowEditHref}
-                      />
-                      {editing ? (
-                        <WorkflowInstancePanel
-                          moduleKey="handover"
-                          entityId={editing.id}
-                          focusStepId={step.id}
-                          compact
+                      <TabsContent
+                        key={step.id}
+                        value={step.id}
+                        className="absolute inset-0 mt-0 overflow-y-auto py-4 space-y-4 data-[state=inactive]:hidden"
+                      >
+                        <DynamicStepFormFields
+                          fieldSchema={step.fieldSchema}
+                          values={stepPayloads[step.id] ?? {}}
+                          onChange={(key, value) => patchStepPayload(step.id, key, value)}
+                          stepDescription={step.description}
+                          workflowEditHref={workflowEditHref}
                         />
-                      ) : null}
-                    </TabsContent>
-                  ))}
-            </Tabs>
-          )}
+                        {editing ? (
+                          <WorkflowInstancePanel
+                            moduleKey="handover"
+                            entityId={editing.id}
+                            focusStepId={step.id}
+                            compact
+                          />
+                        ) : null}
+                      </TabsContent>
+                    ))}
+                  </div>
+                </Tabs>
+              )}
+            </div>
+          </section>
         </div>
+      </SheetContent>
+    </Sheet>
 
-        <AlertDialog open={Boolean(pendingSwitchId)} onOpenChange={(o) => !o && setPendingSwitchId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Áp dụng quy trình khác?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tiến trình hiện tại sẽ đóng và tạo lại từ bước đầu theo quy trình mới. Bạn có chắc?
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={attachWf.isPending}>Hủy</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={(e) => {
-                  e.preventDefault();
-                  void confirmSwitch();
-                }}
-                disabled={attachWf.isPending}
-              >
-                {attachWf.isPending ? "Đang áp dụng…" : "Áp dụng"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
-        <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-            Hủy
-          </Button>
-          <Button
-            type="button"
-            onClick={() => void submit()}
-            disabled={submitting || (isCreateMode && (!contractId || contracts.length === 0))}
+    <AlertDialog open={Boolean(pendingSwitchId)} onOpenChange={(o) => !o && setPendingSwitchId(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Áp dụng quy trình khác?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tiến trình hiện tại sẽ đóng và tạo lại từ bước đầu theo quy trình mới. Bạn có chắc?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={attachWf.isPending}>Hủy</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              void confirmSwitch();
+            }}
+            disabled={attachWf.isPending}
           >
-            {submitting ? "Đang lưu…" : "Lưu"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {attachWf.isPending ? "Đang áp dụng…" : "Áp dụng"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </>
   );
 }

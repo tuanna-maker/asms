@@ -185,6 +185,18 @@ enum CrmActivityStatus {
   done
 }
 
+enum CustomerFeedbackSeverity {
+  low
+  medium
+  high
+}
+
+enum CustomerFeedbackStatus {
+  new
+  processing
+  resolved
+}
+
 model Role {
   id          String   @id @default(cuid())
   code        String   @unique
@@ -197,9 +209,26 @@ model Role {
   deletedAt   DateTime? @map("deleted_at")
 
   users       User[]
+  permissions RolePermission[]
 
   @@index([deletedAt], map: "idx_roles_deleted_at")
   @@map("roles")
+}
+
+model RolePermission {
+  id        String  @id @default(cuid())
+  roleId    String  @map("role_id")
+  moduleKey String  @map("module_key")
+  canRead   Boolean @default(false) @map("can_read")
+  canCreate Boolean @default(false) @map("can_create")
+  canUpdate Boolean @default(false) @map("can_update")
+  canDelete Boolean @default(false) @map("can_delete")
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, moduleKey], map: "uniq_role_permission_module")
+  @@index([roleId], map: "idx_role_permissions_role_id")
+  @@map("role_permissions")
 }
 
 model User {
@@ -223,6 +252,7 @@ model User {
   courses       TrainingCourse[] @relation("CourseInstructor")
   documents     Document[] @relation("DocumentOwner")
   crmActivities CrmActivity[] @relation("CrmActivityCreatedBy")
+  customerFeedbacks CustomerFeedback[] @relation("CustomerFeedbackCreatedBy")
   refreshTokens          RefreshToken[]
   notificationPreferences UserNotificationPreference[]
   notifications           Notification[]
@@ -304,6 +334,7 @@ model Customer {
   trainingCourses TrainingCourse[]
   documents       Document[]
   anniversaries   CustomerAnniversary[]
+  feedbacks       CustomerFeedback[]
 
   @@index([name], map: "idx_customers_name")
   @@index([sourceCode], map: "idx_customers_source_code")
@@ -392,6 +423,35 @@ model CrmActivity {
   @@map("crm_activities")
 }
 
+model CustomerFeedback {
+  id          String                   @id @default(cuid())
+  customerId  String                   @map("customer_id")
+  contractId  String?                  @map("contract_id")
+  warrantyId  String?                  @map("warranty_id")
+  createdById String?                  @map("created_by_id")
+  title       String
+  content     String                   @db.Text
+  severity    CustomerFeedbackSeverity @default(medium)
+  status      CustomerFeedbackStatus   @default(new)
+  feedbackAt  DateTime                 @map("feedback_at")
+  createdAt   DateTime                 @default(now()) @map("created_at")
+  updatedAt   DateTime                 @updatedAt @map("updated_at")
+  deletedAt   DateTime?                @map("deleted_at")
+
+  customer  Customer  @relation(fields: [customerId], references: [id])
+  contract  Contract? @relation(fields: [contractId], references: [id])
+  warranty  Warranty? @relation(fields: [warrantyId], references: [id])
+  createdBy User?     @relation("CustomerFeedbackCreatedBy", fields: [createdById], references: [id])
+
+  @@index([customerId], map: "idx_customer_feedbacks_customer_id")
+  @@index([contractId], map: "idx_customer_feedbacks_contract_id")
+  @@index([warrantyId], map: "idx_customer_feedbacks_warranty_id")
+  @@index([feedbackAt], map: "idx_customer_feedbacks_feedback_at")
+  @@index([status], map: "idx_customer_feedbacks_status")
+  @@index([deletedAt], map: "idx_customer_feedbacks_deleted_at")
+  @@map("customer_feedbacks")
+}
+
 model Contract {
   id           String         @id @default(cuid())
   code         String         @unique
@@ -405,6 +465,7 @@ model Contract {
   warrantyEnd  DateTime?      @map("warranty_end")
   status       ContractStatus @default(draft)
   progress     Int            @default(0)
+  endReminderDays Int         @default(7) @map("end_reminder_days")
   contractTypeCode String?    @map("contract_type_code")
   workflowId   String?        @map("workflow_id")
   workflowInstanceId String?  @map("workflow_instance_id")
@@ -423,6 +484,7 @@ model Contract {
   trainingCourses  TrainingCourse[]
   documents        Document[]
   stepPayloads     ContractStepPayload[]
+  feedbacks        CustomerFeedback[]
 
   @@index([customerId], map: "idx_contracts_customer_id")
   @@index([createdById], map: "idx_contracts_created_by_id")
@@ -553,6 +615,7 @@ model Warranty {
   assignee       User?            @relation("WarrantyAssignee", fields: [assigneeId], references: [id])
   documents      Document[]
   stepPayloads   WarrantyStepPayload[]
+  feedbacks      CustomerFeedback[]
 
   @@index([contractId], map: "idx_warranties_contract_id")
   @@index([customerId], map: "idx_warranties_customer_id")
@@ -650,6 +713,8 @@ model Product {
   updatedAt     DateTime      @updatedAt @map("updated_at")
   deletedAt     DateTime?     @map("deleted_at")
 
+  workflowInstanceId String? @map("workflow_instance_id")
+
   contract         Contract?         @relation(fields: [contractId], references: [id])
   customer         Customer?         @relation(fields: [customerId], references: [id])
   materials        Material[]
@@ -657,13 +722,31 @@ model Product {
   productBoms      ProductBom[]
   warranties       Warranty[]
   documents        Document[]
+  stepPayloads     ProductStepPayload[]
 
   @@index([contractId], map: "idx_products_contract_id")
   @@index([customerId], map: "idx_products_customer_id")
   @@index([status], map: "idx_products_status")
   @@index([category], map: "idx_products_category")
+  @@index([workflowInstanceId], map: "idx_products_workflow_instance_id")
   @@index([deletedAt], map: "idx_products_deleted_at")
   @@map("products")
+}
+
+/** Nội dung form sản phẩm theo từng bước quy trình (key = workflowStepId). */
+model ProductStepPayload {
+  id             String   @id @default(cuid())
+  productId      String   @map("product_id")
+  workflowStepId String   @map("workflow_step_id")
+  payload        Json
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, workflowStepId], map: "uniq_product_step_payload")
+  @@index([productId], map: "idx_product_step_payloads_product_id")
+  @@map("product_step_payloads")
 }
 
 model ContractProduct {
@@ -781,6 +864,8 @@ model TrainingCourse {
   status             TrainingStatus @default(planned)
   location           String?
   description        String?
+  /// training = đào tạo (/dao-tao); coaching = huấn luyện (/ban-giao tab HL)
+  courseKind         String         @default("training") @map("course_kind")
   workflowInstanceId String?        @map("workflow_instance_id")
   createdAt          DateTime       @default(now()) @map("created_at")
   updatedAt          DateTime       @updatedAt @map("updated_at")
@@ -792,15 +877,33 @@ model TrainingCourse {
   trainees      Trainee[]
   sessions      ScheduleSession[]
   documents     Document[]
+  stepPayloads  TrainingCourseStepPayload[]
 
   @@index([contractId], map: "idx_training_courses_contract_id")
   @@index([customerId], map: "idx_training_courses_customer_id")
   @@index([instructorId], map: "idx_training_courses_instructor_id")
   @@index([status], map: "idx_training_courses_status")
   @@index([typeCode], map: "idx_training_courses_type_code")
+  @@index([courseKind], map: "idx_training_courses_course_kind")
   @@index([workflowInstanceId], map: "idx_training_courses_workflow_instance_id")
   @@index([deletedAt], map: "idx_training_courses_deleted_at")
   @@map("training_courses")
+}
+
+/** Nội dung form khóa học theo từng bước quy trình (key = workflowStepId). */
+model TrainingCourseStepPayload {
+  id               String   @id @default(cuid())
+  trainingCourseId String   @map("training_course_id")
+  workflowStepId   String   @map("workflow_step_id")
+  payload          Json
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  trainingCourse TrainingCourse @relation(fields: [trainingCourseId], references: [id], onDelete: Cascade)
+
+  @@unique([trainingCourseId, workflowStepId], map: "uniq_training_course_step_payload")
+  @@index([trainingCourseId], map: "idx_training_course_step_payloads_course_id")
+  @@map("training_course_step_payloads")
 }
 
 model Trainee {
@@ -977,6 +1080,7 @@ model WorkflowStep {
   name            String
   actionCode      String   @default("approve") @map("action_code")
   roleCode        String   @map("role_code")
+  assigneeIds     String[] @default([]) @map("assignee_ids")
   slaHours        Int?     @map("sla_hours")
   description     String?  @db.Text
   phaseCode       String   @default("other") @map("phase_code")

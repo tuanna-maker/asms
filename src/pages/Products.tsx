@@ -35,6 +35,8 @@ import {
   type ProductListItem,
 } from "@/hooks/use-products-api";
 import { toast } from "sonner";
+import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
+import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 
 function apiProductToDefense(p: ProductListItem): DefenseProduct {
   return {
@@ -64,9 +66,15 @@ function apiProductToDefense(p: ProductListItem): DefenseProduct {
   };
 }
 
-const statusLabel: Record<DefenseProduct["status"], { label: string; cls: string }> = {
+const statusLabel: Record<string, { label: string; cls: string }> = {
   developing: { label: "Đang phát triển", cls: "bg-warning/10 text-warning border-warning/30" },
   producing: { label: "Đang sản xuất", cls: "bg-info/10 text-info border-info/30" },
+  produced: { label: "Sản xuất xong", cls: "bg-info/10 text-info border-info/30" },
+  inspection_submitted: { label: "Đã trình NT", cls: "bg-warning/10 text-warning border-warning/30" },
+  inspecting: { label: "Đang nghiệm thu", cls: "bg-warning/10 text-warning border-warning/30" },
+  inspection_passed: { label: "NT xong", cls: "bg-success/10 text-success border-success/30" },
+  decision_approved: { label: "QĐ phê duyệt", cls: "bg-success/10 text-success border-success/30" },
+  equip_decided: { label: "Có QĐ trang bị", cls: "bg-success/10 text-success border-success/30" },
   equipped: { label: "Đã trang bị", cls: "bg-success/10 text-success border-success/30" },
   stopped: { label: "Dừng SX", cls: "bg-muted text-muted-foreground border-border" },
 };
@@ -87,6 +95,14 @@ const Products = () => {
 
   useEffect(() => {
     setProducts(apiProducts.map(apiProductToDefense));
+  }, [apiProducts]);
+
+  const workflowByProductId = useMemo(() => {
+    const m = new Map<string, WorkflowInstanceListSnapshot | null>();
+    for (const p of apiProducts) {
+      m.set(p.id, p.workflow ?? null);
+    }
+    return m;
   }, [apiProducts]);
 
   const [search, setSearch] = useState("");
@@ -134,14 +150,6 @@ const Products = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Sản phẩm Quốc phòng</h1>
-          <p className="text-sm text-muted-foreground mt-1">Quản lý các sản phẩm quốc phòng và danh mục linh kiện cấu thành (BOM)</p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />Thêm sản phẩm</Button>
-      </div>
-
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Tổng sản phẩm" value={stats.total} icon={Package} color="primary" />
         <StatCard title="Đang phát triển" value={stats.developing} icon={Cpu} color="warning" />
@@ -155,7 +163,7 @@ const Products = () => {
 
       <Card>
         <CardContent className="pt-6 space-y-4">
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Tìm theo tên, mã SP, mã quân sự..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
@@ -176,6 +184,10 @@ const Products = () => {
                 ))}
               </SelectContent>
             </Select>
+            <Button className="shrink-0 md:ml-auto" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Thêm sản phẩm
+            </Button>
           </div>
 
           {/* Desktop table */}
@@ -188,15 +200,16 @@ const Products = () => {
                   <TableHead>ID hệ thống</TableHead>
                   <TableHead>Phân loại</TableHead>
                   <TableHead className="text-center">Linh kiện</TableHead>
+                  <TableHead>Bước QT</TableHead>
                   <TableHead className="text-right">Đã SX</TableHead>
-                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-center">Trạng thái</TableHead>
                   <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {productsLoading && isAuthenticated ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
@@ -209,8 +222,31 @@ const Products = () => {
                     <TableCell className="text-center">
                       <Badge variant="outline" className="gap-1"><Layers className="h-3 w-3" />{p.bom.length}</Badge>
                     </TableCell>
+                    <TableCell className="text-sm align-middle" onClick={(e) => e.stopPropagation()}>
+                      {(() => {
+                        const wf = workflowByProductId.get(p.id);
+                        if (!wf || wf.totalSteps === 0) {
+                          return <span className="text-xs text-muted-foreground">—</span>;
+                        }
+                        return (
+                          <WorkflowStepProgressPill
+                            variant="table"
+                            totalSteps={wf.totalSteps}
+                            currentStepIndex={wf.currentStepIndex}
+                            status={wf.status}
+                            label={
+                              wf.status === "completed"
+                                ? wf.currentStepName ?? "Hoàn tất"
+                                : wf.currentStepIndex > 0
+                                  ? `${wf.currentStepIndex}/${wf.totalSteps}`
+                                  : "Chưa gắn"
+                            }
+                          />
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="text-right font-medium">{p.totalProduced.toLocaleString()}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Badge variant="outline" className={(statusLabel[p.status] ?? statusLabel.developing).cls}>
                         {(statusLabel[p.status] ?? statusLabel.developing).label}
                       </Badge>
@@ -229,7 +265,7 @@ const Products = () => {
                   </TableRow>
                 ))}
                 {!productsLoading && filtered.length === 0 && (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     {isAuthenticated ? "Không có sản phẩm phù hợp" : "Chưa có dữ liệu"}
                   </TableCell></TableRow>
                 )}
@@ -296,7 +332,9 @@ const Products = () => {
         apiMode={isAuthenticated}
         existingCodes={products.map((p) => p.code)}
         onApiCreate={async (payload) => {
-          await createProduct.mutateAsync(payload);
+          const res = await createProduct.mutateAsync(payload);
+          const data = (res as { data?: { data?: { id: string } } }).data?.data;
+          return data ? { id: data.id } : undefined;
         }}
       />
 

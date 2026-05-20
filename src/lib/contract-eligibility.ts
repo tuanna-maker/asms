@@ -7,13 +7,13 @@ export type ContractOption = {
 
 export function buildAssignedContractSets(
   handovers: { contractId: string }[],
-  trainings: { contractId?: string | null }[],
+  coachingCourses: { contractId?: string | null }[],
 ) {
   const withHandover = new Set(handovers.map((h) => h.contractId));
-  const withTraining = new Set(
-    trainings.map((t) => t.contractId).filter((id): id is string => Boolean(id)),
+  const withCoaching = new Set(
+    coachingCourses.map((t) => t.contractId).filter((id): id is string => Boolean(id)),
   );
-  return { withHandover, withTraining };
+  return { withHandover, withCoaching };
 }
 
 /** HĐ chưa có bàn giao và chưa có huấn luyện (cho tạo mới từ màn list). */
@@ -23,7 +23,7 @@ export function filterContractsEligibleForNewLink(
   includeContractId?: string | null,
 ): ContractOption[] {
   const eligible = contracts.filter(
-    (c) => !sets.withHandover.has(c.id) && !sets.withTraining.has(c.id),
+    (c) => !sets.withHandover.has(c.id) && !sets.withCoaching.has(c.id),
   );
   if (includeContractId && !eligible.some((c) => c.id === includeContractId)) {
     const extra = contracts.find((c) => c.id === includeContractId);

@@ -1,25 +1,8 @@
 import { ROUTE_PERMISSIONS, ROLE_LABELS, type Role } from "@/hooks/use-role";
+import { PERMISSION_MODULE_DEFS } from "@/lib/route-module-map";
 
 /** Các nhóm chức năng khớp menu chính; `paths` là khóa trong `ROUTE_PERMISSIONS`. */
-export const ROLE_MATRIX_MODULES: ReadonlyArray<{
-  label: string;
-  paths: (keyof typeof ROUTE_PERMISSIONS)[];
-}> = [
-  { label: "Dashboard", paths: ["/"] },
-  { label: "Hợp đồng", paths: ["/hop-dong"] },
-  { label: "Bàn giao & HL", paths: ["/ban-giao"] },
-  { label: "Bảo hành / SC", paths: ["/bao-hanh"] },
-  { label: "Sản phẩm", paths: ["/san-pham"] },
-  { label: "Vật tư", paths: ["/vat-tu"] },
-  { label: "CRM / Khách hàng", paths: ["/khach-hang"] },
-  { label: "Báo cáo", paths: ["/bao-cao"] },
-  { label: "Đề tài NC", paths: ["/de-tai"] },
-  { label: "Công việc", paths: ["/cong-viec"] },
-  { label: "Đào tạo & HL", paths: ["/dao-tao", "/dao-tao/:id"] },
-  { label: "Tài liệu", paths: ["/tai-lieu"] },
-  { label: "Quy trình", paths: ["/quy-trinh"] },
-  { label: "Cài đặt", paths: ["/cai-dat"] },
-];
+export const ROLE_MATRIX_MODULES = PERMISSION_MODULE_DEFS;
 
 /** Đơn nhất, thứ tự hiển thị trong màn «Phân quyền». */
 export const SETTINGS_ROLE_ORDER: Role[] = ["admin", "manager", "technician", "sales", "viewer"];

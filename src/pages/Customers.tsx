@@ -173,7 +173,6 @@ const Customers = () => {
     email: "",
     address: "",
   });
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const [createdFrom, setCreatedFrom] = useState<string>("");
@@ -339,7 +338,6 @@ const Customers = () => {
       await deleteCustomerMutation.mutateAsync(c.id);
       toast.success(`Đã xóa khách hàng ${c.name}`);
       setDeletingCustomer(null);
-      if (selectedCustomer?.id === c.id) setSelectedCustomer(null);
       if (editingCustomer?.id === c.id) setEditingCustomer(null);
     } catch {
       toast.error("Không thể xóa khách hàng");
@@ -538,7 +536,7 @@ const Customers = () => {
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <Label>Loại hoạt động</Label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {(Object.keys(activityMeta) as ActivityType[]).map((t) => {
                       const M = activityMeta[t];
                       const Icon = M.icon;
@@ -697,7 +695,7 @@ const Customers = () => {
                   <Label>Họ tên</Label>
                   <Input value={contactForm.name} onChange={(e) => setContactForm((p) => ({ ...p, name: e.target.value }))} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Chức danh</Label>
                     <Input value={contactForm.title} onChange={(e) => setContactForm((p) => ({ ...p, title: e.target.value }))} />
@@ -707,7 +705,7 @@ const Customers = () => {
                     <Input value={contactForm.rank} onChange={(e) => setContactForm((p) => ({ ...p, rank: e.target.value }))} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Phòng ban</Label>
                     <Input value={contactForm.department} onChange={(e) => setContactForm((p) => ({ ...p, department: e.target.value }))} />
@@ -722,7 +720,7 @@ const Customers = () => {
                     </Select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Điện thoại</Label>
                     <Input value={contactForm.phone} onChange={(e) => setContactForm((p) => ({ ...p, phone: e.target.value }))} />
@@ -732,7 +730,7 @@ const Customers = () => {
                     <Input type="email" value={contactForm.email} onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))} />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Sinh nhật</Label>
                     <Input type="date" value={contactForm.birthday} onChange={(e) => setContactForm((p) => ({ ...p, birthday: e.target.value }))} />
@@ -829,7 +827,7 @@ const Customers = () => {
                 <div className="space-y-4 pt-4">
                   <div className="space-y-2"><label className="text-sm font-medium text-foreground">Tên đơn vị</label><Input placeholder="Tên đơn vị" value={createForm.name} onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))} /></div>
                   <div className="space-y-2"><label className="text-sm font-medium text-foreground">Người liên hệ</label><Input placeholder="Họ tên" value={createForm.contact} onChange={(e) => setCreateForm((p) => ({ ...p, contact: e.target.value }))} /></div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2"><label className="text-sm font-medium text-foreground">Điện thoại</label><Input placeholder="Số điện thoại" value={createForm.phone} onChange={(e) => setCreateForm((p) => ({ ...p, phone: e.target.value }))} /></div>
                     <div className="space-y-2"><label className="text-sm font-medium text-foreground">Email</label><Input placeholder="Email" value={createForm.email} onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))} /></div>
                   </div>
@@ -879,7 +877,7 @@ const Customers = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedCustomer(c)} aria-label="Xem"><Eye className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Eye className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
                       </div>
@@ -901,7 +899,7 @@ const Customers = () => {
                     <p className="text-xs text-muted-foreground truncate">{c.contact}</p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedCustomer(c)} aria-label="Xem"><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
                   </div>
@@ -1013,12 +1011,6 @@ const Customers = () => {
         </TabsContent>
       </Tabs>
 
-      <CustomerDetailDialog
-        customer={selectedCustomer}
-        open={!!selectedCustomer}
-        mode="view"
-        onOpenChange={(o) => !o && setSelectedCustomer(null)}
-      />
       <CustomerDetailDialog
         customer={editingCustomer}
         open={!!editingCustomer}

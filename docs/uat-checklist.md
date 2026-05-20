@@ -55,12 +55,13 @@
   - Tab Phản ánh: chỉ Warranty — theo KH, theo dòng SP, vật tư/LK (`material-defects`, ghi chú heuristic BOM).
   - Xuất Excel/PDF theo tab đang xem; empty dataset không crash.
 - Training:
-  - Courses create/update/delete/list/detail; gắn HĐ: tối đa 1 khóa/HĐ; create/update có `workflowId` + `stepPayloads` (panel tiến trình như bàn giao).
+  - **Đào tạo** (`courseKind=training`, `/dao-tao`): tab Tổng quan có tab bước + `stepPayloads` + phê duyệt bước; quy trình module `training`.
+  - **Huấn luyện** (`courseKind=coaching`): chỉ trên tab HL Hợp đồng / Bàn giao — không list trên `/dao-tao`; tối đa 1 khóa HL/HĐ; `stepPayloads` + nút «Xử lý quy trình» trên list HL.
   - Trainees create/update/delete and attendance toggle persist.
   - Sessions create/update/delete and status quick-update persist.
 
 ## Quy trình (Workflow)
-- `/quy-trinh` hiển thị 4 thẻ Bàn giao / Bảo hành / Huấn luyện / Hợp đồng kèm số workflow của mỗi nhóm.
+- `/quy-trinh` hiển thị thẻ Bàn giao / Bảo hành / **Đào tạo** / **Huấn luyện** / Hợp đồng / Sản phẩm kèm số workflow.
 - Vào `/quy-trinh/handover` thấy bảng workflow với cột Mã / Tên / Bước / Tổng SLA / Trạng thái / Cập nhật. Mỗi dòng có nút Lịch sử, Sửa, Xoá. Workflow seed `WF_HANDOVER_DEFAULT` đánh `Hệ thống` và không cho xoá.
 - Tạo workflow mới (`Thêm quy trình`): nhập tên + mã + mô tả + Hoạt động → mở thẳng editor mới.
 - Trang editor `/quy-trinh/handover/:id`: cột trái hiển thị Thông tin cấu hình + **Trường header phiếu** (`entityFieldSchema`, tuỳ chọn) + Tổng quát (số bước, tổng SLA); cột phải có dải `BẮT ĐẦU` / `KẾT THÚC`, mỗi bước có chỉ số tròn, tên + badge hành động, dòng phụ vai trò + SLA, 4 nút (Lên, Xuống, Sửa, Xoá).
@@ -75,7 +76,8 @@
 - Vai trò sai bấm Phê duyệt → toast lỗi `Bước này yêu cầu vai trò …` (HTTP 403).
 - Hoàn tất bước cuối → instance đóng (`Hoàn tất`), Handover.status = `completed`.
 - Bấm `Trả lại` ở bước bất kỳ → instance `cancelled`, Handover.status đổi `late`, panel hiển thị badge `Đã trả lại`.
-- Tạo phiếu bảo hành mới và khoá đào tạo mới: đều hiển thị panel `Tiến trình xử lý`. Hoàn tất workflow của bảo hành → Warranty đổi `statusCode = completed` và `resolvedAt` set.
+- Tạo phiếu bảo hành / khoá đào tạo / khoá huấn luyện: có quy trình runtime. Hoàn tất workflow bảo hành → `statusCode = completed`. List **Sản phẩm** có cột «Bước QT».
+- Migration: `course_kind`, `training_course_step_payloads`; seed `WF_TRAINING_DEFAULT` + `WF_COACHING_DEFAULT` (restart backend sau migrate).
 - Dữ liệu cũ: HĐ có `contracts.workflow_id` / `contract_step_payloads` vẫn trong DB nhưng UI không chỉnh; quy trình mới gắn tại phiếu Bàn giao / Huấn luyện. Nhiều khóa HL cùng `contractId` → gỡ thừa trước khi bật ràng buộc 1:1.
 
 ## Reliability

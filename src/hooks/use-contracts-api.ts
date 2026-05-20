@@ -11,8 +11,11 @@ export type ContractPayload = {
   startDate: string;
   endDate: string;
   warrantyEnd?: string;
-  status?: "draft" | "active" | "completed" | "late" | "liquidated";
+  endReminderDays?: number;
+  status?: "completed" | "liquidated" | "draft";
   progress?: number;
+  workflowId?: string;
+  stepPayloads?: Record<string, Record<string, unknown>>;
   terms?: string | null;
   contractTypeCode?: string | null;
 };
@@ -35,7 +38,7 @@ export type ContractListRow = {
 export function useContractsList(filters?: {
   contractTypeCode?: string;
   customerId?: string;
-  eligibleFor?: "handover" | "training";
+  eligibleFor?: "handover" | "coaching";
 }) {
   return useQuery({
     queryKey: [

@@ -2,8 +2,11 @@ import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
+import { startInstanceForEntity } from "../workflows/runtime";
+import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
 import { syncContractProductCounts } from "../contracts/product-count";
 import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
+import { enrichProductWithStepPayloads, upsertStepPayloads, type ProductStepPayloadJson } from "./step-payload";
 
 import { createProductSchema } from "./schema";
 import type { z } from "zod";
@@ -24,6 +27,7 @@ const listSelect = {
   yearReleased: true,
   totalProduced: true,
   customerId: true,
+  workflowInstanceId: true,
   createdAt: true,
   updatedAt: true,
   productBoms: {
@@ -131,7 +135,15 @@ export async function listProductsService() {
     orderBy: { name: "asc" },
     select: listSelect,
   });
-  return rows.map(formatProductWithBom);
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds(
+    rows.map((r) => r.workflowInstanceId),
+  );
+  return rows.map((row) => ({
+    ...formatProductWithBom(row),
+    workflow: row.workflowInstanceId
+      ? (workflowMap.get(row.workflowInstanceId) ?? null)
+      : null,
+  }));
 }
 
 async function resolveProductId(idOrCode: string) {
@@ -159,7 +171,13 @@ export async function getProductDetailService(idOrCode: string) {
     select: listSelect,
   });
   if (!row) throw new HttpError(404, "Product not found");
-  return formatProductWithBom(row);
+  const formatted = formatProductWithBom(row);
+  const workflowMap = await loadWorkflowSnapshotsByInstanceIds([row.workflowInstanceId]);
+  const workflow: WorkflowSnapshot | null = row.workflowInstanceId
+    ? (workflowMap.get(row.workflowInstanceId) ?? null)
+    : null;
+  const enriched = await enrichProductWithStepPayloads(formatted);
+  return { ...enriched, workflow };
 }
 
 export async function updateProductService(idOrCode: string, payload: Record<string, unknown>) {
@@ -200,15 +218,27 @@ export async function updateProductService(idOrCode: string, payload: Record<str
     if (dup) throw new HttpError(409, "Product code already exists");
   }
 
-  if (Object.keys(data).length === 0) throw new HttpError(400, "No fields to update");
+  if (
+    Object.keys(data).length === 0 &&
+    !(payload.stepPayloads && Object.keys(payload.stepPayloads as Record<string, unknown>).length > 0)
+  ) {
+    throw new HttpError(400, "No fields to update");
+  }
 
   try {
-    const updated = await prisma.product.update({
-      where: { id },
-      data: data as Prisma.ProductUpdateInput,
-      select: listSelect,
-    });
-    return formatProductWithBom(updated);
+    const updated = Object.keys(data).length > 0
+      ? await prisma.product.update({
+          where: { id },
+          data: data as Prisma.ProductUpdateInput,
+          select: listSelect,
+        })
+      : await prisma.product.findFirstOrThrow({ where: { id }, select: listSelect });
+
+    if (payload.stepPayloads && Object.keys(payload.stepPayloads as Record<string, unknown>).length > 0) {
+      await upsertStepPayloads(id, payload.stepPayloads as Record<string, ProductStepPayloadJson>);
+    }
+
+    return getProductDetailService(id);
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");
@@ -364,7 +394,15 @@ export async function createProductService(payload: CreateProductInput) {
       },
       select: listSelect,
     });
-    return formatProductWithBom(created);
+
+    try {
+      await startInstanceForEntity("product", created.id);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn("[product] workflow init failed", e);
+    }
+
+    return getProductDetailService(created.id);
   } catch (e) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
       throw new HttpError(409, "Product code already exists");

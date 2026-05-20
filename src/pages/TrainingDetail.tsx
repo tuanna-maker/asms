@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -24,8 +24,10 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { typeLabel, statusLabel, statusColor, Trainee, ScheduleSession } from "@/data/trainingData";
 import { useTrainingCourse } from "@/hooks/use-training";
-import { buildSessionPayload, buildTraineePayload } from "@/lib/training-payload";
-import { WorkflowInstancePanel } from "@/components/workflow/WorkflowInstancePanel";
+import { buildSessionPayload, buildTraineePayload, buildTrainingCoursePayload } from "@/lib/training-payload";
+import { CourseWorkflowSection } from "@/components/training/CourseWorkflowSection";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
+import { courseKindLabel, workflowModuleForCourseKind } from "@/lib/training-course-kind";
 
 const attendanceLabel = { present: "Có mặt", absent: "Vắng", pending: "Chưa điểm danh" };
 const attendanceColor = {
@@ -86,6 +88,38 @@ const TrainingDetail = () => {
   const [sessionForm, setSessionForm] = useState<Omit<ScheduleSession, "id">>({
     date: "", startTime: "08:00", endTime: "11:30", topic: "", location: "", status: "planned",
   });
+
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [stepPayloads, setStepPayloads] = useState<TrainingStepPayloadRecord>({});
+  const [workflowSaving, setWorkflowSaving] = useState(false);
+
+  useEffect(() => {
+    if (!course) return;
+    setSelectedWorkflowId(course.workflow?.workflowId ?? "");
+    if (course.stepPayloads) setStepPayloads(course.stepPayloads);
+  }, [course?.id, course?.workflow?.workflowId, course?.stepPayloads]);
+
+  const saveWorkflowData = async () => {
+    if (!course) return;
+    setWorkflowSaving(true);
+    try {
+      const { trainees: _t, schedule: _s, workflow: _w, stepPayloads: _sp, ...rest } = course;
+      const payload = buildTrainingCoursePayload(
+        rest,
+        selectedWorkflowId || undefined,
+        course.courseKind ?? "training",
+        stepPayloads,
+      );
+      await api.put(`/api/v1/training/${course.id}`, payload);
+      await qc.invalidateQueries({ queryKey: ["trainingCourse", course.id] });
+      await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+      toast.success("Đã lưu nội dung quy trình");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Không lưu được quy trình");
+    } finally {
+      setWorkflowSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -280,6 +314,7 @@ const TrainingDetail = () => {
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className="text-xs font-mono text-primary">{course.id}</span>
+              <Badge variant="outline" className="text-xs">{courseKindLabel(course.courseKind)}</Badge>
               <Badge variant="outline" className="text-xs">{typeLabel[course.type]}</Badge>
               <Badge className={`text-xs ${statusColor[course.status]} border-0`}>{statusLabel[course.status]}</Badge>
             </div>
@@ -307,18 +342,18 @@ const TrainingDetail = () => {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="p-4">
           <div className="text-xs text-muted-foreground flex items-center gap-1"><UserIcon className="h-3 w-3" /> Giảng viên</div>
-          <div className="font-semibold mt-1 truncate">{course.instructor}</div>
+          <div className="font-semibold mt-1 truncate">{course.instructorName || "—"}</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Khách hàng</div>
-          <div className="font-semibold mt-1 truncate">{course.customer}</div>
+          <div className="font-semibold mt-1 truncate">{course.customerName || "—"}</div>
         </Card>
         <Card className="p-4">
           <div className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3" /> Thời gian</div>
           <div className="font-semibold mt-1 text-sm">{course.startDate} → {course.endDate}</div>
         </Card>
         <Card className="p-4">
-          <div className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Địa điểm</div>
+          <div className="text-xs text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Đơn vị tổ chức</div>
           <div className="font-semibold mt-1 truncate">{course.location || "—"}</div>
         </Card>
       </div>
@@ -333,7 +368,32 @@ const TrainingDetail = () => {
 
         {/* Overview */}
         <TabsContent value="overview" className="mt-4 space-y-4">
-          <WorkflowInstancePanel moduleKey="training" entityId={course?.id ?? null} />
+          <Card className="p-4 space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold">
+                Quy trình {courseKindLabel(course.courseKind).toLowerCase()}
+              </h3>
+              <Button size="sm" onClick={() => void saveWorkflowData()} disabled={workflowSaving}>
+                {workflowSaving ? "Đang lưu…" : "Lưu nội dung bước"}
+              </Button>
+            </div>
+            <CourseWorkflowSection
+              open
+              courseId={course.id}
+              moduleKey={workflowModuleForCourseKind(course.courseKind)}
+              detailWorkflow={course.workflow ?? undefined}
+              detailStepPayloads={course.stepPayloads}
+              selectedWorkflowId={selectedWorkflowId}
+              onSelectedWorkflowIdChange={setSelectedWorkflowId}
+              stepPayloads={stepPayloads}
+              onStepPayloadsChange={setStepPayloads}
+              workflowSelectHint={
+                course.courseKind === "coaching"
+                  ? "Cấu hình bước tại menu Quy trình → Huấn luyện."
+                  : "Cấu hình bước tại menu Quy trình → Đào tạo."
+              }
+            />
+          </Card>
           <Card className="p-4">
             <h3 className="font-semibold mb-2">Mô tả khóa học</h3>
             <p className="text-sm text-muted-foreground">{course.description || "Chưa có mô tả."}</p>
@@ -586,3 +646,4 @@ const TrainingDetail = () => {
 };
 
 export default TrainingDetail;
+

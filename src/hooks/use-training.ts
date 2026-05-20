@@ -3,29 +3,32 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { ScheduleSession, TrainingCourse, Trainee } from "@/data/trainingData";
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
+import { parseCourseKind, type TrainingCourseKind } from "@/lib/training-course-kind";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
 
 function toDateInputValue(iso: unknown) {
   if (!iso) return "";
   if (typeof iso !== "string") return String(iso);
-  // Backend returns ISO strings; UI expects `YYYY-MM-DD` for <input type="date" />
   if (iso.includes("T")) return new Date(iso).toISOString().slice(0, 10);
   return iso;
 }
 
 function mapTrainingStatus(uiStatus: string): TrainingCourse["status"] {
-  // UI doesn't include `cancelled`; map cancelled -> planned
   if (uiStatus === "cancelled") return "planned";
   if (uiStatus === "planned" || uiStatus === "ongoing" || uiStatus === "completed") return uiStatus;
   return "planned";
 }
 
 type TrainingCourseType = TrainingCourse["type"];
-type TrainingCourseStatus = TrainingCourse["status"];
+
+type PersonRef = { id: string; fullName?: string; name?: string; code?: string };
 
 type TrainingCourseListRow = {
   id: string;
   code?: string;
   contractId?: string | null;
+  customerId?: string | null;
+  instructorId?: string | null;
   title: string;
   type: TrainingCourseType;
   startDate: string;
@@ -33,10 +36,13 @@ type TrainingCourseListRow = {
   participants: number;
   status: string;
   location?: string | null;
+  courseKind?: string | null;
   description?: string | null;
   workflowInstanceId?: string | null;
   workflow?: WorkflowInstanceListSnapshot | null;
-  customer?: { id: string; code: string; name: string } | null;
+  stepPayloads?: TrainingStepPayloadRecord;
+  customer?: PersonRef | null;
+  instructor?: { id: string; fullName: string } | null;
   contract?: { id: string; code: string } | null;
 };
 
@@ -59,35 +65,26 @@ type ScheduleSessionRow = {
   status: ScheduleSession["status"];
 };
 
-type TrainingCourseDetailRow = {
-  id: string;
-  contractId?: string | null;
-  title: string;
-  type: TrainingCourseType;
-  instructorId?: string | null;
-  customerId?: string | null;
-  startDate: string;
-  endDate: string;
-  participants?: number | null;
-  status: string;
-  description?: string | null;
-  location?: string | null;
+type TrainingCourseDetailRow = TrainingCourseListRow & {
   trainees?: TraineeRow[];
   sessions?: ScheduleSessionRow[];
+  stepPayloads?: TrainingStepPayloadRecord;
 };
 
 type ApiSuccess<T> = { success: true; data: T; message?: string };
 
-function mapCourseListItem(item: unknown): TrainingCourse {
-  const row = item as TrainingCourseListRow;
+function mapCourseRow(row: TrainingCourseListRow): TrainingCourse {
   return {
     id: row.id,
     code: row.code,
+    courseKind: parseCourseKind(row.courseKind),
     contractId: row.contract?.id ?? row.contractId ?? null,
+    customerId: row.customer?.id ?? row.customerId ?? null,
+    instructorId: row.instructor?.id ?? row.instructorId ?? null,
+    customerName: row.customer?.name ?? row.customer?.code ?? undefined,
+    instructorName: row.instructor?.fullName ?? undefined,
     title: row.title,
     type: row.type,
-    instructor: "",
-    customer: row.customer?.name ?? row.customer?.code ?? "",
     startDate: toDateInputValue(row.startDate),
     endDate: toDateInputValue(row.endDate),
     participants: Number(row.participants ?? 0),
@@ -96,6 +93,7 @@ function mapCourseListItem(item: unknown): TrainingCourse {
     location: row.location ?? undefined,
     workflowInstanceId: row.workflowInstanceId ?? null,
     workflow: row.workflow ?? null,
+    stepPayloads: row.stepPayloads,
     trainees: [],
     schedule: [],
   };
@@ -128,10 +126,11 @@ function mapSchedule(s: unknown): ScheduleSession {
   };
 }
 
-async function fetchTrainingCourses(): Promise<TrainingCourse[]> {
-  const res = await api.get<ApiSuccess<TrainingCourseListRow[]>>("/api/v1/training");
+async function fetchTrainingCourses(courseKind?: TrainingCourseKind): Promise<TrainingCourse[]> {
+  const params = courseKind ? { courseKind } : undefined;
+  const res = await api.get<ApiSuccess<TrainingCourseListRow[]>>("/api/v1/training", { params });
   const rows = res.data.data ?? [];
-  return rows.map(mapCourseListItem);
+  return rows.map(mapCourseRow);
 }
 
 async function fetchTrainingCourseDetail(id: string): Promise<TrainingCourseDetailRow> {
@@ -139,24 +138,25 @@ async function fetchTrainingCourseDetail(id: string): Promise<TrainingCourseDeta
   return res.data.data;
 }
 
-/** Kết quả useQuery đầy đủ (loading / error) — dùng khi cần, ví dụ `Handover`. */
-export function useTrainingCoursesQuery() {
+export function useTrainingCoursesQuery(opts?: { courseKind?: TrainingCourseKind }) {
+  const courseKind = opts?.courseKind;
   return useQuery({
-    queryKey: ["trainingCourses"],
-    queryFn: () => fetchTrainingCourses(),
+    queryKey: ["trainingCourses", courseKind ?? "all"],
+    queryFn: () => fetchTrainingCourses(courseKind),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: 1,
   });
 }
 
-export const useTrainingCourses = () => {
-  const { data = [] } = useTrainingCoursesQuery();
+/** Mặc định lấy tất cả khóa (đào tạo + huấn luyện) — truyền courseKind để lọc. */
+export const useTrainingCourses = (courseKind?: TrainingCourseKind) => {
+  const { data = [] } = useTrainingCoursesQuery(courseKind !== undefined ? { courseKind } : undefined);
   return data;
 };
 
 export const useTrainingCourse = (id: string | undefined) => {
-  const all = useTrainingCourses();
+  const { data: all = [] } = useTrainingCoursesQuery();
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["trainingCourse", id],
@@ -166,22 +166,13 @@ export const useTrainingCourse = (id: string | undefined) => {
     refetchOnWindowFocus: false,
     retry: 1,
   });
+
   const mappedDetail: TrainingCourse | undefined =
     data == null
       ? undefined
       : {
-          id: data.id,
-          contractId: data.contractId ?? null,
-          title: data.title,
-          type: data.type,
-          instructor: data.instructorId ?? "",
-          customer: data.customerId ?? "",
-          startDate: toDateInputValue(data.startDate),
-          endDate: toDateInputValue(data.endDate),
-          participants: Number(data.participants ?? 0),
-          status: mapTrainingStatus(data.status),
-          description: data.description ?? undefined,
-          location: data.location ?? undefined,
+          ...mapCourseRow(data),
+          stepPayloads: data.stepPayloads,
           trainees: Array.isArray(data.trainees) ? data.trainees.map(mapTrainee) : [],
           schedule: Array.isArray(data.sessions) ? data.sessions.map(mapSchedule) : [],
         };

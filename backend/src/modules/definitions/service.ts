@@ -128,6 +128,9 @@ export async function updateDefinitionService(
 
   const codeNew = input.code !== undefined ? input.code.trim() : row.code;
   if (codeNew !== row.code) {
+    if (row.isSystem) {
+      throw new HttpError(400, "Không thể đổi mã mục hệ thống");
+    }
     const dup = await prisma.dataDefinition.findFirst({
       where: { category: row.category, code: codeNew, deletedAt: null, NOT: { id } },
     });

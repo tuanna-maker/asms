@@ -163,6 +163,54 @@ export const WARRANTY_STEP_SCHEMAS: FieldSchemaTemplate[][] = [
   [{ key: "handoverNotes", label: "Ghi chú bàn giao", type: "textarea" }],
 ];
 
+export const COACHING_STEP_SCHEMAS: FieldSchemaTemplate[][] = [
+  [
+    { key: "trainingPlanNote", label: "Kế hoạch huấn luyện", type: "textarea" },
+    { key: "tempHandoverNote", label: "Ghi chú BBBG tạm (tùy chọn)", type: "textarea" },
+  ],
+  [
+    { key: "trainingCostReport", label: "Tờ trình huấn luyện", type: "textarea" },
+  ],
+  [
+    { key: "trainingReportNote", label: "Báo cáo KT thực hành", type: "textarea" },
+    { key: "trainingDecision", label: "QĐ công nhận KQ huấn luyện", type: "textarea" },
+  ],
+];
+
+export const TRAINING_STEP_SCHEMAS: FieldSchemaTemplate[][] = [
+  [
+    { key: "trainingPlanNote", label: "Nội dung chương trình", type: "textarea" },
+    { key: "participantsNote", label: "Thành phần học viên", type: "textarea" },
+    { key: "scheduleNote", label: "Lịch dự kiến", type: "textarea" },
+  ],
+  [
+    { key: "contentApprovalNote", label: "Nội dung phê duyệt", type: "textarea" },
+    { key: "approvalDecision", label: "Quyết định phê duyệt", type: "textarea" },
+  ],
+  [
+    { key: "trainingConclusion", label: "Kết luận khóa đào tạo", type: "textarea" },
+    { key: "closeoutNote", label: "Ghi chú đóng khóa", type: "textarea" },
+  ],
+];
+
+export const PRODUCT_STEP_SCHEMAS: FieldSchemaTemplate[][] = [
+  [
+    { key: "productionStartDate", label: "Ngày bắt đầu sản xuất", type: "date" },
+    { key: "productionEndDate", label: "Ngày kết thúc sản xuất", type: "date" },
+    { key: "productionNotes", label: "Ghi chú sản xuất", type: "textarea" },
+  ],
+  [
+    { key: "inspectionDecisionNumber", label: "Số quyết định nghiệm thu", type: "text", required: true },
+    { key: "inspectionDecisionDate", label: "Ngày quyết định nghiệm thu", type: "date", required: true },
+    { key: "inspectionNotes", label: "Ghi chú nghiệm thu", type: "textarea" },
+  ],
+  [
+    { key: "equipDecisionNumber", label: "Số quyết định trang bị", type: "text", required: true },
+    { key: "equipDecisionDate", label: "Ngày quyết định trang bị", type: "date", required: true },
+    { key: "equipNotes", label: "Ghi chú trang bị", type: "textarea" },
+  ],
+];
+
 export function schemaForStepIndex(
   templates: FieldSchemaTemplate[][],
   stepIndex: number,

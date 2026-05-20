@@ -1,18 +1,28 @@
 import type { ScheduleSession, Trainee, TrainingCourse } from "@/data/trainingData";
+import type { TrainingCourseKind } from "@/lib/training-course-kind";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
 
-export function buildTrainingCoursePayload(form: Omit<TrainingCourse, "id">) {
+export function buildTrainingCoursePayload(
+  form: Omit<TrainingCourse, "id">,
+  workflowId?: string,
+  courseKind: TrainingCourseKind = "training",
+  stepPayloads?: TrainingStepPayloadRecord,
+) {
   return {
+    courseKind,
     title: form.title,
     typeCode: form.type,
     contractId: form.contractId || undefined,
-    instructorId: form.instructor || undefined,
-    customerId: form.customer || undefined,
+    ...(form.customerId ? { customerId: form.customerId } : {}),
+    ...(form.instructorId ? { instructorId: form.instructorId } : {}),
     startDate: form.startDate,
     endDate: form.endDate || form.startDate,
     participants: Number(form.participants ?? 0),
     status: form.status,
-    ...(form.location ? { location: form.location } : {}),
+    ...(form.location?.trim() ? { location: form.location.trim() } : {}),
     ...(form.description ? { description: form.description } : {}),
+    ...(workflowId ? { workflowId } : {}),
+    ...(stepPayloads && Object.keys(stepPayloads).length > 0 ? { stepPayloads } : {}),
   };
 }
 

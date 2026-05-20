@@ -15,6 +15,7 @@ import {
   updateContractSchema,
 } from "./schema";
 
+import { sanitizeStoredContractStatus } from "./display-status";
 import {
   createContractService,
   getContractDetailService,
@@ -77,7 +78,12 @@ export async function createContractController(req: Request, res: Response) {
     actorId: createdById,
   };
   if (payload.warrantyEnd === undefined) delete input.warrantyEnd;
-  if (payload.status === undefined) delete input.status;
+  if (payload.endReminderDays === undefined) delete input.endReminderDays;
+  const terminalStatus = sanitizeStoredContractStatus(payload.status);
+  if (terminalStatus !== undefined) input.status = terminalStatus;
+  else delete input.status;
+  if (payload.workflowId === undefined) delete input.workflowId;
+  if (payload.stepPayloads === undefined) delete input.stepPayloads;
   if (payload.progress === undefined) delete input.progress;
 
   const data = await createContractService(input as Parameters<typeof createContractService>[0]);
@@ -95,10 +101,17 @@ export async function updateContractController(req: Request, res: Response) {
   const payload = zodParseOrThrow(updateContractSchema, req.body);
   if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
 
-  const data = await updateContractService(id, {
+  const updatePayload: Parameters<typeof updateContractService>[1] = {
     ...(payload as Parameters<typeof updateContractService>[1]),
     actorId: req.user?.id ?? null,
-  });
+  };
+  const terminalStatus = sanitizeStoredContractStatus(payload.status);
+  if (payload.status !== undefined) {
+    if (terminalStatus !== undefined) updatePayload.status = terminalStatus;
+    else delete updatePayload.status;
+  }
+
+  const data = await updateContractService(id, updatePayload);
   await writeAudit(req, {
     action: "update",
     entity: "contract",

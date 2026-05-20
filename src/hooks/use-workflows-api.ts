@@ -4,8 +4,8 @@ import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 import { parseFieldSchema, type FieldDef } from "@/lib/workflow-field-schema";
 
-export type WorkflowModuleKey = "handover" | "warranty" | "training" | "contract";
-export type WorkflowEntityModuleKey = "handover" | "warranty" | "training" | "contract";
+export type WorkflowModuleKey = "handover" | "warranty" | "training" | "coaching" | "contract" | "product";
+export type WorkflowEntityModuleKey = "handover" | "warranty" | "training" | "coaching" | "contract" | "product";
 
 export type PersonRef = { id: string; fullName: string } | null;
 
@@ -16,6 +16,7 @@ export type WorkflowStepItem = {
   name: string;
   actionCode: string;
   roleCode: string;
+  assigneeIds: string[];
   slaHours: number | null;
   description: string | null;
   phaseCode: string;
@@ -79,7 +80,7 @@ export type WorkflowInstanceListSnapshot = {
 };
 
 export type CreateWorkflowPayload = {
-  code: string;
+  code?: string;
   name: string;
   moduleKey: WorkflowModuleKey;
   description?: string | null;
@@ -94,6 +95,7 @@ export type UpsertStepPayload = {
   name: string;
   actionCode: string;
   roleCode: string;
+  assigneeIds?: string[];
   slaHours?: number | null;
   description?: string | null;
   phaseCode?: string;
@@ -261,6 +263,7 @@ export type WorkflowInstance = {
       name: string;
       actionCode: string;
       roleCode: string;
+      assigneeIds: string[];
       slaHours: number | null;
       description: string | null;
       phaseCode: string;
@@ -273,6 +276,7 @@ export type WorkflowInstance = {
     name: string;
     actionCode: string;
     roleCode: string;
+    assigneeIds: string[];
     slaHours: number | null;
     phaseCode: string;
     requireDocument: boolean;
@@ -337,6 +341,10 @@ export function useAttachWorkflow() {
       if (variables.moduleKey === "contract") {
         void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", variables.entityId] });
       }
+      if (variables.moduleKey === "product") {
+        void qc.invalidateQueries({ queryKey: ["products"] });
+        void qc.invalidateQueries({ queryKey: ["product-detail", variables.entityId] });
+      }
     },
   });
 }
@@ -369,8 +377,10 @@ export function useAdvanceInstance() {
       if (inst?.moduleKey === "handover" && inst.entityId) {
         void qc.invalidateQueries({ queryKey: qk.handovers.detail(inst.entityId) });
       }
-      if (inst?.moduleKey === "training" && inst.entityId) {
+      if ((inst?.moduleKey === "training" || inst?.moduleKey === "coaching") && inst.entityId) {
         void qc.invalidateQueries({ queryKey: qk.training.detail(inst.entityId) });
+        void qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+        void qc.invalidateQueries({ queryKey: ["trainingCourse", inst.entityId] });
       }
       if (inst?.moduleKey === "contract" && inst.entityId) {
         void qc.invalidateQueries({ queryKey: [...qk.contracts.all, "detail", inst.entityId] });

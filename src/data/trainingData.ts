@@ -18,15 +18,20 @@ export interface ScheduleSession {
 }
 
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
+import type { TrainingCourseKind } from "@/lib/training-course-kind";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
 
 export interface TrainingCourse {
   id: string;
   code?: string;
+  courseKind?: TrainingCourseKind;
   contractId?: string | null;
+  customerId?: string | null;
+  instructorId?: string | null;
+  customerName?: string;
+  instructorName?: string;
   title: string;
   type: "internal" | "external" | "online";
-  instructor: string;
-  customer: string;
   startDate: string;
   endDate: string;
   participants: number;
@@ -35,6 +40,7 @@ export interface TrainingCourse {
   location?: string;
   workflowInstanceId?: string | null;
   workflow?: WorkflowInstanceListSnapshot | null;
+  stepPayloads?: TrainingStepPayloadRecord;
   trainees?: Trainee[];
   schedule?: ScheduleSession[];
 }
@@ -74,8 +80,8 @@ const sampleSchedule2: ScheduleSession[] = [
 ];
 
 export const initialCourses: TrainingCourse[] = [
-  { id: "DT-001", title: "Vận hành thiết bị radar X-2000", type: "internal", instructor: "Nguyễn Văn A", customer: "Quân khu 1", startDate: "2025-04-10", endDate: "2025-04-15", participants: 24, status: "completed", location: "Trung tâm đào tạo", description: "Khóa huấn luyện vận hành cho cán bộ kỹ thuật.", trainees: sampleTrainees1, schedule: sampleSchedule1 },
-  { id: "DT-002", title: "Bảo dưỡng định kỳ hệ thống thông tin", type: "external", instructor: "Trần Thị B", customer: "Quân khu 3", startDate: "2025-04-20", endDate: "2025-04-25", participants: 18, status: "ongoing", location: "Khách hàng", description: "Hướng dẫn quy trình bảo dưỡng định kỳ.", trainees: sampleTrainees2, schedule: sampleSchedule2 },
-  { id: "DT-003", title: "An toàn lao động - Quý 2/2025", type: "online", instructor: "Lê Văn C", customer: "Nội bộ", startDate: "2025-05-05", endDate: "2025-05-07", participants: 45, status: "planned", location: "MS Teams", trainees: [], schedule: [] },
-  { id: "DT-004", title: "Sử dụng phần mềm ERP", type: "internal", instructor: "Phạm Thị D", customer: "Bộ TL TTTM", startDate: "2025-05-12", endDate: "2025-05-14", participants: 30, status: "planned", location: "Phòng đào tạo", trainees: [], schedule: [] },
+  { id: "DT-001", title: "Vận hành thiết bị radar X-2000", type: "internal", instructorId: null, customerId: null, instructorName: "Nguyễn Văn A", customerName: "Quân khu 1", startDate: "2025-04-10", endDate: "2025-04-15", participants: 24, status: "completed", location: "Trung tâm đào tạo", description: "Khóa huấn luyện vận hành cho cán bộ kỹ thuật.", trainees: sampleTrainees1, schedule: sampleSchedule1 },
+  { id: "DT-002", title: "Bảo dưỡng định kỳ hệ thống thông tin", type: "external", instructorId: null, customerId: null, instructorName: "Trần Thị B", customerName: "Quân khu 3", startDate: "2025-04-20", endDate: "2025-04-25", participants: 18, status: "ongoing", location: "Khách hàng", description: "Hướng dẫn quy trình bảo dưỡng định kỳ.", trainees: sampleTrainees2, schedule: sampleSchedule2 },
+  { id: "DT-003", title: "An toàn lao động - Quý 2/2025", type: "online", instructorId: null, customerId: null, instructorName: "Lê Văn C", customerName: "Nội bộ", startDate: "2025-05-05", endDate: "2025-05-07", participants: 45, status: "planned", location: "MS Teams", trainees: [], schedule: [] },
+  { id: "DT-004", title: "Sử dụng phần mềm ERP", type: "internal", instructorId: null, customerId: null, instructorName: "Phạm Thị D", customerName: "Bộ TL TTTM", startDate: "2025-05-12", endDate: "2025-05-14", participants: 30, status: "planned", location: "Phòng đào tạo", trainees: [], schedule: [] },
 ];

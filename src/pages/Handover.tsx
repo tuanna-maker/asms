@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Truck, GraduationCap, CheckCircle, Clock, Plus, Pencil, Trash2, Inbox } from "lucide-react";
+import { Truck, GraduationCap, CheckCircle, Clock, Plus, Pencil, Trash2, Inbox, GitBranch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,9 +27,12 @@ import { qk } from "@/lib/query-keys";
 import { useDeleteHandover, useHandoversList, type HandoverListItem } from "@/hooks/use-handovers-api";
 import { useRole } from "@/hooks/use-role";
 import { useTrainingCoursesQuery } from "@/hooks/use-training";
+import { CourseWorkflowSection } from "@/components/training/CourseWorkflowSection";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
 import { useWorkflowsList } from "@/hooks/use-workflows-api";
 import type { TrainingCourse } from "@/data/trainingData";
 import { HandoverUpsertDialog } from "@/components/handover/HandoverUpsertDialog";
+import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
 import {
   buildAssignedContractSets,
   filterContractsEligibleForNewLink,
@@ -83,8 +86,40 @@ const Handover = () => {
   const qc = useQueryClient();
   const { role } = useRole();
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
-  const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } = useTrainingCoursesQuery();
-  const { data: trainingWorkflows = [] } = useWorkflowsList("training");
+  const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } =
+    useTrainingCoursesQuery({ courseKind: "coaching" });
+
+  const [upsertOpen, setUpsertOpen] = useState(false);
+  const [editingHandover, setEditingHandover] = useState<HandoverListItem | null>(null);
+  const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
+  const [trainingCreateOpen, setTrainingCreateOpen] = useState(false);
+  const [trainingSubmitting, setTrainingSubmitting] = useState(false);
+  const [trainingEditingId, setTrainingEditingId] = useState<string | null>(null);
+  const [deletingTrainingId, setDeletingTrainingId] = useState<string | null>(null);
+  const [workflowDialogOpen, setWorkflowDialogOpen] = useState(false);
+  const [workflowCourseId, setWorkflowCourseId] = useState<string | null>(null);
+  const [workflowSelectedId, setWorkflowSelectedId] = useState("");
+  const [workflowStepPayloads, setWorkflowStepPayloads] = useState<TrainingStepPayloadRecord>({});
+  const [workflowSaving, setWorkflowSaving] = useState(false);
+
+  const { data: workflowCourseDetail } = useQuery({
+    queryKey: ["trainingCourse", workflowCourseId],
+    enabled: Boolean(workflowCourseId) && workflowDialogOpen,
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<TrainingCourse & { stepPayloads?: TrainingStepPayloadRecord }>>(
+        `/api/v1/training/${encodeURIComponent(workflowCourseId!)}`,
+      );
+      return res.data.data;
+    },
+  });
+
+  useEffect(() => {
+    if (!workflowDialogOpen || !workflowCourseDetail) return;
+    setWorkflowSelectedId(workflowCourseDetail.workflow?.workflowId ?? "");
+    setWorkflowStepPayloads(workflowCourseDetail.stepPayloads ?? {});
+  }, [workflowDialogOpen, workflowCourseDetail]);
+
+  const { data: trainingWorkflows = [] } = useWorkflowsList("coaching");
   const { data: contractOptions = [] } = useQuery({
     queryKey: qk.contracts.all,
     queryFn: async () => {
@@ -94,13 +129,6 @@ const Handover = () => {
     staleTime: 60_000,
   });
 
-  const [upsertOpen, setUpsertOpen] = useState(false);
-  const [editingHandover, setEditingHandover] = useState<HandoverListItem | null>(null);
-  const [deletingHandover, setDeletingHandover] = useState<HandoverListItem | null>(null);
-  const [trainingCreateOpen, setTrainingCreateOpen] = useState(false);
-  const [trainingSubmitting, setTrainingSubmitting] = useState(false);
-  const [trainingEditingId, setTrainingEditingId] = useState<string | null>(null);
-  const [deletingTrainingId, setDeletingTrainingId] = useState<string | null>(null);
   const [trainingForm, setTrainingForm] = useState({
     title: "",
     contractId: "",
@@ -231,7 +259,8 @@ const Handover = () => {
       setTrainingSubmitting(true);
       const payload = {
         title: trainingForm.title.trim(),
-        type: trainingForm.type,
+        typeCode: trainingForm.type,
+        courseKind: "coaching" as const,
         status: trainingForm.status,
         startDate: trainingForm.startDate,
         endDate: trainingForm.endDate || trainingForm.startDate,
@@ -266,6 +295,29 @@ const Handover = () => {
     }
   };
 
+  const openWorkflowDialog = (course: TrainingCourse) => {
+    setWorkflowCourseId(course.id);
+    setWorkflowDialogOpen(true);
+  };
+
+  const saveWorkflowDialog = async () => {
+    if (!workflowCourseId) return;
+    setWorkflowSaving(true);
+    try {
+      await api.put(`/api/v1/training/${workflowCourseId}`, {
+        ...(workflowSelectedId ? { workflowId: workflowSelectedId } : {}),
+        ...(Object.keys(workflowStepPayloads).length > 0 ? { stepPayloads: workflowStepPayloads } : {}),
+      });
+      await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
+      await qc.invalidateQueries({ queryKey: ["trainingCourse", workflowCourseId] });
+      toast.success("Đã lưu quy trình huấn luyện");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Không lưu được quy trình"));
+    } finally {
+      setWorkflowSaving(false);
+    }
+  };
+
   const handleDeleteTraining = async () => {
     if (!deletingTrainingId) return;
     try {
@@ -296,10 +348,9 @@ const Handover = () => {
                 <TableRow>
                   <TableHead className="px-4 py-3">Loại</TableHead>
                   <TableHead className="px-4 py-3">Mã</TableHead>
-                  <TableHead className="px-4 py-3">Quy trình</TableHead>
                   <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
                   <TableHead className="px-4 py-3">Thời gian</TableHead>
-                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-center min-w-[8rem]">Trạng thái</TableHead>
                   <TableHead className="px-4 py-3 text-right w-24">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -313,16 +364,13 @@ const Handover = () => {
                           <Badge variant="outline">Bàn giao</Badge>
                         </TableCell>
                         <TableCell className="px-4 py-3.5 font-medium text-primary">{h.code}</TableCell>
-                        <TableCell className="px-4 py-3.5 text-xs text-muted-foreground">
-                          {h.workflow?.workflowName ?? "—"}
-                        </TableCell>
                         <TableCell className="px-4 py-3.5 text-sm">
                           {h.workflow?.currentStepName ?? "—"}
                         </TableCell>
                         <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
                           {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
                         </TableCell>
-                        <TableCell className="px-4 py-3.5">{statusBadge(h.status)}</TableCell>
+                        <TableCell className="px-4 py-3.5 text-center">{statusBadge(h.status)}</TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <Button
                             variant="ghost"
@@ -346,16 +394,13 @@ const Handover = () => {
                         <Badge variant="outline">Huấn luyện</Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3.5 font-medium text-primary">{t.code ?? t.id}</TableCell>
-                      <TableCell className="px-4 py-3.5 text-xs text-muted-foreground">
-                        {t.workflow?.workflowName ?? "—"}
-                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-sm">
                         {t.workflow?.currentStepName ?? "—"}
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-center">{statusBadge(t.status)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
                           <Pencil className="h-4 w-4" />
@@ -445,26 +490,25 @@ const Handover = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="px-4 py-3">Mã</TableHead>
-                  <TableHead className="px-4 py-3">Quy trình</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Hợp đồng</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
                   <TableHead className="px-4 py-3 text-center">SP</TableHead>
                   <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
                   <TableHead className="px-4 py-3">Thời gian</TableHead>
-                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-center min-w-[8rem]">Trạng thái</TableHead>
                   <TableHead className="px-4 py-3 text-right w-28">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : syncedHandoverRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Chưa có bàn giao. Nhấn «Thêm bàn giao» để tạo mới.
                     </TableCell>
                   </TableRow>
@@ -472,45 +516,34 @@ const Handover = () => {
                   syncedHandoverRows.map((h) => (
                     <TableRow key={h.id} className={lateProgressRowClass(h.status)}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle max-w-[140px]">
-                        <span className="text-xs text-muted-foreground line-clamp-2" title={h.workflow?.workflowName ?? undefined}>
-                          {h.workflow?.workflowName ?? "—"}
-                        </span>
-                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{h.contract.code}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{h.customer.name}</TableCell>
                       <TableCell className="px-4 py-3.5 text-center align-middle">{h.products}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle">
-                        <div className="flex items-center gap-2.5 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1.5">
-                          {h.workflow && h.workflow.totalSteps > 0 ? (
-                            <>
-                              <div className="flex gap-0.5">
-                                {Array.from({ length: h.workflow.totalSteps }, (_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`h-2 w-5 rounded-sm ${
-                                      i < h.workflow!.currentStepIndex ? "bg-primary" : "bg-secondary"
-                                    }`}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-xs text-muted-foreground">
-                                {h.workflow.currentStepIndex > 0
+                        {h.workflow && h.workflow.totalSteps > 0 ? (
+                          <WorkflowStepProgressPill
+                            variant="table"
+                            totalSteps={h.workflow.totalSteps}
+                            currentStepIndex={h.workflow.currentStepIndex}
+                            status={h.workflow.status}
+                            label={
+                              h.workflow.status === "completed"
+                                ? h.workflow.currentStepName
+                                  ? `${h.workflow.totalSteps}/${h.workflow.totalSteps} · ${h.workflow.currentStepName}`
+                                  : "Hoàn tất"
+                                : h.workflow.currentStepIndex > 0
                                   ? `${h.workflow.currentStepIndex}/${h.workflow.totalSteps} · ${h.workflow.currentStepName ?? "—"}`
-                                  : h.workflow.status === "completed"
-                                    ? "Hoàn tất"
-                                    : "Đã đóng"}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
-                          )}
-                        </div>
+                                  : "Đã đóng"
+                            }
+                          />
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle">{statusBadge(h.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(h.status)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
                           <Button
@@ -553,26 +586,25 @@ const Handover = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="px-4 py-3">Mã</TableHead>
-                  <TableHead className="px-4 py-3">Quy trình</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khóa học</TableHead>
                   <TableHead className="px-4 py-3 text-center lg:text-left">Khách hàng</TableHead>
                   <TableHead className="px-4 py-3 text-center">Học viên</TableHead>
                   <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
                   <TableHead className="px-4 py-3">Thời gian</TableHead>
-                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-center min-w-[8rem]">Trạng thái</TableHead>
                   <TableHead className="px-4 py-3 text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isTrainingLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Đang tải…
                     </TableCell>
                   </TableRow>
                 ) : syncedTrainingRows.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                       Chưa có dữ liệu huấn luyện.
                     </TableCell>
                   </TableRow>
@@ -580,11 +612,6 @@ const Handover = () => {
                   syncedTrainingRows.map((t) => (
                     <TableRow key={t.id}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.code ?? t.id}</TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle max-w-[140px]">
-                        <span className="text-xs text-muted-foreground line-clamp-2" title={t.workflow?.workflowName ?? undefined}>
-                          {t.workflow?.workflowName ?? "—"}
-                        </span>
-                      </TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{t.title}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{t.customer || "-"}</TableCell>
                       <TableCell className="px-4 py-3.5 text-center align-middle">{t.participants}</TableCell>
@@ -594,9 +621,18 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(t.status)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Xử lý quy trình"
+                            onClick={() => openWorkflowDialog(t)}
+                          >
+                            <GitBranch className="h-4 w-4" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -747,6 +783,41 @@ const Handover = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={workflowDialogOpen}
+        onOpenChange={(open) => {
+          setWorkflowDialogOpen(open);
+          if (!open) setWorkflowCourseId(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quy trình huấn luyện</DialogTitle>
+          </DialogHeader>
+          {workflowCourseId ? (
+            <CourseWorkflowSection
+              open={workflowDialogOpen}
+              courseId={workflowCourseId}
+              moduleKey="coaching"
+              detailWorkflow={workflowCourseDetail?.workflow ?? undefined}
+              detailStepPayloads={workflowCourseDetail?.stepPayloads}
+              selectedWorkflowId={workflowSelectedId}
+              onSelectedWorkflowIdChange={setWorkflowSelectedId}
+              stepPayloads={workflowStepPayloads}
+              onStepPayloadsChange={setWorkflowStepPayloads}
+            />
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setWorkflowDialogOpen(false)}>
+              Đóng
+            </Button>
+            <Button onClick={() => void saveWorkflowDialog()} disabled={workflowSaving}>
+              {workflowSaving ? "Đang lưu…" : "Lưu quy trình"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <HandoverUpsertDialog
         open={upsertOpen}

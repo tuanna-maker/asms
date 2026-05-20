@@ -17,11 +17,12 @@ describe("use-training hooks", () => {
   it("returns list data from training courses query", () => {
     mockedUseQuery.mockImplementation(((args: MockQueryArgs): MockQueryResult => {
       const { queryKey } = args;
-      if (queryKey?.[0] === "trainingCourses") {
+      if (queryKey?.[0] === "trainingCourses" && queryKey?.[1] === "all") {
         return {
           data: [
             {
               id: "tc-1",
+              courseKind: "training",
               title: "Course 1",
               type: "internal",
               startDate: "2026-01-02T00:00:00.000Z",
@@ -53,11 +54,12 @@ describe("use-training hooks", () => {
   it("prefers mapped detail over list fallback", () => {
     mockedUseQuery.mockImplementation(((args: MockQueryArgs): MockQueryResult => {
       const { queryKey } = args;
-      if (queryKey?.[0] === "trainingCourses") {
+      if (queryKey?.[0] === "trainingCourses" && queryKey?.[1] === "all") {
         return {
           data: [
             {
               id: "tc-2",
+              courseKind: "training",
               title: "List title",
               type: "internal",
               startDate: "2026-01-01T00:00:00.000Z",
@@ -76,12 +78,15 @@ describe("use-training hooks", () => {
             type: "external",
             instructorId: "gv-a",
             customerId: "kh-a",
+            instructor: { id: "gv-a", fullName: "Giảng viên A" },
+            customer: { id: "kh-a", code: "KH-A", name: "Khách A" },
             startDate: "2026-02-01T00:00:00.000Z",
             endDate: "2026-02-03T00:00:00.000Z",
             participants: 7,
             status: "ongoing",
             trainees: [{ id: "tr-1", fullName: "Nguyen A", attendance: "present", score: "9.5" }],
             sessions: [{ id: "s-1", date: "2026-02-01T00:00:00.000Z", startTime: "08:00", endTime: "10:00", topic: "Topic", status: "planned" }],
+            stepPayloads: { "step-a": { field1: "value" } },
           },
           isLoading: false,
           isError: false,
@@ -94,9 +99,13 @@ describe("use-training hooks", () => {
     const { result } = renderHook(() => useTrainingCourse("tc-2"));
     expect(result.current.course?.title).toBe("Detail title");
     expect(result.current.course?.type).toBe("external");
-    expect(result.current.course?.instructor).toBe("gv-a");
+    expect(result.current.course?.instructorId).toBe("gv-a");
+    expect(result.current.course?.instructorName).toBe("Giảng viên A");
+    expect(result.current.course?.customerId).toBe("kh-a");
+    expect(result.current.course?.customerName).toBe("Khách A");
     expect(result.current.course?.trainees?.[0]).toMatchObject({ name: "Nguyen A", score: 9.5 });
     expect(result.current.course?.schedule?.[0]).toMatchObject({ date: "2026-02-01", topic: "Topic" });
+    expect(result.current.course?.stepPayloads).toEqual({ "step-a": { field1: "value" } });
     expect(result.current.isLoading).toBe(false);
   });
 });

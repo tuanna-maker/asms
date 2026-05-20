@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
       
 const priorityBadge = (p: string) => {
   const map: Record<string, { label: string; className: string }> = {
@@ -72,7 +73,6 @@ const typeBadge = (t: string) => {
   return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
 };
 
-/** Tiến trình danh sách BH/SC: vạch theo bước + `n/tổng · tên bước` trong khung bo góc (cùng kiểu màn Bàn giao). */
 function WarrantyListProgressPill({
   workflow,
   emphasis,
@@ -81,42 +81,26 @@ function WarrantyListProgressPill({
   emphasis: boolean;
 }) {
   const { totalSteps, currentStepIndex, status, currentStepName } = workflow;
-  const n = Math.max(0, totalSteps);
-  const finished = status === "completed";
-  const cancelled = status === "cancelled";
-
-  const segmentClass = (i: number) => {
-    if (finished || cancelled) return "bg-secondary";
-    if (currentStepIndex <= 0) return "bg-secondary";
-    return i < currentStepIndex ? "bg-primary" : "bg-secondary";
-  };
-
-  const label = finished
-    ? "Hoàn tất"
-    : cancelled
-      ? "Đã hủy"
-      : currentStepIndex > 0
-        ? (currentStepName ?? "—")
-        : "Chưa bắt đầu";
-
-  if (n === 0) {
-    return <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>;
-  }
+  const label =
+    status === "completed"
+      ? totalSteps > 0 && currentStepName
+        ? `${totalSteps}/${totalSteps} · ${currentStepName}`
+        : "Hoàn tất"
+      : status === "cancelled"
+        ? "Đã hủy"
+        : currentStepIndex > 0
+          ? `${currentStepIndex}/${totalSteps} · ${currentStepName ?? "—"}`
+          : "Chưa bắt đầu";
 
   return (
-    <div
-      className={cn(
-        "flex items-start gap-2.5 rounded-lg border px-2.5 py-1.5 max-w-[220px] sm:max-w-[280px]",
-        emphasis ? "border-destructive/20 bg-destructive/10" : "border-border/40 bg-muted/20",
-      )}
-    >
-      <div className="flex shrink-0 gap-0.5 pt-0.5">
-        {Array.from({ length: n }, (_, i) => (
-          <div key={i} className={cn("h-2 w-5 shrink-0 rounded-sm", segmentClass(i))} />
-        ))}
-      </div>
-      <span className="text-xs text-muted-foreground leading-snug break-words min-w-0">{label}</span>
-    </div>
+    <WorkflowStepProgressPill
+      variant="table"
+      totalSteps={totalSteps}
+      currentStepIndex={currentStepIndex}
+      status={status}
+      label={label}
+      emphasis={emphasis}
+    />
   );
 }
 
@@ -251,17 +235,6 @@ const Warranty = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bảo hành / Sửa chữa</h1>
-          <p className="text-sm text-muted-foreground mt-1">Tiếp nhận và xử lý phiếu — mở chi tiết từ bên phải (giống màn Sản phẩm).</p>
-        </div>
-        <Button onClick={() => { setSelectedTicket(null); setShowCreate(true); }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Tạo phiếu
-        </Button>
-      </div>
-
       <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as "list" | "stats")} className="space-y-4">
         <TabsList>
           <TabsTrigger value="list">Danh sách phiếu</TabsTrigger>
@@ -288,7 +261,7 @@ const Warranty = () => {
                   <TableHead className="px-4 py-3">Bước hiện tại</TableHead>
                   <TableHead className="px-4 py-3">Khách hàng</TableHead>
                   <TableHead className="px-4 py-3">Ngày tạo</TableHead>
-                  <TableHead className="px-4 py-3">Trạng thái</TableHead>
+                  <TableHead className="px-4 py-3 text-center">Trạng thái</TableHead>
                   <TableHead className="px-4 py-3 text-right w-24">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
@@ -305,7 +278,7 @@ const Warranty = () => {
                     </TableCell>
                     <TableCell className="px-4 py-3.5 text-sm">{t.customer}</TableCell>
                     <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">{t.createdAt}</TableCell>
-                    <TableCell className="px-4 py-3.5">{tabStatusBadge(t.tabStatus)}</TableCell>
+                    <TableCell className="px-4 py-3.5 text-center">{tabStatusBadge(t.tabStatus)}</TableCell>
                     <TableCell className="px-4 py-3.5 text-right">
                       <Button
                         variant="ghost"
@@ -327,9 +300,21 @@ const Warranty = () => {
 
       <Card>
         <CardContent className="pt-6 space-y-4">
-          <div className="relative max-w-full sm:max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Tìm phiếu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="relative flex-1 max-w-full sm:max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input placeholder="Tìm phiếu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+            <Button
+              className="shrink-0"
+              onClick={() => {
+                setSelectedTicket(null);
+                setShowCreate(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Tạo phiếu
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground">
             Tổng <span className="font-medium text-foreground">{statLine.total}</span> phiếu · Đang xử lý{" "}
@@ -411,7 +396,7 @@ const Warranty = () => {
                                   className="h-8 w-8"
                                   onClick={() => {
                                     setShowCreate(false);
-                                    setDetailMode("view");
+                                    setDetailMode("edit");
                                     setSelectedTicket(t);
                                   }}
                                   aria-label={`Xem ticket ${t.code}`}

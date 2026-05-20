@@ -5,12 +5,18 @@ import {
   HANDOVER_STEP_SCHEMAS,
   CONTRACT_STEP_SCHEMAS,
   WARRANTY_STEP_SCHEMAS,
+  PRODUCT_STEP_SCHEMAS,
+  TRAINING_STEP_SCHEMAS,
+  COACHING_STEP_SCHEMAS,
 } from "./step-field-schema-templates";
 
 const MODULE_STEP_TEMPLATES: Record<string, typeof HANDOVER_STEP_SCHEMAS> = {
   handover: HANDOVER_STEP_SCHEMAS,
   contract: CONTRACT_STEP_SCHEMAS,
   warranty: WARRANTY_STEP_SCHEMAS,
+  product: PRODUCT_STEP_SCHEMAS,
+  training: TRAINING_STEP_SCHEMAS,
+  coaching: COACHING_STEP_SCHEMAS,
 };
 
 function fieldSchemaForModuleStep(moduleKey: string, stepIndex: number) {
@@ -26,14 +32,14 @@ type SeedStep = {
   roleCode: string;
   slaHours?: number | null;
   description?: string | null;
-  phaseCode?: "handover" | "training" | "warranty" | "other";
+  phaseCode?: "handover" | "training" | "warranty" | "product" | "other";
   requireDocument?: boolean;
 };
 
 type SeedWorkflow = {
   code: string;
   name: string;
-  moduleKey: "handover" | "warranty" | "training" | "contract";
+  moduleKey: "handover" | "warranty" | "training" | "coaching" | "contract" | "product";
   description?: string | null;
   steps: SeedStep[];
 };
@@ -188,11 +194,22 @@ const WORKFLOWS: SeedWorkflow[] = [
     code: "WF_TRAINING_DEFAULT",
     name: "Luồng tổ chức đào tạo",
     moduleKey: "training",
-    description: "Quy trình tổ chức khoá đào tạo: lên kế hoạch → trưởng phòng phê duyệt → tổng kết.",
+    description: "Quy trình tổ chức khoá đào tạo: lên kế hoạch → phê duyệt → tổng kết.",
     steps: [
       { order: 10, name: "Lên kế hoạch khoá đào tạo", actionCode: "submit", roleCode: "manager", slaHours: 48, phaseCode: "training" },
       { order: 20, name: "Phê duyệt nội dung", actionCode: "approve", roleCode: "admin", slaHours: 48, phaseCode: "training", requireDocument: true },
       { order: 30, name: "Tổng kết và đóng khoá", actionCode: "release", roleCode: "manager", slaHours: 24, phaseCode: "training" },
+    ],
+  },
+  {
+    code: "WF_COACHING_DEFAULT",
+    name: "Luồng huấn luyện thực hành",
+    moduleKey: "coaching",
+    description: "Quy trình huấn luyện gắn hợp đồng/bàn giao: kế hoạch HL → tờ trình → báo cáo & công nhận.",
+    steps: [
+      { order: 10, name: "Lập kế hoạch huấn luyện", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "training" },
+      { order: 20, name: "Phê duyệt tờ trình HL", actionCode: "approve", roleCode: "manager", slaHours: 72, phaseCode: "training", requireDocument: true },
+      { order: 30, name: "Báo cáo và công nhận KQ", actionCode: "release", roleCode: "manager", slaHours: 48, phaseCode: "training", requireDocument: true },
     ],
   },
   {
@@ -207,6 +224,43 @@ const WORKFLOWS: SeedWorkflow[] = [
       { order: 40, name: "Tổng kết khoá huấn luyện", actionCode: "release", roleCode: "manager", slaHours: 24, phaseCode: "training", requireDocument: true },
       { order: 50, name: "Bảo hành / hỗ trợ kỹ thuật", actionCode: "approve", roleCode: "technician", slaHours: 168, phaseCode: "warranty" },
       { order: 60, name: "Nghiệm thu kết thúc hợp đồng", actionCode: "release", roleCode: "admin", slaHours: 48, phaseCode: "warranty" },
+    ],
+  },
+  {
+    code: "WF_PRODUCT_DEFAULT",
+    name: "Quy trình sản phẩm",
+    moduleKey: "product",
+    description: "Quy trình: Sản xuất → Nghiệm thu cấp Bộ → Đưa vào trang bị",
+    steps: [
+      {
+        order: 10,
+        name: "Đang sản xuất",
+        actionCode: "submit",
+        roleCode: "technician",
+        slaHours: null,
+        phaseCode: "product",
+        description: "Từ ngày — đến ngày",
+      },
+      {
+        order: 20,
+        name: "Nghiệm thu cấp Bộ",
+        actionCode: "approve",
+        roleCode: "admin",
+        slaHours: 168,
+        phaseCode: "product",
+        requireDocument: true,
+        description: "Quyết định nghiệm thu",
+      },
+      {
+        order: 30,
+        name: "Đưa vào trang bị",
+        actionCode: "release",
+        roleCode: "admin",
+        slaHours: 168,
+        phaseCode: "product",
+        requireDocument: true,
+        description: "Quyết định trang bị",
+      },
     ],
   },
 ];
@@ -227,6 +281,33 @@ async function syncStepDescriptions(workflowId: string, steps: SeedStep[]) {
   }
 }
 
+async function syncStepFieldSchemas(workflowId: string, moduleKey: string, steps: SeedStep[]) {
+  const existingSteps = await prisma.workflowStep.findMany({
+    where: { workflowId },
+    select: { id: true, order: true },
+    orderBy: { order: "asc" },
+  });
+  const sortedSeed = [...steps].sort((a, b) => a.order - b.order);
+  for (let i = 0; i < existingSteps.length; i++) {
+    const row = existingSteps[i];
+    const seedStep = sortedSeed[i];
+    if (!row || !seedStep) continue;
+    await prisma.workflowStep.update({
+      where: { id: row.id },
+      data: {
+        name: seedStep.name,
+        actionCode: seedStep.actionCode,
+        roleCode: seedStep.roleCode,
+        slaHours: seedStep.slaHours ?? null,
+        description: seedStep.description ?? null,
+        phaseCode: seedStep.phaseCode ?? "other",
+        requireDocument: seedStep.requireDocument ?? false,
+        fieldSchema: fieldSchemaForModuleStep(moduleKey, i),
+      },
+    });
+  }
+}
+
 export async function seedWorkflows() {
   await prisma.workflowDefinition.updateMany({
     where: { code: "WF_HANDOVER_DEFAULT" },
@@ -239,13 +320,17 @@ export async function seedWorkflows() {
       select: { id: true, isSystem: true },
     });
     if (existing) {
-      if (!existing.isSystem) {
-        await prisma.workflowDefinition.update({
-          where: { id: existing.id },
-          data: { isSystem: true, name: wf.name, description: wf.description ?? null },
-        });
-      }
+      await prisma.workflowDefinition.update({
+        where: { id: existing.id },
+        data: {
+          isSystem: true,
+          isActive: true,
+          name: wf.name,
+          description: wf.description ?? null,
+        },
+      });
       await syncStepDescriptions(existing.id, wf.steps);
+      await syncStepFieldSchemas(existing.id, wf.moduleKey, wf.steps);
       continue;
     }
     await prisma.workflowDefinition.create({

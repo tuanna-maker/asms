@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +9,15 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, Download, Edit,
+  Info, ListChecks, Boxes, Files, Download, Edit, MessageSquareWarning, GitBranch,
 } from "lucide-react";
+import { ContractWorkflowSection } from "@/components/contracts/ContractWorkflowSection";
+import type { ContractStepPayloadRecord } from "@/lib/contract-step-payload";
+import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import ContractEditDialog from "./ContractEditDialog";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import { resolveContractDisplayStatus } from "@/lib/contract-display-status";
 import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useContractDetail } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
@@ -60,6 +64,7 @@ type DetailDocument = {
 
 type ContractDetailData = {
   id?: string;
+  customer?: { id: string; code: string; name: string };
   terms?: string | null;
   contractTypeCode?: string | null;
   productsList?: DetailProduct[];
@@ -81,6 +86,16 @@ type ContractDetailData = {
     startDate?: string;
     endDate?: string;
   } | null;
+  workflow?: {
+    workflowId: string;
+    workflowName: string;
+    currentStepIndex: number;
+    totalSteps: number;
+    currentStepName?: string | null;
+    steps: Array<{ id: string; order: number; name: string }>;
+  } | null;
+  workflowId?: string | null;
+  stepPayloads?: ContractStepPayloadRecord;
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -102,6 +117,8 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [editing, setEditing] = useState(false);
   const [editTab, setEditTab] = useState("info");
   const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
+  const [viewWorkflowId, setViewWorkflowId] = useState("");
+  const [viewStepPayloads, setViewStepPayloads] = useState<ContractStepPayloadRecord>({});
 
   const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
@@ -110,6 +127,13 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
     typeof detail?.id === "string" && detail.id.trim()
       ? detail.id
       : contract?.dbId ?? contract?.id ?? null;
+  const feedbackCustomerId = detail?.customer?.id ?? null;
+
+  useEffect(() => {
+    if (!detail) return;
+    setViewWorkflowId(detail.workflow?.workflowId ?? detail.workflowId ?? "");
+    if (detail.stepPayloads) setViewStepPayloads(detail.stepPayloads);
+  }, [detail?.id, detail?.workflow, detail?.workflowId, detail?.stepPayloads]);
 
   const { data: contractAudit } = useAuditLogs(
     { entity: "contract", entityId: contractDbId ?? "", pageSize: 20 },
@@ -135,7 +159,14 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   };
 
   if (!contract) return null;
-  const cfg = statusConfig[contract.status] || statusConfig.active;
+  const displayStatus =
+    (detail as { displayStatus?: string } | null)?.displayStatus ??
+    resolveContractDisplayStatus({
+      status: contract.status,
+      startDate: contract.startDate,
+      endDate: contract.endDate,
+    });
+  const cfg = statusConfig[displayStatus] || statusConfig.active;
   const termsText = (detail?.terms ?? contract.terms ?? "").trim();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -160,13 +191,25 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản chính" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
+              <TabTrigger value="workflow" icon={<GitBranch className="h-4 w-4" />} label="Quy trình" />
+              <TabTrigger value="feedback" icon={<MessageSquareWarning className="h-4 w-4" />} label="Phản ánh" />
             </TabsList>
           </div>
 
           <TabsContent value="info" className="flex-1 overflow-y-auto p-6 space-y-6 mt-0">
             <div className="flex items-center justify-between">
               <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
-              <span className="text-sm font-medium text-muted-foreground">Tiến độ: {contract.progress}%</span>
+              <div className="text-right">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Tiến độ{detail?.workflow ? " (theo quy trình)" : ""}: {contract.progress}%
+                </span>
+                {detail?.workflow ? (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Bước {detail.workflow.currentStepIndex}/{detail.workflow.totalSteps}
+                    {detail.workflow.currentStepName ? ` · ${detail.workflow.currentStepName}` : ""}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <div className="h-3 w-full rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${contract.progress}%` }} />
@@ -304,6 +347,40 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
                   </div>
                 ))}
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="workflow" className="flex-1 overflow-y-auto p-6 mt-0 flex flex-col min-h-0">
+            <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+              <p className="text-sm text-muted-foreground">
+                Quy trình tổng hợp — tiến độ theo số bước đã hoàn thành.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => openEdit("workflow")}>
+                <Edit className="h-4 w-4" /> Chỉnh sửa
+              </div>
+            <ContractWorkflowSection
+              open={open}
+              contractDbId={contractDbId}
+              isCreateMode={false}
+              detailWorkflow={detail?.workflow ?? null}
+              detailStepPayloads={detail?.stepPayloads}
+              detailWorkflowId={detail?.workflowId ?? detail?.workflow?.workflowId ?? null}
+              selectedWorkflowId={viewWorkflowId}
+              onSelectedWorkflowIdChange={setViewWorkflowId}
+              stepPayloads={viewStepPayloads}
+              onStepPayloadsChange={setViewStepPayloads}
+            />
+          </TabsContent>
+
+          <TabsContent value="feedback" className="flex-1 overflow-y-auto p-6 mt-0">
+            {feedbackCustomerId && contractDbId ? (
+              <CustomerFeedbackSection
+                customerId={feedbackCustomerId}
+                contractId={contractDbId}
+                readonly
+              />
+            ) : (
+              <EmptyHint text="Đang tải thông tin khách hàng…" />
             )}
           </TabsContent>
 

@@ -52,6 +52,11 @@ function SelectField({
   );
 }
 
+function fieldGridSpanClass(def: FieldDef): string {
+  if (def.type === "textarea" || def.type === "boolean") return "col-span-full";
+  return "";
+}
+
 function FieldRow({
   def,
   values,
@@ -69,7 +74,7 @@ function FieldRow({
   const id = `dyn-${def.key}`;
 
   return (
-    <div className="space-y-1.5">
+    <div className={`space-y-1.5 min-w-0 ${fieldGridSpanClass(def)}`}>
       {def.type === "boolean" ? (
         <div className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2">
           <Label htmlFor={id} className="cursor-pointer text-sm font-normal">
@@ -172,11 +177,11 @@ export function DynamicStepFormFields({
       {stepDescription ? (
         <p className="text-sm text-muted-foreground whitespace-pre-wrap">{stepDescription}</p>
       ) : null}
-      {schema
-        .filter((def) => isFieldVisible(def, values))
-        .map((def) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+        {schema.map((def) => (
           <FieldRow key={def.key} def={def} values={values} onChange={onChange} readOnly={readOnly} />
         ))}
+      </div>
     </div>
   );
 }

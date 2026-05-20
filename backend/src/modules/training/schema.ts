@@ -2,8 +2,11 @@ import { z } from "zod";
 
 export const trainingStatusSchema = z.enum(["planned", "ongoing", "completed", "cancelled"]);
 
+export const trainingCourseKindSchema = z.enum(["training", "coaching"]);
+
 export const createTrainingCourseSchema = z.object({
   code: z.string().optional(),
+  courseKind: trainingCourseKindSchema.optional(),
   contractId: z.string().optional(),
   customerId: z.string().optional(),
   instructorId: z.string().optional(),
@@ -16,6 +19,7 @@ export const createTrainingCourseSchema = z.object({
   location: z.string().optional(),
   description: z.string().optional(),
   workflowId: z.string().min(1).optional(),
+  stepPayloads: z.record(z.string().min(1), z.record(z.string(), z.unknown())).optional(),
 });
 
 export const updateTrainingCourseSchema = createTrainingCourseSchema.partial().extend({
@@ -27,6 +31,7 @@ export const listTrainingQuerySchema = z.object({
   status: trainingStatusSchema.optional(),
   typeCode: z.string().optional(),
   contractId: z.string().optional(),
+  courseKind: trainingCourseKindSchema.optional(),
 });
 
 export const trainingIdParamSchema = z.object({

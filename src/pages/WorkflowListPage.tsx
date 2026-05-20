@@ -38,12 +38,21 @@ import {
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
   warranty: "Bảo hành",
-  training: "Huấn luyện",
+  training: "Đào tạo",
+  coaching: "Huấn luyện",
   contract: "Hợp đồng (tổng hợp)",
+  product: "Sản phẩm",
 };
 
 function isValidModule(key: string | undefined): key is WorkflowModuleKey {
-  return key === "handover" || key === "warranty" || key === "training" || key === "contract";
+  return (
+    key === "handover" ||
+    key === "warranty" ||
+    key === "training" ||
+    key === "coaching" ||
+    key === "contract" ||
+    key === "product"
+  );
 }
 
 function errMessage(e: unknown) {
@@ -77,7 +86,7 @@ const WorkflowListPage = () => {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteRow, setDeleteRow] = useState<WorkflowListItem | null>(null);
-  const [form, setForm] = useState({ code: "", name: "", description: "", isActive: true });
+  const [form, setForm] = useState({ name: "", description: "", isActive: true });
 
   const rows = useMemo(() => workflows, [workflows]);
 
@@ -93,24 +102,18 @@ const WorkflowListPage = () => {
   }
 
   const openCreate = () => {
-    setForm({ code: "", name: "", description: "", isActive: true });
+    setForm({ name: "", description: "", isActive: true });
     setCreateOpen(true);
   };
 
   const submitCreate = async () => {
-    const code = form.code.trim();
     const name = form.name.trim();
-    if (!code || !name) {
-      toast.error("Mã và tên là bắt buộc");
-      return;
-    }
-    if (!/^[A-Za-z0-9._-]+$/.test(code)) {
-      toast.error("Mã chỉ chứa chữ Latin, số, ., _, -");
+    if (!name) {
+      toast.error("Tên quy trình là bắt buộc");
       return;
     }
     try {
       const res = await createWf.mutateAsync({
-        code,
         name,
         moduleKey: validKey,
         description: form.description.trim() || null,
@@ -160,6 +163,9 @@ const WorkflowListPage = () => {
           <h2 className="text-lg font-semibold text-card-foreground">Quy trình — {MODULE_LABEL[validKey]}</h2>
           <p className="text-sm text-muted-foreground">
             Danh sách quy trình được áp dụng cho module {MODULE_LABEL[validKey].toLowerCase()}.
+            {validKey === "training"
+              ? " Chuẩn 3 bước: Lên kế hoạch khoá đào tạo → Phê duyệt nội dung → Tổng kết và đóng khoá."
+              : null}
           </p>
         </div>
         <Table>
@@ -249,10 +255,7 @@ const WorkflowListPage = () => {
               <Label htmlFor="wf-name">Tên quy trình</Label>
               <Input id="wf-name" value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="wf-code">Mã quy trình</Label>
-              <Input id="wf-code" value={form.code} onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))} />
-            </div>
+            <p className="text-xs text-muted-foreground">Mã quy trình sẽ được hệ thống tự sinh sau khi tạo.</p>
             <div className="space-y-1.5">
               <Label htmlFor="wf-desc">Mô tả</Label>
               <Textarea

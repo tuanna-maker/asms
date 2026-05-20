@@ -20,6 +20,11 @@ export const qk = {
     list: (customerId?: string) => ["crm-activities", "list", customerId ?? "all"] as const,
     detail: (id: string) => ["crm-activities", id] as const,
   },
+  customerFeedbacks: {
+    all: ["customer-feedbacks"] as const,
+    list: (key: string) => ["customer-feedbacks", "list", key] as const,
+    detail: (id: string) => ["customer-feedbacks", id] as const,
+  },
   contracts: {
     all: ["contracts"] as const,
     detail: (id: string) => ["contracts", id] as const,
@@ -90,6 +95,9 @@ export const qk = {
   roles: {
     all: ["roles"] as const,
     detail: (id: string) => ["roles", id] as const,
+  },
+  rolePermissions: {
+    all: ["role-permissions"] as const,
   },
   auditLogs: {
     list: (key: string) => ["audit-logs", key] as const,

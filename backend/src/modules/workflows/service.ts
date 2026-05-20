@@ -1,3 +1,5 @@
+import { randomBytes } from "node:crypto";
+
 import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
@@ -11,6 +13,7 @@ const SELECT_STEP = {
   name: true,
   actionCode: true,
   roleCode: true,
+  assigneeIds: true,
   slaHours: true,
   description: true,
   phaseCode: true,
@@ -56,6 +59,17 @@ async function assertRoleExists(roleCode: string) {
   }
 }
 
+async function assertAssigneeIds(assigneeIds: string[] | undefined) {
+  if (!assigneeIds || assigneeIds.length === 0) return;
+  const unique = [...new Set(assigneeIds)];
+  const count = await prisma.user.count({
+    where: { id: { in: unique }, deletedAt: null, status: "active" },
+  });
+  if (count !== unique.length) {
+    throw new HttpError(400, "Một hoặc nhiều người xử lý không hợp lệ hoặc không còn hoạt động");
+  }
+}
+
 export async function listWorkflowsService(moduleKey?: string) {
   const rows = await prisma.workflowDefinition.findMany({
     where: {
@@ -98,15 +112,30 @@ export async function getWorkflowDetailService(id: string) {
   return row;
 }
 
+async function generateUniqueWorkflowCode(moduleKey: string): Promise<string> {
+  const modulePart = moduleKey.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+  const base = `WF_${modulePart}`;
+  for (let attempt = 0; attempt < 30; attempt++) {
+    const suffix = randomBytes(4).toString("hex").toUpperCase();
+    const code = `${base}_${suffix}`;
+    const dup = await prisma.workflowDefinition.findFirst({ where: { code, deletedAt: null } });
+    if (!dup) return code;
+  }
+  throw new HttpError(500, "Không tạo được mã quy trình duy nhất");
+}
+
 export async function createWorkflowService(input: {
-  code: string;
+  code?: string;
   name: string;
   moduleKey: string;
   description?: string | null;
   isActive?: boolean;
   actorId?: string | null;
 }) {
-  const code = input.code.trim();
+  const code =
+    input.code?.trim() && input.code.trim().length > 0
+      ? input.code.trim()
+      : await generateUniqueWorkflowCode(input.moduleKey);
   const dup = await prisma.workflowDefinition.findFirst({ where: { code, deletedAt: null } });
   if (dup) throw new HttpError(409, "Mã quy trình đã tồn tại");
   const row = await prisma.workflowDefinition.create({
@@ -139,24 +168,16 @@ export async function updateWorkflowService(
   if (!row) throw new HttpError(404, "Không tìm thấy quy trình");
 
   if (row.isSystem) {
-    if (input.code !== undefined && input.code.trim() !== row.code) {
-      throw new HttpError(400, "Không thể đổi mã của quy trình hệ thống");
-    }
     if (input.moduleKey !== undefined && input.moduleKey !== row.moduleKey) {
       throw new HttpError(400, "Không thể đổi nhóm của quy trình hệ thống");
     }
   }
 
-  const codeNew = input.code !== undefined ? input.code.trim() : row.code;
-  if (codeNew !== row.code) {
-    const dup = await prisma.workflowDefinition.findFirst({
-      where: { code: codeNew, deletedAt: null, NOT: { id } },
-    });
-    if (dup) throw new HttpError(409, "Mã quy trình đã tồn tại");
+  if (input.code !== undefined && input.code.trim() !== row.code) {
+    throw new HttpError(400, "Mã quy trình được hệ thống tự sinh và không thể thay đổi");
   }
 
   const data: Prisma.WorkflowDefinitionUpdateInput = {
-    code: codeNew,
     ...(input.name !== undefined ? { name: input.name.trim() } : {}),
     ...(input.moduleKey !== undefined ? { moduleKey: input.moduleKey } : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
@@ -206,6 +227,7 @@ export async function addStepService(
     name: string;
     actionCode: string;
     roleCode: string;
+    assigneeIds?: string[];
     slaHours?: number | null;
     description?: string | null;
     phaseCode?: string;
@@ -217,6 +239,7 @@ export async function addStepService(
   if (!wf) throw new HttpError(404, "Không tìm thấy quy trình");
   await assertActiveDefinitionCode("workflow_step_action", input.actionCode, "Hành động bước");
   await assertRoleExists(input.roleCode);
+  await assertAssigneeIds(input.assigneeIds);
   if (input.phaseCode !== undefined) {
     await assertActiveDefinitionCode("workflow_phase", input.phaseCode, "Giai đoạn");
   }
@@ -228,6 +251,7 @@ export async function addStepService(
       name: input.name.trim(),
       actionCode: input.actionCode,
       roleCode: input.roleCode,
+      assigneeIds: input.assigneeIds ?? [],
       slaHours: input.slaHours ?? null,
       description: input.description ?? null,
       ...(input.phaseCode !== undefined ? { phaseCode: input.phaseCode } : {}),
@@ -248,6 +272,7 @@ export async function updateStepService(
     name?: string;
     actionCode?: string;
     roleCode?: string;
+    assigneeIds?: string[];
     slaHours?: number | null;
     description?: string | null;
     phaseCode?: string;
@@ -264,6 +289,9 @@ export async function updateStepService(
   if (input.roleCode !== undefined) {
     await assertRoleExists(input.roleCode);
   }
+  if (input.assigneeIds !== undefined) {
+    await assertAssigneeIds(input.assigneeIds);
+  }
   if (input.phaseCode !== undefined) {
     await assertActiveDefinitionCode("workflow_phase", input.phaseCode, "Giai đoạn");
   }
@@ -274,6 +302,7 @@ export async function updateStepService(
       ...(input.name !== undefined ? { name: input.name.trim() } : {}),
       ...(input.actionCode !== undefined ? { actionCode: input.actionCode } : {}),
       ...(input.roleCode !== undefined ? { roleCode: input.roleCode } : {}),
+      ...(input.assigneeIds !== undefined ? { assigneeIds: input.assigneeIds } : {}),
       ...(input.slaHours !== undefined ? { slaHours: input.slaHours } : {}),
       ...(input.description !== undefined ? { description: input.description } : {}),
       ...(input.phaseCode !== undefined ? { phaseCode: input.phaseCode } : {}),

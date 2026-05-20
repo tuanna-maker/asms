@@ -222,3 +222,132 @@ export function mergeWarrantyFormIntoStepPayloads(
 
   return out;
 }
+
+/** Trích field header phiếu BH từ payload các bước (khi lưu qua form động). */
+export function pickWarrantyHeaderFromStepPayloads(
+  steps: Array<{ id: string }>,
+  payloads: WarrantyStepPayloadRecord,
+): {
+  issue?: string;
+  type?: string;
+  priorityCode?: string;
+  statusCode?: string;
+  source?: "customer" | "internal";
+  receiptCategory?: string | null;
+  occurredAt?: string | null;
+  productSerialSnapshot?: string | null;
+  rootCause?: string | null;
+  handlingPlan?: string | null;
+  plannedHours?: number | null;
+  costEstimate?: string | null;
+  customerDisagreedClose?: boolean;
+  executionMode?: "self" | "outsource" | null;
+  outsourcePartner?: string | null;
+  outsourceBudget?: string | null;
+  outsourceTimeline?: string | null;
+  repairDetails?: string | null;
+  postRepairAssessment?: string | null;
+  handoverNotes?: string | null;
+} {
+  const out: ReturnType<typeof pickWarrantyHeaderFromStepPayloads> = {};
+
+  const p0 = payloads[steps[0]?.id ?? ""] ?? {};
+  if (p0.issue != null) out.issue = String(p0.issue).trim();
+  if (p0.type != null) out.type = String(p0.type);
+  if (p0.priorityCode != null) out.priorityCode = String(p0.priorityCode);
+  if (p0.statusCode != null) out.statusCode = String(p0.statusCode);
+  if (p0.source != null) {
+    const s = String(p0.source);
+    out.source = s === "Nội bộ" || s === "internal" ? "internal" : "customer";
+  }
+  if (p0.receiptCategory !== undefined) {
+    out.receiptCategory = p0.receiptCategory == null ? null : String(p0.receiptCategory);
+  }
+  if (p0.occurredAt !== undefined) {
+    out.occurredAt = p0.occurredAt == null ? null : String(p0.occurredAt);
+  }
+  if (p0.productSerialSnapshot !== undefined) {
+    out.productSerialSnapshot =
+      p0.productSerialSnapshot == null ? null : String(p0.productSerialSnapshot);
+  }
+
+  const p1 = payloads[steps[1]?.id ?? ""] ?? {};
+  if (p1.rootCause !== undefined) {
+    out.rootCause = p1.rootCause == null ? null : String(p1.rootCause);
+  }
+  if (p1.handlingPlan !== undefined) {
+    out.handlingPlan = p1.handlingPlan == null ? null : String(p1.handlingPlan);
+  }
+  if (p1.plannedHours !== undefined) {
+    const ph = p1.plannedHours;
+    out.plannedHours =
+      ph == null || ph === "" ? null : typeof ph === "number" ? ph : Number.parseInt(String(ph), 10);
+    if (out.plannedHours != null && Number.isNaN(out.plannedHours)) out.plannedHours = null;
+  }
+  if (p1.costEstimate !== undefined) {
+    out.costEstimate = p1.costEstimate == null ? null : String(p1.costEstimate);
+  }
+  if (p1.customerDisagreedClose !== undefined) {
+    out.customerDisagreedClose = Boolean(p1.customerDisagreedClose);
+  }
+
+  const p2 = payloads[steps[2]?.id ?? ""] ?? {};
+  if (p2.executionMode !== undefined) {
+    const mode = p2.executionMode == null ? null : String(p2.executionMode);
+    out.executionMode = mode === "self" || mode === "outsource" ? mode : null;
+  }
+  if (p2.outsourcePartner !== undefined) {
+    out.outsourcePartner = p2.outsourcePartner == null ? null : String(p2.outsourcePartner);
+  }
+  if (p2.outsourceBudget !== undefined) {
+    out.outsourceBudget = p2.outsourceBudget == null ? null : String(p2.outsourceBudget);
+  }
+  if (p2.outsourceTimeline !== undefined) {
+    out.outsourceTimeline = p2.outsourceTimeline == null ? null : String(p2.outsourceTimeline);
+  }
+  if (p2.repairDetails !== undefined) {
+    out.repairDetails = p2.repairDetails == null ? null : String(p2.repairDetails);
+  }
+
+  const p3 = payloads[steps[3]?.id ?? ""] ?? {};
+  if (p3.postRepairAssessment !== undefined) {
+    out.postRepairAssessment =
+      p3.postRepairAssessment == null ? null : String(p3.postRepairAssessment);
+  }
+
+  const p4 = payloads[steps[4]?.id ?? ""] ?? {};
+  if (p4.handoverNotes !== undefined) {
+    out.handoverNotes = p4.handoverNotes == null ? null : String(p4.handoverNotes);
+  }
+
+  return out;
+}
+
+export type WarrantyHeaderFromPayloads = ReturnType<typeof pickWarrantyHeaderFromStepPayloads>;
+
+/** Map header trích từ bước → payload cột legacy warranty (buildBhPayload). */
+export function buildBhPayloadFromStepHeader(h: WarrantyHeaderFromPayloads) {
+  return {
+    receiptCategory:
+      h.receiptCategory === undefined
+        ? undefined
+        : (h.receiptCategory as "incident" | "technical_support" | null),
+    occurredAt: h.occurredAt === undefined ? undefined : h.occurredAt,
+    productSerialSnapshot: h.productSerialSnapshot === undefined ? undefined : h.productSerialSnapshot,
+    rootCause:
+      h.rootCause === undefined
+        ? undefined
+        : (h.rootCause as "manufacturer" | "customer" | "unknown" | null),
+    handlingPlan: h.handlingPlan === undefined ? undefined : h.handlingPlan,
+    plannedHours: h.plannedHours === undefined ? undefined : h.plannedHours,
+    costEstimate: h.costEstimate === undefined ? undefined : h.costEstimate,
+    customerDisagreedClose: h.customerDisagreedClose,
+    executionMode: h.executionMode === undefined ? undefined : h.executionMode,
+    outsourcePartner: h.outsourcePartner === undefined ? undefined : h.outsourcePartner,
+    outsourceBudget: h.outsourceBudget === undefined ? undefined : h.outsourceBudget,
+    outsourceTimeline: h.outsourceTimeline === undefined ? undefined : h.outsourceTimeline,
+    repairDetails: h.repairDetails === undefined ? undefined : h.repairDetails,
+    postRepairAssessment: h.postRepairAssessment === undefined ? undefined : h.postRepairAssessment,
+    handoverNotes: h.handoverNotes === undefined ? undefined : h.handoverNotes,
+  };
+}

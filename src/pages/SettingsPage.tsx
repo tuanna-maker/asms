@@ -23,13 +23,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole, type Role } from "@/hooks/use-role";
-import {
-  ROLE_MATRIX_MODULES,
-  SETTINGS_ROLE_ORDER,
-  getAllowedModuleLabels,
-  getRolePublicTitle,
-  moduleAllowedForRole,
-} from "@/lib/role-matrix";
+import { getRolePublicTitle } from "@/lib/role-matrix";
+import { PermissionsTab } from "@/components/settings/PermissionsTab";
 import { ATTRIBUTE_SETTINGS_BASE_PATH } from "@/lib/attribute-settings-config";
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsersList, type UserListItem } from "@/hooks/use-users-api";
 import {
@@ -218,7 +213,6 @@ const SettingsPage = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [editUser, setEditUser] = useState<UserListItem | null>(null);
   const [deleteUserRow, setDeleteUserRow] = useState<UserListItem | null>(null);
-  const [permissionsDetailRole, setPermissionsDetailRole] = useState<Role | null>(null);
 
   const [createForm, setCreateForm] = useState({
     fullName: "",
@@ -422,36 +416,7 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="permissions">
-          <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50 space-y-4">
-            <div className="space-y-1">
-              <h3 className="font-semibold text-card-foreground">Phân quyền theo vai trò</h3>
-              <p className="text-sm text-muted-foreground">
-                Ma trận quyền cố định trong mã nguồn (route + API), khớp với menu chính. Để gán vai trò cho từng người, dùng tab{" "}
-                <span className="font-medium text-foreground">Người dùng</span> → <span className="font-medium text-foreground">Sửa</span>.
-              </p>
-            </div>
-            {SETTINGS_ROLE_ORDER.map((roleKey) => {
-              const labels = getAllowedModuleLabels(roleKey);
-              return (
-                <div key={roleKey} className="rounded-lg bg-secondary/30 p-4">
-                  <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                    <span className="font-medium text-card-foreground">{getRolePublicTitle(roleKey)}</span>
-                    <Button variant="outline" size="sm" type="button" onClick={() => setPermissionsDetailRole(roleKey)}>
-                      Xem chi tiết
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {labels.map((p) => (
-                      <Badge key={p} variant="outline">{p}</Badge>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            <p className="text-xs text-muted-foreground pt-1">
-              Quản trị và Quản lý được chỉnh sửa danh mục Thuộc tính; chỉ Quản trị quản lý người dùng.
-            </p>
-          </div>
+          <PermissionsTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -476,48 +441,6 @@ const SettingsPage = () => {
           </TabsContent>
         ) : null}
       </Tabs>
-
-      <Dialog open={permissionsDetailRole !== null} onOpenChange={(o) => !o && setPermissionsDetailRole(null)}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>
-              Quyền truy cập — {permissionsDetailRole ? getRolePublicTitle(permissionsDetailRole) : ""}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="overflow-y-auto pr-1 -mr-1 min-h-0 flex-1">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mục / trang</TableHead>
-                  <TableHead className="text-right w-28">Truy cập</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {permissionsDetailRole &&
-                  ROLE_MATRIX_MODULES.map((mod) => {
-                    const ok = moduleAllowedForRole(permissionsDetailRole, mod.paths);
-                    return (
-                      <TableRow key={mod.label}>
-                        <TableCell className="font-medium">{mod.label}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={ok ? "default" : "secondary"}>{ok ? "Được phép" : "Không"}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
-          </div>
-          <p className="text-xs text-muted-foreground shrink-0">
-            Quyền trên máy chủ (API) được áp đặt tương ứng; thay đổi vai trò người dùng không làm đổi bảng này trong mã nguồn.
-          </p>
-          <DialogFooter className="shrink-0 sm:justify-end">
-            <Button type="button" variant="secondary" onClick={() => setPermissionsDetailRole(null)}>
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">

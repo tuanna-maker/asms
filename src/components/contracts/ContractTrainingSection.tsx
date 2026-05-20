@@ -1,33 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GitBranch, GraduationCap, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { WorkflowInstancePanel } from "@/components/workflow/WorkflowInstancePanel";
-import {
-  useAttachWorkflow,
-  useInstanceForEntity,
-  useWorkflowsList,
-} from "@/hooks/use-workflows-api";
+import { CourseWorkflowSection } from "@/components/training/CourseWorkflowSection";
+import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
+import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
 export type LinkedTrainingSummary = {
   id: string;
   code: string;
@@ -50,6 +36,8 @@ type TrainingDetail = {
   location?: string | null;
   description?: string | null;
   contractId?: string | null;
+  stepPayloads?: TrainingStepPayloadRecord;
+  workflow?: WorkflowInstanceListSnapshot | null;
 };
 
 type Props = {
@@ -80,8 +68,6 @@ export function ContractTrainingSection({
   const courseId = linkedTraining?.id ?? null;
 
   const { data: trainingTypes = [] } = useDefinitionsList("training_type");
-  const { data: trainingWorkflows = [] } = useWorkflowsList("training");
-  const attachWf = useAttachWorkflow();
 
   const { data: detail, isLoading: detailLoading } = useQuery({
     queryKey: ["training-course", courseId],
@@ -92,10 +78,6 @@ export function ContractTrainingSection({
     },
   });
 
-  const { data: liveInstance } = useInstanceForEntity("training", courseId, {
-    enabled: Boolean(courseId),
-  });
-
   const [title, setTitle] = useState("");
   const [typeCode, setTypeCode] = useState("internal");
   const [startDate, setStartDate] = useState("");
@@ -104,7 +86,7 @@ export function ContractTrainingSection({
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("planned");
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
-  const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
+  const [stepPayloads, setStepPayloads] = useState<TrainingStepPayloadRecord>({});
 
   const isCreateMode = !courseId;
 
@@ -117,7 +99,8 @@ export function ContractTrainingSection({
       setLocation(detail.location ?? "");
       setDescription(detail.description ?? "");
       setStatus(detail.status);
-      setSelectedWorkflowId(liveInstance?.workflowId ?? linkedTraining?.workflowId ?? "");
+      setSelectedWorkflowId(detail.workflow?.workflowId ?? linkedTraining?.workflowId ?? "");
+      setStepPayloads(detail.stepPayloads ?? {});
     } else if (isCreateMode && contractId) {
       const d = new Date();
       setStartDate(d.toISOString().slice(0, 10));
@@ -126,16 +109,9 @@ export function ContractTrainingSection({
       setEndDate(end.toISOString().slice(0, 10));
       setTitle("");
       setSelectedWorkflowId("");
+      setStepPayloads({});
     }
-  }, [detail, isCreateMode, contractId, liveInstance?.workflowId, linkedTraining?.workflowId]);
-
-  const workflowOptions = useMemo(
-    () =>
-      trainingWorkflows.filter(
-        (w) => w.isActive || w.id === selectedWorkflowId || w.id === liveInstance?.workflowId,
-      ),
-    [trainingWorkflows, selectedWorkflowId, liveInstance?.workflowId],
-  );
+  }, [detail, isCreateMode, contractId, linkedTraining?.workflowId]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -150,7 +126,9 @@ export function ContractTrainingSection({
         location: location.trim() || undefined,
         description: description.trim() || undefined,
         status,
+        courseKind: "coaching" as const,
         ...(isCreateMode && selectedWorkflowId ? { workflowId: selectedWorkflowId } : {}),
+        ...(Object.keys(stepPayloads).length > 0 ? { stepPayloads } : {}),
       };
       if (isCreateMode) {
         const res = await api.post<ApiSuccess<TrainingDetail>>("/api/v1/training", body);
@@ -173,35 +151,6 @@ export function ContractTrainingSection({
     },
     onError: (e) => toast.error(getApiErrorMessage(e, "Không lưu được huấn luyện")),
   });
-
-  const handleWorkflowSelect = (workflowId: string) => {
-    if (isCreateMode) {
-      setSelectedWorkflowId(workflowId);
-      return;
-    }
-    if (workflowId === liveInstance?.workflowId) {
-      setSelectedWorkflowId(workflowId);
-      return;
-    }
-    setPendingSwitchId(workflowId);
-  };
-
-  const confirmSwitch = async () => {
-    if (!courseId || !pendingSwitchId) return;
-    try {
-      await attachWf.mutateAsync({
-        moduleKey: "training",
-        entityId: courseId,
-        workflowId: pendingSwitchId,
-      });
-      toast.success("Đã áp dụng quy trình mới");
-      setPendingSwitchId(null);
-      setSelectedWorkflowId(pendingSwitchId);
-      onSaved?.();
-    } catch (e) {
-      toast.error(getApiErrorMessage(e, "Không áp dụng được quy trình"));
-    }
-  };
 
   if (!contractId) {
     return (
@@ -263,23 +212,6 @@ export function ContractTrainingSection({
           </Select>
         </div>
         <div className="space-y-1.5">
-          <Label className="flex items-center gap-1">
-            <GitBranch className="h-3.5 w-3.5" /> Quy trình huấn luyện
-          </Label>
-          <Select value={selectedWorkflowId || undefined} onValueChange={handleWorkflowSelect}>
-            <SelectTrigger>
-              <SelectValue placeholder="Chọn quy trình" />
-            </SelectTrigger>
-            <SelectContent>
-              {workflowOptions.map((wf) => (
-                <SelectItem key={wf.id} value={wf.id}>
-                  {wf.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
           <Label>Ngày bắt đầu</Label>
           <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
         </div>
@@ -311,18 +243,19 @@ export function ContractTrainingSection({
         </div>
       </div>
 
-      {courseId && selectedWorkflowId ? (
-        <div className="rounded-lg border border-border/50 p-4">
-          <p className="text-sm font-medium mb-3 flex items-center gap-2">
-            <GraduationCap className="h-4 w-4" /> Tiến độ quy trình
-          </p>
-          <WorkflowInstancePanel moduleKey="training" entityId={courseId} compact />
-        </div>
-      ) : isCreateMode && !selectedWorkflowId ? (
-        <p className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-lg">
-          Chọn quy trình huấn luyện trước khi lưu.
-        </p>
-      ) : null}
+      <CourseWorkflowSection
+        open
+        courseId={courseId}
+        moduleKey="coaching"
+        isCreateMode={isCreateMode}
+        detailWorkflow={detail?.workflow ?? undefined}
+        detailStepPayloads={detail?.stepPayloads}
+        selectedWorkflowId={selectedWorkflowId}
+        onSelectedWorkflowIdChange={setSelectedWorkflowId}
+        stepPayloads={stepPayloads}
+        onStepPayloadsChange={setStepPayloads}
+        workflowSelectHint="Cấu hình bước tại menu Quy trình → Huấn luyện."
+      />
 
       <div className="flex justify-end">
         <Button
@@ -344,28 +277,6 @@ export function ContractTrainingSection({
         </Button>
       </div>
 
-      <AlertDialog open={Boolean(pendingSwitchId)} onOpenChange={(o) => !o && setPendingSwitchId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Ap dung quy trinh khac?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tien trinh hien tai se dong va tao lai tu buoc dau. Ban co chac?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={attachWf.isPending}>Huy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void confirmSwitch();
-              }}
-              disabled={attachWf.isPending}
-            >
-              {attachWf.isPending ? "Dang ap dung..." : "Ap dung"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

@@ -136,6 +136,52 @@ export const WARRANTY_STEP_SCHEMAS: FieldDef[][] = [
   [{ key: "handoverNotes", label: "Ghi chú bàn giao", type: "textarea" }],
 ];
 
+export const COACHING_STEP_SCHEMAS: FieldDef[][] = [
+  [
+    { key: "trainingPlanNote", label: "Kế hoạch huấn luyện", type: "textarea" },
+    { key: "tempHandoverNote", label: "Ghi chú BBBG tạm (tùy chọn)", type: "textarea" },
+  ],
+  [{ key: "trainingCostReport", label: "Tờ trình huấn luyện", type: "textarea" }],
+  [
+    { key: "trainingReportNote", label: "Báo cáo KT thực hành", type: "textarea" },
+    { key: "trainingDecision", label: "QĐ công nhận KQ huấn luyện", type: "textarea" },
+  ],
+];
+
+export const TRAINING_STEP_SCHEMAS: FieldDef[][] = [
+  [
+    { key: "trainingPlanNote", label: "Nội dung chương trình", type: "textarea" },
+    { key: "participantsNote", label: "Thành phần học viên", type: "textarea" },
+    { key: "scheduleNote", label: "Lịch dự kiến", type: "textarea" },
+  ],
+  [
+    { key: "contentApprovalNote", label: "Nội dung phê duyệt", type: "textarea" },
+    { key: "approvalDecision", label: "Quyết định phê duyệt", type: "textarea" },
+  ],
+  [
+    { key: "trainingConclusion", label: "Kết luận khóa đào tạo", type: "textarea" },
+    { key: "closeoutNote", label: "Ghi chú đóng khóa", type: "textarea" },
+  ],
+];
+
+export const PRODUCT_STEP_SCHEMAS: FieldDef[][] = [
+  [
+    { key: "productionStartDate", label: "Ngày bắt đầu sản xuất", type: "date" },
+    { key: "productionEndDate", label: "Ngày kết thúc sản xuất", type: "date" },
+    { key: "productionNotes", label: "Ghi chú sản xuất", type: "textarea" },
+  ],
+  [
+    { key: "inspectionDecisionNumber", label: "Số quyết định nghiệm thu", type: "text", required: true },
+    { key: "inspectionDecisionDate", label: "Ngày quyết định nghiệm thu", type: "date", required: true },
+    { key: "inspectionNotes", label: "Ghi chú nghiệm thu", type: "textarea" },
+  ],
+  [
+    { key: "equipDecisionNumber", label: "Số quyết định trang bị", type: "text", required: true },
+    { key: "equipDecisionDate", label: "Ngày quyết định trang bị", type: "date", required: true },
+    { key: "equipNotes", label: "Ghi chú trang bị", type: "textarea" },
+  ],
+];
+
 /** Trường header phiếu bàn giao — đồng bộ backend HANDOVER_ENTITY_FIELD_SCHEMA */
 export const HANDOVER_ENTITY_FIELD_SCHEMA: FieldDef[] = [
   { key: "contractId", label: "Hợp đồng", type: "select", dataSource: "contract", required: true },
@@ -156,6 +202,9 @@ const MODULE_MAP: Record<string, FieldDef[][]> = {
   handover: HANDOVER_STEP_SCHEMAS,
   contract: CONTRACT_STEP_SCHEMAS,
   warranty: WARRANTY_STEP_SCHEMAS,
+  product: PRODUCT_STEP_SCHEMAS,
+  training: TRAINING_STEP_SCHEMAS,
+  coaching: COACHING_STEP_SCHEMAS,
 };
 
 /** Field mẫu theo vị trí bước (0-based) — đồng bộ các màn BG/HĐ/BH */
@@ -246,10 +295,71 @@ const CONTRACT_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
   { order: 50, name: "Bàn giao chính thức", actionCode: "release", roleCode: "manager", slaHours: 48, phaseCode: "handover", requireDocument: true },
 ];
 
+const COACHING_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
+  { order: 10, name: "Lập kế hoạch huấn luyện", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "training" },
+  {
+    order: 20,
+    name: "Phê duyệt tờ trình HL",
+    actionCode: "approve",
+    roleCode: "manager",
+    slaHours: 72,
+    phaseCode: "training",
+    requireDocument: true,
+  },
+  {
+    order: 30,
+    name: "Báo cáo và công nhận KQ",
+    actionCode: "release",
+    roleCode: "manager",
+    slaHours: 48,
+    phaseCode: "training",
+    requireDocument: true,
+  },
+];
+
+const TRAINING_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
+  { order: 10, name: "Lên kế hoạch khoá đào tạo", actionCode: "submit", roleCode: "manager", slaHours: 48, phaseCode: "training" },
+  {
+    order: 20,
+    name: "Phê duyệt nội dung",
+    actionCode: "approve",
+    roleCode: "admin",
+    slaHours: 48,
+    phaseCode: "training",
+    requireDocument: true,
+  },
+  { order: 30, name: "Tổng kết và đóng khoá", actionCode: "release", roleCode: "manager", slaHours: 24, phaseCode: "training" },
+];
+
+const PRODUCT_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
+  { order: 10, name: "Đang sản xuất", actionCode: "submit", roleCode: "technician", slaHours: 0, phaseCode: "product" },
+  {
+    order: 20,
+    name: "Nghiệm thu cấp Bộ",
+    actionCode: "approve",
+    roleCode: "admin",
+    slaHours: 168,
+    phaseCode: "product",
+    requireDocument: true,
+  },
+  {
+    order: 30,
+    name: "Đưa vào trang bị",
+    actionCode: "release",
+    roleCode: "admin",
+    slaHours: 168,
+    phaseCode: "product",
+    requireDocument: true,
+  },
+];
+
 const STANDARD_STEP_META: Record<string, Omit<ModuleStandardStep, "fieldSchema">[]> = {
   handover: HANDOVER_STANDARD_STEPS,
   warranty: WARRANTY_STANDARD_STEPS,
   contract: CONTRACT_STANDARD_STEPS,
+  product: PRODUCT_STANDARD_STEPS,
+  training: TRAINING_STANDARD_STEPS,
+  coaching: COACHING_STANDARD_STEPS,
 };
 
 export function getModuleStandardSteps(moduleKey: string): ModuleStandardStep[] | null {

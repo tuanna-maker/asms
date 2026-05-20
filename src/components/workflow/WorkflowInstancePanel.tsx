@@ -6,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/hooks/use-role";
+import { useAuth } from "@/hooks/use-auth";
+import { canUserActOnWorkflowStep } from "@/lib/workflow-step-access";
+import { workflowStepListItemClass } from "@/components/workflow/WorkflowStepSegments";
 import {
   useAdvanceInstance,
   useDeleteInstanceDocument,
@@ -66,6 +69,7 @@ function formatSize(bytes: number) {
 
 export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compact }: Props) {
   const { role } = useRole();
+  const { user } = useAuth();
   const { data: instance, isLoading } = useInstanceForEntity(moduleKey, entityId);
   const advance = useAdvanceInstance();
   const { data: documents = [] } = useInstanceDocuments(instance?.id);
@@ -96,7 +100,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
   const canAct =
     instance.status === "running" &&
     instance.currentStep &&
-    (role === "admin" || role === instance.currentStep.roleCode);
+    canUserActOnWorkflowStep(role, user?.id, instance.currentStep);
 
   const actionStepId = focusStepId ?? instance.currentStepId;
   const actionStep = actionStepId
@@ -109,7 +113,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
     instance.status === "running" &&
     actionStep &&
     actionStepId === instance.currentStepId &&
-    (role === "admin" || role === actionStep.roleCode);
+    canUserActOnWorkflowStep(role, user?.id, actionStep);
 
   const onAct = async (action: "approve" | "reject") => {
     if (action === "approve" && blockedByDocument) {
@@ -164,7 +168,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
   return (
     <div
       className={cn(
-        "space-y-3 rounded-lg border border-border/50 bg-card p-4 shadow-sm",
+        "space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4",
         compact && "border-0 bg-transparent p-0 shadow-none",
       )}
     >
@@ -199,10 +203,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
               return (
                 <li
                   key={step.id}
-                  className={cn(
-                    "flex items-start gap-2 rounded-md border border-border/40 px-2.5 py-2 text-sm",
-                    isCurrent ? "border-amber-300 bg-amber-50/60" : isDone ? "bg-emerald-50/40" : "bg-background",
-                  )}
+                  className={workflowStepListItemClass(isDone, isCurrent)}
                 >
                   <span
                     className={cn(
@@ -272,18 +273,18 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
           ) : (
             <ul className="space-y-1.5">
               {stepDocs.map((doc) => (
-                <li key={doc.id} className="flex items-center gap-2 rounded-md bg-card px-2 py-1.5 text-xs">
-                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                <li key={doc.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-card px-2 py-1.5 text-xs">
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1 truncate">
                     <span className="font-medium text-foreground">{doc.fileName}</span>
                     <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
                   </span>
                   {doc.uploadedBy ? (
-                    <span className="text-muted-foreground">
+                    <span className="shrink-0 text-muted-foreground">
                       {doc.uploadedBy.fullName} · {formatDateTime(doc.uploadedAt)}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground">{formatDateTime(doc.uploadedAt)}</span>
+                    <span className="shrink-0 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</span>
                   )}
                   {canUploadDocs ? (
                     <Button

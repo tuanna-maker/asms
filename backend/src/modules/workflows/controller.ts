@@ -56,11 +56,11 @@ export async function getWorkflowController(req: Request, res: Response) {
 export async function createWorkflowController(req: Request, res: Response) {
   const payload = parseOrThrow(createWorkflowSchema, req.body);
   const input: Parameters<typeof createWorkflowService>[0] = {
-    code: payload.code,
     name: payload.name,
     moduleKey: payload.moduleKey,
     actorId: req.user?.id ?? null,
   };
+  if (payload.code !== undefined) input.code = payload.code;
   if (payload.description !== undefined) input.description = payload.description;
   if (payload.isActive !== undefined) input.isActive = payload.isActive;
   const data = await createWorkflowService(input);
@@ -78,7 +78,6 @@ export async function updateWorkflowController(req: Request, res: Response) {
   const { id } = parseOrThrow(idParamSchema, req.params);
   const payload = parseOrThrow(updateWorkflowSchema, req.body);
   const input: Parameters<typeof updateWorkflowService>[1] = { actorId: req.user?.id ?? null };
-  if (payload.code !== undefined) input.code = payload.code;
   if (payload.name !== undefined) input.name = payload.name;
   if (payload.moduleKey !== undefined) input.moduleKey = payload.moduleKey;
   if (payload.description !== undefined) input.description = payload.description;
@@ -120,6 +119,7 @@ export async function addStepController(req: Request, res: Response) {
   if (payload.phaseCode !== undefined) input.phaseCode = payload.phaseCode;
   if (payload.requireDocument !== undefined) input.requireDocument = payload.requireDocument;
   if (payload.fieldSchema !== undefined) input.fieldSchema = payload.fieldSchema;
+  if (payload.assigneeIds !== undefined) input.assigneeIds = payload.assigneeIds;
   const data = await addStepService(id, input);
   await writeAudit(req, {
     action: "create",
@@ -143,6 +143,7 @@ export async function updateStepController(req: Request, res: Response) {
   if (payload.phaseCode !== undefined) input.phaseCode = payload.phaseCode;
   if (payload.requireDocument !== undefined) input.requireDocument = payload.requireDocument;
   if (payload.fieldSchema !== undefined) input.fieldSchema = payload.fieldSchema;
+  if (payload.assigneeIds !== undefined) input.assigneeIds = payload.assigneeIds;
   const data = await updateStepService(id, stepId, input);
   await writeAudit(req, {
     action: "update",

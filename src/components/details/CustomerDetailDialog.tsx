@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import {
   Users, Phone, Mail, MapPin, FileText, Cake, AlertTriangle,
   X, PlusCircle, Trash2, Wrench, Activity, Edit,
-  Building2, CalendarDays, Medal, Crown, DollarSign,
-  Contact as ContactIcon, Bell, BellOff,
+  Building2, CalendarDays, DollarSign,
+  Contact as ContactIcon, Bell, BellOff, MessageSquareWarning,
 } from "lucide-react";
+import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { toast } from "sonner";
 import { useCustomerDetail } from "@/hooks/use-customers-api";
 import {
@@ -31,7 +32,6 @@ import {
   useDeleteAnniversary,
   useUpdateAnniversary,
   type Anniversary,
-  type AnniversaryType,
 } from "@/hooks/use-anniversaries-api";
 import {
   useCrmActivitiesList,
@@ -149,13 +149,6 @@ function daysUntil(iso: string, recurring: boolean) {
   return Math.max(0, Math.ceil((date.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
 }
 
-const ANNIVERSARY_TYPE_LABELS: Record<AnniversaryType, { label: string; icon: typeof Medal }> = {
-  traditional_day: { label: "Ngày truyền thống của đơn vị", icon: Building2 },
-  medal_day: { label: "Ngày đón nhận huân/huy chương", icon: Medal },
-  leader_birthday: { label: "Sinh nhật Lãnh đạo", icon: Crown },
-  other: { label: "Khác", icon: Cake },
-};
-
 const STATUS_MAP: Record<string, string> = {
   active: "Đang thực hiện",
   completed: "Hoàn thành",
@@ -199,20 +192,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
   const warranties = detail?.warranties ?? [];
   const costBreakdown = detail?.costBreakdown ?? [];
 
-  const anniversariesByType = useMemo(() => {
-    const items = detail?.anniversaries ?? [];
-    const map: Record<AnniversaryType, Anniversary[]> = {
-      traditional_day: [],
-      medal_day: [],
-      leader_birthday: [],
-      other: [],
-    };
-    for (const a of items) {
-      const t = a.type ?? "other";
-      (map[t] ?? map.other).push(a);
-    }
-    return map;
-  }, [detail?.anniversaries]);
+  const anniversaries = detail?.anniversaries ?? [];
 
   const anniversaryIds = useMemo(
     () => (detail?.anniversaries ?? []).map((a) => a.id),
@@ -265,7 +245,6 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
 
   // --- Anniversary form state ---
   const [annForm, setAnnForm] = useState({
-    type: "other" as AnniversaryType,
     label: "",
     occursAt: "",
     recurringYearly: true,
@@ -275,20 +254,14 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
   const [editingAnnId, setEditingAnnId] = useState<string | null>(null);
   const [annDialogOpen, setAnnDialogOpen] = useState(false);
 
-  const openCreateAnn = (type: AnniversaryType) => {
+  const openCreateAnn = () => {
     setEditingAnnId(null);
-    setAnnForm({ type, label: ANNIVERSARY_TYPE_LABELS[type].label, occursAt: "", recurringYearly: true, reminderDays: 7, notes: "" });
-    setAnnDialogOpen(true);
-  };
-  const openCreateAnnFromHeader = () => {
-    setEditingAnnId(null);
-    setAnnForm({ type: "other", label: "", occursAt: "", recurringYearly: true, reminderDays: 7, notes: "" });
+    setAnnForm({ label: "", occursAt: "", recurringYearly: true, reminderDays: 7, notes: "" });
     setAnnDialogOpen(true);
   };
   const openEditAnn = (a: Anniversary) => {
     setEditingAnnId(a.id);
     setAnnForm({
-      type: a.type ?? "other",
       label: a.label,
       occursAt: a.occursAt.slice(0, 10),
       recurringYearly: a.recurringYearly,
@@ -307,7 +280,6 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
         await updateAnniversary.mutateAsync({
           id: editingAnnId,
           payload: {
-            type: annForm.type,
             label: annForm.label.trim(),
             occursAt: annForm.occursAt,
             recurringYearly: annForm.recurringYearly,
@@ -319,7 +291,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
       } else {
         await createAnniversary.mutateAsync({
           customerId,
-          type: annForm.type,
+          type: "other",
           label: annForm.label.trim(),
           occursAt: annForm.occursAt,
           recurringYearly: annForm.recurringYearly,
@@ -511,6 +483,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
               <TabsTrigger value="contacts" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Đầu mối liên lạc</TabsTrigger>
               <TabsTrigger value="care" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Chăm sóc & Tiếp xúc</TabsTrigger>
               <TabsTrigger value="cost" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Chi phí</TabsTrigger>
+              <TabsTrigger value="feedback" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Phản ánh</TabsTrigger>
             </TabsList>
           </div>
 
@@ -529,27 +502,32 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
               <h4 className="text-sm font-semibold text-card-foreground">Thông tin cơ bản</h4>
               <InfoRow icon={<Building2 className="h-4 w-4" />} label="Mã KH" value={detail?.code ?? customer.id} />
               {canEditBasic ? (
-                <div className="space-y-1 pt-1">
-                  <EditableInfoRow icon={<Users className="h-4 w-4" />} label="Tên đơn vị *">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Tên đơn vị *</Label>
                     <Input className="h-8 text-sm" value={basicForm.name} onChange={(e) => setBasicForm((p) => ({ ...p, name: e.target.value }))} />
-                  </EditableInfoRow>
-                  <EditableInfoRow icon={<Users className="h-4 w-4" />} label="Người liên hệ">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Người liên hệ</Label>
                     <Input className="h-8 text-sm" value={basicForm.contact} onChange={(e) => setBasicForm((p) => ({ ...p, contact: e.target.value }))} />
-                  </EditableInfoRow>
-                  <EditableInfoRow icon={<Phone className="h-4 w-4" />} label="Điện thoại">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Điện thoại</Label>
                     <Input className="h-8 text-sm" value={basicForm.phone} onChange={(e) => setBasicForm((p) => ({ ...p, phone: e.target.value }))} />
-                  </EditableInfoRow>
-                  <EditableInfoRow icon={<Mail className="h-4 w-4" />} label="Email">
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">Email</Label>
                     <Input className="h-8 text-sm" type="email" value={basicForm.email} onChange={(e) => setBasicForm((p) => ({ ...p, email: e.target.value }))} />
-                  </EditableInfoRow>
-                  <EditableInfoRow icon={<MapPin className="h-4 w-4" />} label="Địa chỉ">
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs text-muted-foreground">Địa chỉ</Label>
                     <Input className="h-8 text-sm" value={basicForm.address} onChange={(e) => setBasicForm((p) => ({ ...p, address: e.target.value }))} />
-                  </EditableInfoRow>
-                  {onSave && (
-                    <div className="flex justify-end pt-2">
+                  </div>
+                  {onSave ? (
+                    <div className="flex justify-end pt-1 sm:col-span-2">
                       <Button size="sm" onClick={handleSaveBasicInfo} disabled={!basicForm.name.trim()}>Lưu thông tin cơ bản</Button>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <>
@@ -739,96 +717,43 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
                   <Cake className="h-4 w-4 text-pink-500" /> Ngày kỷ niệm quan trọng
                 </h4>
                 {canEditAnniversaries && (
-                  <Button size="sm" variant="outline" onClick={openCreateAnnFromHeader}>
+                  <Button size="sm" variant="outline" onClick={openCreateAnn}>
                     <PlusCircle className="h-4 w-4 mr-1" /> Thêm
                   </Button>
                 )}
               </div>
 
-              {(["traditional_day", "medal_day", "leader_birthday"] as AnniversaryType[]).map((type) => {
-                const meta = ANNIVERSARY_TYPE_LABELS[type];
-                const Icon = meta.icon;
-                const items = anniversariesByType[type];
-                return (
-                  <div key={type} className="rounded-lg border border-border/50 bg-card p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium text-card-foreground">{meta.label}</span>
-                      </div>
-                      {canEditAnniversaries && (
-                        <Button size="sm" variant="ghost" onClick={() => openCreateAnn(type)}>
-                          <PlusCircle className="h-3.5 w-3.5 mr-1" /> Thêm
-                        </Button>
-                      )}
-                    </div>
-                    {items.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">Chưa có thông tin</p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {items.map((a) => {
-                          const days = daysUntil(a.occursAt, a.recurringYearly);
-                          return (
-                            <li key={a.id} className="flex items-start justify-between gap-3 rounded-md border border-border/30 bg-muted/30 p-2.5 text-sm">
-                              <div>
-                                <p className="font-medium text-card-foreground">{a.label}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {formatDate(a.occursAt)} {a.recurringYearly ? "· Hàng năm" : ""} · Nhắc trước {a.reminderDays} ngày
-                                </p>
-                                {a.notes && <p className="text-xs text-muted-foreground mt-0.5">{a.notes}</p>}
-                              </div>
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-100">Còn {days} ngày</Badge>
-                                {renderAnniversaryBell(a.id)}
-                                {canEditAnniversaries && (
-                                  <>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAnn(a)} aria-label="Sửa"><Edit className="h-3.5 w-3.5" /></Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => void onDeleteAnniversary(a.id)} aria-label="Xoá"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                                  </>
-                                )}
-                              </div>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                );
-              })}
-
-              {(canEditAnniversaries || anniversariesByType.other.length > 0) && (
-                <div className="rounded-lg border border-border/50 bg-card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2"><Cake className="h-4 w-4 text-muted-foreground" /><span className="text-sm font-medium text-card-foreground">Kỷ niệm khác</span></div>
-                    {canEditAnniversaries && (
-                      <Button size="sm" variant="ghost" onClick={() => openCreateAnn("other")}><PlusCircle className="h-3.5 w-3.5 mr-1" /> Thêm</Button>
-                    )}
-                  </div>
-                  <ul className="space-y-2">
-                    {anniversariesByType.other.map((a) => {
-                      const days = daysUntil(a.occursAt, a.recurringYearly);
-                      return (
-                        <li key={a.id} className="flex items-start justify-between gap-3 rounded-md border border-border/30 bg-muted/30 p-2.5 text-sm">
-                          <div>
-                            <p className="font-medium text-card-foreground">{a.label}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(a.occursAt)} {a.recurringYearly ? "· Hàng năm" : ""}</p>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-100">Còn {days} ngày</Badge>
-                            {renderAnniversaryBell(a.id)}
-                            {canEditAnniversaries && (
-                              <>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAnn(a)}><Edit className="h-3.5 w-3.5" /></Button>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => void onDeleteAnniversary(a.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
-                              </>
-                            )}
-                          </div>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
+              {anniversaries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Chưa có ngày kỷ niệm</p>
+              ) : (
+                <ul className="space-y-2">
+                  {anniversaries.map((a) => {
+                    const days = daysUntil(a.occursAt, a.recurringYearly);
+                    return (
+                      <li key={a.id} className="flex items-start justify-between gap-3 rounded-md border border-border/50 bg-card p-3 text-sm">
+                        <div>
+                          <p className="font-medium text-card-foreground">{a.label}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDate(a.occursAt)} {a.recurringYearly ? "· Hàng năm" : ""} · Nhắc trước {a.reminderDays} ngày
+                          </p>
+                          {a.notes && <p className="text-xs text-muted-foreground mt-0.5">{a.notes}</p>}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Badge className="bg-pink-100 text-pink-700 hover:bg-pink-100">Còn {days} ngày</Badge>
+                          {renderAnniversaryBell(a.id)}
+                          {canEditAnniversaries && (
+                            <>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditAnn(a)} aria-label="Sửa"><Edit className="h-3.5 w-3.5" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => void onDeleteAnniversary(a.id)} aria-label="Xoá"><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                            </>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
+
             </div>
 
             {canEditAnniversaries && (
@@ -837,18 +762,6 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
               <DialogContent className="max-w-md">
                 <DialogHeader><DialogTitle>{editingAnnId ? "Sửa kỷ niệm" : "Thêm kỷ niệm"}</DialogTitle></DialogHeader>
                 <div className="space-y-3 pt-2">
-                  <div className="space-y-1.5">
-                    <Label>Loại</Label>
-                    <Select value={annForm.type} onValueChange={(v) => setAnnForm((p) => ({ ...p, type: v as AnniversaryType }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="traditional_day">Ngày truyền thống của đơn vị</SelectItem>
-                        <SelectItem value="medal_day">Ngày đón nhận huân/huy chương</SelectItem>
-                        <SelectItem value="leader_birthday">Sinh nhật Lãnh đạo</SelectItem>
-                        <SelectItem value="other">Khác</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1.5"><Label>Tên *</Label><Input value={annForm.label} onChange={(e) => setAnnForm((p) => ({ ...p, label: e.target.value }))} /></div>
                     <div className="space-y-1.5"><Label>Ngày *</Label><Input type="date" value={annForm.occursAt} onChange={(e) => setAnnForm((p) => ({ ...p, occursAt: e.target.value }))} /></div>
@@ -962,6 +875,18 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
                   </TableBody>
                 </Table>
               </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="feedback" className="flex-1 overflow-y-auto p-6 mt-0">
+            {customerId ? (
+              <CustomerFeedbackSection
+                customerId={customerId}
+                showContextColumns
+                readonly={isViewMode}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Không xác định được khách hàng.</p>
             )}
           </TabsContent>
         </Tabs>

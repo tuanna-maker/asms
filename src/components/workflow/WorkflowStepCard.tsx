@@ -124,6 +124,9 @@ export function WorkflowStepCard({
             {roleText}
           </span>
           <span>{step.slaHours != null ? `${step.slaHours} giờ` : "Không hạn"}</span>
+          {(step.assigneeIds?.length ?? 0) > 0 ? (
+            <span>{step.assigneeIds.length} người xử lý</span>
+          ) : null}
           <span>{fieldCount > 0 ? `${fieldCount} trường nhập` : "Chưa có trường nhập"}</span>
         </div>
         {step.description ? (

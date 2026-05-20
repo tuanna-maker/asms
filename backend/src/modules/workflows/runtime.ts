@@ -4,6 +4,7 @@ import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 import { pruneStepPayloadsNotIn as pruneContractStepPayloadsNotIn } from "../contracts/step-payload";
 import { pruneStepPayloadsNotIn as pruneHandoverStepPayloadsNotIn } from "../handovers/step-payload";
+import { pruneStepPayloadsNotIn as pruneProductStepPayloadsNotIn } from "../products/step-payload";
 import { pruneStepPayloadsNotIn as pruneWarrantyStepPayloadsNotIn } from "../warranties/step-payload";
 
 export const WORKFLOW_INSTANCE_SELECT = {
@@ -33,6 +34,7 @@ export const WORKFLOW_INSTANCE_SELECT = {
           name: true,
           actionCode: true,
           roleCode: true,
+          assigneeIds: true,
           slaHours: true,
           description: true,
           phaseCode: true,
@@ -48,6 +50,7 @@ export const WORKFLOW_INSTANCE_SELECT = {
       name: true,
       actionCode: true,
       roleCode: true,
+      assigneeIds: true,
       slaHours: true,
       phaseCode: true,
       requireDocument: true,
@@ -82,7 +85,11 @@ export const WORKFLOW_INSTANCE_SELECT = {
   },
 } satisfies Prisma.WorkflowInstanceSelect;
 
-type EntityModuleKey = "handover" | "warranty" | "training" | "contract";
+type EntityModuleKey = "handover" | "warranty" | "training" | "coaching" | "contract" | "product";
+
+function isTrainingCourseModule(moduleKey: string) {
+  return moduleKey === "training" || moduleKey === "coaching";
+}
 
 async function resolveContractIdForEntity(
   moduleKey: EntityModuleKey,
@@ -172,6 +179,28 @@ export async function startInstanceForEntity(
     },
     select: { id: true },
   });
+
+  if (moduleKey === "contract") {
+    const totalSteps = workflow.steps.length;
+    const progress =
+      totalSteps > 0 ? Math.min(100, Math.round((1 / totalSteps) * 100)) : 0;
+    await prisma.contract.update({
+      where: { id: entityId },
+      data: {
+        workflowInstanceId: instance.id,
+        workflowId: workflow.id,
+        progress,
+      },
+    });
+  }
+
+  if (moduleKey === "product") {
+    await prisma.product.update({
+      where: { id: entityId },
+      data: { workflowInstanceId: instance.id, status: "producing" },
+    });
+  }
+
   return { instanceId: instance.id, firstStepIndex: 1 };
 }
 
@@ -267,15 +296,23 @@ export async function attachWorkflowToEntity(args: {
           resolvedAt: null,
         },
       });
-    } else if (args.moduleKey === "training") {
+    } else if (isTrainingCourseModule(args.moduleKey)) {
       await tx.trainingCourse.updateMany({
         where: { id: args.entityId },
         data: { workflowInstanceId: created.id, status: "planned" },
       });
     } else if (args.moduleKey === "contract") {
+      const totalSteps = workflow.steps.length;
+      const progress =
+        totalSteps > 0 ? Math.min(100, Math.round((1 / totalSteps) * 100)) : 0;
       await tx.contract.updateMany({
         where: { id: args.entityId },
-        data: { workflowInstanceId: created.id, workflowId: workflow.id },
+        data: { workflowInstanceId: created.id, workflowId: workflow.id, progress },
+      });
+    } else if (args.moduleKey === "product") {
+      await tx.product.updateMany({
+        where: { id: args.entityId },
+        data: { workflowInstanceId: created.id, status: "producing" },
       });
     }
     return created;
@@ -293,6 +330,11 @@ export async function attachWorkflowToEntity(args: {
     );
   } else if (args.moduleKey === "contract") {
     await pruneContractStepPayloadsNotIn(
+      args.entityId,
+      workflow.steps.map((s) => s.id),
+    );
+  } else if (args.moduleKey === "product") {
+    await pruneProductStepPayloadsNotIn(
       args.entityId,
       workflow.steps.map((s) => s.id),
     );
@@ -333,11 +375,18 @@ export async function advanceInstanceService(args: AdvanceArgs) {
   const step = inst.currentStep;
   if (!step) throw new HttpError(409, "Phiên xử lý chưa được gắn bước nào.");
 
-  if (args.actorRoleCode !== step.roleCode && args.actorRoleCode !== "admin") {
-    throw new HttpError(
-      403,
-      `Bước này yêu cầu vai trò «${step.roleCode}», bạn đang là «${args.actorRoleCode}».`,
-    );
+  if (args.actorRoleCode !== "admin") {
+    const assignees = step.assigneeIds ?? [];
+    if (assignees.length > 0) {
+      if (!assignees.includes(args.actorId)) {
+        throw new HttpError(403, "Bạn không nằm trong danh sách người xử lý của bước này.");
+      }
+    } else if (args.actorRoleCode !== step.roleCode) {
+      throw new HttpError(
+        403,
+        `Bước này yêu cầu vai trò «${step.roleCode}», bạn đang là «${args.actorRoleCode}».`,
+      );
+    }
   }
 
   if (step.requireDocument && args.action === "approve") {
@@ -433,13 +482,13 @@ export async function advanceInstanceService(args: AdvanceArgs) {
       }
     }
 
-    if (inst.moduleKey === "training" && newStatus === "completed") {
+    if (isTrainingCourseModule(inst.moduleKey) && newStatus === "completed") {
       await tx.trainingCourse.updateMany({
         where: { workflowInstanceId: inst.id },
         data: { status: "completed" },
       });
     }
-    if (inst.moduleKey === "training" && newStatus === "running" && nextIndex != null) {
+    if (isTrainingCourseModule(inst.moduleKey) && newStatus === "running" && nextIndex != null) {
       await tx.trainingCourse.updateMany({
         where: { workflowInstanceId: inst.id },
         data: { status: "ongoing" },
@@ -465,6 +514,27 @@ export async function advanceInstanceService(args: AdvanceArgs) {
         await tx.contract.updateMany({
           where: { workflowInstanceId: inst.id },
           data: { status: "late" },
+        });
+      }
+    }
+
+    if (inst.moduleKey === "product") {
+      const PRODUCT_STEP_STATUS: Record<number, string> = {
+        1: "producing",
+        2: "inspecting",
+        3: "equip_decided",
+      };
+      if (newStatus === "running" && nextIndex != null) {
+        const mapped = PRODUCT_STEP_STATUS[nextIndex] ?? "producing";
+        await tx.product.updateMany({
+          where: { workflowInstanceId: inst.id },
+          data: { status: mapped as never },
+        });
+      }
+      if (newStatus === "completed") {
+        await tx.product.updateMany({
+          where: { workflowInstanceId: inst.id },
+          data: { status: "equipped" },
         });
       }
     }

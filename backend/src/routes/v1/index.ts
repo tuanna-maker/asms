@@ -20,6 +20,8 @@ import documentsRoutes from "../../modules/documents/route";
 import reportsRoutes from "../../modules/reports/route";
 import contactsRoutes from "../../modules/contacts/route";
 import crmActivitiesRoutes from "../../modules/crm-activities/route";
+import customerFeedbacksRoutes from "../../modules/customer-feedbacks/route";
+import rolePermissionsRoutes from "../../modules/role-permissions/route";
 import definitionsRoutes from "../../modules/definitions/route";
 import notificationPreferencesRoutes from "../../modules/notification-preferences/route";
 import workflowsRoutes from "../../modules/workflows/route";
@@ -38,6 +40,8 @@ router.use("/notifications", notificationsRoutes);
 router.use("/customers", customersRoutes);
 router.use("/contacts", contactsRoutes);
 router.use("/crm-activities", crmActivitiesRoutes);
+router.use("/customer-feedbacks", customerFeedbacksRoutes);
+router.use("/role-permissions", rolePermissionsRoutes);
 router.use("/contracts", contractsRoutes);
 router.use("/handovers", handoversRoutes);
 /** Đăng ký trước mount `/warranties` để `stats` không bị nuốt bởi `/:id` của router con (tránh 404). */

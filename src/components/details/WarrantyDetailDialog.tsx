@@ -37,14 +37,16 @@ import { WorkflowInstancePanel } from "@/components/workflow/WorkflowInstancePan
 import { DynamicStepFormFields } from "@/components/workflow/DynamicStepFormFields";
 import {
   applyWarrantyPayloadsToFormState,
+  buildBhPayloadFromStepHeader,
   buildStepPayloadsFromForm,
   initWarrantyStepPayloads,
-  mergeWarrantyFormIntoStepPayloads,
+  pickWarrantyHeaderFromStepPayloads,
   stepTabLabel,
   type WarrantyFormSnapshot,
   type WarrantyStepPayloadRecord,
 } from "@/lib/warranty-step-payload";
 import { cn } from "@/lib/utils";
+import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 
 const NONE = "__none__";
 
@@ -537,6 +539,12 @@ const WarrantyDetailDialog = ({
   }
 
   const handleSave = async () => {
+    const useDynamicStepPayload =
+      showDynamicTabs && stepsForTabs.length > 0 && Object.keys(stepPayloads).length > 0;
+    const headerFromSteps = useDynamicStepPayload
+      ? pickWarrantyHeaderFromStepPayloads(stepsForTabs, stepPayloads)
+      : null;
+
     if (isCreateMode) {
       if (!customerId) {
         toast.error("Vui lòng chọn khách hàng");
@@ -546,34 +554,43 @@ const WarrantyDetailDialog = ({
         toast.error("Vui lòng chọn quy trình áp dụng");
         return;
       }
-      if (!issue.trim()) {
+      const issueToSave = (headerFromSteps?.issue ?? issue).trim();
+      if (!issueToSave) {
         toast.error("Vui lòng mô tả sự cố");
         return;
       }
       try {
         await createW.mutateAsync({
           customerId,
-          issue: issue.trim(),
-          type: type as "warranty" | "repair" | "maintenance",
-          priorityCode: priority,
-          source: source === "customer" ? "Khách hàng" : "Nội bộ",
-          statusCode: "open",
+          issue: issueToSave,
+          type: (headerFromSteps?.type ?? type) as "warranty" | "repair" | "maintenance",
+          priorityCode: headerFromSteps?.priorityCode ?? priority,
+          source:
+            headerFromSteps?.source != null
+              ? headerFromSteps.source === "customer"
+                ? "Khách hàng"
+                : "Nội bộ"
+              : source === "customer"
+                ? "Khách hàng"
+                : "Nội bộ",
+          statusCode: headerFromSteps?.statusCode ?? "open",
           workflowId: selectedWorkflowId,
           workflowStep: 1,
-          ...buildBhPayload(),
+          ...(useDynamicStepPayload && headerFromSteps
+            ? buildBhPayloadFromStepHeader(headerFromSteps)
+            : buildBhPayload()),
           ...(contractId !== NO_CONTRACT ? { contractId } : {}),
           ...(productId !== NO_PRODUCT ? { productId } : {}),
           ...(productId !== NO_PRODUCT && selectedMaterialIds.length > 0 ? { materialIds: selectedMaterialIds } : {}),
           ...(stepsForTabs.length > 0
             ? {
-                stepPayloads:
-                  showDynamicTabs && Object.keys(stepPayloads).length > 0
-                    ? mergeWarrantyFormIntoStepPayloads(stepsForTabs, stepPayloads, formSnapshot)
-                    : buildStepPayloadsFromForm(
-                        stepsForTabs.map((s) => s.id),
-                        formSnapshot,
-                        genericNotesByStepId,
-                      ),
+                stepPayloads: useDynamicStepPayload
+                  ? stepPayloads
+                  : buildStepPayloadsFromForm(
+                      stepsForTabs.map((s) => s.id),
+                      formSnapshot,
+                      genericNotesByStepId,
+                    ),
               }
             : {}),
         });
@@ -593,23 +610,31 @@ const WarrantyDetailDialog = ({
           contractId: contractId === NO_CONTRACT ? null : contractId,
           productId: productId === NO_PRODUCT ? null : productId,
           materialIds: productId === NO_PRODUCT ? [] : selectedMaterialIds,
-          issue,
-          priorityCode: priority,
-          type: type as "warranty" | "repair" | "maintenance",
-          source: source === "customer" ? "Khách hàng" : "Nội bộ",
+          issue: headerFromSteps?.issue ?? issue,
+          priorityCode: headerFromSteps?.priorityCode ?? priority,
+          type: (headerFromSteps?.type ?? type) as "warranty" | "repair" | "maintenance",
+          source:
+            headerFromSteps?.source != null
+              ? headerFromSteps.source === "customer"
+                ? "Khách hàng"
+                : "Nội bộ"
+              : source === "customer"
+                ? "Khách hàng"
+                : "Nội bộ",
           ...(!hasEngineSteps ? { workflowStep } : {}),
-          statusCode: status,
-          ...buildBhPayload(),
+          statusCode: headerFromSteps?.statusCode ?? status,
+          ...(useDynamicStepPayload && headerFromSteps
+            ? buildBhPayloadFromStepHeader(headerFromSteps)
+            : buildBhPayload()),
           ...(hasEngineSteps && stepsForTabs.length > 0
             ? {
-                stepPayloads:
-                  showDynamicTabs && Object.keys(stepPayloads).length > 0
-                    ? mergeWarrantyFormIntoStepPayloads(stepsForTabs, stepPayloads, formSnapshot)
-                    : buildStepPayloadsFromForm(
-                        stepsForTabs.map((s) => s.id),
-                        formSnapshot,
-                        genericNotesByStepId,
-                      ),
+                stepPayloads: useDynamicStepPayload
+                  ? stepPayloads
+                  : buildStepPayloadsFromForm(
+                      stepsForTabs.map((s) => s.id),
+                      formSnapshot,
+                      genericNotesByStepId,
+                    ),
               }
             : {}),
           ...((detail?.orphanStepPayloads?.length ?? 0) > 0 ? { pruneOrphanStepPayloads: true } : {}),
@@ -1028,6 +1053,14 @@ const WarrantyDetailDialog = ({
                 </div>
               </>
             )}
+
+            {!isCreateMode && customerId && ticket ? (
+              <CustomerFeedbackSection
+                customerId={customerId}
+                warrantyId={ticket.apiId}
+                readonly={readOnly}
+              />
+            ) : null}
 
             <div className="rounded-lg border border-border p-3 sm:p-4 space-y-3">
               <h4 className="text-sm font-semibold text-card-foreground">

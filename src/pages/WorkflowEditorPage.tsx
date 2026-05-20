@@ -52,12 +52,21 @@ import { getModuleStandardStepCount, getModuleStandardSteps } from "@/lib/workfl
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
   warranty: "Bảo hành",
-  training: "Huấn luyện",
+  training: "Đào tạo",
+  coaching: "Huấn luyện",
   contract: "Hợp đồng",
+  product: "Sản phẩm",
 };
 
 function isValidModule(key: string | undefined): key is WorkflowModuleKey {
-  return key === "handover" || key === "warranty" || key === "training" || key === "contract";
+  return (
+    key === "handover" ||
+    key === "warranty" ||
+    key === "training" ||
+    key === "coaching" ||
+    key === "contract" ||
+    key === "product"
+  );
 }
 
 type SortableStepProps = {
@@ -166,9 +175,8 @@ const WorkflowEditorPage = () => {
 
   const submitWorkflow = async () => {
     const name = form.name.trim();
-    const code = form.code.trim();
-    if (!name || !code) {
-      toast.error("Tên và mã quy trình là bắt buộc");
+    if (!name) {
+      toast.error("Tên quy trình là bắt buộc");
       return;
     }
     try {
@@ -176,7 +184,6 @@ const WorkflowEditorPage = () => {
         id: workflowId,
         payload: {
           name,
-          code,
           description: form.description.trim() || null,
           isActive: form.isActive,
         },
@@ -336,15 +343,9 @@ const WorkflowEditorPage = () => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="wf-code">
-                  <span className="text-destructive">*</span> Mã quy trình
-                </Label>
-                <Input
-                  id="wf-code"
-                  value={form.code}
-                  onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
-                  disabled={!canWrite || isLoading || (detail?.isSystem ?? false)}
-                />
+                <Label htmlFor="wf-code">Mã quy trình</Label>
+                <Input id="wf-code" value={form.code} readOnly disabled className="bg-muted font-mono text-sm" />
+                <p className="text-xs text-muted-foreground">Mã do hệ thống tự sinh, không thể chỉnh sửa.</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

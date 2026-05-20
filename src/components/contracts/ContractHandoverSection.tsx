@@ -36,6 +36,7 @@ import {
   type HandoverStepPayloadRecord,
 } from "@/lib/handover-step-payload";
 import { resolveInitialWorkflowStepTabId } from "@/lib/workflow-step-tab";
+import { workflowStepTabTriggerClass } from "@/components/workflow/WorkflowStepSegments";
 
 export type LinkedHandoverSummary = {
   id: string;
@@ -357,7 +358,7 @@ export function ContractHandoverSection({
         <Tabs value={formTab} onValueChange={setFormTab}>
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
             {stepsForTabs.map((step) => (
-              <TabsTrigger key={step.id} value={step.id} className="text-xs">
+              <TabsTrigger key={step.id} value={step.id} className={workflowStepTabTriggerClass}>
                 {stepTabLabel(step.order, step.name)}
               </TabsTrigger>
             ))}

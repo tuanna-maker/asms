@@ -13,9 +13,17 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files,
+  Info, ListChecks, Boxes, Files, MessageSquareWarning, GitBranch,
 } from "lucide-react";
+import { ContractWorkflowSection } from "@/components/contracts/ContractWorkflowSection";
+import type { ContractStepPayloadRecord } from "@/lib/contract-step-payload";
+import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import {
+  isTerminalContractStatus,
+  resolveContractDisplayStatus,
+  type DisplayContractStatus,
+} from "@/lib/contract-display-status";
 import { toast } from "sonner";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
@@ -28,7 +36,8 @@ import { api } from "@/lib/api";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
-  startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
+  startDate: string; endDate: string; warrantyEnd: string; status: string; displayStatus?: string; progress: number;
+  endReminderDays?: number;
   terms?: string | null;
   contractTypeCode?: string | null;
 };
@@ -69,8 +78,15 @@ type DraftDocument = {
 type ContractDetailData = {
   id?: string;
   customerId?: string;
+  customer?: { id: string; code: string; name: string };
+  title?: string;
   terms?: string | null;
   contractTypeCode?: string | null;
+  status?: string;
+  displayStatus?: string;
+  startDate?: string;
+  endDate?: string;
+  endReminderDays?: number;
   productsList?: DetailProduct[];
   documents?: DetailDocument[];
   linkedHandover?: {
@@ -88,6 +104,15 @@ type ContractDetailData = {
     workflowId?: string | null;
     workflowName?: string | null;
   } | null;
+  workflow?: {
+    workflowId: string;
+    workflowName: string;
+    currentStepIndex: number;
+    totalSteps: number;
+    steps: Array<{ id: string }>;
+  } | null;
+  workflowId?: string | null;
+  stepPayloads?: ContractStepPayloadRecord;
 };
 
 interface Props {
@@ -118,6 +143,17 @@ function isoToDisplay(iso: string): string {
 
 const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "doc", "docx", "xls", "xlsx", "csv"];
 const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
+
+const EDIT_STATUS_BADGE_VARIANT: Record<
+  DisplayContractStatus,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
+  draft: "outline",
+  active: "default",
+  completed: "secondary",
+  late: "destructive",
+  liquidated: "outline",
+};
 
 function toDocType(file: File): "pdf" | "doc" | "xls" | "img" | "other" {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -169,8 +205,9 @@ const ContractEditDialog = ({
     startDate: "",
     endDate: "",
     warrantyEnd: "",
-    status: "active",
+    terminalStatus: "__none__" as "__none__" | "completed" | "liquidated",
     progress: "0",
+    endReminderDays: "7",
     terms: "",
     contractTypeCode: "",
   });
@@ -184,6 +221,9 @@ const ContractEditDialog = ({
   const [draftNewDocuments, setDraftNewDocuments] = useState<DraftDocument[]>([]);
   const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<DraftProduct | null>(null);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [stepPayloads, setStepPayloads] = useState<ContractStepPayloadRecord>({});
+  const [workflowProgressHint, setWorkflowProgressHint] = useState(0);
   const { data: detailData, isLoading: detailLoading } = useContractDetail(!isCreateMode && open ? contract?.id ?? null : null);
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
@@ -225,8 +265,9 @@ const ContractEditDialog = ({
       startDate: toInputDateValue(contract.startDate),
       endDate: toInputDateValue(contract.endDate),
       warrantyEnd: contract.warrantyEnd === "—" ? "" : toInputDateValue(contract.warrantyEnd),
-      status: contract.status,
+      terminalStatus: isTerminalContractStatus(contract.status) ? contract.status : "__none__",
       progress: String(contract.progress),
+      endReminderDays: String(contract.endReminderDays ?? 7),
       terms: contract.terms ?? "",
       contractTypeCode: contract.contractTypeCode ?? "",
     });
@@ -250,8 +291,9 @@ const ContractEditDialog = ({
       startDate: "",
       endDate: "",
       warrantyEnd: "",
-      status: "active",
+      terminalStatus: "__none__",
       progress: "0",
+      endReminderDays: "7",
       terms: "",
       contractTypeCode: "",
     });
@@ -265,6 +307,9 @@ const ContractEditDialog = ({
     setDraftNewDocuments([]);
     setRemovedDocumentIds([]);
     setSelectedProduct(null);
+    setSelectedWorkflowId("");
+    setStepPayloads({});
+    setWorkflowProgressHint(0);
   }, [open, isCreateMode]);
 
   useEffect(() => {
@@ -272,6 +317,30 @@ const ContractEditDialog = ({
     const terms = detail?.terms ?? contract?.terms ?? "";
     setTermItems(splitTerms(terms));
   }, [open, detail?.terms, contract?.terms, isCreateMode]);
+
+  useEffect(() => {
+    if (!open || isCreateMode || !detail) return;
+    const wfId = detail.workflow?.workflowId ?? detail.workflowId ?? "";
+    if (wfId) setSelectedWorkflowId(wfId);
+    if (detail.stepPayloads) setStepPayloads(detail.stepPayloads);
+  }, [open, isCreateMode, detail?.id, detail?.workflow, detail?.workflowId, detail?.stepPayloads]);
+
+  useEffect(() => {
+    if (!open || isCreateMode || !detail) return;
+    const cid = detail.customerId ?? detail.customer?.id ?? "";
+    setForm((f) => ({
+      ...f,
+      ...(cid ? { customerId: cid } : {}),
+      ...(detail.customer?.name ? { customer: detail.customer.name } : {}),
+      ...(detail.title ? { title: detail.title } : {}),
+    }));
+    if (typeof detail.endReminderDays === "number") {
+      setForm((f) => ({ ...f, endReminderDays: String(detail.endReminderDays) }));
+    }
+    if (detail.status && isTerminalContractStatus(detail.status)) {
+      setForm((f) => ({ ...f, terminalStatus: detail.status as "completed" | "liquidated" }));
+    }
+  }, [open, isCreateMode, detail?.id, detail?.customerId, detail?.customer, detail?.title, detail?.endReminderDays, detail?.status]);
 
   useEffect(() => {
     if (!open) return;
@@ -317,12 +386,30 @@ const ContractEditDialog = ({
     );
   }, [open, draftProducts.length, productMapById]);
 
+  const computedDisplayStatus = useMemo((): DisplayContractStatus => {
+    const storedForCompute =
+      form.terminalStatus !== "__none__" ? form.terminalStatus : "draft";
+    if (!form.startDate || !form.endDate) return "draft";
+    return resolveContractDisplayStatus({
+      status: storedForCompute,
+      startDate: form.startDate,
+      endDate: form.endDate,
+    });
+  }, [form.terminalStatus, form.startDate, form.endDate]);
+
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
 
   const termsText = (detail?.terms ?? form.terms ?? "").trim();
-  const progressValue = Math.min(100, Math.max(0, Number(form.progress) || 0));
+  const hasWorkflowProgress = Boolean(
+    selectedWorkflowId || detail?.workflow || detail?.workflowId,
+  );
+  const progressValue = hasWorkflowProgress
+    ? workflowProgressHint || contract?.progress || 0
+    : Math.min(100, Math.max(0, Number(form.progress) || 0));
   const contractDbId = typeof detail?.id === "string" && detail.id.trim() ? detail.id : contract?.dbId ?? contractCode;
+  const feedbackCustomerId =
+    (detail?.customerId ?? detail?.customer?.id ?? form.customerId) || null;
   const assignedProductIds = new Set(draftProducts.map((p) => p.id));
   const productOptions = allProducts.filter(
     (p) =>
@@ -371,6 +458,12 @@ const ContractEditDialog = ({
       toast.error("Vui lòng nhập đủ khách hàng và thời gian");
       return;
     }
+    if (!selectedWorkflowId) {
+      toast.error("Chọn quy trình tổng hợp ở tab Quy trình");
+      return;
+    }
+    const payloadsToSend =
+      Object.keys(stepPayloads).length > 0 ? stepPayloads : undefined;
     try {
       const created = await createContract.mutateAsync({
         customerId: form.customerId,
@@ -380,10 +473,12 @@ const ContractEditDialog = ({
         startDate: form.startDate,
         endDate: form.endDate,
         warrantyEnd: form.warrantyEnd || undefined,
-        status: "active",
-        progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
+        endReminderDays: Math.max(0, Number(form.endReminderDays) || 7),
+        workflowId: selectedWorkflowId,
+        ...(payloadsToSend ? { stepPayloads: payloadsToSend } : {}),
         terms: joinTerms(termItems),
         ...(form.contractTypeCode.trim() ? { contractTypeCode: form.contractTypeCode.trim() } : {}),
+        ...(form.terminalStatus !== "__none__" ? { status: form.terminalStatus } : {}),
       });
       const createdPayload = (created as { data?: { data?: { id?: string; code?: string } } })?.data?.data;
       const createdContractId = createdPayload?.id ?? createdPayload?.code;
@@ -467,6 +562,8 @@ const ContractEditDialog = ({
       return;
     }
     const savedTypeCode = form.contractTypeCode.trim() || null;
+    const payloadsToSend =
+      Object.keys(stepPayloads).length > 0 ? stepPayloads : undefined;
     try {
       await updateContract.mutateAsync({
         id: contractCode,
@@ -475,10 +572,18 @@ const ContractEditDialog = ({
           startDate: form.startDate,
           endDate: form.endDate,
           warrantyEnd: form.warrantyEnd || undefined,
-          status: form.status as "draft" | "active" | "completed" | "late" | "liquidated",
-          progress: Math.min(100, Math.max(0, Number(form.progress) || 0)),
+          endReminderDays: Math.max(0, Number(form.endReminderDays) || 7),
+          ...(payloadsToSend ? { stepPayloads: payloadsToSend } : {}),
+          ...(!hasWorkflowProgress
+            ? { progress: Math.min(100, Math.max(0, Number(form.progress) || 0)) }
+            : {}),
           terms: joinTerms(termItems),
           contractTypeCode: savedTypeCode,
+          ...(form.terminalStatus === "completed" || form.terminalStatus === "liquidated"
+            ? { status: form.terminalStatus }
+            : contract && isTerminalContractStatus(contract.status)
+              ? { status: "draft" as const }
+              : {}),
         },
       });
       onContractSaved?.({ id: contractCode, contractTypeCode: savedTypeCode });
@@ -583,33 +688,53 @@ const ContractEditDialog = ({
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản & Điều kiện" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
+              <TabTrigger value="workflow" icon={<GitBranch className="h-4 w-4" />} label="Quy trình" />
+              {!isCreateMode ? (
+                <TabTrigger value="feedback" icon={<MessageSquareWarning className="h-4 w-4" />} label="Phản ánh" />
+              ) : null}
             </TabsList>
           </div>
 
           <div className="relative min-h-0 flex-1">
           <TabsContent value="info" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-6">
             <div className="flex items-center justify-between">
-              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">{CONTRACT_STATUS_LABELS.draft ?? "Nháp"}</SelectItem>
-                  <SelectItem value="active">{CONTRACT_STATUS_LABELS.active ?? "Đang thực hiện"}</SelectItem>
-                  <SelectItem value="completed">{CONTRACT_STATUS_LABELS.completed ?? "Hoàn thành"}</SelectItem>
-                  <SelectItem value="late">{CONTRACT_STATUS_LABELS.late ?? "Chậm tiến độ"}</SelectItem>
-                  <SelectItem value="liquidated">{CONTRACT_STATUS_LABELS.liquidated ?? "Đã thanh lý"}</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground">Tiến độ:</span>
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="w-20 h-8"
-                  value={form.progress}
-                  onChange={(e) => setForm({ ...form, progress: e.target.value })}
-                />
-                <span className="text-sm text-muted-foreground">%</span>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Trạng thái (theo thời gian)</p>
+                  <Badge variant={EDIT_STATUS_BADGE_VARIANT[computedDisplayStatus]}>
+                    {CONTRACT_STATUS_LABELS[computedDisplayStatus] ?? computedDisplayStatus}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Kết thúc nghiệp vụ</p>
+                  <Select
+                    value={form.terminalStatus}
+                    onValueChange={(v) =>
+                      setForm({
+                        ...form,
+                        terminalStatus: v as "__none__" | "completed" | "liquidated",
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Theo thời gian hợp đồng</SelectItem>
+                      <SelectItem value="completed">{CONTRACT_STATUS_LABELS.completed}</SelectItem>
+                      <SelectItem value="liquidated">{CONTRACT_STATUS_LABELS.liquidated}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-0.5">
+                <span className="text-sm font-medium text-muted-foreground">
+                  Tiến độ{hasWorkflowProgress ? " (theo quy trình)" : ""}: {progressValue}%
+                </span>
+                {hasWorkflowProgress && detail?.workflow ? (
+                  <span className="text-xs text-muted-foreground">
+                    Bước {detail.workflow.currentStepIndex}/{detail.workflow.totalSteps}
+                    {detail.workflow.workflowName ? ` · ${detail.workflow.workflowName}` : ""}
+                  </span>
+                ) : null}
               </div>
             </div>
             <div className="h-3 w-full rounded-full bg-secondary">
@@ -618,7 +743,7 @@ const ContractEditDialog = ({
 
             <Separator />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <InfoItem icon={<FileText className="h-4 w-4" />} label="Loại hợp đồng">
                 <Select
                   value={form.contractTypeCode || "__none__"}
@@ -666,6 +791,15 @@ const ContractEditDialog = ({
               </InfoItem>
               <InfoItem icon={<Calendar className="h-4 w-4" />} label="Ngày kết thúc">
                 <Input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
+              </InfoItem>
+              <InfoItem icon={<Calendar className="h-4 w-4" />} label="Nhắc trước hạn kết thúc (ngày)">
+                <Input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={form.endReminderDays}
+                  onChange={(e) => setForm({ ...form, endReminderDays: e.target.value })}
+                />
               </InfoItem>
             </div>
           </TabsContent>
@@ -869,6 +1003,37 @@ const ContractEditDialog = ({
             </div>
             </>
           </TabsContent>
+
+          <TabsContent value="workflow" className="absolute inset-0 mt-0 overflow-y-auto p-6 flex flex-col min-h-0">
+            <ContractWorkflowSection
+              open={open}
+              contractDbId={contractDbId}
+              isCreateMode={isCreateMode}
+              detailWorkflow={detail?.workflow ?? null}
+              detailStepPayloads={detail?.stepPayloads}
+              detailWorkflowId={detail?.workflowId ?? detail?.workflow?.workflowId ?? null}
+              selectedWorkflowId={selectedWorkflowId}
+              onSelectedWorkflowIdChange={setSelectedWorkflowId}
+              stepPayloads={stepPayloads}
+              onStepPayloadsChange={setStepPayloads}
+              onProgressHintChange={setWorkflowProgressHint}
+            />
+          </TabsContent>
+
+          {!isCreateMode ? (
+            <TabsContent value="feedback" className="absolute inset-0 mt-0 overflow-y-auto p-6">
+              {feedbackCustomerId && contractDbId ? (
+                <CustomerFeedbackSection
+                  customerId={feedbackCustomerId}
+                  contractId={contractDbId}
+                />
+              ) : detailLoading ? (
+                <p className="text-sm text-muted-foreground">Đang tải thông tin hợp đồng…</p>
+              ) : (
+                <p className="text-sm text-muted-foreground">Chọn khách hàng để quản lý phản ánh.</p>
+              )}
+            </TabsContent>
+          ) : null}
 
           </div>
         </Tabs>

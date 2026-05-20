@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User, Trash2 } from "lucide-react";
+import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User, Trash2, GitBranch } from "lucide-react";
 import { DefenseProduct, BOMItem, productCategoryColors, ProductSpecField } from "@/data/productsData";
 import { useDefinitionOptions } from "@/hooks/use-definition-options";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +21,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSection";
+import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
 
 interface Props {
   product: DefenseProduct | null;
@@ -48,12 +50,22 @@ const statusMap: Record<string, { label: string; cls: string }> = {
 
 const defaultStatusBadge = { label: "Không xác định", cls: "bg-muted text-muted-foreground border-border" };
 type ApiSuccess<T> = { success: true; data: T; message?: string };
+type ApiProductWorkflowSnapshot = {
+  instanceId: string;
+  workflowId: string;
+  workflowName: string;
+  currentStepIndex: number;
+  totalSteps: number;
+  steps: Array<{ id: string }>;
+};
 type ApiProductDetail = {
   id: string;
   code: string;
   name: string;
   createdAt?: string;
   updatedAt?: string;
+  workflow?: ApiProductWorkflowSnapshot | null;
+  stepPayloads?: Record<string, Record<string, unknown>>;
   contracts?: Array<{
     id: string;
     code: string;
@@ -115,6 +127,8 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
   const [docName, setDocName] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
   const [specsDraft, setSpecsDraft] = useState<ProductSpecField[]>([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
+  const [stepPayloads, setStepPayloads] = useState<ProductStepPayloadRecord>({});
 
   useEffect(() => {
     if (!open || !product) return;
@@ -139,6 +153,8 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
         ...(s.unit ? { unit: s.unit } : {}),
       })),
     );
+    setSelectedWorkflowId("");
+    setStepPayloads({});
   }, [open, product]);
 
   const { data: productDocuments = [], isLoading: isDocumentsLoading, isFetching: isDocumentsFetching } = useQuery({
@@ -157,6 +173,16 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
       return res.data.data;
     },
   });
+
+  useEffect(() => {
+    if (!productDetail) return;
+    if (productDetail.workflow?.workflowId && !selectedWorkflowId) {
+      setSelectedWorkflowId(productDetail.workflow.workflowId);
+    }
+    if (productDetail.stepPayloads && Object.keys(productDetail.stepPayloads).length > 0 && Object.keys(stepPayloads).length === 0) {
+      setStepPayloads(productDetail.stepPayloads);
+    }
+  }, [productDetail, selectedWorkflowId, stepPayloads]);
 
   const statusBadge = statusMap[editable ? status : product?.status ?? "developing"] ?? defaultStatusBadge;
 
@@ -202,7 +228,8 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
           label: s.label,
           ...(s.unit ? { unit: s.unit } : {}),
         })),
-      });
+        ...(Object.keys(stepPayloads).length > 0 ? { stepPayloads } : {}),
+      } as UpdateProductPayload);
       if (onUpdateBomQuantity) {
         for (const item of product.bom) {
           const nextQty = Number(bomQuantities[item.materialId] ?? item.quantity);
@@ -371,8 +398,9 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
         </SheetHeader>
 
         <Tabs defaultValue="overview" className="mt-2">
-          <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full h-auto">
+          <TabsList className="grid grid-cols-4 sm:grid-cols-7 w-full h-auto">
             <TabsTrigger value="overview"><FileText className="h-4 w-4 mr-2" />Tổng quan</TabsTrigger>
+            <TabsTrigger value="workflow"><GitBranch className="h-4 w-4 mr-2" />Quy trình</TabsTrigger>
             <TabsTrigger value="bom"><Layers className="h-4 w-4 mr-2" />Linh kiện ({product.bom.length})</TabsTrigger>
             <TabsTrigger value="specs"><Cpu className="h-4 w-4 mr-2" />Thông số</TabsTrigger>
             <TabsTrigger value="documents"><FileBox className="h-4 w-4 mr-2" />Tài liệu</TabsTrigger>
@@ -450,6 +478,20 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
                 </>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="workflow" className="mt-4 space-y-4">
+            <ProductWorkflowSection
+              open={open}
+              productDbId={product.id}
+              isCreateMode={false}
+              detailWorkflow={productDetail?.workflow ?? null}
+              detailStepPayloads={productDetail?.stepPayloads}
+              selectedWorkflowId={selectedWorkflowId}
+              onSelectedWorkflowIdChange={setSelectedWorkflowId}
+              stepPayloads={stepPayloads}
+              onStepPayloadsChange={setStepPayloads}
+            />
           </TabsContent>
 
           <TabsContent value="bom" className="mt-4">

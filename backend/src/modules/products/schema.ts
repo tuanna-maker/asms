@@ -34,9 +34,15 @@ export const createProductSchema = z.object({
   specs: z.array(productSpecSchema).optional(),
 });
 
-export const updateProductSchema = createProductSchema.partial().refine((o) => Object.keys(o).length > 0, {
-  message: "Cần ít nhất một trường cập nhật",
-});
+export const updateProductSchema = createProductSchema
+  .partial()
+  .extend({
+    stepPayloads: z.record(z.string().min(1), z.record(z.string(), z.unknown())).optional(),
+  })
+  .refine(
+    (o) => Object.keys(o).length > 0,
+    { message: "Cần ít nhất một trường cập nhật" },
+  );
 
 export const productIdParamSchema = z.object({
   id: z.string().min(1),

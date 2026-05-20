@@ -43,6 +43,7 @@ export async function listTrainingCoursesController(req: Request, res: Response)
     ...(query.status !== undefined ? { status: query.status } : {}),
     ...(query.typeCode !== undefined ? { typeCode: query.typeCode } : {}),
     ...(query.contractId !== undefined ? { contractId: query.contractId } : {}),
+    ...(query.courseKind !== undefined ? { courseKind: query.courseKind } : {}),
   };
 
   const data = await listTrainingCoursesService(filters);
@@ -71,6 +72,8 @@ export async function createTrainingCourseController(req: Request, res: Response
     ...(payload.location !== undefined ? { location: payload.location } : {}),
     ...(payload.description !== undefined ? { description: payload.description } : {}),
     ...(payload.workflowId !== undefined ? { workflowId: payload.workflowId } : {}),
+    ...(payload.courseKind !== undefined ? { courseKind: payload.courseKind } : {}),
+    ...(payload.stepPayloads !== undefined ? { stepPayloads: payload.stepPayloads } : {}),
     actorId: (req as { user?: { id?: string } }).user?.id ?? null,
   };
 

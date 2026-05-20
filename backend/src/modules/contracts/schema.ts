@@ -8,8 +8,11 @@ export const createContractSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   warrantyEnd: z.coerce.date().optional(),
+  endReminderDays: z.coerce.number().int().min(0).max(365).optional(),
   status: z.enum(["draft", "active", "completed", "late", "liquidated"]).optional(),
   progress: z.number().int().nonnegative().optional(),
+  workflowId: z.string().min(1).optional(),
+  stepPayloads: z.record(z.string().min(1), z.record(z.string(), z.unknown())).optional(),
   terms: z.string().optional().nullable(),
   contractTypeCode: z.string().min(1).max(256).optional().nullable(),
 });
@@ -48,7 +51,7 @@ export const listContractsQuerySchema = z.object({
   createdFrom: z.coerce.date().optional(),
   createdTo: z.coerce.date().optional(),
   /** Chỉ HĐ chưa có bàn giao và chưa có khóa huấn luyện active (dùng cho dropdown tạo mới). */
-  eligibleFor: z.enum(["handover", "training"]).optional(),
+  eligibleFor: z.enum(["handover", "coaching"]).optional(),
 });
 
 export const setContractProductsSchema = z.object({

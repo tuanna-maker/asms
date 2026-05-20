@@ -108,6 +108,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại phiếu bàn giao và huấn luyện.",
         icon: Truck,
         iconClassName: "bg-orange-500/15 text-orange-600",
+        dataSource: "definitions",
+        definitionCategory: "handover_type",
       },
       {
         id: "handover_status",
@@ -131,6 +133,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Mức ưu tiên xử lý yêu cầu bảo hành, sửa chữa.",
         icon: Wrench,
         iconClassName: "bg-rose-500/15 text-rose-600",
+        dataSource: "definitions",
+        definitionCategory: "warranty_priority",
       },
       {
         id: "warranty_status",
@@ -138,6 +142,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Trạng thái tiếp nhận và xử lý.",
         icon: Tags,
         iconClassName: "bg-violet-500/15 text-violet-600",
+        dataSource: "definitions",
+        definitionCategory: "warranty_status",
       },
       {
         id: "warranty_ticket_type",
@@ -161,6 +167,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại sản phẩm trên danh mục.",
         icon: Boxes,
         iconClassName: "bg-sky-500/15 text-sky-600",
+        dataSource: "definitions",
+        definitionCategory: "product_category",
       },
       {
         id: "product_status",
@@ -184,6 +192,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Hiển thị trong ô chọn Kho khi nhập vật tư.",
         icon: Warehouse,
         iconClassName: "bg-amber-500/15 text-amber-600",
+        dataSource: "definitions",
+        definitionCategory: "warehouse",
       },
       {
         id: "material_unit",
@@ -191,6 +201,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Đơn vị tính trên form nhập kho.",
         icon: Ruler,
         iconClassName: "bg-teal-500/15 text-teal-600",
+        dataSource: "definitions",
+        definitionCategory: "material_unit",
       },
       {
         id: "material_type",
@@ -232,6 +244,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Nguồn khách hàng tiềm năng.",
         icon: Users,
         iconClassName: "bg-indigo-500/15 text-indigo-600",
+        dataSource: "definitions",
+        definitionCategory: "customer_source",
       },
       {
         id: "company_type",
@@ -239,6 +253,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại tổ chức khách hàng.",
         icon: Building2,
         iconClassName: "bg-blue-500/15 text-blue-600",
+        dataSource: "definitions",
+        definitionCategory: "company_type",
       },
     ],
   },
@@ -253,6 +269,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Trạng thái nghiên cứu.",
         icon: FlaskConical,
         iconClassName: "bg-lime-500/15 text-lime-600",
+        dataSource: "definitions",
+        definitionCategory: "research_stage",
       },
     ],
   },
@@ -267,6 +285,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Mức ưu tiên công việc.",
         icon: ListTodo,
         iconClassName: "bg-cyan-500/15 text-cyan-600",
+        dataSource: "definitions",
+        definitionCategory: "task_priority",
       },
       {
         id: "task_status",
@@ -299,6 +319,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Hình thức đào tạo và huấn luyện.",
         icon: GraduationCap,
         iconClassName: "bg-pink-500/15 text-pink-600",
+        dataSource: "definitions",
+        definitionCategory: "training_type",
       },
       {
         id: "training_status",
@@ -322,6 +344,8 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         description: "Phân loại tài liệu lưu trữ.",
         icon: FolderOpen,
         iconClassName: "bg-slate-500/15 text-slate-600",
+        dataSource: "definitions",
+        definitionCategory: "document_type",
       },
     ],
   },
@@ -351,6 +375,11 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
     ],
   },
 ];
+
+/** Tất cả nhóm danh mục dùng trong Cài đặt → Thuộc tính (cho FieldSchemaBuilder, v.v.). */
+export const ALL_DEFINITION_CATEGORIES = ATTRIBUTE_MODULES.flatMap((m) =>
+  m.sections.map((s) => s.definitionCategory ?? s.id),
+).sort();
 
 export const DEFAULT_ATTRIBUTE_MODULE_KEY: AttributeModuleKey = "hop-dong";
 
