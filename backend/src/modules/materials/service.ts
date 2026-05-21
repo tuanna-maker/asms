@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
+import { ORDER_BY_CREATED_DESC } from "../../lib/list-order";
 import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 import { prisma } from "../../utils/prisma";
 
@@ -26,7 +27,7 @@ export async function listMaterialsService(filters: {
 
   return prisma.material.findMany({
     where,
-    orderBy: { name: "asc" },
+    orderBy: ORDER_BY_CREATED_DESC,
     select: {
       id: true,
       code: true,
@@ -37,6 +38,7 @@ export async function listMaterialsService(filters: {
       available: true,
       unit: true,
       warehouse: true,
+      createdAt: true,
     },
   });
 }

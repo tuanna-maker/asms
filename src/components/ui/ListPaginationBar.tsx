@@ -18,6 +18,8 @@ export interface ListPaginationBarProps {
   disabled?: boolean;
   /** Ẩn khi chỉ có 1 trang và ít hơn pageSize (mặc định true) */
   hideWhenSinglePage?: boolean;
+  /** Kiểu hiển thị dòng tổng (dùng cho màn Thuộc tính) */
+  variant?: "default" | "attribute";
 }
 
 const ListPaginationBar = ({
@@ -29,24 +31,64 @@ const ListPaginationBar = ({
   className,
   disabled = false,
   hideWhenSinglePage = true,
+  variant = "default",
 }: ListPaginationBarProps) => {
   if (totalItems === 0) return null;
+
+  const totalSummary =
+    variant === "attribute" ? (
+      <span className="inline-flex items-center gap-2 text-sm">
+        <span className="text-muted-foreground font-medium">Tổng</span>
+        <span className="inline-flex min-h-6 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/12 px-2 text-xs font-bold text-primary tabular-nums">
+          {totalItems}
+        </span>
+        <span className="text-muted-foreground font-medium">mục</span>
+      </span>
+    ) : (
+      <p className="text-sm text-muted-foreground">Tổng {totalItems} mục</p>
+    );
+
   if (hideWhenSinglePage && totalPages <= 1 && totalItems <= pageSize) {
     return (
-      <p className={cn("text-sm text-muted-foreground", className)}>Tổng {totalItems} mục</p>
+      <div
+        className={cn(
+          variant === "attribute"
+            ? "border-t border-border/60 bg-muted/25 px-4 py-3"
+            : undefined,
+          className,
+        )}
+      >
+        {totalSummary}
+      </div>
     );
   }
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 border-t border-border/50 pt-3 sm:flex-row sm:items-center sm:justify-between",
+        variant === "attribute"
+          ? "flex flex-col gap-2 border-t border-border/60 bg-muted/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+          : "flex flex-col gap-2 border-t border-border/50 pt-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
-      <p className="text-sm text-muted-foreground">
-        {pageRangeLabel(page, pageSize, totalItems)} / {totalItems} mục
-      </p>
+      {variant === "attribute" ? (
+        <span className="inline-flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground font-medium">
+            {pageRangeLabel(page, pageSize, totalItems)}
+          </span>
+          <span className="text-border">·</span>
+          <span className="text-muted-foreground font-medium">Tổng</span>
+          <span className="inline-flex min-h-6 min-w-[1.5rem] items-center justify-center rounded-md bg-primary/12 px-2 text-xs font-bold text-primary tabular-nums">
+            {totalItems}
+          </span>
+          <span className="text-muted-foreground font-medium">mục</span>
+        </span>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          {pageRangeLabel(page, pageSize, totalItems)} / {totalItems} mục
+        </p>
+      )}
       {totalPages > 1 && (
         <Pagination className="mx-0 w-auto justify-end">
           <PaginationContent>

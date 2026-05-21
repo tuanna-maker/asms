@@ -101,7 +101,7 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
       {
         id: "contract_clause_groups",
         title: "Nhóm điều khoản và điều kiện",
-        description: "Gom các điều khoản mẫu thành nhóm để chọn nhanh trên hợp đồng.",
+        description: "Gom điều khoản mẫu thành nhóm. Mỗi điều khoản chỉ được gán vào một nhóm.",
         icon: Layers,
         iconClassName: "bg-amber-500/15 text-amber-600",
         dataSource: "contract_clause_groups",
@@ -109,7 +109,7 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
       {
         id: "contract_clauses",
         title: "Điều khoản và điều kiện",
-        description: "Nội dung mẫu điều khoản gắn vào hợp đồng khi tạo / sửa.",
+        description: "Nội dung mẫu điều khoản. Mỗi mục chỉ thuộc một nhóm (gán tại Nhóm điều khoản).",
         icon: ListChecks,
         iconClassName: "bg-emerald-500/15 text-emerald-600",
         dataSource: "contract_clauses",

@@ -57,7 +57,7 @@ export const WORKFLOW_INSTANCE_SELECT = {
     },
   },
   logs: {
-    orderBy: { createdAt: "asc" as const },
+    orderBy: { createdAt: "desc" as const },
     select: {
       id: true,
       stepId: true,
@@ -152,7 +152,7 @@ export async function startInstanceForEntity(
   if (!workflow) {
     workflow = await prisma.workflowDefinition.findFirst({
       where: { moduleKey, isActive: true, deletedAt: null },
-      orderBy: [{ isSystem: "desc" }, { createdAt: "asc" }],
+      orderBy: [{ isSystem: "desc" }, { createdAt: "desc" }],
       include: {
         steps: { orderBy: { order: "asc" } },
       },

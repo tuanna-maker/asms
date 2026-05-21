@@ -1,4 +1,5 @@
 import { HttpError } from "../../lib/errors/HttpError";
+import { ORDER_BY_CREATED_DESC } from "../../lib/list-order";
 import { prisma } from "../../utils/prisma";
 
 import type { z } from "zod";
@@ -39,7 +40,7 @@ export async function listContactsService(filters: z.infer<typeof listContactsQu
 
   return prisma.contact.findMany({
     where,
-    orderBy: [{ isPrimary: "desc" }, { fullName: "asc" }],
+    orderBy: [{ isPrimary: "desc" }, ORDER_BY_CREATED_DESC],
     select: contactSelect,
   });
 }

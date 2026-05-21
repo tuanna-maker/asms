@@ -37,6 +37,8 @@ import {
   type ContractClauseGroupItem,
 } from "@/hooks/use-contract-clauses-api";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
+import { clauseAttrStyles } from "@/components/settings/attributes/contract-clause-styles";
+import { cn } from "@/lib/utils";
 
 type Props = {
   section: AttributeSectionDef;
@@ -77,6 +79,19 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
     [allClauses],
   );
 
+  /** Mỗi điều khoản chỉ thuộc tối đa một nhóm */
+  const clauseAssignment = useMemo(() => {
+    const map = new Map<string, { groupId: string; label: string }>();
+    for (const g of groups) {
+      for (const m of g.members) {
+        if (!map.has(m.clauseId)) {
+          map.set(m.clauseId, { groupId: g.id, label: g.label });
+        }
+      }
+    }
+    return map;
+  }, [groups]);
+
   const openCreate = () => {
     setEditing(null);
     setForm(emptyForm());
@@ -101,6 +116,13 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
   };
 
   const toggleClause = (clauseId: string, checked: boolean) => {
+    if (checked && membersGroup) {
+      const assigned = clauseAssignment.get(clauseId);
+      if (assigned && assigned.groupId !== membersGroup.id) {
+        toast.error(`Điều khoản đang thuộc nhóm «${assigned.label}». Mỗi điều khoản chỉ được ở một nhóm.`);
+        return;
+      }
+    }
     setSelectedClauseIds((prev) =>
       checked ? [...new Set([...prev, clauseId])] : prev.filter((id) => id !== clauseId),
     );
@@ -158,15 +180,15 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
   };
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border/50">
+    <div className={clauseAttrStyles.section}>
+      <div className={clauseAttrStyles.sectionHead}>
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg shrink-0 ${section.iconClassName}`}>
+          <div className={cn("p-2 rounded-lg shrink-0", section.iconClassName)}>
             <section.icon className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-card-foreground">{section.title}</h3>
-            <p className="text-sm text-muted-foreground">{section.description}</p>
+            <h3 className={clauseAttrStyles.sectionTitle}>{section.title}</h3>
+            <p className={clauseAttrStyles.sectionDesc}>{section.description}</p>
           </div>
         </div>
         {canWrite ? (
@@ -183,27 +205,29 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Mã</TableHead>
-              <TableHead>Tên nhóm</TableHead>
-              <TableHead>Số ĐK</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              {canWrite ? <TableHead className="text-right">Thao tác</TableHead> : null}
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={clauseAttrStyles.tableHead}>Mã</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Tên nhóm</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Số ĐK</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Trạng thái</TableHead>
+              {canWrite ? (
+                <TableHead className={cn(clauseAttrStyles.tableHead, "text-right")}>Thao tác</TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 5 : 4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={canWrite ? 5 : 4} className="text-center text-muted-foreground py-10">
                   Chưa có nhóm nào.
                 </TableCell>
               </TableRow>
             ) : (
               listPag.pagedItems.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs">{row.code}</TableCell>
-                  <TableCell>{row.label}</TableCell>
-                  <TableCell>{row.members.length}</TableCell>
+                <TableRow key={row.id} className={clauseAttrStyles.tableRow}>
+                  <TableCell className={clauseAttrStyles.cellCode}>{row.code}</TableCell>
+                  <TableCell className={clauseAttrStyles.cellTitle}>{row.label}</TableCell>
+                  <TableCell className={clauseAttrStyles.cellOrder}>{row.members.length}</TableCell>
                   <TableCell>
                     <Badge variant={row.isActive ? "default" : "secondary"}>
                       {row.isActive ? "Đang dùng" : "Ngừng"}
@@ -229,7 +253,7 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
         </Table>
       )}
       {!isLoading && sorted.length > 0 && (
-        <PaginatedTableFooter className="mt-3" {...listPag.footerProps} />
+        <PaginatedTableFooter variant="attribute" {...listPag.footerProps} />
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -276,22 +300,50 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
           <DialogHeader>
             <DialogTitle>Gán điều khoản — {membersGroup?.label}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Mỗi điều khoản chỉ được gán vào một nhóm. Mục đã thuộc nhóm khác sẽ bị khóa.
+          </p>
+          <div className="rounded-lg border border-border/60 divide-y divide-border/40 max-h-[50vh] overflow-y-auto">
             {activeClauses.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Chưa có điều khoản active. Thêm tại mục Điều khoản.</p>
+              <p className="text-sm text-muted-foreground p-4">Chưa có điều khoản active. Thêm tại mục Điều khoản.</p>
             ) : (
-              activeClauses.map((c) => (
-                <label key={c.id} className="flex items-start gap-2 rounded-md border p-2 cursor-pointer">
-                  <Checkbox
-                    checked={selectedClauseIds.includes(c.id)}
-                    onCheckedChange={(v) => toggleClause(c.id, v === true)}
-                  />
-                  <span className="text-sm">
-                    <span className="font-medium">{c.title}</span>
-                    <span className="text-muted-foreground font-mono text-xs ml-1">({c.code})</span>
-                  </span>
-                </label>
-              ))
+              activeClauses.map((c) => {
+                const assigned = clauseAssignment.get(c.id);
+                const inCurrentGroup = membersGroup && assigned?.groupId === membersGroup.id;
+                const inOtherGroup = assigned && !inCurrentGroup;
+                const checked = selectedClauseIds.includes(c.id);
+                return (
+                  <label
+                    key={c.id}
+                    className={cn(
+                      "flex items-start gap-3 px-3 py-2.5 transition-colors",
+                      inOtherGroup
+                        ? "opacity-55 cursor-not-allowed bg-muted/25"
+                        : "cursor-pointer hover:bg-muted/20",
+                      checked && !inOtherGroup && "bg-primary/5",
+                    )}
+                  >
+                    <Checkbox
+                      className="mt-0.5"
+                      checked={checked}
+                      disabled={Boolean(inOtherGroup)}
+                      onCheckedChange={(v) => toggleClause(c.id, v === true)}
+                    />
+                    <span className="text-sm min-w-0 flex-1 leading-snug">
+                      <span className="font-medium text-foreground">{c.title}</span>
+                      {inOtherGroup ? (
+                        <Badge variant="secondary" className="ml-2 text-xs font-normal">
+                          Nhóm: {assigned.label}
+                        </Badge>
+                      ) : inCurrentGroup ? (
+                        <Badge variant="outline" className="ml-2 text-xs font-normal">
+                          Đang trong nhóm này
+                        </Badge>
+                      ) : null}
+                    </span>
+                  </label>
+                );
+              })
             )}
           </div>
           <DialogFooter>

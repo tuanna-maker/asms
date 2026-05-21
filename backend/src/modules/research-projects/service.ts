@@ -65,7 +65,7 @@ export async function getResearchProjectDetailService(idOrCode: string) {
       ...listSelect,
       tasks: {
         where: { deletedAt: null },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         select: {
           id: true,
           code: true,

@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
+import { ORDER_BY_CREATED_DESC } from "../../lib/list-order";
 import { prisma } from "../../utils/prisma";
 import { startInstanceForEntity } from "../workflows/runtime";
 import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
@@ -47,7 +48,7 @@ const listSelect = {
         },
       },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: ORDER_BY_CREATED_DESC,
   },
   contractProducts: {
     where: { deletedAt: null, contract: { deletedAt: null } },
@@ -71,7 +72,7 @@ const listSelect = {
               location: true,
               instructor: { select: { fullName: true } },
             },
-            orderBy: { startDate: "asc" },
+            orderBy: { startDate: "desc" },
           },
         },
       },
@@ -132,7 +133,7 @@ async function resolveCustomerIdOptional(idOrCode: string | undefined) {
 export async function listProductsService() {
   const rows = await prisma.product.findMany({
     where: { deletedAt: null },
-    orderBy: { name: "asc" },
+    orderBy: ORDER_BY_CREATED_DESC,
     select: listSelect,
   });
   const workflowMap = await loadWorkflowSnapshotsByInstanceIds(

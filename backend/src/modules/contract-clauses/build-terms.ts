@@ -1,73 +1,47 @@
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
-/** Ghép nội dung điều khoản theo thứ tự catalog: nhóm → thành viên → mục lẻ. */
+/** Ghép nội dung điều khoản theo thứ tự đã chọn trên hợp đồng. */
 export function joinClauseContents(contents: string[]): string | null {
   const parts = contents.map((c) => c.trim()).filter(Boolean);
   if (parts.length === 0) return null;
   return parts.join("\n\n");
 }
 
+/** Giữ thứ tự `clauseIds` do người dùng sắp xếp trên form hợp đồng. */
+function dedupePreserveOrder(clauseIds: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const id of clauseIds) {
+    const trimmed = id?.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    unique.push(trimmed);
+  }
+  return unique;
+}
+
 /**
- * Sắp xếp `clauseIds` theo thứ tự hiển thị catalog rồi ghép `content` thành `terms`.
+ * Ghép `content` thành `terms` theo đúng thứ tự mảng `clauseIds` gửi từ client.
  */
 export async function buildTermsFromClauseIds(clauseIds: string[]): Promise<{
   orderedIds: string[];
   terms: string | null;
 }> {
-  const unique = [...new Set(clauseIds.filter(Boolean))];
+  const unique = dedupePreserveOrder(clauseIds);
   if (unique.length === 0) {
     return { orderedIds: [], terms: null };
   }
 
-  const idSet = new Set(unique);
-  const [groups, clauses] = await Promise.all([
-    prisma.contractClauseGroup.findMany({
-      where: { deletedAt: null, isActive: true },
-      orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
-      include: {
-        members: {
-          orderBy: { sortOrder: "asc" },
-          include: {
-            clause: {
-              select: { id: true, content: true, deletedAt: true, isActive: true },
-            },
-          },
-        },
-      },
-    }),
-    prisma.contractClause.findMany({
-      where: { id: { in: unique }, deletedAt: null, isActive: true },
-      select: { id: true, content: true, sortOrder: true },
-    }),
-  ]);
+  const clauses = await prisma.contractClause.findMany({
+    where: { id: { in: unique }, deletedAt: null, isActive: true },
+    select: { id: true, content: true },
+  });
 
   const clauseMap = new Map(clauses.map((c) => [c.id, c]));
-  const orderedIds: string[] = [];
-  const seen = new Set<string>();
-
-  const pushId = (id: string) => {
-    if (!idSet.has(id) || seen.has(id) || !clauseMap.has(id)) return;
-    seen.add(id);
-    orderedIds.push(id);
-  };
-
-  for (const group of groups) {
-    for (const member of group.members) {
-      const clause = member.clause;
-      if (!clause || clause.deletedAt || !clause.isActive) continue;
-      pushId(clause.id);
-    }
-  }
-
-  const orphans = clauses
-    .filter((c) => !seen.has(c.id))
-    .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id));
-  for (const c of orphans) {
-    pushId(c.id);
-  }
-
+  const orderedIds = unique.filter((id) => clauseMap.has(id));
   const contents = orderedIds.map((id) => clauseMap.get(id)?.content ?? "").filter(Boolean);
+
   return {
     orderedIds,
     terms: joinClauseContents(contents),
@@ -75,7 +49,7 @@ export async function buildTermsFromClauseIds(clauseIds: string[]): Promise<{
 }
 
 export async function assertActiveClauseIds(clauseIds: string[]): Promise<void> {
-  const unique = [...new Set(clauseIds.filter(Boolean))];
+  const unique = dedupePreserveOrder(clauseIds);
   if (unique.length === 0) return;
 
   const found = await prisma.contractClause.findMany({

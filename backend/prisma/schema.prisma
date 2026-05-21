@@ -575,6 +575,7 @@ model ContractClauseGroupMember {
   clause ContractClause      @relation(fields: [clauseId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, clauseId], map: "uniq_contract_clause_group_member")
+  @@unique([clauseId], map: "uniq_contract_clause_group_member_clause")
   @@index([groupId], map: "idx_contract_clause_group_members_group_id")
   @@index([clauseId], map: "idx_contract_clause_group_members_clause_id")
   @@map("contract_clause_group_members")

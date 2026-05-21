@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
+import { ORDER_BY_CREATED_DESC } from "../../lib/list-order";
 import { prisma } from "../../utils/prisma";
 import { attachWorkflowToEntity, startInstanceForEntity } from "../workflows/runtime";
 import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
@@ -38,7 +39,7 @@ const CONTRACT_TYPE_CATEGORY = "contract_type";
 async function getContractFallbackWorkflowId(): Promise<string | null> {
   const wf = await prisma.workflowDefinition.findFirst({
     where: { moduleKey: "contract", isActive: true, deletedAt: null },
-    orderBy: [{ isSystem: "desc" }, { createdAt: "asc" }],
+    orderBy: [{ isSystem: "desc" }, ORDER_BY_CREATED_DESC],
     select: { id: true },
   });
   return wf?.id ?? null;
@@ -146,7 +147,7 @@ export async function listContractsService(filters: {
 
   const rows = await prisma.contract.findMany({
     where,
-    orderBy: { startDate: "desc" },
+    orderBy: ORDER_BY_CREATED_DESC,
     select: {
       id: true,
       code: true,
@@ -279,7 +280,7 @@ export async function listContractProductsService(idOrCode: string) {
   const resolvedId = await resolveContractId(idOrCode);
   const rows = await prisma.contractProduct.findMany({
     where: { contractId: resolvedId, deletedAt: null, product: { deletedAt: null } },
-    orderBy: { createdAt: "asc" },
+    orderBy: ORDER_BY_CREATED_DESC,
     select: {
       id: true,
       quantity: true,

@@ -2,7 +2,6 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../../utils/prisma", () => ({
   prisma: {
-    contractClauseGroup: { findMany: vi.fn() },
     contractClause: { findMany: vi.fn() },
   },
 }));
@@ -10,7 +9,6 @@ vi.mock("../../utils/prisma", () => ({
 import { prisma } from "../../utils/prisma";
 import { buildTermsFromClauseIds, joinClauseContents } from "./build-terms";
 
-const mockedGroupFindMany = vi.mocked(prisma.contractClauseGroup.findMany);
 const mockedClauseFindMany = vi.mocked(prisma.contractClause.findMany);
 
 describe("joinClauseContents", () => {
@@ -28,33 +26,34 @@ describe("buildTermsFromClauseIds", () => {
     vi.clearAllMocks();
   });
 
-  it("orders by group then orphans", async () => {
-    mockedGroupFindMany.mockResolvedValue([
-      {
-        id: "g1",
-        sortOrder: 0,
-        members: [
-          {
-            sortOrder: 0,
-            clause: { id: "c2", content: "B", deletedAt: null, isActive: true },
-          },
-        ],
-      },
-    ] as never);
+  it("preserves client order for terms snapshot", async () => {
     mockedClauseFindMany.mockResolvedValue([
-      { id: "c1", content: "A", sortOrder: 0 },
-      { id: "c2", content: "B", sortOrder: 1 },
+      { id: "c1", content: "A" },
+      { id: "c2", content: "B" },
     ] as never);
 
-    const result = await buildTermsFromClauseIds(["c1", "c2"]);
+    const result = await buildTermsFromClauseIds(["c2", "c1"]);
     expect(result.orderedIds).toEqual(["c2", "c1"]);
     expect(result.terms).toBe("B\n\nA");
+    expect(mockedClauseFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: { in: ["c2", "c1"] } }),
+      }),
+    );
+  });
+
+  it("dedupes while keeping first occurrence", async () => {
+    mockedClauseFindMany.mockResolvedValue([{ id: "c1", content: "A" }] as never);
+
+    const result = await buildTermsFromClauseIds(["c1", "c1", "c1"]);
+    expect(result.orderedIds).toEqual(["c1"]);
+    expect(result.terms).toBe("A");
   });
 
   it("returns empty when no ids", async () => {
     const result = await buildTermsFromClauseIds([]);
     expect(result.orderedIds).toEqual([]);
     expect(result.terms).toBeNull();
-    expect(mockedGroupFindMany).not.toHaveBeenCalled();
+    expect(mockedClauseFindMany).not.toHaveBeenCalled();
   });
 });

@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { sortByNewestFirst } from "@/lib/sort-by-time";
 
 type Customer = {
   id: string;
@@ -46,6 +47,7 @@ type Customer = {
   address: string;
   contracts: number;
   activeContracts: number;
+  createdAt?: string;
 };
 
 type ApiSuccess<T> = { success: true; data: T; message?: string };
@@ -73,6 +75,7 @@ function mapCustomerRow(row: ApiCustomerRow): Customer {
     address: row.address ?? "",
     contracts: Number(row.contractsCount ?? 0),
     activeContracts: Number(row.activeContracts ?? 0),
+    createdAt: row.createdAt,
   };
 }
 
@@ -308,10 +311,16 @@ const Customers = () => {
   };
 
   const filtered = useMemo(
-    () => customers.filter(
-      (c) => c.name.toLowerCase().includes(search.toLowerCase()) || c.contact.toLowerCase().includes(search.toLowerCase())
-    ),
-    [customers, search]
+    () =>
+      sortByNewestFirst(
+        customers.filter(
+          (c) =>
+            c.name.toLowerCase().includes(search.toLowerCase()) ||
+            c.contact.toLowerCase().includes(search.toLowerCase()),
+        ),
+        (c) => c.createdAt,
+      ),
+    [customers, search],
   );
 
   const customerListPag = usePaginatedSlice(filtered, [search]);

@@ -228,3 +228,17 @@
 .dashboard-grid .react-grid-item > .react-resizable-handle {
   flex-shrink: 0;
 }
+
+@keyframes dashboard-alert-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px hsl(var(--destructive) / 0);
+  }
+}
+
+.dashboard-alert-pulse {
+  animation: dashboard-alert-pulse 2s ease-in-out infinite;
+}

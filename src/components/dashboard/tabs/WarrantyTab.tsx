@@ -57,10 +57,10 @@ const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
-        <StatCard title="Tổng phản ánh" value={complaint.total} icon={AlertTriangle} color="destructive" />
+        <StatCard title="Chờ xử lý" value={complaint.processing} icon={Clock} color="destructive" alertLevel="critical" />
+        <StatCard title="Trễ hạn SLA" value={complaint.late} icon={AlertTriangle} color="destructive" alertLevel="critical" />
         <StatCard title="Bảo hành" value={complaint.warranty} icon={Shield} color="primary" />
         <StatCard title="Sửa chữa" value={complaint.repair} icon={Wrench} color="accent" />
-        <StatCard title="Tỷ lệ xử lý" value={`${resolvedRate}%`} icon={TrendingUp} color="success" subtitle={`${complaint.done}/${complaint.total} hoàn thành`} />
       </div>
     ),
     "complaint": (

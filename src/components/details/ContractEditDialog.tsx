@@ -392,7 +392,6 @@ const ContractEditDialog = ({
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
 
-  const termsText = (detail?.terms ?? form.terms ?? "").trim();
   const hasWorkflowProgress = Boolean(
     selectedWorkflowId || detail?.workflow || detail?.workflowId,
   );
@@ -788,25 +787,8 @@ const ContractEditDialog = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="terms" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-4">
-            {isCreateMode && (
-              <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                Chọn điều khoản từ danh mục; nội dung lưu khi bấm &quot;Tạo hợp đồng&quot;.
-              </div>
-            )}
-            {!isCreateMode && (detail?.clauseIds?.length ?? 0) === 0 && termsText ? (
-              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
-                Hợp đồng có nội dung điều khoản cũ (nhập tay). Chọn lại từ danh mục bên dưới để đồng bộ.
-                <p className="mt-2 whitespace-pre-wrap text-muted-foreground">{termsText}</p>
-              </div>
-            ) : null}
-            <div>
-              <h4 className="text-sm font-semibold text-card-foreground mb-1">Điều khoản & điều kiện</h4>
-              <p className="text-xs text-muted-foreground mb-3">
-                Tích nhóm hoặc từng điều khoản cần áp dụng cho hợp đồng.
-              </p>
-              <ContractTermsPicker value={selectedClauseIds} onChange={setSelectedClauseIds} />
-            </div>
+          <TabsContent value="terms" className="absolute inset-0 mt-0 overflow-y-auto p-6">
+            <ContractTermsPicker value={selectedClauseIds} onChange={setSelectedClauseIds} />
           </TabsContent>
 
           <TabsContent value="products" className="absolute inset-0 mt-0 overflow-y-auto p-6">

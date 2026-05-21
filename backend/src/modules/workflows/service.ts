@@ -76,7 +76,7 @@ export async function listWorkflowsService(moduleKey?: string) {
       deletedAt: null,
       ...(moduleKey ? { moduleKey } : {}),
     },
-    orderBy: [{ moduleKey: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ moduleKey: "asc" }, { createdAt: "desc" }],
     select: {
       ...SELECT_WORKFLOW_BASE,
       steps: { select: { id: true, slaHours: true } },

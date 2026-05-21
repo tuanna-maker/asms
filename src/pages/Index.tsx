@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { computeDashboardAlertMetrics } from "@/lib/dashboard-alerts";
 import { useCustomersList } from "@/hooks/use-customers-api";
 import { buildDashboardReportFilters } from "@/lib/report-filters";
 import OverviewTab from "@/components/dashboard/tabs/OverviewTab";
@@ -60,6 +61,11 @@ const Index = () => {
 
   const { data, liveContracts, liveHandovers, liveTrainings, liveProducts, liveWarranties, liveMaterials, isLoading: dashboardLoading, isError: dashboardError } =
     useDashboardData(reportFilters);
+
+  const alertMetrics = useMemo(
+    () => (data ? computeDashboardAlertMetrics(data) : null),
+    [data],
+  );
 
   const activeFilters = [year !== DEFAULT_YEAR, quarter !== "all", customer !== "all"].filter(Boolean).length;
 
@@ -226,7 +232,20 @@ const Index = () => {
             <TabsTrigger value="product" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Sản phẩm</TabsTrigger>
             <TabsTrigger value="warranty" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Bảo hành</TabsTrigger>
             <TabsTrigger value="material" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Vật tư</TabsTrigger>
-            <TabsTrigger value="alerts" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Cảnh báo</TabsTrigger>
+            <TabsTrigger value="alerts" className="relative text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">
+              Cảnh báo
+              {alertMetrics && alertMetrics.actionableAlertCount > 0 && (
+                <span
+                  className={`ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-destructive-foreground ${
+                    alertMetrics.criticalCount > 0
+                      ? "bg-destructive dashboard-alert-pulse"
+                      : "bg-warning text-warning-foreground"
+                  }`}
+                >
+                  {alertMetrics.actionableAlertCount > 99 ? "99+" : alertMetrics.actionableAlertCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
           {autoRotate && (
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted overflow-hidden rounded-full">

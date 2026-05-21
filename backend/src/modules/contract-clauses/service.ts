@@ -367,6 +367,14 @@ export async function setClauseGroupMembersService(
   }
 
   await prisma.$transaction(async (tx) => {
+    if (unique.length > 0) {
+      await tx.contractClauseGroupMember.deleteMany({
+        where: {
+          clauseId: { in: unique },
+          NOT: { groupId },
+        },
+      });
+    }
     await tx.contractClauseGroupMember.deleteMany({ where: { groupId } });
     if (unique.length > 0) {
       await tx.contractClauseGroupMember.createMany({

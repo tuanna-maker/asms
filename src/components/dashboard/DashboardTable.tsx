@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DashboardPagination from "./DashboardPagination";
+import { detectTimeSortKey, getTimeMs } from "@/lib/sort-by-time";
 
 export interface FilterOption {
   value: string;
@@ -103,6 +104,15 @@ function DashboardTable<T>({
         else cmp = String(av ?? "").localeCompare(String(bv ?? ""), "vi");
         return sortDir === "desc" ? -cmp : cmp;
       });
+    } else if (result.length > 1) {
+      const timeKey = detectTimeSortKey(result[0] as Record<string, unknown>);
+      if (timeKey) {
+        result.sort(
+          (a, b) =>
+            getTimeMs((b as Record<string, unknown>)[timeKey]) -
+            getTimeMs((a as Record<string, unknown>)[timeKey]),
+        );
+      }
     }
 
     return result;

@@ -28,6 +28,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { AttributeSectionDef } from "@/lib/attribute-settings-config";
 import { isValidDefinitionCode, definitionCodeHint } from "@/lib/attribute-code-validation";
 import {
+  useContractClauseGroupsList,
   useContractClauseUsage,
   useContractClausesList,
   useCreateContractClause,
@@ -36,6 +37,8 @@ import {
   type ContractClauseItem,
 } from "@/hooks/use-contract-clauses-api";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
+import { clauseAttrStyles } from "@/components/settings/attributes/contract-clause-styles";
+import { cn } from "@/lib/utils";
 
 type Props = {
   section: AttributeSectionDef;
@@ -46,12 +49,12 @@ const emptyForm = () => ({
   code: "",
   title: "",
   content: "",
-  sortOrder: "0",
   isActive: true,
 });
 
 export function AttributeContractClauseSection({ section, canWrite }: Props) {
   const { data: rows = [], isLoading } = useContractClausesList({ includeInactive: true });
+  const { data: groups = [] } = useContractClauseGroupsList({ includeInactive: true });
   const createMut = useCreateContractClause();
   const updateMut = useUpdateContractClause();
   const deleteMut = useDeleteContractClause();
@@ -63,9 +66,18 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
   const { data: usage } = useContractClauseUsage(deleteId, { enabled: Boolean(deleteId) });
 
   const sorted = useMemo(
-    () => [...rows].sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title)),
+    () => [...rows].sort((a, b) => a.title.localeCompare(b.title, "vi")),
     [rows],
   );
+  const groupLabelByClauseId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of groups) {
+      for (const m of g.members) {
+        if (!map.has(m.clauseId)) map.set(m.clauseId, g.label);
+      }
+    }
+    return map;
+  }, [groups]);
   const listPag = usePaginatedSlice(sorted);
 
   const openCreate = () => {
@@ -80,7 +92,6 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
       code: row.code,
       title: row.title,
       content: row.content,
-      sortOrder: String(row.sortOrder),
       isActive: row.isActive,
     });
     setDialogOpen(true);
@@ -95,12 +106,14 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
       toast.error(definitionCodeHint);
       return;
     }
+    const nextSortOrder =
+      rows.length > 0 ? Math.max(...rows.map((r) => r.sortOrder)) + 1 : 0;
     const payload = {
       code: form.code.trim(),
       title: form.title.trim(),
       content: form.content.trim(),
-      sortOrder: Number(form.sortOrder) || 0,
       isActive: form.isActive,
+      ...(!editing ? { sortOrder: nextSortOrder } : {}),
     };
     try {
       if (editing) {
@@ -128,15 +141,15 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
   };
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card shadow-sm overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-border/50">
+    <div className={clauseAttrStyles.section}>
+      <div className={clauseAttrStyles.sectionHead}>
         <div className="flex items-start gap-3">
-          <div className={`p-2 rounded-lg shrink-0 ${section.iconClassName}`}>
+          <div className={cn("p-2 rounded-lg shrink-0", section.iconClassName)}>
             <section.icon className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-semibold text-card-foreground">{section.title}</h3>
-            <p className="text-sm text-muted-foreground">{section.description}</p>
+            <h3 className={clauseAttrStyles.sectionTitle}>{section.title}</h3>
+            <p className={clauseAttrStyles.sectionDesc}>{section.description}</p>
           </div>
         </div>
         {canWrite ? (
@@ -153,27 +166,33 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
       ) : (
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Mã</TableHead>
-              <TableHead>Tiêu đề</TableHead>
-              <TableHead>Thứ tự</TableHead>
-              <TableHead>Trạng thái</TableHead>
-              {canWrite ? <TableHead className="text-right">Thao tác</TableHead> : null}
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={clauseAttrStyles.tableHead}>Mã</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Tiêu đề</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Nhóm</TableHead>
+              <TableHead className={clauseAttrStyles.tableHead}>Trạng thái</TableHead>
+              {canWrite ? (
+                <TableHead className={cn(clauseAttrStyles.tableHead, "text-right")}>Thao tác</TableHead>
+              ) : null}
             </TableRow>
           </TableHeader>
           <TableBody>
             {sorted.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={canWrite ? 5 : 4} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={canWrite ? 5 : 4} className="text-center text-muted-foreground py-10">
                   Chưa có điều khoản nào.
                 </TableCell>
               </TableRow>
             ) : (
-              listPag.pagedItems.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-mono text-xs">{row.code}</TableCell>
-                  <TableCell>{row.title}</TableCell>
-                  <TableCell>{row.sortOrder}</TableCell>
+              listPag.pagedItems.map((row) => {
+                const groupLabel = groupLabelByClauseId.get(row.id);
+                return (
+                <TableRow key={row.id} className={clauseAttrStyles.tableRow}>
+                  <TableCell className={clauseAttrStyles.cellCode}>{row.code}</TableCell>
+                  <TableCell className={clauseAttrStyles.cellTitle}>{row.title}</TableCell>
+                  <TableCell className={groupLabel ? clauseAttrStyles.cellGroup : clauseAttrStyles.cellGroupEmpty}>
+                    {groupLabel ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={row.isActive ? "default" : "secondary"}>
                       {row.isActive ? "Đang dùng" : "Ngừng"}
@@ -190,13 +209,14 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
                     </TableCell>
                   ) : null}
                 </TableRow>
-              ))
+              );
+              })
             )}
           </TableBody>
         </Table>
       )}
       {!isLoading && sorted.length > 0 && (
-        <PaginatedTableFooter className="mt-3" {...listPag.footerProps} />
+        <PaginatedTableFooter variant="attribute" {...listPag.footerProps} />
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -222,14 +242,6 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
                 rows={6}
                 value={form.content}
                 onChange={(e) => setForm({ ...form, content: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Thứ tự</Label>
-              <Input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
               />
             </div>
             <div className="flex items-center gap-2">

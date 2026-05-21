@@ -9,11 +9,12 @@ interface PaginatedTableFooterProps {
   onPageChange: (page: number) => void;
   disabled?: boolean;
   className?: string;
+  variant?: "default" | "attribute";
 }
 
 /** Chân bảng phân trang — dùng khi hook pagination nằm ở component cha */
-export function PaginatedTableFooter(props: PaginatedTableFooterProps) {
-  return <ListPaginationBar {...props} />;
+export function PaginatedTableFooter({ variant, ...props }: PaginatedTableFooterProps) {
+  return <ListPaginationBar variant={variant} {...props} />;
 }
 
 interface UsePaginatedSliceResult<T> {

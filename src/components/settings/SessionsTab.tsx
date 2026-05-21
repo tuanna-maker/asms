@@ -10,7 +10,6 @@ import {
   useSessions,
   type SessionItem,
 } from "@/hooks/use-sessions-api";
-import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
 function errMessage(e: unknown) {
   if (e && typeof e === "object" && "response" in e) {

@@ -95,7 +95,7 @@ const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: Pr
         <StatCard title="Tổng hợp đồng" value={data.contract.total} icon={FileText} color="primary" />
         <StatCard title="Đang thực hiện" value={data.contract.active} icon={Clock} color="info" />
         <StatCard title="Hoàn thành đúng hạn" value={data.contract.onTime} icon={CheckCircle} color="success" />
-        <StatCard title="Chậm tiến độ" value={data.contract.late} icon={Clock} color="warning" />
+        <StatCard title="Chậm tiến độ" value={data.contract.late} icon={Clock} color="destructive" alertLevel="critical" />
       </div>
     ),
     "progress-contract": (

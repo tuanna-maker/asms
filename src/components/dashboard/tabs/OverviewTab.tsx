@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
 import {
-  Package, FileText, Truck, GraduationCap, Clock, CheckCircle, Layers,
+  Package, FileText, Truck, GraduationCap, Clock, Layers, AlertTriangle,
 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import { computeDashboardAlertMetrics } from "@/lib/dashboard-alerts";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
 import PAKDWidget from "@/components/dashboard/PAKDWidget";
@@ -68,6 +69,7 @@ const allWidgetTemplates = [
 ];
 
 const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
+  const alertMetrics = useMemo(() => computeDashboardAlertMetrics(data), [data]);
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
     "stats",
@@ -86,9 +88,29 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
     "stats": (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
         <StatCard title="Tổng sản phẩm" value={data.stats.totalProducts} icon={Package} color="primary" />
-        <StatCard title="HĐ đang thực hiện" value={data.stats.activeContracts} icon={FileText} color="info" />
-        <StatCard title="Khiếu nại đang xử lý" value={data.stats.pendingComplaints} icon={Clock} color="warning" />
-        <StatCard title="Hoàn thành tháng này" value={data.stats.completedThisMonth} icon={CheckCircle} color="success" />
+        <StatCard
+          title="HĐ chậm tiến độ"
+          value={data.contract.late}
+          icon={FileText}
+          color="destructive"
+          alertLevel="critical"
+          subtitle={data.contract.late > 0 ? `/${data.contract.total} hợp đồng` : undefined}
+        />
+        <StatCard
+          title="Khiếu nại chờ xử lý"
+          value={data.stats.pendingComplaints}
+          icon={AlertTriangle}
+          color="destructive"
+          alertLevel={data.stats.pendingComplaints > 0 ? "critical" : undefined}
+        />
+        <StatCard
+          title="Chậm tiến độ (tổng)"
+          value={alertMetrics.totalLate}
+          icon={Clock}
+          color="destructive"
+          alertLevel="critical"
+          subtitle="HĐ · BG · HL · KN"
+        />
       </div>
     ),
     "product-manufacturing": <ProductManufacturingWidget data={data.productProgress} />,
@@ -154,7 +176,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
         compact
       />
     ),
-  }), [contractsTableData, data]);
+  }), [alertMetrics.totalLate, contractsTableData, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds

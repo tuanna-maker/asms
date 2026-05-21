@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 
 import { HttpError } from "../../lib/errors/HttpError";
+import { ORDER_BY_CREATED_DESC } from "../../lib/list-order";
 import { prisma } from "../../utils/prisma";
 import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
 
@@ -54,7 +55,7 @@ export async function listCustomersService(filters: z.infer<typeof listCustomers
   });
   return prisma.customer.findMany({
     where,
-    orderBy: { name: "asc" },
+    orderBy: ORDER_BY_CREATED_DESC,
     select: {
       id: true,
       code: true,
@@ -68,6 +69,7 @@ export async function listCustomersService(filters: z.infer<typeof listCustomers
       foundedAt: true,
       contractsCount: true,
       activeContracts: true,
+      createdAt: true,
     },
   });
 }
@@ -79,10 +81,11 @@ export async function getCustomerDetailService(id: string) {
     include: {
       contacts: {
         where: { deletedAt: null },
-        orderBy: { createdAt: "asc" },
+        orderBy: ORDER_BY_CREATED_DESC,
       },
       contracts: {
         where: { deletedAt: null },
+        orderBy: ORDER_BY_CREATED_DESC,
         select: {
           id: true,
           code: true,
@@ -92,6 +95,7 @@ export async function getCustomerDetailService(id: string) {
           startDate: true,
           endDate: true,
           progress: true,
+          createdAt: true,
         },
       },
       crmActivities: {
