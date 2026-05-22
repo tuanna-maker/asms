@@ -13,17 +13,16 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, MessageSquareWarning, GitBranch,
+  Info, ListChecks, Boxes, Files, MessageSquareWarning,
 } from "lucide-react";
-import { ContractWorkflowSection } from "@/components/contracts/ContractWorkflowSection";
-import type { ContractStepPayloadRecord } from "@/lib/contract-step-payload";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
+import type { DisplayContractStatus } from "@/lib/contract-display-status";
 import {
-  isTerminalContractStatus,
-  resolveContractDisplayStatus,
-  type DisplayContractStatus,
-} from "@/lib/contract-display-status";
+  formatSlaDeadline,
+  isContractExecutionSlaOverdue,
+} from "@/lib/contract-execution-sla";
+import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import { toast } from "sonner";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
@@ -34,6 +33,10 @@ import type { ProductSpec } from "@/hooks/use-products-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { api } from "@/lib/api";
 import { ContractTermsPicker } from "@/components/contracts/ContractTermsPicker";
+import {
+  normalizeClauseEntriesFromDetail,
+  type ContractClauseEntry,
+} from "@/lib/contract-clause-items";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
@@ -41,6 +44,7 @@ type Contract = {
   endReminderDays?: number;
   terms?: string | null;
   clauseIds?: string[];
+  clauseItems?: ContractClauseEntry[];
   contractTypeCode?: string | null;
 };
 
@@ -84,6 +88,7 @@ type ContractDetailData = {
   title?: string;
   terms?: string | null;
   clauseIds?: string[];
+  clauseItems?: ContractClauseEntry[];
   contractTypeCode?: string | null;
   status?: string;
   displayStatus?: string;
@@ -107,15 +112,8 @@ type ContractDetailData = {
     workflowId?: string | null;
     workflowName?: string | null;
   } | null;
-  workflow?: {
-    workflowId: string;
-    workflowName: string;
-    currentStepIndex: number;
-    totalSteps: number;
-    steps: Array<{ id: string }>;
-  } | null;
-  workflowId?: string | null;
-  stepPayloads?: ContractStepPayloadRecord;
+  slaHours?: number | null;
+  updatedAt?: string;
 };
 
 interface Props {
@@ -146,17 +144,6 @@ function isoToDisplay(iso: string): string {
 
 const ALLOWED_DOCUMENT_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "webp", "doc", "docx", "xls", "xlsx", "csv"];
 const MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
-
-const EDIT_STATUS_BADGE_VARIANT: Record<
-  DisplayContractStatus,
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  draft: "outline",
-  active: "default",
-  completed: "secondary",
-  late: "destructive",
-  liquidated: "outline",
-};
 
 function toDocType(file: File): "pdf" | "doc" | "xls" | "img" | "other" {
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -197,13 +184,14 @@ const ContractEditDialog = ({
     startDate: "",
     endDate: "",
     warrantyEnd: "",
-    terminalStatus: "__none__" as "__none__" | "completed" | "liquidated",
+    status: "draft" as DisplayContractStatus,
+    slaHours: "",
     progress: "0",
     endReminderDays: "7",
     terms: "",
     contractTypeCode: "",
   });
-  const [selectedClauseIds, setSelectedClauseIds] = useState<string[]>([]);
+  const [clauseItems, setClauseItems] = useState<ContractClauseEntry[]>([]);
   const [selectedProductId, setSelectedProductId] = useState("");
   const [addQuantity, setAddQuantity] = useState("1");
   const [docName, setDocName] = useState("");
@@ -213,14 +201,12 @@ const ContractEditDialog = ({
   const [draftNewDocuments, setDraftNewDocuments] = useState<DraftDocument[]>([]);
   const [removedDocumentIds, setRemovedDocumentIds] = useState<string[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<DraftProduct | null>(null);
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
-  const [stepPayloads, setStepPayloads] = useState<ContractStepPayloadRecord>({});
-  const [workflowProgressHint, setWorkflowProgressHint] = useState(0);
   const { data: detailData, isLoading: detailLoading } = useContractDetail(!isCreateMode && open ? contract?.id ?? null : null);
   const { data: allProducts = [] } = useProductsList(open);
   const createContract = useCreateContract();
   const updateContract = useUpdateContract();
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
+  const { data: contractStatusOptions = [] } = useDefinitionsList("contract_status");
   const detail = detailData as ContractDetailData | null;
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
@@ -257,13 +243,19 @@ const ContractEditDialog = ({
       startDate: toInputDateValue(contract.startDate),
       endDate: toInputDateValue(contract.endDate),
       warrantyEnd: contract.warrantyEnd === "—" ? "" : toInputDateValue(contract.warrantyEnd),
-      terminalStatus: isTerminalContractStatus(contract.status) ? contract.status : "__none__",
+      status: (contract.displayStatus ?? contract.status ?? "draft") as DisplayContractStatus,
+      slaHours: "",
       progress: String(contract.progress),
       endReminderDays: String(contract.endReminderDays ?? 7),
       terms: contract.terms ?? "",
       contractTypeCode: contract.contractTypeCode ?? "",
     });
-    setSelectedClauseIds(contract.clauseIds ?? []);
+    setClauseItems(
+      normalizeClauseEntriesFromDetail({
+        clauseItems: contract.clauseItems,
+        clauseIds: contract.clauseIds,
+      }),
+    );
   }, [open, contract?.id, isCreateMode]);
 
   useEffect(() => {
@@ -283,13 +275,14 @@ const ContractEditDialog = ({
       startDate: "",
       endDate: "",
       warrantyEnd: "",
-      terminalStatus: "__none__",
+      status: "draft",
+      slaHours: "",
       progress: "0",
       endReminderDays: "7",
       terms: "",
       contractTypeCode: "",
     });
-    setSelectedClauseIds([]);
+    setClauseItems([]);
     setSelectedProductId("");
     setAddQuantity("1");
     setDocName("");
@@ -299,40 +292,49 @@ const ContractEditDialog = ({
     setDraftNewDocuments([]);
     setRemovedDocumentIds([]);
     setSelectedProduct(null);
-    setSelectedWorkflowId("");
-    setStepPayloads({});
-    setWorkflowProgressHint(0);
   }, [open, isCreateMode]);
 
   useEffect(() => {
-    if (!open || isCreateMode) return;
-    const ids = detail?.clauseIds;
-    if (Array.isArray(ids)) setSelectedClauseIds(ids);
-  }, [open, detail?.clauseIds, isCreateMode]);
-
-  useEffect(() => {
     if (!open || isCreateMode || !detail) return;
-    const wfId = detail.workflow?.workflowId ?? detail.workflowId ?? "";
-    if (wfId) setSelectedWorkflowId(wfId);
-    if (detail.stepPayloads) setStepPayloads(detail.stepPayloads);
-  }, [open, isCreateMode, detail?.id, detail?.workflow, detail?.workflowId, detail?.stepPayloads]);
+    setClauseItems(
+      normalizeClauseEntriesFromDetail({
+        clauseItems: detail.clauseItems as ContractClauseEntry[] | undefined,
+        clauseIds: detail.clauseIds,
+      }),
+    );
+  }, [open, isCreateMode, detail?.id, detail?.clauseIds, detail?.clauseItems]);
 
   useEffect(() => {
     if (!open || isCreateMode || !detail) return;
     const cid = detail.customerId ?? detail.customer?.id ?? "";
+    const storedStatus = (detail.displayStatus ?? detail.status ?? "draft") as DisplayContractStatus;
     setForm((f) => ({
       ...f,
       ...(cid ? { customerId: cid } : {}),
       ...(detail.customer?.name ? { customer: detail.customer.name } : {}),
       ...(detail.title ? { title: detail.title } : {}),
+      status: storedStatus,
     }));
     if (typeof detail.endReminderDays === "number") {
       setForm((f) => ({ ...f, endReminderDays: String(detail.endReminderDays) }));
     }
-    if (detail.status && isTerminalContractStatus(detail.status)) {
-      setForm((f) => ({ ...f, terminalStatus: detail.status as "completed" | "liquidated" }));
-    }
-  }, [open, isCreateMode, detail?.id, detail?.customerId, detail?.customer, detail?.title, detail?.endReminderDays, detail?.status]);
+    setForm((f) => ({
+      ...f,
+      slaHours:
+        detail.slaHours != null && detail.slaHours >= 0 ? String(detail.slaHours) : "",
+    }));
+  }, [
+    open,
+    isCreateMode,
+    detail?.id,
+    detail?.customerId,
+    detail?.customer,
+    detail?.title,
+    detail?.endReminderDays,
+    detail?.status,
+    detail?.displayStatus,
+    detail?.slaHours,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -378,26 +380,41 @@ const ContractEditDialog = ({
     );
   }, [open, draftProducts.length, productMapById]);
 
-  const computedDisplayStatus = useMemo((): DisplayContractStatus => {
-    const storedForCompute =
-      form.terminalStatus !== "__none__" ? form.terminalStatus : "draft";
-    if (!form.startDate || !form.endDate) return "draft";
-    return resolveContractDisplayStatus({
-      status: storedForCompute,
-      startDate: form.startDate,
-      endDate: form.endDate,
+  const progressValue = Math.min(100, Math.max(0, Number(form.progress) || 0));
+
+  const slaHoursValue = useMemo(() => {
+    const raw = (form.slaHours ?? "").trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
+  }, [form.slaHours]);
+
+  const slaOverduePreview = useMemo(() => {
+    if (slaHoursValue == null || slaHoursValue <= 0) return false;
+    const updatedAt = detail?.updatedAt;
+    if (!updatedAt) return false;
+    return isContractExecutionSlaOverdue({
+      status: form.status,
+      slaHours: slaHoursValue,
+      updatedAt,
     });
-  }, [form.terminalStatus, form.startDate, form.endDate]);
+  }, [slaHoursValue, detail?.updatedAt, form.status]);
+
+  const statusSelectOptions = useMemo(() => {
+    if (contractStatusOptions.length > 0) {
+      return contractStatusOptions.map((item) => ({
+        value: item.code,
+        label: resolveDefinitionLabel(contractStatusOptions, item.code),
+      }));
+    }
+    return (Object.keys(CONTRACT_STATUS_LABELS) as DisplayContractStatus[]).map((code) => ({
+      value: code,
+      label: CONTRACT_STATUS_LABELS[code] ?? code,
+    }));
+  }, [contractStatusOptions]);
 
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
-
-  const hasWorkflowProgress = Boolean(
-    selectedWorkflowId || detail?.workflow || detail?.workflowId,
-  );
-  const progressValue = hasWorkflowProgress
-    ? workflowProgressHint || contract?.progress || 0
-    : Math.min(100, Math.max(0, Number(form.progress) || 0));
   const contractDbId = typeof detail?.id === "string" && detail.id.trim() ? detail.id : contract?.dbId ?? contractCode;
   const feedbackCustomerId =
     (detail?.customerId ?? detail?.customer?.id ?? form.customerId) || null;
@@ -449,12 +466,6 @@ const ContractEditDialog = ({
       toast.error("Vui lòng nhập đủ khách hàng và thời gian");
       return;
     }
-    if (!selectedWorkflowId) {
-      toast.error("Chọn quy trình tổng hợp ở tab Quy trình");
-      return;
-    }
-    const payloadsToSend =
-      Object.keys(stepPayloads).length > 0 ? stepPayloads : undefined;
     try {
       const created = await createContract.mutateAsync({
         customerId: form.customerId,
@@ -465,11 +476,11 @@ const ContractEditDialog = ({
         endDate: form.endDate,
         warrantyEnd: form.warrantyEnd || undefined,
         endReminderDays: Math.max(0, Number(form.endReminderDays) || 7),
-        workflowId: selectedWorkflowId,
-        ...(payloadsToSend ? { stepPayloads: payloadsToSend } : {}),
-        clauseIds: selectedClauseIds,
+        status: form.status,
+        slaHours: slaHoursValue,
+        progress: progressValue,
+        clauseItems: clauseItems.map((e) => ({ clauseId: e.clauseId, content: e.content })),
         ...(form.contractTypeCode.trim() ? { contractTypeCode: form.contractTypeCode.trim() } : {}),
-        ...(form.terminalStatus !== "__none__" ? { status: form.terminalStatus } : {}),
       });
       const createdPayload = (created as { data?: { data?: { id?: string; code?: string } } })?.data?.data;
       const createdContractId = createdPayload?.id ?? createdPayload?.code;
@@ -545,8 +556,6 @@ const ContractEditDialog = ({
       return;
     }
     const savedTypeCode = form.contractTypeCode.trim() || null;
-    const payloadsToSend =
-      Object.keys(stepPayloads).length > 0 ? stepPayloads : undefined;
     try {
       await updateContract.mutateAsync({
         id: contractCode,
@@ -556,17 +565,11 @@ const ContractEditDialog = ({
           endDate: form.endDate,
           warrantyEnd: form.warrantyEnd || undefined,
           endReminderDays: Math.max(0, Number(form.endReminderDays) || 7),
-          ...(payloadsToSend ? { stepPayloads: payloadsToSend } : {}),
-          ...(!hasWorkflowProgress
-            ? { progress: Math.min(100, Math.max(0, Number(form.progress) || 0)) }
-            : {}),
-          clauseIds: selectedClauseIds,
+          progress: progressValue,
+          status: form.status,
+          slaHours: slaHoursValue,
+          clauseItems: clauseItems.map((e) => ({ clauseId: e.clauseId, content: e.content })),
           contractTypeCode: savedTypeCode,
-          ...(form.terminalStatus === "completed" || form.terminalStatus === "liquidated"
-            ? { status: form.terminalStatus }
-            : contract && isTerminalContractStatus(contract.status)
-              ? { status: "draft" as const }
-              : {}),
         },
       });
       onContractSaved?.({ id: contractCode, contractTypeCode: savedTypeCode });
@@ -671,7 +674,6 @@ const ContractEditDialog = ({
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản & Điều kiện" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
-              <TabTrigger value="workflow" icon={<GitBranch className="h-4 w-4" />} label="Quy trình" />
               {!isCreateMode ? (
                 <TabTrigger value="feedback" icon={<MessageSquareWarning className="h-4 w-4" />} label="Phản ánh" />
               ) : null}
@@ -680,49 +682,69 @@ const ContractEditDialog = ({
 
           <div className="relative min-h-0 flex-1">
           <TabsContent value="info" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="flex flex-wrap items-end gap-3">
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Trạng thái (theo thời gian)</p>
-                  <Badge variant={EDIT_STATUS_BADGE_VARIANT[computedDisplayStatus]}>
-                    {CONTRACT_STATUS_LABELS[computedDisplayStatus] ?? computedDisplayStatus}
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Kết thúc nghiệp vụ</p>
+                  <p className="text-xs text-muted-foreground">Trạng thái</p>
                   <Select
-                    value={form.terminalStatus}
-                    onValueChange={(v) =>
-                      setForm({
-                        ...form,
-                        terminalStatus: v as "__none__" | "completed" | "liquidated",
-                      })
-                    }
+                    value={form.status}
+                    onValueChange={(v) => setForm({ ...form, status: v as DisplayContractStatus })}
                   >
-                    <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Theo thời gian hợp đồng</SelectItem>
-                      <SelectItem value="completed">{CONTRACT_STATUS_LABELS.completed}</SelectItem>
-                      <SelectItem value="liquidated">{CONTRACT_STATUS_LABELS.liquidated}</SelectItem>
+                      {statusSelectOptions.map((item) => (
+                        <SelectItem key={item.value} value={item.value}>
+                          {item.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">SLA thực hiện (giờ)</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    className="w-28 h-9"
+                    placeholder="VD: 72"
+                    value={form.slaHours ?? ""}
+                    onChange={(e) => setForm((f) => ({ ...f, slaHours: e.target.value }))}
+                  />
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-0.5">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Tiến độ{hasWorkflowProgress ? " (theo quy trình)" : ""}: {progressValue}%
-                </span>
-                {hasWorkflowProgress && detail?.workflow ? (
-                  <span className="text-xs text-muted-foreground">
-                    Bước {detail.workflow.currentStepIndex}/{detail.workflow.totalSteps}
-                    {detail.workflow.workflowName ? ` · ${detail.workflow.workflowName}` : ""}
-                  </span>
-                ) : null}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Tiến độ:</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="w-20 h-8"
+                  value={form.progress}
+                  onChange={(e) => setForm({ ...form, progress: e.target.value })}
+                />
+                <span className="text-sm text-muted-foreground">%</span>
               </div>
             </div>
             <div className="h-3 w-full rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${progressValue}%` }} />
             </div>
+
+            {slaHoursValue != null && slaHoursValue > 0 && detail?.updatedAt ? (
+              <p
+                className={`text-xs ${slaOverduePreview ? "text-destructive font-medium" : "text-muted-foreground"}`}
+              >
+                {slaOverduePreview
+                  ? "Đã quá SLA kể từ lần cập nhật cuối — hệ thống sẽ tự chuyển sang Chậm tiến độ khi tải lại."
+                  : `Hạn SLA: ${formatSlaDeadline(detail.updatedAt, slaHoursValue)} (tính từ lần cập nhật cuối).`}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Nhập SLA (giờ) để theo dõi thời gian thực hiện. Quá hạn mà hợp đồng không được cập nhật sẽ tự
+                chuyển sang Chậm tiến độ.
+              </p>
+            )}
 
             <Separator />
 
@@ -788,7 +810,7 @@ const ContractEditDialog = ({
           </TabsContent>
 
           <TabsContent value="terms" className="absolute inset-0 mt-0 overflow-y-auto p-6">
-            <ContractTermsPicker value={selectedClauseIds} onChange={setSelectedClauseIds} />
+            <ContractTermsPicker value={clauseItems} onChange={setClauseItems} />
           </TabsContent>
 
           <TabsContent value="products" className="absolute inset-0 mt-0 overflow-y-auto p-6">
@@ -959,22 +981,6 @@ const ContractEditDialog = ({
               </div>
             </div>
             </>
-          </TabsContent>
-
-          <TabsContent value="workflow" className="absolute inset-0 mt-0 overflow-y-auto p-6 flex flex-col min-h-0">
-            <ContractWorkflowSection
-              open={open}
-              contractDbId={contractDbId}
-              isCreateMode={isCreateMode}
-              detailWorkflow={detail?.workflow ?? null}
-              detailStepPayloads={detail?.stepPayloads}
-              detailWorkflowId={detail?.workflowId ?? detail?.workflow?.workflowId ?? null}
-              selectedWorkflowId={selectedWorkflowId}
-              onSelectedWorkflowIdChange={setSelectedWorkflowId}
-              stepPayloads={stepPayloads}
-              onStepPayloadsChange={setStepPayloads}
-              onProgressHintChange={setWorkflowProgressHint}
-            />
           </TabsContent>
 
           {!isCreateMode ? (

@@ -23,6 +23,9 @@ const { prismaMock } = vi.hoisted(() => ({
     customer: {
       count: vi.fn(),
     },
+    product: {
+      findMany: vi.fn(),
+    },
   },
 }));
 
@@ -67,6 +70,7 @@ describe("reports service", () => {
       .mockResolvedValueOnce({ _sum: { products: 8 } });
     prismaMock.contract.count.mockResolvedValue(2);
     prismaMock.warranty.count.mockResolvedValue(4);
+    prismaMock.product.findMany.mockResolvedValue([]);
 
     const data = await getReportsService({ year: "2026" });
 
@@ -110,6 +114,7 @@ describe("reports service", () => {
       .mockResolvedValueOnce({ _sum: { products: 0 } });
     prismaMock.contract.count.mockResolvedValue(0);
     prismaMock.warranty.count.mockResolvedValue(0);
+    prismaMock.product.findMany.mockResolvedValue([]);
 
     const data = await getReportsService({ year: "2026" });
 

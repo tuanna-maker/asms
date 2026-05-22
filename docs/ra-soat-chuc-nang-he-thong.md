@@ -20,8 +20,10 @@ Mục đích: liệt kê **đã hoàn thiện / chỉ một phần / chưa khớ
 | Route | Màn | Dữ liệu chính | CRUD / thao tác | Trạng thái |
 |-------|-----|---------------|-----------------|------------|
 | `/login` | Đăng nhập | Auth JWT | Đăng nhập / refresh / đăng xuất | ✅ |
-| `/` | Dashboard CEO | Aggregated API (`useDashboardData`) | Xem đa tab, lọc năm, carousel | ⚠️ (chi tiết từng tab mục 4) |
-| `/hop-dong` | Hợp đồng | `GET/POST/PUT/DELETE /contracts` | Danh sách + tạo + sửa popup + xóa mềm | ⚠️ (chi tiết mục 3, 6) |
+| `/` | Dashboard CEO | Aggregated API (`useDashboardData`) | Xem đa tab, lọc năm/KH từ CRM, carousel | ⚠️ (mục 4 — cảnh báo rule-based) |
+| `/hop-dong` | Hợp đồng | `GET/POST/PUT/DELETE /contracts` | Danh sách + tạo + sửa (`customerId`, điều khoản) + xóa mềm | ⚠️ (tab chi tiết SP/tài liệu chỉ đọc — mục 3) |
+| `/phan-anh` | Phản ánh KH | `GET/POST/PUT/DELETE /customer-feedbacks` | CRUD + lọc; gắn HĐ/BH trên form | ✅ |
+| `/quy-trinh` | Quy trình | `/workflows` | Danh sách + editor bước + runtime trên phiếu | ✅ |
 | `/ban-giao` | Bàn giao | `GET /handovers`, training list | CRUD handover qua dialog | ✅ |
 | `/bao-hanh` | Bảo hành / SC | `GET /warranties`, customers/products options | Danh sách + tạo phiếu; chi tiết có cập nhật/xóa | ✅ |
 | `/vat-tu` | Vật tư | `GET/POST/PUT/DELETE /materials`, transfers API | Vật tư + điều chuyển + quét mã (UI) | ⚠️ (chi tiết dialog mục 5) |
@@ -33,7 +35,7 @@ Mục đích: liệt kê **đã hoàn thiện / chỉ một phần / chưa khớ
 | `/cong-viec` | Công việc | `/tasks` | Kanban/List/Lịch + CRUD task | ✅ (nhãn trạng thái UI lấy từ constants file) |
 | `/dao-tao` | Khóa đào tạo | `/training` | CRUD khóa, link chi tiết | ✅ |
 | `/dao-tao/:id` | Chi tiết đào tạo | Detail + trainee/session API | Học viên, lịch buổi học + CRUD | ✅ |
-| `/tai-lieu` | Tài liệu | `/documents` | Danh sách + tạo/sửa/xóa **metadata + URL** | ⚠️ (không upload file nhị phân qua multipart) |
+| `/tai-lieu` | Tài liệu | `/documents` | CRUD metadata + **upload multipart** (`POST /documents/upload`) | ✅ |
 | `/cai-dat` | Cài đặt | Users, prefs, định nghĩa | CRUD người dùng (theo RBAC), cấu hình | ✅ |
 
 Các đường dẫn không thuộc bảng trên chỉ có `*` → `NotFound`.
@@ -48,22 +50,20 @@ Các đường dẫn không thuộc bảng trên chỉ có `*` → `NotFound`.
 
 ---
 
-## 3. Màn Chi tiết hợp đồng (`ContractDetailDialog`) — 5 tab
+## 3. Màn Chi tiết hợp đồng (`ContractDetailDialog`) — 6 tab
 
 Component: `src/components/details/ContractDetailDialog.tsx`, dữ liệu chi tiết: `GET /api/v1/contracts/:id`.
 
 | Tab | Đọc dữ liệu thật | Ghi/Cập nhật trong tab | Trạng thái |
 |-----|-------------------|-------------------------|------------|
-| Thông tin chung | Một phần từ prop `contract` (danh sách); không load lại đủ mọi trường contract từ API detail | Nút **Chỉnh sửa** → popup `ContractEditDialog` → `PUT /contracts/:id` (qua `Contracts.tsx` handler) | ⚠️ |
-| Điều khoản chính | `terms` snapshot + `clauseIds` từ API | Tab Điều khoản: chọn từ danh mục (`clauseIds`); Cài đặt → Thuộc tính → HĐ quản lý mẫu & nhóm | ✅ |
-| Danh mục sản phẩm | `productsList` trong response detail | Không có thêm/sửa/xóa trong tab | ❌ (chỉ đọc) |
-| Tài liệu | `documents` trong detail (hoặc tương đương include) | Không CRUD trong tab; chỉ **Tải về** nếu có `fileUrl` | ❌ (chỉ đọc) |
-| Đào tạo & Huấn luyện | `trainingCourses` trong detail | Không CRUD trong tab | ❌ (chỉ đọc) |
+| Thông tin chung | API detail + **nhật ký** (`useAuditLogs`, entity=contract) | **Chỉnh sửa** → `ContractEditDialog` → `PUT` (có `customerId` qua `CustomerSearchSelect`) | ✅ |
+| Điều khoản | `terms` + `clauseIds` / `clauseItems` | Sửa qua dialog HĐ (picker + snapshot) | ✅ |
+| Danh mục sản phẩm | `productsList` | Xem + mở `ContractProductDetailDialog`; không CRUD gắn HĐ trong tab | ⚠️ (chỉ đọc / xem chi tiết SP) |
+| Tài liệu | `documents` trong detail | Tải về nếu có `fileUrl`; CRUD qua màn Tài liệu / sửa HĐ | ⚠️ (chỉ đọc trong tab) |
+| Phản ánh | `CustomerFeedbackSection` (readonly) | CRUD trên màn `/phan-anh` hoặc khi sửa HĐ | ✅ |
+| Bàn giao / Huấn luyện | `linkedHandover`, `linkedTraining` | Sửa qua tab BG/HL trong `ContractEditDialog` | ✅ |
 
-**Mục Thông tin chung — chỗ dễ lệch:**
-
-- ⚠️ “Lịch sử hoạt động” trong tab là **dựng theo tiến độ** (UI), không phải nhật ký thật từ API.
-- ⚠️ `ContractEditDialog` cho phép sửa tên khách hiển thị là **chuỗi**; **`handleSave` trên `Contracts.tsx` không gửi `customerId`** trong payload update — chỉnh sửa tên khách **có thể không được lưu** đúng nghiệp vụ (backend gắn khách qua FK).
+**Lưu ý:** Tab SP/tài liệu trong sheet chi tiết vẫn **không** thay thế luồng gắn SP/tài liệu đầy đủ trên form sửa HĐ hoặc module riêng.
 
 ---
 
@@ -73,16 +73,16 @@ Hook tổng hợp: `src/hooks/use-dashboard-data.ts` — gộp contracts, handov
 
 | Tab | Phần dùng API thật | Phần còn mock / cần lưu ý | Trạng thái |
 |-----|--------------------|---------------------------|------------|
-| Tổng quan (Overview) | Thống kê + bảng hợp đồng từ `liveContracts` | — | ✅ |
-| Khách hàng | Biểu đồ/ghi nhật ký từ `data.customerProducts`, `data.customerRevenue` | ⚠️ Cột/filter bảng vẫn giả định danh sách KH cố định trong code (Không đọc động từ API) | ⚠️ |
-| Doanh thu | Thẻ/chart `/ trend` thật | **Bảng “Chi tiết DT theo HĐ” đang bind `contractsData`** (`src/data/tableData.ts`) — **KHÔNG phải dữ liệu live** | ❌ (bảng widget) |
-| Dự án (Project) | Bảng hợp đồng / bàn giao / đào tạo live | — | ✅ |
-| Sản phẩm (Product) | Thẻ/thống kê aggregated | **Bảng “Danh sách SP” đang bind `productsData`** — mock | ❌ (bảng widget) |
-| Bảo hành (Warranty) | Widget Complaint/ghi nhật ký aggregated | **Bảng khiếu nại đang bind `complaintsData`** — mock | ❌ (bảng widget) |
+| Tổng quan (Overview) | Thống kê + bảng HĐ từ `liveContracts` | — | ✅ |
+| Khách hàng | Chart/tổng hợp từ `useDashboardData` / reports | Bảng tổng hợp KH gộp từ aggregate (không phải CRM 360°) | ⚠️ |
+| Doanh thu | Chart + **bảng HĐ từ `liveContracts`**; filter KH cột bảng theo tên KH thật | — | ✅ |
+| Dự án (Project) | Bảng HĐ / bàn giao / đào tạo live | — | ✅ |
+| Sản phẩm (Product) | Thẻ + **bảng SP từ `liveProducts`** | — | ✅ |
+| Bảo hành (Warranty) | Widget + **bảng từ `liveWarranties`** | — | ✅ |
 | Vật tư (Material) | Danh sách từ `liveMaterials` | — | ✅ |
-| Cảnh báo (Alerts) | Cảnh báo **tính từ các aggregate** của `DashboardData` | Không có API “alarm” riêng — chỉ rule trên chỉ số | ⚠️ |
+| Cảnh báo (Alerts) | Rule trên `DashboardData` (`dashboard-alerts`) | Không có API alarm riêng | ⚠️ |
 
-**Bộ lọc Dashboard:** danh sách “khách hàng” trong toolbar (`src/pages/Index.tsx`) là **mảng tĩnh** (qk1…), không lấy từ CRM — chỉ là filter UI chứ chưa chắc khớp dữ liệu thực sau này.
+**Bộ lọc Dashboard:** toolbar KH lấy từ `useCustomersList()` (`Index.tsx`), không còn mảng tĩnh qk1….
 
 ---
 
@@ -108,7 +108,7 @@ Hook tổng hợp: `src/hooks/use-dashboard-data.ts` — gộp contracts, handov
 | Danh sách | `GET /contracts` | ✅ |
 | Tạo | `POST /contracts` (có `customerId`, tiêu đề, dates, `terms`…) | ✅ |
 | Sửa từ popup danh sách | `PUT /contracts/:code` | ✅ |
-| Sửa từ chi tiết | Cùng handler `handleSave` | ⚠️ (xem mục 3 — `customerId`) |
+| Sửa từ chi tiết | `ContractEditDialog` → `PUT` (payload có `customerId`) | ✅ |
 | Xóa | `DELETE /contracts/:code` (soft delete) | ✅ |
 
 ---
@@ -118,25 +118,26 @@ Hook tổng hợp: `src/hooks/use-dashboard-data.ts` — gộp contracts, handov
 | Chức năng | Ghi chú | Trạng thái |
 |-----------|---------|------------|
 | CRUD metadata | `fileUrl`, `fileSize` là **chuỗi** gửi API | ✅ |
-| Upload file thật (multipart) | Không thấy flow upload binary trong hook `use-documents-api` | ❌ (nếu nghiệp vụ cần upload) |
+| Upload file (multipart) | `use-documents-api` → `POST /api/v1/documents/upload` | ✅ |
 
 ---
 
 ## 8. Các module backend tồn tại (đối chiếu nhanh)
 
-Các module có file `routes.ts` trong `backend/src/modules/`:  
-`auth`, `users`, `customers`, `contracts`, `handovers`, `products`, `warranties`, `materials`, `tasks`, `documents`, `reports`, `training`, `research-projects`.
+Các module có `route.ts` trong `backend/src/modules/` (28 module), gồm thêm so với bản cũ:  
+`workflows`, `workflow-documents`, `contract-clauses`, `customer-feedbacks`, `crm-activities`, `contacts`, `definitions`, `roles`, `role-permissions`, `audit-logs`, `notifications`, `notification-preferences`, `system-settings`, `customer-anniversaries`, `anniversary-subscriptions`, …
 
-→ Mọi module trên **đều có API**; trạng thái “hoàn thiện UI” phụ thuộc từng màn (bảng trên).
+→ Trạng thái “hoàn thiện UI” phụ thuộc từng màn (bảng mục 1).
 
 ---
 
-## 9. Việc nên làm tiếp (ưu tiên gắn với gap trên)
+## 9. Việc nên làm tiếp (ưu tiên gắn với gap / backlog cuộc họp)
 
-1. **Dashboard:** thay `contractsData` / `productsData` / `complaintsData` trong `RevenueTab`, `ProductTab`, `WarrantyTab` bằng dòng dữ liệu map từ `liveContracts`, `live` products/warranties hoặc từ `useDashboardData` (để không còn bảng mock).
-2. **Chi tiết hợp đồng:** thêm luồng CRUD sản phẩm gắn hợp đồng, tài liệu theo `contractId`, khóa đào tạo theo `contractId` — hoặc deep-link sang màn module tương ứng.
-3. **Sửa hợp đồng:** chọn khách qua `customerId` (Select) đồng bộ backend, tránh chỉnh tên text không lưu.
-4. **Tài liệu:** nếu cần upload file, bổ sung API + FE upload (hoặc ghi rõ chỉ nhập URL).
+1. **CRM 360°:** màn tổng quan KH (doanh thu, chi phí, lãi/lỗ, phản ánh tồn) — xem `docs/hop-bang-cong-viec-chi-tiet.md` (CRM-04).
+2. **Chi tiết HĐ:** CRUD gắn SP/tài liệu trực tiếp trong tab sheet (hoặc deep-link rõ ràng).
+3. **Workflow:** bắt buộc tài liệu trước phê duyệt bước (WF-06); nội dung bước chi tiết từ VTX (WF-10).
+4. **Nhắc hạn:** mở rộng rule theo loại HĐ + checkbox từng mốc (HD-03→HD-05) trên Cài đặt.
+5. **UAT:** chạy đầy đủ `docs/uat-checklist.md` theo từng role; giữ `pnpm test` 44/44 pass.
 
 ---
 
@@ -150,4 +151,4 @@ Các module có file `routes.ts` trong `backend/src/modules/`:
 
 ---
 
-*Tạo/cập nhật: rà soát theo snapshot mã nguồn workspace; khi merge nhánh khác cần chạy lại quét tương tự.*
+*Tạo/cập nhật: 21/05/2026 — đồng bộ sau sửa test reports, dashboard live data, migration `contract_clause_items`; khi merge nhánh khác cần chạy lại quét tương tự.*

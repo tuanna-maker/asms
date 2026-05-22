@@ -26,4 +26,7 @@ export const listCustomerFeedbacksQuerySchema = z.object({
   warrantyId: z.string().optional(),
   severity: severityEnum.optional(),
   status: statusEnum.optional(),
+  search: z.string().optional(),
+  feedbackFrom: z.coerce.date().optional(),
+  feedbackTo: z.coerce.date().optional(),
 });

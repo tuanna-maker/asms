@@ -1,40 +1,72 @@
 /**
- * Scheduler thông báo:
- *  - Chạy 1 lần khi server khởi động (sau 1 phút) và lặp mỗi 24h.
- *  - Mỗi lần quét 4 luật: hợp đồng sắp hết hạn, vật tư sắp hết, nhiệm vụ trễ, phiếu bảo hành chưa đóng.
- *  - Idempotent qua `Notification(userId, key, refType, refId)` unique constraint.
- *
- * Đây là lựa chọn không phụ thuộc package ngoài (thay cho `node-cron`).
- * Sau này có thể swap sang `node-cron` bằng cách giữ nguyên hàm `runNotificationScan`.
+ * Scheduler thông báo in-app:
+ *  - SLA HĐ thực hiện: quét mỗi N phút (mặc định 60).
+ *  - Nhắc lịch (HĐ hết hạn, vật tư, …): 1 lần/ngày theo notification_daily_run_hour.
  */
 import { prisma } from "../utils/prisma";
+import { runContractExecutionSlaScan } from "../modules/contracts/execution-sla";
 import { getSettingNumber } from "../modules/system-settings/service";
 import { createNotificationForUser, notifyByPreference } from "../modules/notifications/service";
 import { resolveContractDisplayStatus } from "../modules/contracts/display-status";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DAILY_CHECK_MS = 15 * 60 * 1000;
 
 let cronStarted = false;
+let lastDailyRunDateKey = "";
+
+function todayDateKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 export async function startNotificationCron() {
   if (cronStarted) return;
   cronStarted = true;
-  // Defer initial scan để khỏi cản trở khởi động server.
+
+  const runSlaLoop = async () => {
+    try {
+      const intervalMin = await getSettingNumber("notification_sla_scan_interval_minutes");
+      await runContractExecutionSlaScan();
+      return Math.max(5, intervalMin) * 60 * 1000;
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("[notify] SLA scan failed", e);
+      return 60 * 60 * 1000;
+    }
+  };
+
+  const scheduleSla = (delayMs: number) => {
+    setTimeout(() => {
+      void runSlaLoop().then((nextMs) => scheduleSla(nextMs));
+    }, delayMs);
+  };
+
   setTimeout(() => {
-    void runNotificationScan().catch((e) => {
-      // eslint-disable-next-line no-console
-      console.error("[notify] initial scan failed", e);
-    });
+    void runSlaLoop().then((nextMs) => scheduleSla(nextMs));
   }, 60 * 1000);
-  setInterval(() => {
-    void runNotificationScan().catch((e) => {
+
+  const tickDaily = async () => {
+    try {
+      const now = new Date();
+      const runHour = await getSettingNumber("notification_daily_run_hour");
+      const hour = now.getHours();
+      const todayKey = todayDateKey(now);
+      if (hour === runHour && lastDailyRunDateKey !== todayKey) {
+        lastDailyRunDateKey = todayKey;
+        await runDailyNotificationScan();
+      }
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.error("[notify] scan failed", e);
-    });
-  }, DAY_MS);
+      console.error("[notify] daily scan failed", e);
+    }
+  };
+
+  setTimeout(() => void tickDaily(), 90 * 1000);
+  setInterval(() => void tickDaily(), DAILY_CHECK_MS);
 }
 
-export async function runNotificationScan() {
+/** Quét nhắc lịch (không gồm SLA thực hiện HĐ — đã tách cron riêng). */
+export async function runDailyNotificationScan() {
   const now = new Date();
 
   const [
@@ -71,6 +103,11 @@ export async function runNotificationScan() {
   await scanTrainingUpcoming(now, trainingDays);
   await scanRepairScheduled(now, repairDays);
   await scanCustomerAnniversaries(now);
+}
+
+/** @deprecated Dùng runDailyNotificationScan; giữ alias cho script/dev. */
+export async function runNotificationScan() {
+  await runDailyNotificationScan();
 }
 
 async function scanContractExpiry(
@@ -159,11 +196,12 @@ async function scanTaskLate(now: Date, graceHours: number) {
   });
   for (const t of tasks) {
     if (!t.assigneeId) continue;
-    await notifyByPreference({
+    await createNotificationForUser({
+      userId: t.assigneeId,
       key: "task_late",
       title: `Nhiệm vụ ${t.code} trễ tiến độ`,
       message: t.title,
-      link: `/nhiem-vu`,
+      link: `/cong-viec`,
       refType: "task",
       refId: t.id,
     });
@@ -209,7 +247,7 @@ async function scanTrainingUpcoming(now: Date, days: number) {
       key: "training_upcoming",
       title: `Khoá đào tạo ${t.code} sắp bắt đầu`,
       message: `${t.title} — bắt đầu trong ${daysLeft} ngày.`,
-      link: `/huan-luyen`,
+      link: `/dao-tao`,
       refType: "training_course",
       refId: t.id,
     });

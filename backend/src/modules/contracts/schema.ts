@@ -15,7 +15,18 @@ export const createContractSchema = z.object({
   stepPayloads: z.record(z.string().min(1), z.record(z.string(), z.unknown())).optional(),
   terms: z.string().optional().nullable(),
   clauseIds: z.array(z.string().min(1)).optional(),
+  clauseItems: z
+    .array(
+      z.object({
+        clauseId: z.string().min(1),
+        content: z.string(),
+      }),
+    )
+    .optional(),
   contractTypeCode: z.string().min(1).max(256).optional().nullable(),
+  statusSlaHours: z.record(z.string().min(1), z.number().int().min(0)).optional(),
+  /** SLA thực hiện (giờ) — quá hạn từ lần cập nhật cuối sẽ tự chuyển chậm tiến độ */
+  slaHours: z.number().int().min(0).nullable().optional(),
 });
 
 export const updateContractSchema = createContractSchema

@@ -61,6 +61,7 @@ export const PERMISSION_MODULE_DEFS: ReadonlyArray<{
       { key: "vat-tu.dieu-chuyen", label: "Điều chuyển" },
     ],
   },
+  { key: "phan-anh", label: "Phản ánh", paths: ["/phan-anh"] },
   {
     key: "khach-hang",
     label: "CRM / Khách hàng",

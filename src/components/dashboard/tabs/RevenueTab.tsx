@@ -15,24 +15,37 @@ interface RevenueTabProps {
   contracts?: ContractRow[];
 }
 
-const revenueColumns: Column<ContractRow>[] = [
-  { key: "id", label: "Mã HĐ", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
-  { key: "name", label: "Hợp đồng", sortable: true, hideOnMobile: true },
-  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: [
-    { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
-    { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
-    { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
-  ]},
-  { key: "value", label: "Giá trị (tỷ)", sortable: true, sortValue: (r) => r.value, render: (r) => <span className="font-semibold text-card-foreground">{r.value.toLocaleString()}</span> },
-  { key: "endDate", label: "Thời hạn", hideOnMobile: true },
-  { key: "status", label: "Trạng thái", filterable: true, filterOptions: [
-    { value: "active", label: "Đang TH" }, { value: "completed", label: "Hoàn thành" }, { value: "late", label: "Chậm" },
-  ], render: (r) => {
-    const s = r.status === "completed" ? "success" : r.status === "late" ? "destructive" : "info";
-    const l = r.status === "completed" ? "Hoàn thành" : r.status === "late" ? "Chậm" : "Đang TH";
-    return <span className={`text-xs font-medium ${s === "success" ? "text-success" : s === "destructive" ? "text-destructive" : "text-info"}`}>{l}</span>;
-  }},
-];
+function buildRevenueColumns(contracts: ContractRow[]): Column<ContractRow>[] {
+  const customerNames = [...new Set(contracts.map((r) => r.customer).filter((n) => n && n !== "—"))].sort();
+  return [
+    { key: "id", label: "Mã HĐ", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
+    { key: "name", label: "Hợp đồng", sortable: true, hideOnMobile: true },
+    {
+      key: "customer",
+      label: "Khách hàng",
+      sortable: true,
+      filterable: customerNames.length > 0,
+      filterOptions: customerNames.map((name) => ({ value: name, label: name })),
+    },
+    { key: "value", label: "Giá trị (tỷ)", sortable: true, sortValue: (r) => r.value, render: (r) => <span className="font-semibold text-card-foreground">{r.value.toLocaleString()}</span> },
+    { key: "endDate", label: "Thời hạn", hideOnMobile: true },
+    {
+      key: "status",
+      label: "Trạng thái",
+      filterable: true,
+      filterOptions: [
+        { value: "active", label: "Đang TH" },
+        { value: "completed", label: "Hoàn thành" },
+        { value: "late", label: "Chậm" },
+      ],
+      render: (r) => {
+        const s = r.status === "completed" ? "success" : r.status === "late" ? "destructive" : "info";
+        const l = r.status === "completed" ? "Hoàn thành" : r.status === "late" ? "Chậm" : "Đang TH";
+        return <span className={`text-xs font-medium ${s === "success" ? "text-success" : s === "destructive" ? "text-destructive" : "text-info"}`}>{l}</span>;
+      },
+    },
+  ];
+}
 
 const widgetTemplates = [
   { id: "stats", title: "Thống kê DT", description: "4 thẻ thống kê", icon: DollarSign, category: "Tổng hợp", defaultSize: { w: 12, h: 1 } },
@@ -50,6 +63,8 @@ const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
   const avgRevenue = data.customerRevenue.length > 0 ? Math.round(totalRevenue / data.customerRevenue.length) : 0;
   const maxRevenue = data.customerRevenue.length > 0 ? Math.max(...data.customerRevenue.map(c => c.revenue)) : 0;
 
+  const revenueColumns = useMemo(() => buildRevenueColumns(contracts), [contracts]);
+
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
@@ -65,7 +80,7 @@ const RevenueTab = ({ data, contracts = [] }: RevenueTabProps) => {
     "table": (
       <DashboardTable title="Chi tiết DT theo HĐ" columns={revenueColumns} data={contracts} compact />
     ),
-  }), [contracts, data]);
+  }), [contracts, data, revenueColumns]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

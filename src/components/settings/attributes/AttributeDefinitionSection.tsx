@@ -98,8 +98,21 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const [createOpen, setCreateOpen] = useState(false);
   const [editRow, setEditRow] = useState<DefinitionItem | null>(null);
   const [deleteRow, setDeleteRow] = useState<DefinitionItem | null>(null);
-  const [createForm, setCreateForm] = useState({ code: "", label: "", sortOrder: 0, isActive: true });
-  const [editForm, setEditForm] = useState({ code: "", label: "", sortOrder: 0, isActive: true });
+  const showSlaHours = definitionCategory === "contract_status";
+  const [createForm, setCreateForm] = useState({
+    code: "",
+    label: "",
+    sortOrder: 0,
+    isActive: true,
+    slaHours: "" as string,
+  });
+  const [editForm, setEditForm] = useState({
+    code: "",
+    label: "",
+    sortOrder: 0,
+    isActive: true,
+    slaHours: "" as string,
+  });
 
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
   const [hasDragChanges, setHasDragChanges] = useState(false);
@@ -138,6 +151,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const currentPage = Math.min(page, totalPages);
   const isPaginatedView = totalPages > 1 || statusFilter !== "all" || search.trim().length > 0;
   const allowDrag = canWrite && !isPaginatedView;
+  const tableColSpan = (canWrite ? 8 : 7) + (showSlaHours ? 1 : 0) + (allowDrag ? 1 : 0);
 
   const pageRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -171,12 +185,21 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     }
   };
 
+  const parseSlaHoursInput = (raw: string): number | null | undefined => {
+    const t = raw.trim();
+    if (!t) return showSlaHours ? null : undefined;
+    const n = Number(t);
+    if (!Number.isFinite(n) || n < 0) return undefined;
+    return Math.floor(n);
+  };
+
   const openCreate = () => {
     setCreateForm({
       code: "",
       label: "",
       sortOrder: definitions.length ? Math.max(...definitions.map((r) => r.sortOrder)) + 10 : 0,
       isActive: true,
+      slaHours: "",
     });
     setCreateOpen(true);
   };
@@ -187,6 +210,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       label: item.label,
       sortOrder: item.sortOrder,
       isActive: item.isActive,
+      slaHours: item.slaHours != null ? String(item.slaHours) : "",
     });
     setEditRow(item);
   };
@@ -203,12 +227,18 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       return;
     }
     try {
+      const slaParsed = parseSlaHoursInput(createForm.slaHours);
+      if (showSlaHours && createForm.slaHours.trim() && slaParsed === undefined) {
+        toast.error("SLA mặc định phải là số nguyên không âm (giờ).");
+        return;
+      }
       await createDef.mutateAsync({
         category: definitionCategory,
         code,
         label,
         sortOrder: Number.isFinite(createForm.sortOrder) ? createForm.sortOrder : 0,
         isActive: createForm.isActive,
+        ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
       });
       toast.success("Đã thêm mục");
       setCreateOpen(false);
@@ -230,6 +260,11 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       return;
     }
     try {
+      const slaParsed = parseSlaHoursInput(editForm.slaHours);
+      if (showSlaHours && editForm.slaHours.trim() && slaParsed === undefined) {
+        toast.error("SLA mặc định phải là số nguyên không âm (giờ).");
+        return;
+      }
       await updateDef.mutateAsync({
         id: editRow.id,
         payload: {
@@ -237,6 +272,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
           label,
           sortOrder: Number.isFinite(editForm.sortOrder) ? editForm.sortOrder : 0,
           isActive: editForm.isActive,
+          ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
         },
       });
       toast.success("Đã cập nhật");
@@ -356,6 +392,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
             <TableHead className="w-14">STT</TableHead>
             <TableHead className="w-40">Mã</TableHead>
             <TableHead>Tên</TableHead>
+            {showSlaHours ? <TableHead className="w-28">SLA (giờ)</TableHead> : null}
             <TableHead>Người sửa</TableHead>
             <TableHead>Ngày sửa</TableHead>
             <TableHead>Trạng thái</TableHead>
@@ -365,14 +402,14 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={(canWrite ? 8 : 7) + (allowDrag ? 1 : 0)} className="py-8 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
                 <Loader2 className="mr-2 inline h-5 w-5 animate-spin align-middle" />
                 Đang tải…
               </TableCell>
             </TableRow>
           ) : pageRows.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={(canWrite ? 8 : 7) + (allowDrag ? 1 : 0)} className="py-8 text-center text-sm text-muted-foreground">
+              <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
                 Không có dữ liệu phù hợp.
               </TableCell>
             </TableRow>
@@ -385,6 +422,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                     row={row}
                     index={(currentPage - 1) * pageSize + index}
                     canWrite={canWrite}
+                    showSlaHours={showSlaHours}
                     onEdit={() => {
                       const item = definitions.find((d) => d.id === row.id);
                       if (item) openEdit(item);
@@ -404,6 +442,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 row={row}
                 index={(currentPage - 1) * pageSize + index}
                 canWrite={canWrite}
+                showSlaHours={showSlaHours}
                 onEdit={() => {
                   const item = definitions.find((d) => d.id === row.id);
                   if (item) openEdit(item);
@@ -507,6 +546,19 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 onChange={(e) => setCreateForm((s) => ({ ...s, sortOrder: Number(e.target.value) }))}
               />
             </div>
+            {showSlaHours ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="attr-def-sla-create">SLA mặc định (giờ)</Label>
+                <Input
+                  id="attr-def-sla-create"
+                  type="number"
+                  min={0}
+                  placeholder="Để trống nếu không áp dụng"
+                  value={createForm.slaHours}
+                  onChange={(e) => setCreateForm((s) => ({ ...s, slaHours: e.target.value }))}
+                />
+              </div>
+            ) : null}
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
               <Label htmlFor="attr-def-active-create">Hoạt động</Label>
               <Switch
@@ -559,6 +611,19 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 onChange={(e) => setEditForm((s) => ({ ...s, sortOrder: Number(e.target.value) }))}
               />
             </div>
+            {showSlaHours ? (
+              <div className="space-y-1.5">
+                <Label htmlFor="attr-def-sla-edit">SLA mặc định (giờ)</Label>
+                <Input
+                  id="attr-def-sla-edit"
+                  type="number"
+                  min={0}
+                  placeholder="Để trống nếu không áp dụng"
+                  value={editForm.slaHours}
+                  onChange={(e) => setEditForm((s) => ({ ...s, slaHours: e.target.value }))}
+                />
+              </div>
+            ) : null}
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
               <Label htmlFor="attr-def-active-edit">Hoạt động</Label>
               <Switch
@@ -598,16 +663,33 @@ type RowProps = {
   onDelete: () => void;
 };
 
-function StaticAttributeRow({ row, index, canWrite, onEdit, onDelete }: RowProps) {
-  return <AttributeTableRow row={row} index={index} canWrite={canWrite} onEdit={onEdit} onDelete={onDelete} />;
+function StaticAttributeRow({
+  row,
+  index,
+  canWrite,
+  onEdit,
+  onDelete,
+  showSlaHours,
+}: RowProps & { showSlaHours: boolean }) {
+  return (
+    <AttributeTableRow
+      row={row}
+      index={index}
+      canWrite={canWrite}
+      onEdit={onEdit}
+      onDelete={onDelete}
+      showSlaHours={showSlaHours}
+    />
+  );
 }
 
-function SortableAttributeRow(props: RowProps) {
+function SortableAttributeRow(props: RowProps & { showSlaHours: boolean }) {
   const { row } = props;
   const sortable = useSortable({ id: row.id });
   return (
     <AttributeTableRow
       {...props}
+      showSlaHours={props.showSlaHours}
       dragHandleProps={{
         ref: sortable.setNodeRef,
         style: {
@@ -635,8 +717,9 @@ function AttributeTableRow({
   canWrite,
   onEdit,
   onDelete,
+  showSlaHours,
   dragHandleProps,
-}: RowProps & { dragHandleProps?: DragHandleProps }) {
+}: RowProps & { showSlaHours?: boolean; dragHandleProps?: DragHandleProps }) {
   return (
     <TableRow ref={dragHandleProps?.ref ?? undefined} style={dragHandleProps?.style}>
       {dragHandleProps ? (
@@ -649,6 +732,11 @@ function AttributeTableRow({
       <TableCell>{index + 1}</TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{row.code}</TableCell>
       <TableCell className="font-medium">{row.name}</TableCell>
+      {showSlaHours ? (
+        <TableCell className="text-muted-foreground">
+          {row.slaHours != null ? `${row.slaHours}h` : "—"}
+        </TableCell>
+      ) : null}
       <TableCell>{row.updatedBy || "—"}</TableCell>
       <TableCell>{formatDate(row.updatedAt)}</TableCell>
       <TableCell>

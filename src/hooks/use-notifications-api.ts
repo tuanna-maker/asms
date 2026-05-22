@@ -16,20 +16,32 @@ export type NotificationItem = {
   createdAt: string;
 };
 
-export function useNotifications(enabled = true, scope: "all" | "unread" = "all") {
+const DEFAULT_POLL_MS = 60_000;
+const FAST_POLL_MS = 15_000;
+
+export function useNotifications(
+  enabled = true,
+  scope: "all" | "unread" = "all",
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: qk.notifications.list(scope),
     enabled,
     queryFn: async () => {
       const params = scope === "unread" ? { unread: "1" } : {};
-      const res = await api.get<ApiSuccess<NotificationItem[]>>("/api/v1/notifications", { params });
+      const res = await api.get<ApiSuccess<NotificationItem[]>>("/api/v1/notifications", {
+        params: { ...params, limit: 50 },
+      });
       return res.data.data ?? [];
     },
-    refetchInterval: 60_000,
+    refetchInterval: options?.refetchInterval ?? DEFAULT_POLL_MS,
   });
 }
 
-export function useUnreadNotificationsCount(enabled = true) {
+export function useUnreadNotificationsCount(
+  enabled = true,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: qk.notifications.unreadCount,
     enabled,
@@ -37,9 +49,11 @@ export function useUnreadNotificationsCount(enabled = true) {
       const res = await api.get<ApiSuccess<{ count: number }>>("/api/v1/notifications/unread-count");
       return res.data.data?.count ?? 0;
     },
-    refetchInterval: 60_000,
+    refetchInterval: options?.refetchInterval ?? DEFAULT_POLL_MS,
   });
 }
+
+export { DEFAULT_POLL_MS, FAST_POLL_MS };
 
 export function useMarkNotificationRead() {
   const qc = useQueryClient();

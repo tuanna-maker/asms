@@ -814,7 +814,18 @@ export async function seedDemoBusinessData() {
   }
 
   // ── Thông báo mặc định cho admin ────────────────────────────
-  const prefKeys = ["contract_expiry", "new_ticket", "task_late", "material_low"] as const;
+  const prefKeys = [
+    "contract_expiry",
+    "contract_execution_sla",
+    "new_ticket",
+    "feedback_new",
+    "task_late",
+    "material_low",
+    "warranty_expiry",
+    "training_upcoming",
+    "repair_scheduled",
+    "customer_anniversary",
+  ] as const;
   for (const key of prefKeys) {
     await prisma.userNotificationPreference.upsert({
       where: { userId_key: { userId: admin.id, key } },

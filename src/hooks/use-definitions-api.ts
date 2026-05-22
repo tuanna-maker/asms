@@ -13,6 +13,7 @@ export type DefinitionItem = {
   sortOrder: number;
   isActive: boolean;
   isSystem: boolean;
+  slaHours?: number | null;
   createdAt: string;
   updatedAt: string;
   createdBy: DefinitionPersonRef;
@@ -25,9 +26,12 @@ export type CreateDefinitionPayload = {
   label: string;
   sortOrder?: number;
   isActive?: boolean;
+  slaHours?: number | null;
 };
 
-export type UpdateDefinitionPayload = Partial<Pick<CreateDefinitionPayload, "code" | "label" | "sortOrder" | "isActive">>;
+export type UpdateDefinitionPayload = Partial<
+  Pick<CreateDefinitionPayload, "code" | "label" | "sortOrder" | "isActive"> & { slaHours?: number | null }
+>;
 
 export type DefinitionUsage = {
   id: string;

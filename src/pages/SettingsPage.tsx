@@ -28,6 +28,8 @@ import { PermissionsTab } from "@/components/settings/PermissionsTab";
 import { ATTRIBUTE_SETTINGS_BASE_PATH } from "@/lib/attribute-settings-config";
 import { useCreateUser, useDeleteUser, useUpdateUser, useUsersList, type UserListItem } from "@/hooks/use-users-api";
 import {
+  ALL_NOTIFICATION_PREF_KEYS,
+  NOTIFICATION_PREF_LABELS,
   useNotificationPreferences,
   useUpdateNotificationPreferences,
   type NotificationPrefKey,
@@ -87,13 +89,6 @@ function errMessage(e: unknown) {
   return "Có lỗi xảy ra";
 }
 
-const NOTIFICATION_ROWS: Array<{ key: NotificationPrefKey; label: string; desc: string }> = [
-  { key: "contract_expiry", label: "Hợp đồng sắp hết hạn", desc: "Thông báo trước khi hết hạn (theo cấu hình máy chủ)" },
-  { key: "new_ticket", label: "Ticket / yêu cầu mới", desc: "Khi có phiếu yêu cầu mới" },
-  { key: "task_late", label: "Chậm tiến độ", desc: "Khi nhiệm vụ quá hạn" },
-  { key: "material_low", label: "Vật tư sắp hết", desc: "Khi tồn kho xuống dưới ngưỡng" },
-];
-
 function NotificationPrefsPanel({ enabled }: { enabled: boolean }) {
   const { data: prefs = [], isLoading, isError } = useNotificationPreferences(enabled);
   const updatePrefs = useUpdateNotificationPreferences();
@@ -131,9 +126,9 @@ function NotificationPrefsPanel({ enabled }: { enabled: boolean }) {
   const toggle = async (key: NotificationPrefKey, nextEnabled: boolean) => {
     const next = { ...local, [key]: nextEnabled };
     setLocal(next);
-    const merged: Array<{ key: NotificationPrefKey; enabled: boolean }> = NOTIFICATION_ROWS.map((row) => ({
-      key: row.key,
-      enabled: next[row.key] ?? true,
+    const merged: Array<{ key: NotificationPrefKey; enabled: boolean }> = ALL_NOTIFICATION_PREF_KEYS.map((key) => ({
+      key,
+      enabled: next[key] ?? true,
     }));
     try {
       await updatePrefs.mutateAsync(merged);
@@ -146,19 +141,22 @@ function NotificationPrefsPanel({ enabled }: { enabled: boolean }) {
   return (
     <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50 space-y-4">
       <h3 className="font-semibold text-card-foreground">Cài đặt thông báo</h3>
-      {NOTIFICATION_ROWS.map((n) => (
-        <div key={n.key} className="flex items-center justify-between rounded-lg bg-secondary/30 p-4 gap-4">
-          <div className="min-w-0">
-            <p className="font-medium text-card-foreground">{n.label}</p>
-            <p className="text-sm text-muted-foreground">{n.desc}</p>
+      {ALL_NOTIFICATION_PREF_KEYS.map((key) => {
+        const meta = NOTIFICATION_PREF_LABELS[key];
+        return (
+          <div key={key} className="flex items-center justify-between rounded-lg bg-secondary/30 p-4 gap-4">
+            <div className="min-w-0">
+              <p className="font-medium text-card-foreground">{meta.label}</p>
+              <p className="text-sm text-muted-foreground">{meta.desc}</p>
+            </div>
+            <Switch
+              checked={local[key] ?? true}
+              onCheckedChange={(c) => void toggle(key, c)}
+              disabled={updatePrefs.isPending}
+            />
           </div>
-          <Switch
-            checked={local[n.key] ?? true}
-            onCheckedChange={(c) => void toggle(n.key, c)}
-            disabled={updatePrefs.isPending}
-          />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

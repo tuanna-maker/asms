@@ -96,6 +96,8 @@ const groupSelect = {
   },
 } satisfies Prisma.ContractClauseGroupSelect;
 
+type GroupSelectRow = Prisma.ContractClauseGroupGetPayload<{ select: typeof groupSelect }>;
+
 function toClauseDTO(row: ClauseRow): ClauseDTO {
   return {
     id: row.id,
@@ -112,7 +114,7 @@ function toClauseDTO(row: ClauseRow): ClauseDTO {
   };
 }
 
-function toGroupDTO(row: ContractClauseGroup & { members: GroupMemberRow[]; createdBy: UserMeta; updatedBy: UserMeta }): ClauseGroupDTO {
+function toGroupDTO(row: GroupSelectRow): ClauseGroupDTO {
   return {
     id: row.id,
     code: row.code,
@@ -169,7 +171,7 @@ export async function createClauseService(input: {
     data: {
       code,
       title: input.title.trim(),
-      content: input.content.trim(),
+      content: (input.content ?? "").trim(),
       sortOrder: input.sortOrder ?? 0,
       ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
       ...(input.actorId ? { createdById: input.actorId, updatedById: input.actorId } : {}),
@@ -263,7 +265,7 @@ export async function listClauseGroupsService(includeInactive: boolean): Promise
     orderBy: [{ sortOrder: "asc" }, { label: "asc" }],
     select: groupSelect,
   });
-  return rows.map((r) => toGroupDTO(r as Parameters<typeof toGroupDTO>[0]));
+  return rows.map(toGroupDTO);
 }
 
 export async function createClauseGroupService(input: {
@@ -287,7 +289,7 @@ export async function createClauseGroupService(input: {
     },
     select: groupSelect,
   });
-  return toGroupDTO(row as Parameters<typeof toGroupDTO>[0]);
+  return toGroupDTO(row);
 }
 
 export async function updateClauseGroupService(
@@ -322,7 +324,7 @@ export async function updateClauseGroupService(
     },
     select: groupSelect,
   });
-  return toGroupDTO(updated as Parameters<typeof toGroupDTO>[0]);
+  return toGroupDTO(updated);
 }
 
 export async function softDeleteClauseGroupService(id: string): Promise<{ id: string }> {
@@ -392,5 +394,5 @@ export async function setClauseGroupMembersService(
     select: groupSelect,
   });
   if (!row) throw new HttpError(404, "Không tìm thấy nhóm");
-  return toGroupDTO(row as Parameters<typeof toGroupDTO>[0]);
+  return toGroupDTO(row);
 }

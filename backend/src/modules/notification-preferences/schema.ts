@@ -2,7 +2,9 @@ import { z } from "zod";
 
 export const notificationPrefKeyEnum = z.enum([
   "contract_expiry",
+  "contract_execution_sla",
   "new_ticket",
+  "feedback_new",
   "task_late",
   "material_low",
   "warranty_expiry",

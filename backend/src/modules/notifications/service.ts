@@ -1,4 +1,5 @@
 import { HttpError } from "../../lib/errors/HttpError";
+import { resolveRecipientUserIds } from "../notification-preferences/service";
 import { prisma } from "../../utils/prisma";
 
 export type NotificationItem = {
@@ -105,11 +106,8 @@ export async function notifyByPreference(input: {
   refType?: string | null;
   refId?: string | null;
 }): Promise<void> {
-  const prefs = await prisma.userNotificationPreference.findMany({
-    where: { key: input.key, enabled: true, user: { deletedAt: null } },
-    select: { userId: true },
-  });
-  for (const p of prefs) {
-    await createNotificationForUser({ ...input, userId: p.userId });
+  const userIds = await resolveRecipientUserIds(input.key);
+  for (const userId of userIds) {
+    await createNotificationForUser({ ...input, userId });
   }
 }

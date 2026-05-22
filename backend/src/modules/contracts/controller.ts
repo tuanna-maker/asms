@@ -85,6 +85,8 @@ export async function createContractController(req: Request, res: Response) {
   if (payload.workflowId === undefined) delete input.workflowId;
   if (payload.stepPayloads === undefined) delete input.stepPayloads;
   if (payload.progress === undefined) delete input.progress;
+  if (payload.statusSlaHours === undefined) delete input.statusSlaHours;
+  if (payload.slaHours === undefined) delete input.slaHours;
 
   const data = await createContractService(input as Parameters<typeof createContractService>[0]);
   await writeAudit(req, {

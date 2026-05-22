@@ -9,19 +9,25 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, Download, Edit, MessageSquareWarning, GitBranch,
+  Info, ListChecks, Boxes, Files, Download, Edit, MessageSquareWarning,
 } from "lucide-react";
-import { ContractWorkflowSection } from "@/components/contracts/ContractWorkflowSection";
-import type { ContractStepPayloadRecord } from "@/lib/contract-step-payload";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import ContractEditDialog from "./ContractEditDialog";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
-import { resolveContractDisplayStatus } from "@/lib/contract-display-status";
 import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useContractDetail } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
+import type { DisplayContractStatus } from "@/lib/contract-display-status";
+import {
+  formatSlaDeadline,
+  isContractExecutionSlaOverdue,
+} from "@/lib/contract-execution-sla";
+import {
+  normalizeClauseEntriesFromDetail,
+  type ContractClauseEntry,
+} from "@/lib/contract-clause-items";
 import type { ProductSpec } from "@/hooks/use-products-api";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -36,6 +42,8 @@ type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number;
   startDate: string; endDate: string; warrantyEnd: string; status: string; progress: number;
   terms?: string | null;
+  clauseIds?: string[];
+  clauseItems?: ContractClauseEntry[];
   contractTypeCode?: string | null;
 };
 
@@ -86,16 +94,11 @@ type ContractDetailData = {
     startDate?: string;
     endDate?: string;
   } | null;
-  workflow?: {
-    workflowId: string;
-    workflowName: string;
-    currentStepIndex: number;
-    totalSteps: number;
-    currentStepName?: string | null;
-    steps: Array<{ id: string; order: number; name: string }>;
-  } | null;
-  workflowId?: string | null;
-  stepPayloads?: ContractStepPayloadRecord;
+  displayStatus?: string;
+  slaHours?: number | null;
+  updatedAt?: string;
+  clauseItems?: ContractClauseEntry[];
+  clauseIds?: string[];
 };
 
 function formatDate(value: string | null | undefined): string {
@@ -117,9 +120,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
   const [editing, setEditing] = useState(false);
   const [editTab, setEditTab] = useState("info");
   const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
-  const [viewWorkflowId, setViewWorkflowId] = useState("");
-  const [viewStepPayloads, setViewStepPayloads] = useState<ContractStepPayloadRecord>({});
-
   const { data: detailData, isLoading: detailLoading } = useContractDetail(open ? contract?.id ?? null : null);
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
   const detail = detailData as ContractDetailData | null;
@@ -128,12 +128,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
       ? detail.id
       : contract?.dbId ?? contract?.id ?? null;
   const feedbackCustomerId = detail?.customer?.id ?? null;
-
-  useEffect(() => {
-    if (!detail) return;
-    setViewWorkflowId(detail.workflow?.workflowId ?? detail.workflowId ?? "");
-    if (detail.stepPayloads) setViewStepPayloads(detail.stepPayloads);
-  }, [detail?.id, detail?.workflow, detail?.workflowId, detail?.stepPayloads]);
 
   const { data: contractAudit } = useAuditLogs(
     { entity: "contract", entityId: contractDbId ?? "", pageSize: 20 },
@@ -158,15 +152,30 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
     setEditing(true);
   };
 
-  if (!contract) return null;
-  const displayStatus =
-    (detail as { displayStatus?: string } | null)?.displayStatus ??
-    resolveContractDisplayStatus({
-      status: contract.status,
-      startDate: contract.startDate,
-      endDate: contract.endDate,
-    });
+  const displayStatus = (
+    detail?.displayStatus ?? contract?.status ?? "draft"
+  ) as DisplayContractStatus;
   const cfg = statusConfig[displayStatus] || statusConfig.active;
+
+  const slaHours = detail?.slaHours ?? null;
+  const slaOverdue = useMemo(() => {
+    if (slaHours == null || slaHours <= 0 || !detail?.updatedAt) return false;
+    return isContractExecutionSlaOverdue({
+      status: displayStatus,
+      slaHours,
+      updatedAt: detail.updatedAt,
+    });
+  }, [slaHours, detail?.updatedAt, displayStatus]);
+
+  const clauseDisplayEntries = useMemo(() => {
+    if (!contract) return [];
+    return normalizeClauseEntriesFromDetail({
+      clauseItems: detail?.clauseItems ?? contract.clauseItems,
+      clauseIds: detail?.clauseIds ?? contract.clauseIds,
+    });
+  }, [contract, detail?.clauseItems, detail?.clauseIds]);
+
+  if (!contract) return null;
   const termsText = (detail?.terms ?? contract.terms ?? "").trim();
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -191,31 +200,34 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
               <TabTrigger value="terms" icon={<ListChecks className="h-4 w-4" />} label="Điều khoản chính" />
               <TabTrigger value="products" icon={<Boxes className="h-4 w-4" />} label="Danh mục sản phẩm" />
               <TabTrigger value="docs" icon={<Files className="h-4 w-4" />} label="Tài liệu" />
-              <TabTrigger value="workflow" icon={<GitBranch className="h-4 w-4" />} label="Quy trình" />
               <TabTrigger value="feedback" icon={<MessageSquareWarning className="h-4 w-4" />} label="Phản ánh" />
             </TabsList>
           </div>
 
           <TabsContent value="info" className="flex-1 overflow-y-auto p-6 space-y-6 mt-0">
-            <div className="flex items-center justify-between">
-              <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
-              <div className="text-right">
-                <span className="text-sm font-medium text-muted-foreground">
-                  Tiến độ{detail?.workflow ? " (theo quy trình)" : ""}: {contract.progress}%
-                </span>
-                {detail?.workflow ? (
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Bước {detail.workflow.currentStepIndex}/{detail.workflow.totalSteps}
-                    {detail.workflow.currentStepName ? ` · ${detail.workflow.currentStepName}` : ""}
-                  </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant={cfg.variant} className="text-sm px-3 py-1">{cfg.label}</Badge>
+                {slaHours != null && slaHours > 0 ? (
+                  <span className="text-sm text-muted-foreground">
+                    SLA: {slaHours} giờ
+                  </span>
                 ) : null}
               </div>
+              <span className="text-sm font-medium text-muted-foreground">
+                Tiến độ: {contract.progress}%
+              </span>
             </div>
             <div className="h-3 w-full rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${contract.progress}%` }} />
             </div>
-
-            <Separator />
+            {slaHours != null && slaHours > 0 && detail?.updatedAt ? (
+              <p className={`text-xs ${slaOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}>
+                {slaOverdue
+                  ? "Đã quá SLA kể từ lần cập nhật cuối."
+                  : `Hạn SLA: ${formatSlaDeadline(detail.updatedAt, slaHours)} (tính từ lần cập nhật cuối).`}
+              </p>
+            ) : null}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoItem icon={<Users className="h-4 w-4" />} label="Khách hàng" value={contract.customer} />
@@ -256,8 +268,32 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
           </TabsContent>
 
           <TabsContent value="terms" className="flex-1 overflow-y-auto p-6 space-y-4 mt-0">
-            {detailLoading && !termsText ? (
+            {detailLoading && clauseDisplayEntries.length === 0 && !termsText ? (
               <div className="text-sm text-muted-foreground">Đang tải điều khoản hợp đồng...</div>
+            ) : clauseDisplayEntries.length > 0 ? (
+              <div className="space-y-4">
+                {clauseDisplayEntries.map((entry) => {
+                  const title =
+                    entry.title ??
+                    resolveDefinitionLabel(contractStatusOptions, entry.clauseId) ??
+                    entry.clauseId;
+                  return (
+                    <div
+                      key={entry.clauseId}
+                      className="rounded-lg border border-border/60 bg-card p-4 space-y-2"
+                    >
+                      <h4 className="text-sm font-semibold text-card-foreground">{title}</h4>
+                      {entry.content.trim() ? (
+                        <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">
+                          {entry.content}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">Chưa nhập nội dung.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : termsText ? (
               <div className="rounded-lg border border-border/60 bg-card p-4">
                 <p className="text-sm text-card-foreground whitespace-pre-wrap leading-relaxed">{termsText}</p>
@@ -348,28 +384,6 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
                 ))}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="workflow" className="flex-1 overflow-y-auto p-6 mt-0 flex flex-col min-h-0">
-            <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
-              <p className="text-sm text-muted-foreground">
-                Quy trình tổng hợp — tiến độ theo số bước đã hoàn thành.
-              </p>
-              <Button variant="outline" size="sm" onClick={() => openEdit("workflow")}>
-                <Edit className="h-4 w-4" /> Chỉnh sửa
-              </div>
-            <ContractWorkflowSection
-              open={open}
-              contractDbId={contractDbId}
-              isCreateMode={false}
-              detailWorkflow={detail?.workflow ?? null}
-              detailStepPayloads={detail?.stepPayloads}
-              detailWorkflowId={detail?.workflowId ?? detail?.workflow?.workflowId ?? null}
-              selectedWorkflowId={viewWorkflowId}
-              onSelectedWorkflowIdChange={setViewWorkflowId}
-              stepPayloads={viewStepPayloads}
-              onStepPayloadsChange={setViewStepPayloads}
-            />
           </TabsContent>
 
           <TabsContent value="feedback" className="flex-1 overflow-y-auto p-6 mt-0">

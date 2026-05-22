@@ -27,11 +27,8 @@ import { useAuth } from "@/hooks/use-auth";
 import {
   useCreateProduct,
   useDeleteProduct,
-  useDeleteProductBom,
   useProductsList,
   useUpdateProduct,
-  useUpdateProductBom,
-  useUpsertProductBom,
   type ProductListItem,
 } from "@/hooks/use-products-api";
 import { toast } from "sonner";
@@ -58,6 +55,7 @@ function apiProductToDefense(p: ProductListItem): DefenseProduct {
       materialName: item.materialName,
       quantity: item.quantity,
       unit: item.unit,
+      ...(item.materialDbId ? { materialDbId: item.materialDbId } : {}),
       ...(item.serialNumbers && item.serialNumbers.length > 0 ? { serialNumbers: item.serialNumbers } : {}),
     })),
     specs: (p.specs ?? []).map((s) => ({
@@ -87,10 +85,6 @@ const Products = () => {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
-  const upsertProductBom = useUpsertProductBom();
-  const updateProductBom = useUpdateProductBom();
-  const deleteProductBom = useDeleteProductBom();
-
   const { data: categoryDefs = [] } = useDefinitionsList("product_category");
   const statusOptions = useDefinitionOptions("product_status");
   const [products, setProducts] = useState<DefenseProduct[]>([]);
@@ -324,26 +318,6 @@ const Products = () => {
         product={selected ? products.find(p => p.id === selected.id) ?? selected : null}
         open={open}
         onOpenChange={setOpen}
-        onUpdateBomQuantity={async (productId, materialId, quantity) => {
-          await updateProductBom.mutateAsync({
-            id: productId,
-            materialId,
-            payload: { quantity },
-          });
-        }}
-        onRemoveBom={async (productId, materialId) => {
-          await deleteProductBom.mutateAsync({ id: productId, materialId });
-        }}
-        onAddBom={async (productId, bomItem) => {
-          await upsertProductBom.mutateAsync({
-            id: productId,
-            payload: {
-              materialId: bomItem.materialId,
-              quantity: bomItem.quantity,
-              ...(bomItem.serialNumbers?.length ? { serialNumbers: bomItem.serialNumbers } : {}),
-            },
-          });
-        }}
       />
       <CreateProductDialog
         open={createOpen}
@@ -363,26 +337,6 @@ const Products = () => {
         onOpenChange={(o) => {
           setEditOpen(o);
           if (!o) setProductToEdit(null);
-        }}
-        onUpdateBomQuantity={async (productId, materialId, quantity) => {
-          await updateProductBom.mutateAsync({
-            id: productId,
-            materialId,
-            payload: { quantity },
-          });
-        }}
-        onRemoveBom={async (productId, materialId) => {
-          await deleteProductBom.mutateAsync({ id: productId, materialId });
-        }}
-        onAddBom={async (productId, bomItem) => {
-          await upsertProductBom.mutateAsync({
-            id: productId,
-            payload: {
-              materialId: bomItem.materialId,
-              quantity: bomItem.quantity,
-              ...(bomItem.serialNumbers?.length ? { serialNumbers: bomItem.serialNumbers } : {}),
-            },
-          });
         }}
         editable
         onSaveEdits={async (id, payload) => {

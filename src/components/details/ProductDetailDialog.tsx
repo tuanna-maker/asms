@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Cpu, FileText, Layers, FileBox, Download, Plus, GraduationCap, Calendar, Clock, MapPin, Users as UsersIcon, History, User, Trash2, GitBranch } from "lucide-react";
-import { DefenseProduct, BOMItem, productCategoryColors, ProductSpecField } from "@/data/productsData";
+import { DefenseProduct, productCategoryColors, ProductSpecField } from "@/data/productsData";
+import { ProductBomEditor, getPendingBomQuantityUpdates } from "@/components/products/ProductBomEditor";
 import { useDefinitionOptions } from "@/hooks/use-definition-options";
-import { useNavigate } from "react-router-dom";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import { resolveDefinitionCode } from "@/lib/attribute-definition-map";
 import ProductImageGallery from "./ProductImageGallery";
 import type { UpdateProductPayload } from "@/hooks/use-products-api";
-import { useMaterialsList } from "@/hooks/use-materials-api";
+import { useUpdateProductBom } from "@/hooks/use-products-api";
 import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { useAuth } from "@/hooks/use-auth";
@@ -23,14 +25,15 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSection";
 import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
+import { qk } from "@/lib/query-keys";
+import type { ProductListItem } from "@/hooks/use-products-api";
+
+type ProductBomLine = NonNullable<ProductListItem["bom"]>[number];
 
 interface Props {
   product: DefenseProduct | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpdateBomQuantity?: (productId: string, materialId: string, quantity: number) => Promise<void>;
-  onRemoveBom?: (productId: string, materialId: string) => Promise<void>;
-  onAddBom?: (productId: string, item: BOMItem) => Promise<void>;
   editable?: boolean;
   onSaveEdits?: (id: string, payload: UpdateProductPayload) => Promise<void>;
 }
@@ -83,6 +86,7 @@ type ApiProductDetail = {
       trainer: string;
     }>;
   }>;
+  bom?: ProductBomLine[];
 };
 type ProductDocumentRow = {
   id: string;
@@ -95,11 +99,11 @@ type ProductDocumentRow = {
   owner: { id: string; fullName: string } | null;
 };
 
-const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity, onRemoveBom, onAddBom, editable = false, onSaveEdits }: Props) => {
-  const navigate = useNavigate();
+const ProductDetailDialog = ({ product, open, onOpenChange, editable = false, onSaveEdits }: Props) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { data: materials = [] } = useMaterialsList();
+  const updateProductBom = useUpdateProductBom();
+  const { data: categoryDefs = [] } = useDefinitionsList("product_category");
   const categoryOptions = useDefinitionOptions("product_category");
   const statusOptions = useDefinitionOptions("product_status");
   const uploadDocument = useUploadDocument();
@@ -121,8 +125,6 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
   const [yearReleased, setYearReleased] = useState(new Date().getFullYear());
   const [totalProduced, setTotalProduced] = useState(0);
   const [description, setDescription] = useState("");
-  const [selectedMaterialId, setSelectedMaterialId] = useState("");
-  const [addMaterialQty, setAddMaterialQty] = useState("1");
   const [bomQuantities, setBomQuantities] = useState<Record<string, string>>({});
   const [docName, setDocName] = useState("");
   const [docFile, setDocFile] = useState<File | null>(null);
@@ -133,7 +135,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
   useEffect(() => {
     if (!open || !product) return;
     setName(product.name);
-    setCategory(product.category);
+    setCategory(resolveDefinitionCode(categoryDefs, product.category));
     setStatus(product.status);
     setVersion(product.version ?? "");
     setUnit(product.unit ?? "");
@@ -155,7 +157,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
     );
     setSelectedWorkflowId("");
     setStepPayloads({});
-  }, [open, product]);
+  }, [open, product, categoryDefs]);
 
   const { data: productDocuments = [], isLoading: isDocumentsLoading, isFetching: isDocumentsFetching } = useQuery({
     queryKey: ["product-documents", product?.id],
@@ -211,16 +213,22 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
       }
       seen.add(spec.key);
     }
+    const safeYear =
+      typeof yearReleased === "number" && Number.isFinite(yearReleased) ? yearReleased : undefined;
+    const sanitizedStepPayloads = Object.fromEntries(
+      Object.entries(stepPayloads).filter(([stepId]) => stepId.trim().length > 0),
+    );
+
     setSubmitting(true);
     try {
       await onSaveEdits(product.id, {
         name: name.trim(),
-        category: category.trim(),
+        category: resolveDefinitionCode(categoryDefs, category.trim()),
         status,
         version: version.trim() || undefined,
         unit: unit.trim() || undefined,
         manufacturer: manufacturer.trim() || undefined,
-        yearReleased,
+        ...(safeYear !== undefined ? { yearReleased: safeYear } : {}),
         totalProduced,
         description: description.trim() || undefined,
         specs: cleanedSpecs.map((s) => ({
@@ -228,53 +236,28 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
           label: s.label,
           ...(s.unit ? { unit: s.unit } : {}),
         })),
-        ...(Object.keys(stepPayloads).length > 0 ? { stepPayloads } : {}),
+        ...(Object.keys(sanitizedStepPayloads).length > 0 ? { stepPayloads: sanitizedStepPayloads } : {}),
       } as UpdateProductPayload);
-      if (onUpdateBomQuantity) {
-        for (const item of product.bom) {
-          const nextQty = Number(bomQuantities[item.materialId] ?? item.quantity);
-          if (Number.isFinite(nextQty) && nextQty > 0 && nextQty !== item.quantity) {
-            await onUpdateBomQuantity(product.id, item.materialId, nextQty);
-          }
-        }
+      for (const u of getPendingBomQuantityUpdates(bomLines, bomQuantities)) {
+        await updateProductBom.mutateAsync({
+          id: product.id,
+          materialId: u.materialId,
+          payload: { quantity: u.quantity },
+        });
       }
       toast.success("Đã cập nhật sản phẩm");
       onOpenChange(false);
-    } catch {
-      toast.error("Không cập nhật được sản phẩm");
+    } catch (err: unknown) {
+      const msg =
+        typeof err === "object" &&
+        err !== null &&
+        "response" in err &&
+        typeof (err as { response?: { data?: { message?: string } } }).response?.data?.message === "string"
+          ? (err as { response: { data: { message: string } } }).response.data.message
+          : "Không cập nhật được sản phẩm";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const handleAddBom = async () => {
-    if (!product || !onAddBom) return;
-    const material = materials.find((m) => m.id === selectedMaterialId);
-    const qty = Number(addMaterialQty);
-    if (!material || !Number.isFinite(qty) || qty <= 0) return;
-    try {
-      await onAddBom(product.id, {
-        materialId: material.code,
-        materialName: material.name,
-        quantity: qty,
-        unit: material.unit,
-        ...(material.serial ? { serialNumbers: [material.serial] } : {}),
-      });
-      setSelectedMaterialId("");
-      setAddMaterialQty("1");
-      toast.success("Đã thêm linh kiện vào BOM");
-    } catch {
-      toast.error("Không thêm được linh kiện");
-    }
-  };
-
-  const handleRemoveBom = async (materialId: string) => {
-    if (!product || !onRemoveBom) return;
-    try {
-      await onRemoveBom(product.id, materialId);
-      toast.success("Đã xóa linh kiện khỏi BOM");
-    } catch {
-      toast.error("Không xóa được linh kiện");
     }
   };
 
@@ -318,10 +301,18 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
     }
   };
 
-  const availableMaterials = useMemo(() => {
-    const existingMaterialIds = new Set((product?.bom ?? []).map((item) => item.materialId));
-    return materials.filter((material) => !existingMaterialIds.has(material.code));
-  }, [materials, product?.bom]);
+  const bomLines = useMemo((): ProductBomLine[] => {
+    const fromApi = productDetail?.bom;
+    if (fromApi?.length) return fromApi;
+    return (product?.bom ?? []).map((item) => ({
+      materialId: item.materialId,
+      materialName: item.materialName,
+      quantity: item.quantity,
+      unit: item.unit,
+      ...(item.serialNumbers?.length ? { serialNumbers: item.serialNumbers } : {}),
+    }));
+  }, [productDetail?.bom, product?.bom]);
+
   const productContracts = useMemo(() => productDetail?.contracts ?? [], [productDetail?.contracts]);
   const { data: productAudit } = useAuditLogs(
     { entity: "product", entityId: product?.id ?? "", pageSize: 30 },
@@ -495,96 +486,19 @@ const ProductDetailDialog = ({ product, open, onOpenChange, onUpdateBomQuantity,
           </TabsContent>
 
           <TabsContent value="bom" className="mt-4">
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-sm text-muted-foreground mb-3">
-                  Danh sách linh kiện cấu thành (BOM). Click mã linh kiện để xem chi tiết trong module Vật tư.
-                </p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Mã VT</TableHead>
-                      <TableHead>Tên linh kiện</TableHead>
-                      <TableHead>Serial Number</TableHead>
-                      <TableHead className="text-right">Số lượng</TableHead>
-                      <TableHead>ĐVT</TableHead>
-                      {editable ? <TableHead className="text-right">Thao tác</TableHead> : null}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {product.bom.map((item) => {
-                      return (
-                        <TableRow key={item.materialId}>
-                          <TableCell
-                            className="font-mono font-semibold text-primary cursor-pointer hover:underline"
-                            onClick={() => { onOpenChange(false); navigate("/vat-tu"); }}
-                          >
-                            {item.materialId}
-                          </TableCell>
-                          <TableCell>{item.materialName}</TableCell>
-                          <TableCell>
-                            {(item.serialNumbers?.length ?? 0) > 0 ? (
-                              <div className="flex flex-wrap items-center gap-1">
-                                {item.serialNumbers!.slice(0, 2).map((sn) => (
-                                  <Badge key={sn} variant="outline" className="font-mono text-[10px] px-1.5 py-0">
-                                    {sn}
-                                  </Badge>
-                                ))}
-                                {(item.serialNumbers?.length ?? 0) > 2 && (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    +{(item.serialNumbers?.length ?? 0) - 2}
-                                  </Badge>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">Chưa gán</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {editable ? (
-                              <Input
-                                className="h-8 w-20 ml-auto text-right"
-                                type="number"
-                                min={1}
-                                value={bomQuantities[item.materialId] ?? String(item.quantity)}
-                                onChange={(e) => setBomQuantities((prev) => ({ ...prev, [item.materialId]: e.target.value }))}
-                              />
-                            ) : (
-                              item.quantity
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{item.unit}</TableCell>
-                          {editable ? (
-                            <TableCell className="text-right">
-                              <Button size="sm" variant="destructive" onClick={() => void handleRemoveBom(item.materialId)}>
-                                Xóa
-                              </Button>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-                {editable ? (
-                  <div className="mt-4 rounded-lg border border-border p-3">
-                    <p className="text-sm font-medium mb-3">Thêm linh kiện từ kho vật tư</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-2">
-                      <Select value={selectedMaterialId} onValueChange={setSelectedMaterialId}>
-                        <SelectTrigger><SelectValue placeholder="Chọn vật tư" /></SelectTrigger>
-                        <SelectContent>
-                          {availableMaterials.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>{m.code} - {m.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input type="number" min={1} value={addMaterialQty} onChange={(e) => setAddMaterialQty(e.target.value)} />
-                      <Button onClick={() => void handleAddBom()}>Thêm</Button>
-                    </div>
-                  </div>
-                ) : null}
-              </CardContent>
-            </Card>
+            <ProductBomEditor
+              productId={product.id}
+              bom={bomLines}
+              editable={editable}
+              bomSaveMode="batch"
+              bomQuantities={bomQuantities}
+              onBomQuantitiesChange={setBomQuantities}
+              showMaterialAttributes={editable}
+              onBomUpdated={() => {
+                void queryClient.invalidateQueries({ queryKey: ["product-detail", product.id] });
+                void queryClient.invalidateQueries({ queryKey: qk.products.all });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="specs" className="mt-4">

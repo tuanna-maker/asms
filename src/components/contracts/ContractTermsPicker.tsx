@@ -17,6 +17,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -35,52 +36,56 @@ import {
 import {
   useContractClauseGroupsList,
   useContractClausesList,
-  type ContractClauseItem,
 } from "@/hooks/use-contract-clauses-api";
+import type { ContractClauseEntry } from "@/lib/contract-clause-items";
 import { cn } from "@/lib/utils";
 import { clausePickerStyles } from "@/components/settings/attributes/contract-clause-styles";
 
+export type { ContractClauseEntry };
+
 type Props = {
-  value: string[];
-  onChange: (ids: string[]) => void;
+  value: ContractClauseEntry[];
+  onChange: (entries: ContractClauseEntry[]) => void;
   disabled?: boolean;
 };
 
-type ClauseTableRow = {
+type CatalogRow = {
   id: string;
   title: string;
-  content: string;
   groupLabel: string;
 };
 
-function orderSelection(
-  currentValue: string[],
+function orderEntries(
+  current: ContractClauseEntry[],
   nextSelected: Set<string>,
   catalogOrder: string[],
-): string[] {
-  const kept = currentValue.filter((id) => nextSelected.has(id));
-  const keptSet = new Set(kept);
-  const added = catalogOrder.filter((id) => nextSelected.has(id) && !keptSet.has(id));
+): ContractClauseEntry[] {
+  const contentById = new Map(current.map((e) => [e.clauseId, e.content]));
+  const kept = current.filter((e) => nextSelected.has(e.clauseId));
+  const keptSet = new Set(kept.map((e) => e.clauseId));
+  const added = catalogOrder
+    .filter((id) => nextSelected.has(id) && !keptSet.has(id))
+    .map((clauseId) => ({ clauseId, content: contentById.get(clauseId) ?? "" }));
   return [...kept, ...added];
 }
 
-function ClauseContentCell({ content }: { content: string }) {
-  const text = content?.trim() ?? "";
-  if (!text) return <span className="text-xs text-muted-foreground">—</span>;
-  return (
-    <p className="text-sm text-muted-foreground whitespace-pre-wrap line-clamp-3">{text}</p>
-  );
-}
-
 type SortableClauseRowProps = {
-  clause: ContractClauseItem;
+  entry: ContractClauseEntry;
+  title: string;
   disabled?: boolean;
+  onContentChange: (content: string) => void;
   onRemove: () => void;
 };
 
-function SortableClauseRow({ clause, disabled, onRemove }: SortableClauseRowProps) {
+function SortableClauseRow({
+  entry,
+  title,
+  disabled,
+  onContentChange,
+  onRemove,
+}: SortableClauseRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: clause.id,
+    id: entry.clauseId,
     disabled: !!disabled,
   });
 
@@ -110,9 +115,16 @@ function SortableClauseRow({ clause, disabled, onRemove }: SortableClauseRowProp
           <GripVertical className="h-4 w-4" />
         </button>
       </TableCell>
-      <TableCell className="align-top text-sm font-medium w-[26%]">{clause.title}</TableCell>
+      <TableCell className="align-top text-sm font-medium w-[28%]">{title}</TableCell>
       <TableCell className="align-top">
-        <ClauseContentCell content={clause.content} />
+        <Textarea
+          rows={3}
+          placeholder="Nhập nội dung điều khoản cho hợp đồng này…"
+          value={entry.content}
+          disabled={disabled}
+          onChange={(e) => onContentChange(e.target.value)}
+          className="min-h-[72px] resize-y"
+        />
       </TableCell>
       <TableCell className="align-top text-center w-12">
         <Button
@@ -135,12 +147,12 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
   const { data: groups = [], isLoading: groupsLoading } = useContractClauseGroupsList();
   const { data: clauses = [], isLoading: clausesLoading } = useContractClausesList();
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [draftIds, setDraftIds] = useState<string[]>([]);
+  const [draftEntries, setDraftEntries] = useState<ContractClauseEntry[]>([]);
 
   const clauseById = useMemo(() => new Map(clauses.map((c) => [c.id, c])), [clauses]);
 
-  const { tableRows, rowsByGroup, catalogOrder } = useMemo(() => {
-    const rows: ClauseTableRow[] = [];
+  const { catalogRows, rowsByGroup, catalogOrder } = useMemo(() => {
+    const rows: CatalogRow[] = [];
     const inGroup = new Set<string>();
 
     const sortedGroups = [...groups]
@@ -157,12 +169,7 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
         if (seenInGroup.has(c.id)) continue;
         seenInGroup.add(c.id);
         inGroup.add(c.id);
-        rows.push({
-          id: c.id,
-          title: c.title,
-          content: c.content ?? "",
-          groupLabel: group.label,
-        });
+        rows.push({ id: c.id, title: c.title, groupLabel: group.label });
       }
     }
 
@@ -171,75 +178,70 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
       .sort((a, b) => a.sortOrder - b.sortOrder || a.title.localeCompare(b.title));
 
     for (const c of orphans) {
-      rows.push({
-        id: c.id,
-        title: c.title,
-        content: c.content ?? "",
-        groupLabel: "Khác",
-      });
+      rows.push({ id: c.id, title: c.title, groupLabel: "Khác" });
     }
 
-    const map = new Map<string, ClauseTableRow[]>();
+    const map = new Map<string, CatalogRow[]>();
     for (const row of rows) {
       if (!map.has(row.groupLabel)) map.set(row.groupLabel, []);
       map.get(row.groupLabel)!.push(row);
     }
 
     return {
-      tableRows: rows,
+      catalogRows: rows,
       rowsByGroup: map,
       catalogOrder: rows.map((r) => r.id),
     };
   }, [groups, clauses]);
 
-  const selectedClauses = useMemo(
-    () =>
-      value
-        .map((id) => clauseById.get(id))
-        .filter((c): c is ContractClauseItem => Boolean(c)),
-    [value, clauseById],
-  );
-
-  const draftSelected = useMemo(() => new Set(draftIds), [draftIds]);
+  const draftSelected = useMemo(() => new Set(draftEntries.map((e) => e.clauseId)), [draftEntries]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
   useEffect(() => {
-    if (pickerOpen) setDraftIds([...value]);
+    if (pickerOpen) setDraftEntries([...value]);
   }, [pickerOpen, value]);
 
   const applyDraftSelection = (nextSelected: Set<string>) => {
-    setDraftIds(orderSelection(draftIds, nextSelected, catalogOrder));
+    setDraftEntries(orderEntries(draftEntries, nextSelected, catalogOrder));
   };
 
   const toggleDraftClause = (clauseId: string, checked: boolean) => {
     if (disabled) return;
-    const next = new Set(draftIds);
+    const next = new Set(draftEntries.map((e) => e.clauseId));
     if (checked) next.add(clauseId);
     else next.delete(clauseId);
     applyDraftSelection(next);
   };
 
   const handleConfirm = () => {
-    onChange(draftIds);
+    onChange(draftEntries);
     setPickerOpen(false);
   };
 
   const handleRemove = (clauseId: string) => {
     if (disabled) return;
-    onChange(value.filter((id) => id !== clauseId));
+    onChange(value.filter((e) => e.clauseId !== clauseId));
+  };
+
+  const handleContentChange = (clauseId: string, content: string) => {
+    if (disabled) return;
+    onChange(value.map((e) => (e.clauseId === clauseId ? { ...e, content } : e)));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id || disabled) return;
-    const oldIndex = value.indexOf(String(active.id));
-    const newIndex = value.indexOf(String(over.id));
+    const oldIndex = value.findIndex((e) => e.clauseId === String(active.id));
+    const newIndex = value.findIndex((e) => e.clauseId === String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
     onChange(arrayMove(value, oldIndex, newIndex));
   };
+
+  const resolveTitle = (entry: ContractClauseEntry) =>
+    entry.title ?? clauseById.get(entry.clauseId)?.title ?? entry.clauseId;
 
   if (groupsLoading || clausesLoading) {
     return (
@@ -249,10 +251,10 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
     );
   }
 
-  if (tableRows.length === 0) {
+  if (catalogRows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground py-2">
-        Chưa có điều khoản mẫu. Thêm tại Cài đặt → Thuộc tính → Hợp đồng.
+        Chưa có điều khoản mẫu. Thêm tiêu đề tại Cài đặt → Thuộc tính → Hợp đồng.
       </p>
     );
   }
@@ -271,29 +273,34 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
         Thêm điều khoản và điều kiện
       </Button>
 
-      {selectedClauses.length > 0 ? (
+      {value.length > 0 ? (
         <div className="rounded-lg border border-border/60 overflow-hidden">
           <p className="px-3 py-2 text-xs text-muted-foreground border-b border-border/60 bg-muted/20">
-            Kéo thả để sắp xếp thứ tự điều khoản trên hợp đồng
+            Chọn tiêu đề từ danh mục, nhập nội dung riêng cho hợp đồng này. Kéo thả để sắp xếp thứ tự.
           </p>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-10" />
-                <TableHead className="w-[26%]">Tiêu đề</TableHead>
-                <TableHead>Nội dung</TableHead>
+                <TableHead className="w-[28%]">Tiêu đề</TableHead>
+                <TableHead>Nội dung (trên hợp đồng)</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={value} strategy={verticalListSortingStrategy}>
-                  {selectedClauses.map((clause) => (
+                <SortableContext
+                  items={value.map((e) => e.clauseId)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {value.map((entry) => (
                     <SortableClauseRow
-                      key={clause.id}
-                      clause={clause}
+                      key={entry.clauseId}
+                      entry={entry}
+                      title={resolveTitle(entry)}
                       disabled={disabled}
-                      onRemove={() => handleRemove(clause.id)}
+                      onContentChange={(content) => handleContentChange(entry.clauseId, content)}
+                      onRemove={() => handleRemove(entry.clauseId)}
                     />
                   ))}
                 </SortableContext>
@@ -306,16 +313,15 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
       )}
 
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Chọn điều khoản và điều kiện</DialogTitle>
+            <DialogTitle>Chọn tiêu đề điều khoản</DialogTitle>
           </DialogHeader>
 
           <div className={clausePickerStyles.panel}>
             <div className={clausePickerStyles.headerGrid}>
               <div className={clausePickerStyles.headerColCheck} aria-hidden />
               <div className={clausePickerStyles.headerColTitle}>Tiêu đề</div>
-              <div className={clausePickerStyles.headerColContent}>Nội dung</div>
             </div>
             {[...rowsByGroup.entries()].map(([groupLabel, rows]) => (
               <Fragment key={groupLabel}>
@@ -326,7 +332,10 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
                 {rows.map((row) => (
                   <div
                     key={`${groupLabel}-${row.id}`}
-                    className={cn(clausePickerStyles.clauseRow, draftSelected.has(row.id) && "bg-primary/5")}
+                    className={cn(
+                      clausePickerStyles.clauseRow,
+                      draftSelected.has(row.id) && "bg-primary/5",
+                    )}
                   >
                     <div className={clausePickerStyles.clauseCheck}>
                       <Checkbox
@@ -335,14 +344,7 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
                         onCheckedChange={(v) => toggleDraftClause(row.id, v === true)}
                       />
                     </div>
-                    <div className={clausePickerStyles.clauseTitle}>{row.title}</div>
-                    <div className={clausePickerStyles.clauseContent}>
-                      {row.content?.trim() ? (
-                        <span className="whitespace-pre-wrap line-clamp-4">{row.content.trim()}</span>
-                      ) : (
-                        <span className="text-xs">—</span>
-                      )}
-                    </div>
+                    <div className={cn(clausePickerStyles.clauseTitle, "col-span-2")}>{row.title}</div>
                   </div>
                 ))}
               </Fragment>
@@ -354,7 +356,7 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
               Hủy
             </Button>
             <Button type="button" onClick={handleConfirm} disabled={disabled}>
-              Xác nhận ({draftIds.length})
+              Xác nhận ({draftEntries.length})
             </Button>
           </DialogFooter>
         </DialogContent>

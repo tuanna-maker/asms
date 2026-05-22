@@ -475,6 +475,9 @@ model Contract {
   workflowInstanceId String?  @map("workflow_instance_id")
   terms        String?        @db.Text
   clauseIds    String[]       @default([]) @map("clause_ids")
+  clauseItems  Json           @default("[]") @map("clause_items")
+  statusSlaHours Json         @default("{}") @map("status_sla_hours")
+  slaHours     Int?           @map("sla_hours")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
   deletedAt    DateTime?      @map("deleted_at")
@@ -1235,6 +1238,7 @@ model DataDefinition {
   sortOrder   Int       @default(0) @map("sort_order")
   isActive    Boolean   @default(true) @map("is_active")
   isSystem    Boolean   @default(false) @map("is_system")
+  slaHours    Int?      @map("sla_hours")
   createdById String?   @map("created_by_id")
   updatedById String?   @map("updated_by_id")
   createdAt   DateTime  @default(now()) @map("created_at")

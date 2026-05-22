@@ -23,7 +23,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { AttributeSectionDef } from "@/lib/attribute-settings-config";
 import { isValidDefinitionCode, definitionCodeHint } from "@/lib/attribute-code-validation";
@@ -48,7 +47,6 @@ type Props = {
 const emptyForm = () => ({
   code: "",
   title: "",
-  content: "",
   isActive: true,
 });
 
@@ -91,15 +89,14 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
     setForm({
       code: row.code,
       title: row.title,
-      content: row.content,
       isActive: row.isActive,
     });
     setDialogOpen(true);
   };
 
   const handleSave = async () => {
-    if (!form.code.trim() || !form.title.trim() || !form.content.trim()) {
-      toast.error("Vui lòng nhập mã, tiêu đề và nội dung");
+    if (!form.code.trim() || !form.title.trim()) {
+      toast.error("Vui lòng nhập mã và tiêu đề");
       return;
     }
     if (!isValidDefinitionCode(form.code.trim())) {
@@ -111,7 +108,7 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
     const payload = {
       code: form.code.trim(),
       title: form.title.trim(),
-      content: form.content.trim(),
+      content: "",
       isActive: form.isActive,
       ...(!editing ? { sortOrder: nextSortOrder } : {}),
     };
@@ -236,14 +233,9 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
               <Label>Tiêu đề *</Label>
               <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
             </div>
-            <div>
-              <Label>Nội dung *</Label>
-              <Textarea
-                rows={6}
-                value={form.content}
-                onChange={(e) => setForm({ ...form, content: e.target.value })}
-              />
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Nội dung chi tiết được nhập trên từng hợp đồng khi chọn mục này.
+            </p>
             <div className="flex items-center gap-2">
               <Switch checked={form.isActive} onCheckedChange={(v) => setForm({ ...form, isActive: v })} />
               <Label>Đang sử dụng</Label>

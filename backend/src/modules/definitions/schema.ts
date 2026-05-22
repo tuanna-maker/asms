@@ -29,6 +29,7 @@ export const createDefinitionSchema = z.object({
   label: z.string().min(1).max(512),
   sortOrder: z.coerce.number().int().optional(),
   isActive: z.coerce.boolean().optional(),
+  slaHours: z.coerce.number().int().min(0).nullable().optional(),
 });
 
 export const updateDefinitionSchema = z.object({
@@ -36,6 +37,7 @@ export const updateDefinitionSchema = z.object({
   label: z.string().min(1).max(512).optional(),
   sortOrder: z.coerce.number().int().optional(),
   isActive: z.coerce.boolean().optional(),
+  slaHours: z.coerce.number().int().min(0).nullable().optional(),
 });
 
 export const reorderDefinitionsSchema = z.object({

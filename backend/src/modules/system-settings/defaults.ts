@@ -5,6 +5,7 @@ export type SystemSettingKey =
   | "task_late_grace_hours"
   | "notification_channels"
   | "notification_daily_run_hour"
+  | "notification_sla_scan_interval_minutes"
   | "warranty_expiry_remind_days"
   | "training_upcoming_remind_days"
   | "repair_scheduled_remind_days"
@@ -80,6 +81,17 @@ export const SYSTEM_SETTING_DEFS: SystemSettingDef[] = [
     input: "hour",
     min: 0,
     max: 23,
+  },
+  {
+    key: "notification_sla_scan_interval_minutes",
+    group: "notification",
+    label: "Chu kỳ quét SLA HĐ (phút)",
+    description: "Tần suất quét hợp đồng quá SLA thực hiện và gửi thông báo.",
+    defaultValue: 60,
+    input: "number",
+    unit: "phút",
+    min: 5,
+    max: 1440,
   },
   {
     key: "notification_channels",

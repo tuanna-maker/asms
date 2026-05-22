@@ -30,6 +30,7 @@ export type DefinitionDTO = Pick<
   | "sortOrder"
   | "isActive"
   | "isSystem"
+  | "slaHours"
   | "createdAt"
   | "updatedAt"
 > & {
@@ -46,6 +47,7 @@ function toDTO(row: RowWithMeta): DefinitionDTO {
     sortOrder: row.sortOrder,
     isActive: row.isActive,
     isSystem: row.isSystem,
+    slaHours: row.slaHours,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     createdBy: row.createdBy,
@@ -61,6 +63,7 @@ const selectWithMeta = {
   sortOrder: true,
   isActive: true,
   isSystem: true,
+  slaHours: true,
   createdById: true,
   updatedById: true,
   createdAt: true,
@@ -92,6 +95,7 @@ export async function createDefinitionService(input: {
   label: string;
   sortOrder?: number;
   isActive?: boolean;
+  slaHours?: number | null;
   actorId?: string | null;
 }): Promise<DefinitionDTO> {
   const existing = await prisma.dataDefinition.findFirst({
@@ -106,6 +110,7 @@ export async function createDefinitionService(input: {
       label: input.label.trim(),
       sortOrder: input.sortOrder ?? 0,
       ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
+      ...(input.slaHours !== undefined ? { slaHours: input.slaHours } : {}),
       ...(input.actorId ? { createdById: input.actorId, updatedById: input.actorId } : {}),
     },
     select: selectWithMeta,
@@ -120,6 +125,7 @@ export async function updateDefinitionService(
     label?: string;
     sortOrder?: number;
     isActive?: boolean;
+    slaHours?: number | null;
     actorId?: string | null;
   }
 ): Promise<DefinitionDTO> {
@@ -142,6 +148,7 @@ export async function updateDefinitionService(
       label: labelNew,
       ...(input.sortOrder !== undefined ? { sortOrder: input.sortOrder } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      ...(input.slaHours !== undefined ? { slaHours: input.slaHours } : {}),
       ...(input.actorId ? { updatedById: input.actorId } : {}),
     },
     select: selectWithMeta,

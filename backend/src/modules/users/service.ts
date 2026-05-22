@@ -5,6 +5,7 @@ import type { z } from "zod";
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
+import { ensureNotificationPreferencesForUser } from "../notification-preferences/service";
 import { createUserSchema } from "./schema";
 
 const publicUserSelect = {
@@ -86,7 +87,7 @@ export async function createUserService(payload: CreateUserInput) {
   const roleId = await resolveRoleId(payload.roleCode);
   const passwordHash = await bcrypt.hash(payload.password, 10);
 
-  return prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       fullName: payload.fullName,
       email: payload.email,
@@ -96,6 +97,8 @@ export async function createUserService(payload: CreateUserInput) {
     },
     select: publicUserSelect,
   });
+  await ensureNotificationPreferencesForUser(user.id);
+  return user;
 }
 
 export async function updateUserService(idOrEmail: string, payload: Record<string, unknown>) {

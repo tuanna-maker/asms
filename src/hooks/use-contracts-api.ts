@@ -12,12 +12,16 @@ export type ContractPayload = {
   endDate: string;
   warrantyEnd?: string;
   endReminderDays?: number;
-  status?: "completed" | "liquidated" | "draft";
+  status?: "draft" | "active" | "completed" | "late" | "liquidated";
+  statusSlaHours?: Record<string, number>;
+  /** SLA thực hiện (giờ) */
+  slaHours?: number | null;
   progress?: number;
   workflowId?: string;
   stepPayloads?: Record<string, Record<string, unknown>>;
   terms?: string | null;
   clauseIds?: string[];
+  clauseItems?: Array<{ clauseId: string; content: string }>;
   contractTypeCode?: string | null;
 };
 

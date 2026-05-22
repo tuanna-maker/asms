@@ -6,7 +6,6 @@ import { qk } from "@/lib/query-keys";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
-import { resolveContractDisplayStatus } from "@/lib/contract-display-status";
 import { Plus, Search, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
@@ -136,14 +135,7 @@ const Contracts = () => {
         const apiRow = row as ApiContractRow;
         const startIso = apiRow.startDate;
         const endIso = apiRow.endDate;
-        const displayStatus = mapStatus(
-          apiRow.displayStatus ??
-            resolveContractDisplayStatus({
-              status: apiRow.status,
-              startDate: startIso,
-              endDate: endIso,
-            }),
-        );
+        const displayStatus = mapStatus(apiRow.displayStatus ?? apiRow.status);
         return {
           id: apiRow.code,
           dbId: apiRow.id,

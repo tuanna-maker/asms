@@ -4,6 +4,8 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import AppSidebar from "./AppSidebar";
 import BottomNav from "./BottomNav";
+import { useAuth } from "@/hooks/use-auth";
+import { useNotificationToast } from "@/hooks/use-notification-toast";
 import DashboardHeader from "../dashboard/DashboardHeader";
 
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -13,16 +15,20 @@ const pageTitles: Record<string, { title: string; subtitle: string }> = {
   "/bao-hanh": { title: "Bảo hành / Sửa chữa", subtitle: "Tiếp nhận và xử lý yêu cầu bảo hành, sửa chữa" },
   "/vat-tu": { title: "Quản lý vật tư", subtitle: "Nhập, xuất và điều chuyển vật tư" },
   "/khach-hang": { title: "Khách hàng", subtitle: "Quản lý thông tin khách hàng" },
+  "/phan-anh": { title: "Phản ánh", subtitle: "Danh sách phản ánh khách hàng toàn hệ thống" },
   "/bao-cao": { title: "Báo cáo & Thống kê", subtitle: "Báo cáo theo khách hàng, hợp đồng, sản phẩm" },
   "/quy-trinh": { title: "Quy trình", subtitle: "Cấu hình luồng xử lý theo từng module nghiệp vụ" },
   "/cai-dat": { title: "Cài đặt", subtitle: "Quản lý người dùng và phân quyền" },
+  "/thong-bao": { title: "Thông báo", subtitle: "Danh sách thông báo trong ứng dụng" },
 };
 
 const AppLayout = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const page = pageTitles[location.pathname] || { title: "ERP", subtitle: "" };
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useNotificationToast(isAuthenticated);
 
   return (
     <div className="flex h-screen overflow-hidden">

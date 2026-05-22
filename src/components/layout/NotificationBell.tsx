@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Bell, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/hooks/use-auth";
 import {
+  FAST_POLL_MS,
+  DEFAULT_POLL_MS,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
@@ -22,8 +25,14 @@ function formatTime(iso: string) {
 export function NotificationBell() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { data: count = 0 } = useUnreadNotificationsCount(isAuthenticated);
-  const { data: items = [], isLoading } = useNotifications(isAuthenticated, "all");
+  const [open, setOpen] = useState(false);
+  const [scope, setScope] = useState<"all" | "unread">("all");
+  const pollMs = open ? FAST_POLL_MS : DEFAULT_POLL_MS;
+
+  const { data: count = 0 } = useUnreadNotificationsCount(isAuthenticated, { refetchInterval: pollMs });
+  const { data: items = [], isLoading } = useNotifications(isAuthenticated, scope, {
+    refetchInterval: open ? pollMs : DEFAULT_POLL_MS,
+  });
   const markRead = useMarkNotificationRead();
   const markAll = useMarkAllNotificationsRead();
 
@@ -33,6 +42,7 @@ export function NotificationBell() {
     } catch {
       // ignore
     }
+    setOpen(false);
     if (item.link) navigate(item.link);
   };
 
@@ -46,7 +56,7 @@ export function NotificationBell() {
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -62,8 +72,33 @@ export function NotificationBell() {
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
-          <p className="text-sm font-semibold">Thông báo</p>
+        <div className="flex items-center justify-between border-b border-border/50 px-3 py-2 gap-2">
+          <p className="text-sm font-semibold shrink-0">Thông báo</p>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant={scope === "all" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 text-xs px-2"
+              onClick={() => setScope("all")}
+            >
+              Tất cả
+            </Button>
+            <Button
+              type="button"
+              variant={scope === "unread" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 text-xs px-2"
+              onClick={() => setScope("unread")}
+            >
+              Chưa đọc
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center justify-between border-b border-border/50 px-3 py-1.5">
+          <Button variant="link" size="sm" className="h-7 text-xs px-0" asChild onClick={() => setOpen(false)}>
+            <Link to="/thong-bao">Xem tất cả</Link>
+          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -79,7 +114,9 @@ export function NotificationBell() {
           {isLoading ? (
             <p className="px-3 py-6 text-center text-sm text-muted-foreground">Đang tải…</p>
           ) : items.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">Chưa có thông báo.</p>
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+              {scope === "unread" ? "Không có thông báo chưa đọc." : "Chưa có thông báo."}
+            </p>
           ) : (
             items.map((item) => (
               <button

@@ -3,6 +3,7 @@ import { env } from "./config/env";
 import { seedAuthUsers } from "./config/seed-auth";
 import { ensureDefaultSystemSettings } from "./modules/system-settings/service";
 import { ensureRolePermissionsSeeded } from "./modules/role-permissions/service";
+import { ensureNotificationPreferencesForAllUsers } from "./modules/notification-preferences/service";
 import { startNotificationCron } from "./jobs/notify";
 import prisma from "./lib/prisma";
 
@@ -38,6 +39,7 @@ export async function startServer() {
 
   await ensureDefaultSystemSettings();
   await ensureRolePermissionsSeeded();
+  await ensureNotificationPreferencesForAllUsers();
   await startNotificationCron();
 
   const port = Number(env.PORT) || 4000;

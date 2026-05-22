@@ -14,6 +14,7 @@ import {
   GraduationCap,
   FolderOpen,
   Workflow,
+  MessageSquareWarning,
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -35,6 +36,7 @@ const menuItems: Array<{
   { icon: Boxes, label: "Sản phẩm", path: "/san-pham" },
   { icon: Package, label: "Vật tư", path: "/vat-tu" },
   { icon: Users, label: "CRM", path: "/khach-hang" },
+  { icon: MessageSquareWarning, label: "Phản ánh", path: "/phan-anh" },
   { icon: BarChart3, label: "Báo cáo", path: "/bao-cao" },
   { icon: FlaskConical, label: "Đề tài NC", path: "/de-tai" },
   { icon: ListTodo, label: "Công việc", path: "/cong-viec", badge: "lateTasks" },

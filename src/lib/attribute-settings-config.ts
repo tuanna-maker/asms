@@ -48,6 +48,7 @@ export type AttributeRow = {
   updatedBy: string;
   status: AttributeRowStatus;
   isSystem: boolean;
+  slaHours?: number | null;
 };
 
 export type AttributeSectionDataSource =
@@ -109,7 +110,7 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
       {
         id: "contract_clauses",
         title: "Điều khoản và điều kiện",
-        description: "Nội dung mẫu điều khoản. Mỗi mục chỉ thuộc một nhóm (gán tại Nhóm điều khoản).",
+        description: "Chỉ khai báo tiêu đề (mã) làm mục chọn trên hợp đồng; nội dung điền riêng trên từng hợp đồng.",
         icon: ListChecks,
         iconClassName: "bg-emerald-500/15 text-emerald-600",
         dataSource: "contract_clauses",

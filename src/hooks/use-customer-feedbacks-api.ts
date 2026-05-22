@@ -42,6 +42,9 @@ export type CustomerFeedbackListFilters = {
   warrantyId?: string;
   severity?: CustomerFeedbackSeverity;
   status?: CustomerFeedbackStatus;
+  search?: string;
+  feedbackFrom?: string;
+  feedbackTo?: string;
 };
 
 function buildListQuery(filters?: CustomerFeedbackListFilters): string {
@@ -52,6 +55,9 @@ function buildListQuery(filters?: CustomerFeedbackListFilters): string {
   if (filters.warrantyId) params.set("warrantyId", filters.warrantyId);
   if (filters.severity) params.set("severity", filters.severity);
   if (filters.status) params.set("status", filters.status);
+  if (filters.search?.trim()) params.set("search", filters.search.trim());
+  if (filters.feedbackFrom) params.set("feedbackFrom", filters.feedbackFrom);
+  if (filters.feedbackTo) params.set("feedbackTo", filters.feedbackTo);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }
@@ -60,10 +66,31 @@ function listKey(filters?: CustomerFeedbackListFilters): string {
   return JSON.stringify(filters ?? {});
 }
 
+function hasContextFilter(filters?: CustomerFeedbackListFilters): boolean {
+  return Boolean(filters?.customerId || filters?.contractId || filters?.warrantyId);
+}
+
 export function useCustomerFeedbacksList(filters?: CustomerFeedbackListFilters, enabled = true) {
   return useQuery({
     queryKey: qk.customerFeedbacks.list(listKey(filters)),
-    enabled: enabled && Boolean(filters?.customerId || filters?.contractId || filters?.warrantyId),
+    enabled: enabled && hasContextFilter(filters),
+    queryFn: async () => {
+      const res = await api.get<ApiSuccess<CustomerFeedbackRow[]>>(
+        `/api/v1/customer-feedbacks${buildListQuery(filters)}`,
+      );
+      return res.data.data ?? [];
+    },
+  });
+}
+
+/** Danh sách toàn hệ thống (màn /phan-anh) — không yêu cầu customerId/contractId/warrantyId. */
+export function useAllCustomerFeedbacksList(
+  filters?: CustomerFeedbackListFilters,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: [...qk.customerFeedbacks.all, "all-list", listKey(filters)],
+    enabled,
     queryFn: async () => {
       const res = await api.get<ApiSuccess<CustomerFeedbackRow[]>>(
         `/api/v1/customer-feedbacks${buildListQuery(filters)}`,

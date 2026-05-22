@@ -29,6 +29,7 @@ export const ROUTE_PERMISSIONS: Record<string, Role[]> = {
   "/san-pham": ["admin", "manager", "technician", "viewer", "sales"],
   "/vat-tu": ["admin", "manager", "technician"],
   "/khach-hang": ["admin", "manager", "viewer", "sales"],
+  "/phan-anh": ["admin", "manager", "technician", "viewer", "sales"],
   "/bao-cao": ["admin", "manager", "viewer", "sales"],
   "/de-tai": ["admin", "manager", "technician"],
   "/cong-viec": ["admin", "manager", "technician"],

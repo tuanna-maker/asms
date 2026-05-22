@@ -11,14 +11,23 @@ import {
   sanitizeStoredContractStatus,
   withDisplayStatus,
 } from "./display-status";
+import { sanitizeStatusSlaHours, toStatusSlaHoursRecord } from "./status-sla";
+import {
+  applyExecutionSlaOverdueForContract,
+  markExecutionSlaOverdueContracts,
+  sanitizeExecutionSlaHours,
+} from "./execution-sla";
 import {
   enrichContractWithStepPayloads,
   upsertStepPayloads,
   type ContractStepPayloadJson,
 } from "./step-payload";
 import {
-  assertActiveClauseIds,
   buildTermsFromClauseIds,
+  buildTermsFromClauseItems,
+  enrichClauseItemsWithTitles,
+  normalizeStoredClauseItems,
+  type ContractClauseItemInput,
 } from "../contract-clauses/build-terms";
 
 function genContractCode() {
@@ -35,15 +44,6 @@ async function resolveContractId(idOrCode: string) {
 }
 
 const CONTRACT_TYPE_CATEGORY = "contract_type";
-
-async function getContractFallbackWorkflowId(): Promise<string | null> {
-  const wf = await prisma.workflowDefinition.findFirst({
-    where: { moduleKey: "contract", isActive: true, deletedAt: null },
-    orderBy: [{ isSystem: "desc" }, ORDER_BY_CREATED_DESC],
-    select: { id: true },
-  });
-  return wf?.id ?? null;
-}
 
 async function initContractWorkflow(
   contractId: string,
@@ -72,14 +72,28 @@ async function initContractWorkflow(
   }
 }
 
-async function resolveClauseFields(clauseIds: string[] | undefined): {
+async function resolveClauseFields(input: {
+  clauseItems?: ContractClauseItemInput[];
   clauseIds?: string[];
+}): Promise<{
+  clauseIds?: string[];
+  clauseItems?: ContractClauseItemInput[];
   terms?: string | null;
-} {
-  if (clauseIds === undefined) return {};
-  await assertActiveClauseIds(clauseIds);
-  const { orderedIds, terms } = await buildTermsFromClauseIds(clauseIds);
-  return { clauseIds: orderedIds, terms };
+}> {
+  if (input.clauseItems !== undefined) {
+    const built = await buildTermsFromClauseItems(input.clauseItems);
+    return {
+      clauseIds: built.orderedIds,
+      clauseItems: built.clauseItems,
+      terms: built.terms,
+    };
+  }
+  if (input.clauseIds !== undefined) {
+    const built = await buildTermsFromClauseIds(input.clauseIds);
+    const clauseItems = built.orderedIds.map((clauseId) => ({ clauseId, content: "" }));
+    return { clauseIds: built.orderedIds, clauseItems, terms: built.terms };
+  }
+  return {};
 }
 
 async function assertActiveContractTypeCode(code: string) {
@@ -158,6 +172,9 @@ export async function listContractsService(filters: {
       endDate: true,
       warrantyEnd: true,
       status: true,
+      statusSlaHours: true,
+      slaHours: true,
+      updatedAt: true,
       progress: true,
       endReminderDays: true,
       contractTypeCode: true,
@@ -172,17 +189,30 @@ export async function listContractsService(filters: {
       },
     },
   });
+  const overdueIds = await markExecutionSlaOverdueContracts(
+    rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      slaHours: row.slaHours,
+      updatedAt: row.updatedAt,
+    })),
+  );
   const counts = await getContractProductCounts(rows.map((row) => row.id));
   const workflowMap = await loadWorkflowSnapshotsByInstanceIds(
     rows.map((row) => row.workflowInstanceId),
   );
-  return rows.map((row) => ({
-    ...withDisplayStatus(row),
-    products: counts.get(row.id) ?? 0,
+  return rows.map((row) => {
+    const status = overdueIds.has(row.id) ? ("late" as const) : row.status;
+    return {
+      ...withDisplayStatus({ ...row, status }),
+      statusSlaHours: toStatusSlaHoursRecord(row.statusSlaHours),
+      slaHours: row.slaHours,
+      products: counts.get(row.id) ?? 0,
     workflow: row.workflowInstanceId
       ? (workflowMap.get(row.workflowInstanceId) ?? null)
       : null,
-  }));
+    };
+  });
 }
 
 function toSpecValues(value: Prisma.JsonValue | null | undefined): Record<string, string> {
@@ -197,6 +227,7 @@ function toSpecValues(value: Prisma.JsonValue | null | undefined): Record<string
 
 export async function getContractDetailService(id: string) {
   const resolvedId = await resolveContractId(id);
+  await applyExecutionSlaOverdueForContract(resolvedId);
   const contract = await prisma.contract.findFirst({
     where: { id: resolvedId, deletedAt: null },
     include: {
@@ -252,8 +283,18 @@ export async function getContractDetailService(id: string) {
     ? (workflowMap.get(rest.workflowInstanceId) ?? null)
     : null;
   const enriched = await enrichContractWithStepPayloads(withDisplayStatus(rest));
+  const storedClauseItems = (rest as { clauseItems?: Prisma.JsonValue }).clauseItems;
+  const normalizedClauseItems = normalizeStoredClauseItems({
+    clauseItems: storedClauseItems,
+    clauseIds: rest.clauseIds,
+  });
+  const clauseItemsEnriched = await enrichClauseItemsWithTitles(normalizedClauseItems);
   return {
     ...enriched,
+    statusSlaHours: toStatusSlaHoursRecord(rest.statusSlaHours),
+    slaHours: rest.slaHours,
+    updatedAt: rest.updatedAt,
+    clauseItems: clauseItemsEnriched,
     productsList,
     products,
     linkedHandover,
@@ -308,11 +349,14 @@ export async function createContractService(payload: {
   warrantyEnd?: Date;
   endReminderDays?: number;
   status?: string;
+  statusSlaHours?: Record<string, number>;
+  slaHours?: number | null;
   progress?: number;
   workflowId?: string;
   stepPayloads?: Record<string, ContractStepPayloadJson>;
   terms?: string | null;
   clauseIds?: string[];
+  clauseItems?: ContractClauseItemInput[];
   contractTypeCode?: string | null;
   createdById: string;
   actorId?: string | null;
@@ -321,9 +365,17 @@ export async function createContractService(payload: {
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
-  const clauseFields = await resolveClauseFields(payload.clauseIds);
-  const terminalStatus = sanitizeStoredContractStatus(payload.status);
-  const workflowId = payload.workflowId ?? (await getContractFallbackWorkflowId());
+  const clauseFields = await resolveClauseFields(
+    payload.clauseItems !== undefined
+      ? { clauseItems: payload.clauseItems }
+      : payload.clauseIds !== undefined
+        ? { clauseIds: payload.clauseIds }
+        : {},
+  );
+  const storedStatus = sanitizeStoredContractStatus(payload.status);
+  const workflowId = payload.workflowId;
+  const statusSlaJson = sanitizeStatusSlaHours(payload.statusSlaHours);
+  const slaHours = sanitizeExecutionSlaHours(payload.slaHours);
   const created = await prisma.contract.create({
     data: {
       code: genContractCode(),
@@ -336,11 +388,17 @@ export async function createContractService(payload: {
       endDate: payload.endDate,
       warrantyEnd: payload.warrantyEnd ?? null,
       ...(payload.endReminderDays !== undefined ? { endReminderDays: payload.endReminderDays } : {}),
-      ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
+      ...(storedStatus !== undefined ? { status: storedStatus } : {}),
+      ...(statusSlaJson !== undefined ? { statusSlaHours: statusSlaJson } : {}),
+      ...(slaHours !== undefined ? { slaHours } : {}),
       ...(workflowId ? { workflowId } : {}),
-      ...(!workflowId && payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(clauseFields.clauseIds !== undefined
-        ? { clauseIds: clauseFields.clauseIds, terms: clauseFields.terms }
+        ? {
+            clauseIds: clauseFields.clauseIds,
+            clauseItems: (clauseFields.clauseItems ?? []) as unknown as Prisma.InputJsonValue,
+            terms: clauseFields.terms ?? null,
+          }
         : payload.terms !== undefined
           ? { terms: payload.terms }
           : {}),
@@ -351,10 +409,13 @@ export async function createContractService(payload: {
     },
   });
 
-  const workflowStarted = await initContractWorkflow(created.id, {
-    workflowId: workflowId ?? null,
-    actorId: payload.actorId ?? payload.createdById,
-  });
+  const workflowStarted =
+    workflowId != null
+      ? await initContractWorkflow(created.id, {
+          workflowId,
+          actorId: payload.actorId ?? payload.createdById,
+        })
+      : false;
 
   if (
     workflowStarted &&
@@ -376,10 +437,13 @@ type UpdateContractPayload = Partial<{
   warrantyEnd: Date | null;
   endReminderDays?: number;
   status?: string;
+  statusSlaHours?: Record<string, number>;
+  slaHours?: number | null;
   progress: number;
   stepPayloads: Record<string, ContractStepPayloadJson>;
   terms: string | null;
   clauseIds?: string[];
+  clauseItems?: ContractClauseItemInput[];
   contractTypeCode: string | null;
   actorId: string | null;
 }>;
@@ -391,16 +455,23 @@ export async function updateContractService(id: string, payload: UpdateContractP
     await assertActiveContractTypeCode(payload.contractTypeCode);
   }
 
-  const clauseFields = await resolveClauseFields(payload.clauseIds);
+  const clauseFields = await resolveClauseFields(
+    payload.clauseItems !== undefined
+      ? { clauseItems: payload.clauseItems }
+      : payload.clauseIds !== undefined
+        ? { clauseIds: payload.clauseIds }
+        : {},
+  );
 
   const existing = await prisma.contract.findFirst({
     where: { id: resolvedId, deletedAt: null },
-    select: { id: true, workflowInstanceId: true },
+    select: { id: true },
   });
   if (!existing) throw new HttpError(404, "Contract not found");
 
-  const terminalStatus = sanitizeStoredContractStatus(payload.status);
-  const hasWorkflow = Boolean(existing.workflowInstanceId);
+  const storedStatus = sanitizeStoredContractStatus(payload.status);
+  const statusSlaJson = sanitizeStatusSlaHours(payload.statusSlaHours);
+  const slaHours = sanitizeExecutionSlaHours(payload.slaHours);
   await prisma.contract.update({
     where: { id: resolvedId },
     data: {
@@ -411,10 +482,16 @@ export async function updateContractService(id: string, payload: UpdateContractP
       ...(payload.endDate !== undefined ? { endDate: payload.endDate } : {}),
       ...(payload.warrantyEnd !== undefined ? { warrantyEnd: payload.warrantyEnd } : {}),
       ...(payload.endReminderDays !== undefined ? { endReminderDays: payload.endReminderDays } : {}),
-      ...(terminalStatus !== undefined ? { status: terminalStatus } : {}),
-      ...(!hasWorkflow && payload.progress !== undefined ? { progress: payload.progress } : {}),
+      ...(storedStatus !== undefined ? { status: storedStatus } : {}),
+      ...(statusSlaJson !== undefined ? { statusSlaHours: statusSlaJson } : {}),
+      ...(slaHours !== undefined ? { slaHours } : {}),
+      ...(payload.progress !== undefined ? { progress: payload.progress } : {}),
       ...(clauseFields.clauseIds !== undefined
-        ? { clauseIds: clauseFields.clauseIds, terms: clauseFields.terms }
+        ? {
+            clauseIds: clauseFields.clauseIds,
+            clauseItems: (clauseFields.clauseItems ?? []) as unknown as Prisma.InputJsonValue,
+            terms: clauseFields.terms ?? null,
+          }
         : payload.terms !== undefined
           ? { terms: payload.terms }
           : {}),

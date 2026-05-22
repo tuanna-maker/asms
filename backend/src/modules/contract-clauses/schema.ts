@@ -14,7 +14,7 @@ export const clauseIdParamSchema = z.object({
 export const createClauseSchema = z.object({
   code: z.string().min(1).max(64),
   title: z.string().min(1).max(256),
-  content: z.string().min(1),
+  content: z.string().optional().default(""),
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
 });

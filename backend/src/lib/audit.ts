@@ -21,6 +21,8 @@ export type AuditEntity =
   | "workflow"
   | "workflow_step"
   | "workflow_instance"
+  | "contract_clause"
+  | "contract_clause_group"
   | "auth";
 
 export type AuditAction =

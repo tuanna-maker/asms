@@ -1,3 +1,4 @@
+import { notifyByPreference } from "../notifications/service";
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
@@ -63,34 +64,58 @@ const listSelect = {
   createdBy: { select: { id: true, fullName: true } },
 } as const;
 
+function startOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
 export async function listCustomerFeedbacksService(
   filters: z.infer<typeof listCustomerFeedbacksQuerySchema>,
 ) {
-  const where: {
-    deletedAt: null;
-    customerId?: string;
-    contractId?: string;
-    warrantyId?: string;
-    severity?: "low" | "medium" | "high";
-    status?: "new" | "processing" | "resolved";
-  } = { deletedAt: null };
+  const and: Array<Record<string, unknown>> = [{ deletedAt: null }];
 
   if (filters.customerId) {
-    where.customerId = await resolveCustomerId(filters.customerId);
+    and.push({ customerId: await resolveCustomerId(filters.customerId) });
   }
   if (filters.contractId) {
     const contract = await resolveContractId(filters.contractId);
-    where.contractId = contract.id;
+    and.push({ contractId: contract.id });
   }
   if (filters.warrantyId) {
     const warranty = await resolveWarrantyId(filters.warrantyId);
-    where.warrantyId = warranty.id;
+    and.push({ warrantyId: warranty.id });
   }
-  if (filters.severity) where.severity = filters.severity;
-  if (filters.status) where.status = filters.status;
+  if (filters.severity) and.push({ severity: filters.severity });
+  if (filters.status) and.push({ status: filters.status });
+
+  if (filters.feedbackFrom || filters.feedbackTo) {
+    const feedbackAt: { gte?: Date; lte?: Date } = {};
+    if (filters.feedbackFrom) feedbackAt.gte = startOfDay(filters.feedbackFrom);
+    if (filters.feedbackTo) feedbackAt.lte = endOfDay(filters.feedbackTo);
+    and.push({ feedbackAt });
+  }
+
+  const search = filters.search?.trim();
+  if (search) {
+    and.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+        { customer: { name: { contains: search, mode: "insensitive" } } },
+        { customer: { code: { contains: search, mode: "insensitive" } } },
+      ],
+    });
+  }
 
   return prisma.customerFeedback.findMany({
-    where,
+    where: { AND: and },
     orderBy: { feedbackAt: "desc" },
     select: listSelect,
   });
@@ -129,7 +154,7 @@ export async function createCustomerFeedbackService(
     warrantyId = warranty.id;
   }
 
-  return prisma.customerFeedback.create({
+  const row = await prisma.customerFeedback.create({
     data: {
       customerId,
       contractId,
@@ -143,6 +168,20 @@ export async function createCustomerFeedbackService(
     },
     select: listSelect,
   });
+
+  await notifyByPreference({
+    key: "feedback_new",
+    title: `Phản ánh mới: ${row.title}`,
+    message: row.customer?.name ? `Khách hàng ${row.customer.name}` : undefined,
+    link: `/phan-anh`,
+    refType: "customer_feedback",
+    refId: row.id,
+  }).catch((e) => {
+    // eslint-disable-next-line no-console
+    console.error("[notify] feedback_new failed", e);
+  });
+
+  return row;
 }
 
 export async function updateCustomerFeedbackService(id: string, payload: Record<string, unknown>) {

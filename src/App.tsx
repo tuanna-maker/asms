@@ -16,6 +16,7 @@ import Warranty from "./pages/Warranty";
 import Materials from "./pages/Materials";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
+import Feedbacks from "./pages/Feedbacks";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
 import AttributeSettingsPage from "./pages/AttributeSettingsPage";
@@ -28,6 +29,7 @@ import Documents from "./pages/Documents";
 import WorkflowOverviewPage from "./pages/WorkflowOverviewPage";
 import WorkflowListPage from "./pages/WorkflowListPage";
 import WorkflowEditorPage from "./pages/WorkflowEditorPage";
+import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -60,6 +62,7 @@ const App = () => (
                   <Route path="/vat-tu" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
                   <Route path="/san-pham" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                   <Route path="/khach-hang" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+                  <Route path="/phan-anh" element={<ProtectedRoute><Feedbacks /></ProtectedRoute>} />
                   <Route path="/bao-cao" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                   <Route path="/de-tai" element={<ProtectedRoute><ResearchProjects /></ProtectedRoute>} />
                   <Route path="/de-tai/:id" element={<ProtectedRoute><ResearchProjectDetail /></ProtectedRoute>} />
@@ -70,6 +73,7 @@ const App = () => (
                   <Route path="/quy-trinh" element={<ProtectedRoute><WorkflowOverviewPage /></ProtectedRoute>} />
                   <Route path="/quy-trinh/:moduleKey" element={<ProtectedRoute><WorkflowListPage /></ProtectedRoute>} />
                   <Route path="/quy-trinh/:moduleKey/:workflowId" element={<ProtectedRoute><WorkflowEditorPage /></ProtectedRoute>} />
+                  <Route path="/thong-bao" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                   <Route path="/cai-dat" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                   <Route path="/cai-dat/thuoc-tinh" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />
                   <Route path="/cai-dat/thuoc-tinh/:moduleKey" element={<ProtectedRoute><AttributeSettingsPage /></ProtectedRoute>} />

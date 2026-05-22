@@ -47,7 +47,15 @@ export async function listClausesController(req: Request, res: Response) {
 
 export async function createClauseController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createClauseSchema, req.body);
-  const data = await createClauseService({ ...payload, actorId: req.user?.id ?? null });
+  const input: Parameters<typeof createClauseService>[0] = {
+    code: payload.code,
+    title: payload.title,
+    content: payload.content,
+    actorId: req.user?.id ?? null,
+  };
+  if (payload.sortOrder !== undefined) input.sortOrder = payload.sortOrder;
+  if (payload.isActive !== undefined) input.isActive = payload.isActive;
+  const data = await createClauseService(input);
   await writeAudit(req, {
     action: "create",
     entity: "contract_clause",
@@ -61,7 +69,13 @@ export async function createClauseController(req: Request, res: Response) {
 export async function updateClauseController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(clauseIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateClauseSchema, req.body);
-  const data = await updateClauseService(id, { ...payload, actorId: req.user?.id ?? null });
+  const input: Parameters<typeof updateClauseService>[1] = { actorId: req.user?.id ?? null };
+  if (payload.code !== undefined) input.code = payload.code;
+  if (payload.title !== undefined) input.title = payload.title;
+  if (payload.content !== undefined) input.content = payload.content;
+  if (payload.sortOrder !== undefined) input.sortOrder = payload.sortOrder;
+  if (payload.isActive !== undefined) input.isActive = payload.isActive;
+  const data = await updateClauseService(id, input);
   await writeAudit(req, {
     action: "update",
     entity: "contract_clause",
@@ -103,7 +117,14 @@ export async function listClauseGroupsController(req: Request, res: Response) {
 
 export async function createClauseGroupController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createGroupSchema, req.body);
-  const data = await createClauseGroupService({ ...payload, actorId: req.user?.id ?? null });
+  const input: Parameters<typeof createClauseGroupService>[0] = {
+    code: payload.code,
+    label: payload.label,
+    actorId: req.user?.id ?? null,
+  };
+  if (payload.sortOrder !== undefined) input.sortOrder = payload.sortOrder;
+  if (payload.isActive !== undefined) input.isActive = payload.isActive;
+  const data = await createClauseGroupService(input);
   await writeAudit(req, {
     action: "create",
     entity: "contract_clause_group",
@@ -117,7 +138,12 @@ export async function createClauseGroupController(req: Request, res: Response) {
 export async function updateClauseGroupController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(groupIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateGroupSchema, req.body);
-  const data = await updateClauseGroupService(id, { ...payload, actorId: req.user?.id ?? null });
+  const input: Parameters<typeof updateClauseGroupService>[1] = { actorId: req.user?.id ?? null };
+  if (payload.code !== undefined) input.code = payload.code;
+  if (payload.label !== undefined) input.label = payload.label;
+  if (payload.sortOrder !== undefined) input.sortOrder = payload.sortOrder;
+  if (payload.isActive !== undefined) input.isActive = payload.isActive;
+  const data = await updateClauseGroupService(id, input);
   await writeAudit(req, {
     action: "update",
     entity: "contract_clause_group",

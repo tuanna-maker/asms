@@ -223,7 +223,8 @@
 | Tài liệu | Mô tả |
 |---|---|
 | [hop.md](./hop.md) | Biên bản ghi âm gốc (speech-to-text) |
-| [hop-tom-tat.md](./hop-tom-tat.md) | Bảng tổng hợp việc cần làm |
+| [hop-tom-tat.md](./hop-tom-tat.md) | Bảng tổng hợp việc cần làm (24 dòng) |
+| [hop-bang-cong-viec-chi-tiet.md](./hop-bang-cong-viec-chi-tiet.md) | **Bảng chi tiết ~97 hạng mục** cần làm sau họp |
 | [tom-tat-cuoc-hop.md](./tom-tat-cuoc-hop.md) | Tóm tắt cuộc họp (phiên bản ngắn) |
 | [BRD-TONG-THE-ASMS.md](./BRD-TONG-THE-ASMS.md) | BRD tổng thể |
 | [SRS-ASMS.md](./SRS-ASMS.md) | SRS kỹ thuật |

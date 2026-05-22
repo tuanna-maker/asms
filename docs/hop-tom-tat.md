@@ -1,5 +1,7 @@
 # Bảng tổng hợp tất cả việc cần làm (từ `hop.md`)
 
+> Bản **chi tiết đầy đủ** (~97 hạng mục, có mã, người PH, phụ thuộc): [hop-bang-cong-viec-chi-tiet.md](./hop-bang-cong-viec-chi-tiet.md)
+
 | STT | Nhóm việc | Việc cần làm | Đầu ra mong muốn | Ưu tiên | Giai đoạn | Trạng thái |
 |---|---|---|---|---|---|---|
 | 1 | Quy trình | Tách quy trình nghiệp vụ theo mảng | Bàn giao, huấn luyện, bảo hành/sửa chữa, phản ánh có quy trình riêng | Cao | Đợt 1 | Chưa làm |

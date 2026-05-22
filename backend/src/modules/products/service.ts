@@ -6,7 +6,7 @@ import { prisma } from "../../utils/prisma";
 import { startInstanceForEntity } from "../workflows/runtime";
 import { loadWorkflowSnapshotsByInstanceIds, type WorkflowSnapshot } from "../workflows/instance-snapshot";
 import { syncContractProductCounts } from "../contracts/product-count";
-import { assertActiveDefinitionCode } from "../definitions/assert-active-code";
+import { resolveActiveDefinitionCode } from "../definitions/assert-active-code";
 import { enrichProductWithStepPayloads, upsertStepPayloads, type ProductStepPayloadJson } from "./step-payload";
 
 import { createProductSchema } from "./schema";
@@ -193,8 +193,11 @@ export async function updateProductService(idOrCode: string, payload: Record<str
   if (payload.code !== undefined) data.code = payload.code;
   if (payload.name !== undefined) data.name = payload.name;
   if (payload.category !== undefined) {
-    await assertActiveDefinitionCode("product_category", String(payload.category), "Nhóm sản phẩm");
-    data.category = payload.category;
+    data.category = await resolveActiveDefinitionCode(
+      "product_category",
+      String(payload.category),
+      "Nhóm sản phẩm",
+    );
   }
   if (payload.specs !== undefined) data.specs = payload.specs;
   if (payload.status !== undefined) data.status = payload.status;
@@ -373,7 +376,11 @@ export async function createProductService(payload: CreateProductInput) {
   });
   if (dup) throw new HttpError(409, "Product code already exists");
 
-  await assertActiveDefinitionCode("product_category", payload.category, "Nhóm sản phẩm");
+  const categoryCode = await resolveActiveDefinitionCode(
+    "product_category",
+    payload.category,
+    "Nhóm sản phẩm",
+  );
 
   const customerId = await resolveCustomerIdOptional(payload.customerId);
 
@@ -382,7 +389,7 @@ export async function createProductService(payload: CreateProductInput) {
       data: {
         code: payload.code,
         name: payload.name,
-        category: payload.category,
+        category: categoryCode,
         specs: (payload.specs ?? []) as unknown as Prisma.InputJsonValue,
         status: payload.status ?? "producing",
         version: payload.version ?? null,

@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Cpu, Download, FileText, FileBox, Layers, Package } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ProductBomEditor } from "@/components/products/ProductBomEditor";
+import type { ProductBomLine } from "@/components/products/ProductBomEditor";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import type { ProductSpec } from "@/hooks/use-products-api";
@@ -28,13 +27,7 @@ type ProductDetailResponse = {
   yearReleased: number | null;
   version: string | null;
   specs?: ProductSpec[];
-  bom?: Array<{
-    materialId: string;
-    materialName: string;
-    quantity: number;
-    unit: string;
-    serialNumbers?: string[];
-  }>;
+  bom?: ProductBomLine[];
 };
 
 type DocumentRow = {
@@ -71,8 +64,15 @@ const ContractProductDetailDialog = ({
   open,
   onOpenChange,
 }: Props) => {
+  const queryClient = useQueryClient();
   const updateContractProduct = useUpdateContractProduct();
   const [valuesDraft, setValuesDraft] = useState<Record<string, string>>({});
+
+  const invalidateProductDetail = () => {
+    if (productId) {
+      void queryClient.invalidateQueries({ queryKey: ["product-detail-for-contract", productId] });
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -190,60 +190,30 @@ const ContractProductDetailDialog = ({
           </TabsContent>
 
           <TabsContent value="bom" className="flex-1 overflow-y-auto p-6 mt-0">
-            <Card>
-              <CardContent className="pt-6">
-                {bom.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Sản phẩm chưa khai báo linh kiện (BOM).</p>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Mã VT</TableHead>
-                        <TableHead>Tên linh kiện</TableHead>
-                        <TableHead>Serial</TableHead>
-                        <TableHead className="text-right">Số lượng</TableHead>
-                        <TableHead>ĐVT</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {bom.map((item) => (
-                        <TableRow key={item.materialId}>
-                          <TableCell className="font-mono text-xs text-primary">{item.materialId}</TableCell>
-                          <TableCell>{item.materialName}</TableCell>
-                          <TableCell>
-                            {(item.serialNumbers?.length ?? 0) > 0 ? (
-                              <div className="flex flex-wrap gap-1">
-                                {item.serialNumbers!.slice(0, 2).map((sn) => (
-                                  <Badge key={sn} variant="outline" className="font-mono text-[10px] px-1.5 py-0">
-                                    {sn}
-                                  </Badge>
-                                ))}
-                                {(item.serialNumbers?.length ?? 0) > 2 ? (
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                    +{(item.serialNumbers?.length ?? 0) - 2}
-                                  </Badge>
-                                ) : null}
-                              </div>
-                            ) : (
-                              <span className="text-xs text-muted-foreground italic">Chưa gán</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">{item.quantity}</TableCell>
-                          <TableCell className="text-muted-foreground">{item.unit}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
+            {productId ? (
+              <ProductBomEditor
+                productId={productId}
+                bom={bom}
+                editable={editable}
+                bomSaveMode="immediate"
+                showMaterialAttributes={editable}
+                contextBanner={
+                  editable
+                    ? "Thay đổi linh kiện cập nhật danh mục sản phẩm và kho vật tư; mọi hợp đồng dùng sản phẩm này sẽ thấy BOM mới."
+                    : undefined
+                }
+                onBomUpdated={invalidateProductDetail}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Chưa xác định sản phẩm.</p>
+            )}
           </TabsContent>
 
           <TabsContent value="specs" className="flex-1 overflow-y-auto p-6 mt-0 space-y-4">
             <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
               {editable
-                ? "Bạn có thể chỉnh sửa giá trị thông số trong popup này. Các tab còn lại chỉ đọc."
-                : "Màn xem chỉ cho phép xem thông số, không thể chỉnh sửa."}
+                ? "Chỉnh sửa thông số tại tab Thông số; linh kiện và thuộc tính vật tư tại tab Linh kiện."
+                : "Màn xem chỉ cho phép xem, không thể chỉnh sửa."}
             </div>
             {specs.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">

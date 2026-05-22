@@ -14,4 +14,10 @@ describe("role matrix sync với ROUTE_PERMISSIONS", () => {
   it("sales có CRM và Báo cáo", () => {
     expect(getAllowedModuleLabels("sales")).toEqual(expect.arrayContaining(["CRM / Khách hàng", "Báo cáo"]));
   });
+
+  it("technician và viewer truy cập màn Phản ánh", () => {
+    expect(moduleAllowedForRole("technician", ["/phan-anh"])).toBe(true);
+    expect(moduleAllowedForRole("viewer", ["/phan-anh"])).toBe(true);
+    expect(getAllowedModuleLabels("technician")).toContain("Phản ánh");
+  });
 });
