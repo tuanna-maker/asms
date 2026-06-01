@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,17 @@ function emptyField(): FieldDef {
   return { key: "", label: "", type: "text" };
 }
 
+function normalizeFieldKeys(fields: FieldDef[]): FieldDef[] {
+  const usedKeys: string[] = [];
+  return fields.map((field, idx) => {
+    const fallback = field.key?.trim() || `truong_${idx + 1}`;
+    const base = slugFieldKey(field.label?.trim() || fallback);
+    const key = ensureUniqueFieldKey(base, usedKeys);
+    usedKeys.push(key);
+    return { ...field, key };
+  });
+}
+
 export function FieldSchemaBuilder({
   value,
   onChange,
@@ -36,21 +48,27 @@ export function FieldSchemaBuilder({
   stepIndex = 0,
   variant = "step",
 }: Props) {
-  const addField = () => onChange([...value, emptyField()]);
+  const addField = () => onChange(normalizeFieldKeys([...value, emptyField()]));
 
   const updateAt = (index: number, patch: Partial<FieldDef>) => {
-    onChange(value.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+    onChange(normalizeFieldKeys(value.map((f, i) => (i === index ? { ...f, ...patch } : f))));
   };
 
-  const removeAt = (index: number) => onChange(value.filter((_, i) => i !== index));
+  const removeAt = (index: number) => onChange(normalizeFieldKeys(value.filter((_, i) => i !== index)));
 
   const move = (index: number, dir: -1 | 1) => {
     const j = index + dir;
     if (j < 0 || j >= value.length) return;
     const next = [...value];
     [next[index], next[j]] = [next[j]!, next[index]!];
-    onChange(next);
+    onChange(normalizeFieldKeys(next));
   };
+
+  useEffect(() => {
+    const normalized = normalizeFieldKeys(value);
+    const changed = normalized.some((f, i) => f.key !== value[i]?.key);
+    if (changed) onChange(normalized);
+  }, [value, onChange]);
 
   const duplicateKeys = findDuplicateFieldKeys(value);
 
@@ -112,31 +130,14 @@ export function FieldSchemaBuilder({
                   <Label className="text-xs">Nhãn hiển thị</Label>
                   <Input
                     value={field.label}
-                    onChange={(e) => {
-                      const label = e.target.value;
-                      const patch: Partial<FieldDef> = { label };
-                      if (!field.key || field.key === slugFieldKey(field.label)) {
-                        patch.key = ensureUniqueFieldKey(slugFieldKey(label), otherKeys);
-                      }
-                      updateAt(index, patch);
-                    }}
+                    onChange={(e) => updateAt(index, { label: e.target.value })}
                     placeholder="Ví dụ: Loại hợp đồng"
                   />
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Mã trường (key)</Label>
-                  <Input
-                    value={field.key}
-                    onChange={(e) => updateAt(index, { key: e.target.value.replace(/\s/g, "_") })}
-                    placeholder="contract_type"
-                    className={keyDuplicate ? "border-destructive" : undefined}
-                    aria-invalid={keyDuplicate}
-                  />
-                  {keyDuplicate ? (
-                    <p className="text-xs text-destructive">Mã trường đã tồn tại trong bước này.</p>
-                  ) : null}
-                </div>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Mã trường được tự động tạo từ nhãn (ví dụ: checklist_chuan_bi_hang_hoa), tự đảm bảo không trùng.
+              </p>
 
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">

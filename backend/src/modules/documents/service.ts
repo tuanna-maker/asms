@@ -22,7 +22,7 @@ async function resolveDocumentId(idOrCode: string) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!doc) throw new HttpError(404, "Document not found");
+  if (!doc) throw new HttpError(404, "Không tìm thấy tài liệu");
   return doc.id;
 }
 
@@ -95,7 +95,7 @@ export async function getDocumentDetailService(id: string) {
     },
   });
 
-  if (!doc) throw new HttpError(404, "Document not found");
+  if (!doc) throw new HttpError(404, "Không tìm thấy tài liệu");
   return doc;
 }
 

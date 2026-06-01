@@ -334,47 +334,18 @@ const WorkflowEditorPage = () => {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="wf-code">Mã quy trình</Label>
-                <Input id="wf-code" value={form.code} readOnly disabled className="bg-muted font-mono text-sm" />
-                <p className="text-xs text-muted-foreground">Mã do hệ thống tự sinh, không thể chỉnh sửa.</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Loại văn bản</Label>
-                  <Select disabled value="1">
-                    <SelectTrigger>
-                      <SelectValue placeholder="—" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">{MODULE_LABEL[validKey]}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Trạng thái</Label>
-                  <Select
-                    value={form.isActive ? "active" : "inactive"}
-                    onValueChange={(v) => setForm((s) => ({ ...s, isActive: v === "active" }))}
-                    disabled={!canWrite || isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Hoạt động</SelectItem>
-                      <SelectItem value="inactive">Ngừng</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Lĩnh vực Phân quyờn (Domain)</Label>
-                <Select disabled value={validKey}>
+                <Label>Trạng thái</Label>
+                <Select
+                  value={form.isActive ? "active" : "inactive"}
+                  onValueChange={(v) => setForm((s) => ({ ...s, isActive: v === "active" }))}
+                  disabled={!canWrite || isLoading}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={validKey}>{MODULE_LABEL[validKey]}</SelectItem>
+                    <SelectItem value="active">Hoạt động</SelectItem>
+                    <SelectItem value="inactive">Ngừng</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

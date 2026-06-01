@@ -65,7 +65,7 @@ export async function getContractProductsController(req: Request, res: Response)
 export async function createContractController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createContractSchema, req.body);
   const createdById = req.user?.id;
-  if (!createdById) throw new HttpError(401, "Missing user");
+  if (!createdById) throw new HttpError(401, "Thiếu thông tin người dùng");
 
   const input: Record<string, unknown> & { createdById: string } = {
     ...payload,
@@ -90,13 +90,13 @@ export async function createContractController(req: Request, res: Response) {
     entityId: (data as { id?: string }).id ?? null,
     summary: `Tạo hợp đồng ${(data as { code?: string }).code ?? ""}`.trim(),
   });
-  return sendSuccess(res, data, "Contract created");
+  return sendSuccess(res, data, "Đã tạo hợp đồng");
 }
 
 export async function updateContractController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(contractIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateContractSchema, req.body);
-  if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
+  if (Object.keys(payload).length === 0) throw new HttpError(400, "Không có dữ liệu cần cập nhật");
 
   const updatePayload: Parameters<typeof updateContractService>[1] = {
     ...(payload as Parameters<typeof updateContractService>[1]),
@@ -116,7 +116,7 @@ export async function updateContractController(req: Request, res: Response) {
     summary: `Cập nhật hợp đồng ${(data as { code?: string }).code ?? id}`,
     payload: payload as Record<string, unknown>,
   });
-  return sendSuccess(res, data, "Contract updated");
+  return sendSuccess(res, data, "Đã cập nhật hợp đồng");
 }
 
 export async function deleteContractController(req: Request, res: Response) {
@@ -128,20 +128,20 @@ export async function deleteContractController(req: Request, res: Response) {
     entityId: id,
     summary: `Xoá hợp đồng ${id}`,
   });
-  return sendSuccess(res, data, "Contract deleted");
+  return sendSuccess(res, data, "Đã xóa hợp đồng");
 }
 
 export async function setContractProductsController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(contractIdParamSchema, req.params);
   const payload = zodParseOrThrow(setContractProductsSchema, req.body);
   const data = await setContractProductsService(id, payload);
-  return sendSuccess(res, data, "Contract products updated");
+  return sendSuccess(res, data, "Đã cập nhật sản phẩm hợp đồng");
 }
 
 export async function updateContractProductController(req: Request, res: Response) {
   const { id, productId } = zodParseOrThrow(contractProductParamSchema, req.params);
   const payload = zodParseOrThrow(updateContractProductSchema, req.body);
   const data = await updateContractProductService(id, productId, payload);
-  return sendSuccess(res, data, "Contract product updated");
+  return sendSuccess(res, data, "Đã cập nhật sản phẩm trong hợp đồng");
 }
 

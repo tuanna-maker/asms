@@ -73,24 +73,24 @@ export async function createTrainingCourseController(req: Request, res: Response
   };
 
   const data = await createTrainingCourseService(normalizedPayload);
-  return sendSuccess(res, data, "Training course created");
+  return sendSuccess(res, data, "Đã tạo khóa huấn luyện");
 }
 
 export async function updateTrainingCourseController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateTrainingCourseSchema, req.body);
-  if (Object.keys(payload).length === 0) throw new HttpError(400, "No fields to update");
+  if (Object.keys(payload).length === 0) throw new HttpError(400, "Không có dữ liệu cần cập nhật");
   const data = await updateTrainingCourseService(id, {
     ...(payload as Parameters<typeof updateTrainingCourseService>[1]),
     actorId: (req as { user?: { id?: string } }).user?.id ?? null,
   });
-  return sendSuccess(res, data, "Training course updated");
+  return sendSuccess(res, data, "Đã cập nhật khóa huấn luyện");
 }
 
 export async function deleteTrainingCourseController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const data = await softDeleteTrainingCourseService(id);
-  return sendSuccess(res, data, "Training course deleted");
+  return sendSuccess(res, data, "Đã xóa khóa huấn luyện");
 }
 
 export async function addTraineeController(req: Request, res: Response) {
@@ -105,7 +105,7 @@ export async function addTraineeController(req: Request, res: Response) {
   };
 
   const data = await addTraineeService(id, normalizedPayload);
-  return sendSuccess(res, data, "Trainee added");
+  return sendSuccess(res, data, "Đã thêm học viên");
 }
 
 export async function updateTraineeController(req: Request, res: Response) {
@@ -113,14 +113,14 @@ export async function updateTraineeController(req: Request, res: Response) {
   const { traineeId } = zodParseOrThrow(traineeIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateTraineeSchema, req.body);
   const data = await updateTraineeService(id, traineeId, payload as Record<string, unknown>);
-  return sendSuccess(res, data, "Trainee updated");
+  return sendSuccess(res, data, "Đã cập nhật học viên");
 }
 
 export async function deleteTraineeController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const { traineeId } = zodParseOrThrow(traineeIdParamSchema, req.params);
   const data = await softDeleteTraineeService(id, traineeId);
-  return sendSuccess(res, data, "Trainee deleted");
+  return sendSuccess(res, data, "Đã xóa học viên");
 }
 
 export async function addScheduleSessionController(req: Request, res: Response) {
@@ -136,7 +136,7 @@ export async function addScheduleSessionController(req: Request, res: Response) 
   };
 
   const data = await addScheduleSessionService(id, normalizedPayload);
-  return sendSuccess(res, data, "Session scheduled");
+  return sendSuccess(res, data, "Đã tạo buổi học");
 }
 
 export async function updateScheduleSessionController(req: Request, res: Response) {
@@ -144,13 +144,13 @@ export async function updateScheduleSessionController(req: Request, res: Respons
   const { sessionId } = zodParseOrThrow(sessionIdParamSchema, req.params);
   const payload = zodParseOrThrow(updateScheduleSessionSchema, req.body);
   const data = await updateScheduleSessionService(id, sessionId, payload as Record<string, unknown>);
-  return sendSuccess(res, data, "Session updated");
+  return sendSuccess(res, data, "Đã cập nhật buổi học");
 }
 
 export async function deleteScheduleSessionController(req: Request, res: Response) {
   const { id } = zodParseOrThrow(trainingIdParamSchema, req.params);
   const { sessionId } = zodParseOrThrow(sessionIdParamSchema, req.params);
   const data = await softDeleteScheduleSessionService(id, sessionId);
-  return sendSuccess(res, data, "Session deleted");
+  return sendSuccess(res, data, "Đã xóa buổi học");
 }
 

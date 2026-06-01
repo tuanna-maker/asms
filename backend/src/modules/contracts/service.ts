@@ -39,7 +39,7 @@ async function resolveContractId(idOrCode: string) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!contract) throw new HttpError(404, "Contract not found");
+  if (!contract) throw new HttpError(404, "Không tìm thấy hợp đồng");
   return contract.id;
 }
 
@@ -244,7 +244,7 @@ export async function getContractDetailService(id: string) {
       workflow: { select: { id: true, code: true, name: true, moduleKey: true } },
     },
   });
-  if (!contract) throw new HttpError(404, "Contract not found");
+  if (!contract) throw new HttpError(404, "Không tìm thấy hợp đồng");
   const productsList = contract.contractProducts.map((item) => ({
     ...item.product,
     totalProduced: item.quantity,
@@ -468,7 +468,7 @@ export async function updateContractService(id: string, payload: UpdateContractP
     where: { id: resolvedId, deletedAt: null },
     select: { id: true },
   });
-  if (!existing) throw new HttpError(404, "Contract not found");
+  if (!existing) throw new HttpError(404, "Không tìm thấy hợp đồng");
 
   const storedStatus = sanitizeStoredContractStatus(payload.status);
   const statusSlaJson = sanitizeStatusSlaHours(payload.statusSlaHours);
@@ -539,7 +539,7 @@ export async function setContractProductsService(
     });
     const validSet = new Set(validProducts.map((item) => item.id));
     const invalid = productIds.filter((productId) => !validSet.has(productId));
-    if (invalid.length > 0) throw new HttpError(400, "Invalid products", { invalidProductIds: invalid });
+    if (invalid.length > 0) throw new HttpError(400, "Có sản phẩm không hợp lệ", { invalidProductIds: invalid });
   }
 
   const now = new Date();
@@ -596,7 +596,7 @@ export async function updateContractProductService(
     where: { deletedAt: null, OR: [{ id: productIdOrCode }, { code: productIdOrCode }] },
     select: { id: true },
   });
-  if (!product) throw new HttpError(404, "Product not found");
+  if (!product) throw new HttpError(404, "Không tìm thấy sản phẩm");
 
   const link = await prisma.contractProduct.findFirst({
     where: {
@@ -606,7 +606,7 @@ export async function updateContractProductService(
     },
     select: { id: true },
   });
-  if (!link) throw new HttpError(404, "Contract product link not found");
+  if (!link) throw new HttpError(404, "Không tìm thấy liên kết sản phẩm của hợp đồng");
 
   const data: Prisma.ContractProductUpdateInput = {};
   if (payload.specValues !== undefined) {

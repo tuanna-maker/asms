@@ -37,7 +37,7 @@ import {
 
 function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
   const r = schema.safeParse(input);
-  if (!r.success) throw new HttpError(400, "Invalid request input", r.error.flatten());
+  if (!r.success) throw new HttpError(400, "Dữ liệu yêu cầu không hợp lệ", r.error.flatten());
   return r.data;
 }
 

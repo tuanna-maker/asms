@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Check, CircleDot, FileText, History, Paperclip, Trash2, Upload, X } from "lucide-react";
+import { Check, CircleDot, Download, FileText, History, Paperclip, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +63,20 @@ function formatSize(bytes: number) {
   return `${Math.round(bytes / 104857.6) / 10} MB`;
 }
 
+function toWorkflowDocumentUrl(storagePath: string): string {
+  const normalized = storagePath.replace(/\\/g, "/");
+  const marker = "/uploads/";
+  const idx = normalized.lastIndexOf(marker);
+  if (idx >= 0) {
+    const rel = normalized.slice(idx + marker.length);
+    return `/api/v1/uploads/${rel}`;
+  }
+  if (normalized.startsWith("uploads/")) {
+    return `/api/v1/${normalized}`;
+  }
+  return `/api/v1/uploads/${normalized}`;
+}
+
 export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compact }: Props) {
   const { role } = useRole();
   const { user } = useAuth();
@@ -103,6 +117,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
     ? (instance.workflow.steps.find((s) => s.id === actionStepId) ?? instance.currentStep)
     : instance.currentStep;
   const stepDocs = documents.filter((d) => actionStepId && d.stepId === actionStepId);
+  const allDocs = documents;
   const requireDoc = Boolean(actionStep?.requireDocument);
   const blockedByDocument = requireDoc && stepDocs.length === 0;
   const canActOnFocus =
@@ -123,7 +138,13 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
         comment: comment.trim() || null,
       });
       setComment("");
-      toast.success(action === "approve" ? "Đã phê duyệt bước" : "Đã trả lại");
+      toast.success(
+        action === "approve"
+          ? "Đã phê duyệt bước"
+          : moduleKey === "handover"
+            ? "Đã hủy bàn giao"
+            : "Đã trả lại",
+      );
     } catch (e) {
       toast.error(errMessage(e));
     }
@@ -154,10 +175,8 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
   };
 
   const showAct = compact ? canActOnFocus : canAct;
-  const showDocsBlock = compact
-    ? Boolean(actionStep?.requireDocument)
-    : instance.status === "running" && Boolean(instance.currentStep?.requireDocument);
-  /** Cho phép đính kèm khi bước yêu cầu tài liệu và quy trình đang chạy (không bắt buộc đúng vai trò phê duyệt). */
+  const showDocsBlock = Boolean(actionStep);
+  /** Cho phép đính kèm cho mọi bước trong lúc quy trình còn chạy. */
   const canUploadDocs = showDocsBlock && instance.status === "running";
   const docStepLabel = compact && actionStep ? actionStep.name : "bước hiện tại";
 
@@ -270,6 +289,17 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
                     <span className="font-medium text-foreground">{doc.fileName}</span>
                     <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
                   </span>
+                  <a
+                    href={toWorkflowDocumentUrl(doc.storagePath)}
+                    download={doc.fileName}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="shrink-0"
+                  >
+                    <Button variant="ghost" size="icon" aria-label="Tải tài liệu">
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
+                  </a>
                   {doc.uploadedBy ? (
                     <span className="shrink-0 text-muted-foreground">
                       {doc.uploadedBy.fullName} · {formatDateTime(doc.uploadedAt)}
@@ -294,6 +324,42 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
           )}
         </div>
       ) : null}
+      <div className="rounded-md border border-border/50 bg-secondary/10 p-3">
+        <div className="mb-2 text-sm font-medium text-card-foreground">
+          Tất cả tài liệu đã đính kèm
+        </div>
+        {allDocs.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Chưa có tài liệu nào.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {allDocs.map((doc) => (
+              <li key={`all-${doc.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-card px-2 py-1.5 text-xs">
+                <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="min-w-0 flex-1 truncate">
+                  <span className="font-medium text-foreground">{doc.fileName}</span>
+                  <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
+                </span>
+                <span className="shrink-0 text-muted-foreground">
+                  {doc.stepId
+                    ? `Bước ${instance.workflow.steps.find((s) => s.id === doc.stepId)?.order ?? "?"}`
+                    : "Tài liệu chung"}
+                </span>
+                <a
+                  href={toWorkflowDocumentUrl(doc.storagePath)}
+                  download={doc.fileName}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="shrink-0"
+                >
+                  <Button variant="ghost" size="icon" aria-label="Tải tài liệu">
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {showAct ? (
         <div className="space-y-2 rounded-md bg-secondary/30 p-3">
@@ -306,7 +372,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
           <div className="flex justify-end gap-2">
             <Button variant="outline" size="sm" onClick={() => void onAct("reject")} disabled={advance.isPending}>
               <X className="mr-1 h-4 w-4" />
-              Trả lại
+              {moduleKey === "handover" ? "Hủy bàn giao" : "Trả lại"}
             </Button>
             <Button
               size="sm"

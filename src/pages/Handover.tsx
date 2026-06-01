@@ -42,14 +42,65 @@ import {
 } from "@/lib/contract-eligibility";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
 
+type ProgressStatus = "pending" | "active" | "completed" | "late" | "cancelled";
+type HandoverWithDisplayStatus = HandoverListItem & { displayStatus: ProgressStatus };
+type TrainingWithDisplayStatus = TrainingCourse & { displayStatus: ProgressStatus };
 type NeedsProcessingRow =
-  | { kind: "handover"; item: HandoverListItem }
-  | { kind: "training"; item: TrainingCourse };
+  | { kind: "handover"; item: HandoverWithDisplayStatus }
+  | { kind: "training"; item: TrainingWithDisplayStatus };
 
 function formatShortDate(iso: string) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function startOfDay(date: Date): Date {
+  const x = new Date(date);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(date: Date): Date {
+  const x = new Date(date);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
+function parseDateSafe(value?: string | null): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
+function resolveProgressStatus(params: {
+  workflow?: { status?: string; currentStepIndex?: number } | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  rawStatus?: string | null;
+  now?: Date;
+}): ProgressStatus {
+  const now = params.now ?? new Date();
+  const today = startOfDay(now);
+  const start = parseDateSafe(params.startDate);
+  const due = parseDateSafe(params.dueDate);
+  const workflowCompleted = params.workflow?.status === "completed";
+  if (workflowCompleted) return "completed";
+  if (params.workflow?.status === "cancelled") return "cancelled";
+  if (params.rawStatus === "completed") return "completed";
+  if (params.rawStatus === "cancelled") return "cancelled";
+
+  const progressedPastStep1 = (params.workflow?.currentStepIndex ?? 0) > 1;
+  if (due && today > endOfDay(due)) return "late";
+
+  if (start && today < startOfDay(start) && !progressedPastStep1) return "pending";
+  if (progressedPastStep1) return "active";
+  if (start && today >= startOfDay(start)) return "active";
+
+  if (params.rawStatus === "late") return "late";
+  if (params.rawStatus === "active" || params.rawStatus === "ongoing") return "active";
+  return "pending";
 }
 
 
@@ -128,8 +179,32 @@ const Handover = () => {
   });
   const deleteHandover = useDeleteHandover();
 
-  const syncedHandoverRows = handoverRows;
-  const syncedTrainingRows = trainingRows;
+  const syncedHandoverRows = useMemo<HandoverWithDisplayStatus[]>(
+    () =>
+      handoverRows.map((row) => ({
+        ...row,
+        displayStatus: resolveProgressStatus({
+          workflow: row.workflow,
+          startDate: row.startDate,
+          dueDate: row.dueDate,
+          rawStatus: row.status,
+        }),
+      })),
+    [handoverRows],
+  );
+  const syncedTrainingRows = useMemo<TrainingWithDisplayStatus[]>(
+    () =>
+      trainingRows.map((row) => ({
+        ...row,
+        displayStatus: resolveProgressStatus({
+          workflow: row.workflow,
+          startDate: row.startDate,
+          dueDate: row.endDate,
+          rawStatus: row.status,
+        }),
+      })),
+    [trainingRows],
+  );
   const handoverPag = usePaginatedSlice(syncedHandoverRows);
   const trainingPag = usePaginatedSlice(syncedTrainingRows);
 
@@ -146,6 +221,10 @@ const Handover = () => {
         editingHandover?.contractId,
       ),
     [contractOptions, assignedContractSets, editingHandover?.contractId],
+  );
+  const handoverDialogContractsWithProducts = useMemo(
+    () => handoverDialogContracts.map((c) => ({ ...c, products: c.products ?? 0 })),
+    [handoverDialogContracts],
   );
 
   const trainingDialogContracts = useMemo(
@@ -193,8 +272,8 @@ const Handover = () => {
     return [...handovers, ...trainings];
   }, [syncedHandoverRows, syncedTrainingRows, role]);
 
-  const activeCount = syncedHandoverRows.filter((h) => h.status === "active").length;
-  const completedCount = syncedHandoverRows.filter((h) => h.status === "completed").length;
+  const activeCount = syncedHandoverRows.filter((h) => h.displayStatus === "active").length;
+  const completedCount = syncedHandoverRows.filter((h) => h.displayStatus === "completed").length;
 
   const resetTrainingForm = () =>
     setTrainingForm({
@@ -216,7 +295,7 @@ const Handover = () => {
     setTrainingCreateOpen(true);
   };
 
-  const openEditTraining = (course: (typeof syncedTrainingRows)[number]) => {
+  const openEditTraining = (course: TrainingCourse) => {
     setTrainingEditingId(course.id);
     setTrainingForm({
       title: course.title ?? "",
@@ -346,7 +425,7 @@ const Handover = () => {
                   if (row.kind === "handover") {
                     const h = row.item;
                     return (
-                      <TableRow key={`h-${h.id}`} className={lateProgressRowClass(h.status)}>
+                      <TableRow key={`h-${h.id}`} className={lateProgressRowClass(h.displayStatus)}>
                         <TableCell className="px-4 py-3.5">
                           <Badge variant="outline">Bàn giao</Badge>
                         </TableCell>
@@ -357,7 +436,7 @@ const Handover = () => {
                         <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
                           {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
                         </TableCell>
-                        <TableCell className="px-4 py-3.5 text-center">{statusBadge(h.status)}</TableCell>
+                        <TableCell className="px-4 py-3.5 text-center">{statusBadge(h.displayStatus)}</TableCell>
                         <TableCell className="px-4 py-3.5 text-right">
                           <Button
                             variant="ghost"
@@ -387,7 +466,7 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 text-center">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 text-center">{statusBadge(t.displayStatus)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right">
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
                           <Pencil className="h-4 w-4" />
@@ -501,7 +580,7 @@ const Handover = () => {
                   </TableRow>
                 ) : (
                   handoverPag.pagedItems.map((h) => (
-                    <TableRow key={h.id} className={lateProgressRowClass(h.status)}>
+                    <TableRow key={h.id} className={lateProgressRowClass(h.displayStatus)}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{h.code}</TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{h.contract.code}</TableCell>
                       <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{h.customer.name}</TableCell>
@@ -530,7 +609,7 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(h.startDate)} – {formatShortDate(h.dueDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(h.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(h.displayStatus)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
                           <Button
@@ -598,10 +677,10 @@ const Handover = () => {
                   </TableRow>
                 ) : (
                   trainingPag.pagedItems.map((t) => (
-                    <TableRow key={t.id}>
+                    <TableRow key={t.id} className={lateProgressRowClass(t.displayStatus)}>
                       <TableCell className="px-4 py-3.5 font-medium text-primary align-middle">{t.code ?? t.id}</TableCell>
                       <TableCell className="px-4 py-3.5 text-muted-foreground align-middle text-center lg:text-left break-words">{t.title}</TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{t.customer || "-"}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center lg:text-left break-words">{t.customerName || "-"}</TableCell>
                       <TableCell className="px-4 py-3.5 text-center align-middle">{t.participants}</TableCell>
                       <TableCell className="px-4 py-3.5 text-sm align-middle">
                         {t.workflow?.currentStepName ?? (t.workflow ? "—" : "Chưa gắn quy trình")}
@@ -609,7 +688,7 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 text-sm text-muted-foreground align-middle">
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
-                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(t.status)}</TableCell>
+                      <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(t.displayStatus)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
                           <Button
@@ -818,7 +897,7 @@ const Handover = () => {
           setUpsertOpen(o);
           if (!o) setEditingHandover(null);
         }}
-        contracts={handoverDialogContracts}
+        contracts={handoverDialogContractsWithProducts}
         editing={editingHandover}
       />
 

@@ -49,7 +49,7 @@ export async function createHandoverController(req: Request, res: Response) {
     entityId: (data as { id?: string }).id ?? null,
     summary: `Tạo phiếu bàn giao ${(data as { code?: string }).code ?? ""}`.trim(),
   });
-  return sendSuccess(res, data, "Handover created");
+  return sendSuccess(res, data, "Đã tạo phiếu bàn giao");
 }
 
 export async function updateHandoverController(req: Request, res: Response) {
@@ -63,7 +63,7 @@ export async function updateHandoverController(req: Request, res: Response) {
     summary: `Cập nhật phiếu bàn giao ${(data as { code?: string }).code ?? id}`,
     payload: payload as Record<string, unknown>,
   });
-  return sendSuccess(res, data, "Handover updated");
+  return sendSuccess(res, data, "Đã cập nhật phiếu bàn giao");
 }
 
 export async function deleteHandoverController(req: Request, res: Response) {
@@ -75,5 +75,5 @@ export async function deleteHandoverController(req: Request, res: Response) {
     entityId: id,
     summary: `Xoá phiếu bàn giao ${id}`,
   });
-  return sendSuccess(res, data, "Handover deleted");
+  return sendSuccess(res, data, "Đã xóa phiếu bàn giao");
 }

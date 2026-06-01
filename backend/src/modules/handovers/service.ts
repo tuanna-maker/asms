@@ -28,7 +28,7 @@ async function resolveContractId(idOrCode: string) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!contract) throw new HttpError(404, "Contract not found");
+  if (!contract) throw new HttpError(404, "Không tìm thấy hợp đồng");
   return contract.id;
 }
 
@@ -37,7 +37,7 @@ async function resolveCustomerId(idOrCode: string) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!customer) throw new HttpError(404, "Customer not found");
+  if (!customer) throw new HttpError(404, "Không tìm thấy khách hàng");
   return customer.id;
 }
 
@@ -46,7 +46,7 @@ async function resolveHandoverId(idOrCode: string) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!row) throw new HttpError(404, "Handover not found");
+  if (!row) throw new HttpError(404, "Không tìm thấy phiếu bàn giao");
   return row.id;
 }
 
@@ -226,7 +226,7 @@ export async function getHandoverDetailService(idOrCode: string) {
       createdBy: { include: { role: true } },
     },
   });
-  if (!row) throw new HttpError(404, "Handover not found");
+  if (!row) throw new HttpError(404, "Không tìm thấy phiếu bàn giao");
   const products = await getContractProductCount(row.contractId);
   const enriched = await enrichHandoverWithStepPayloads(row);
   const workflowMap = await loadWorkflowSnapshotsByInstanceIds([row.workflowInstanceId]);
@@ -259,7 +259,7 @@ export async function createHandoverService(payload: CreateHandoverBody, actorId
     where: { id: resolvedContractId, deletedAt: null },
     select: { id: true, customerId: true },
   });
-  if (!contract) throw new HttpError(404, "Contract not found");
+  if (!contract) throw new HttpError(404, "Không tìm thấy hợp đồng");
 
   await assertSingleHandoverPerContract(contract.id);
 
@@ -358,7 +358,7 @@ export async function updateHandoverService(idOrCode: string, payload: UpdateHan
     where: { id: resolvedId, deletedAt: null },
     select: { workflowInstanceId: true, contractId: true },
   });
-  if (!existing) throw new HttpError(404, "Handover not found");
+  if (!existing) throw new HttpError(404, "Không tìm thấy phiếu bàn giao");
 
   if (payload.contractId !== undefined) {
     const nextContractId = await resolveContractId(payload.contractId);
@@ -430,6 +430,6 @@ export async function softDeleteHandoverService(idOrCode: string) {
     where: { id: resolvedId, deletedAt: null },
     data: { deletedAt: now },
   });
-  if (n.count === 0) throw new HttpError(404, "Handover not found");
+  if (n.count === 0) throw new HttpError(404, "Không tìm thấy phiếu bàn giao");
   return { id: resolvedId };
 }

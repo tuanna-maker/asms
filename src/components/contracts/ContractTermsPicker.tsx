@@ -216,6 +216,16 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
     applyDraftSelection(next);
   };
 
+  const toggleDraftGroup = (rows: CatalogRow[], checked: boolean) => {
+    if (disabled) return;
+    const next = new Set(draftEntries.map((e) => e.clauseId));
+    for (const row of rows) {
+      if (checked) next.add(row.id);
+      else next.delete(row.id);
+    }
+    applyDraftSelection(next);
+  };
+
   const handleConfirm = () => {
     onChange(draftEntries);
     setPickerOpen(false);
@@ -326,7 +336,19 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
             {[...rowsByGroup.entries()].map(([groupLabel, rows]) => (
               <Fragment key={groupLabel}>
                 <div className={clausePickerStyles.groupRow}>
-                  <div aria-hidden />
+                  <div className={clausePickerStyles.clauseCheck}>
+                    <Checkbox
+                      disabled={disabled}
+                      checked={
+                        rows.every((r) => draftSelected.has(r.id))
+                          ? true
+                          : rows.some((r) => draftSelected.has(r.id))
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(v) => toggleDraftGroup(rows, v === true)}
+                    />
+                  </div>
                   <div className={clausePickerStyles.groupLabel}>{groupLabel}</div>
                 </div>
                 {rows.map((row) => (

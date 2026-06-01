@@ -33,7 +33,7 @@ async function resolveContractIdOptional(idOrCode: string | undefined) {
     where: { deletedAt: null, OR: [{ id: idOrCode }, { code: idOrCode }] },
     select: { id: true },
   });
-  if (!contract) throw new HttpError(404, "Contract not found");
+  if (!contract) throw new HttpError(404, "Không tìm thấy hợp đồng");
   return contract.id;
 }
 
@@ -118,7 +118,7 @@ export async function getTrainingCourseDetailService(id: string) {
     },
   });
 
-  if (!course) throw new HttpError(404, "Training course not found");
+  if (!course) throw new HttpError(404, "Không tìm thấy khóa huấn luyện");
   let enriched = await enrichTrainingCourseWithStepPayloads(course);
   if (enriched.contractId) {
     const participants = await getContractProductCount(enriched.contractId);
@@ -256,7 +256,7 @@ export async function updateTrainingCourseService(id: string, payload: UpdateTra
     where: { id, deletedAt: null },
     select: { id: true, contractId: true, courseKind: true },
   });
-  if (!existing) throw new HttpError(404, "Training course not found");
+  if (!existing) throw new HttpError(404, "Không tìm thấy khóa huấn luyện");
   const workflowModule = workflowModuleForCourseKind(existing.courseKind);
 
   if (payload.typeCode !== undefined) {
@@ -341,7 +341,7 @@ export async function softDeleteTrainingCourseService(id: string) {
     where: { id, deletedAt: null },
     select: { id: true },
   });
-  if (!existing) throw new HttpError(404, "Training course not found");
+  if (!existing) throw new HttpError(404, "Không tìm thấy khóa huấn luyện");
 
   const now = new Date();
   await prisma.$transaction([
@@ -373,7 +373,7 @@ export async function addTraineeService(trainingCourseId: string, payload: {
     where: { id: trainingCourseId, deletedAt: null },
     select: { id: true },
   });
-  if (!course) throw new HttpError(404, "Training course not found");
+  if (!course) throw new HttpError(404, "Không tìm thấy khóa huấn luyện");
 
   return prisma.trainee.create({
     data: {
@@ -392,7 +392,7 @@ export async function updateTraineeService(trainingCourseId: string, traineeId: 
     where: { id: traineeId, trainingCourseId, deletedAt: null },
     select: { id: true },
   });
-  if (!row) throw new HttpError(404, "Trainee not found");
+  if (!row) throw new HttpError(404, "Không tìm thấy học viên");
 
   const data: Record<string, unknown> = {};
   if (payload.fullName !== undefined) data.fullName = payload.fullName;
@@ -412,7 +412,7 @@ export async function softDeleteTraineeService(trainingCourseId: string, trainee
     where: { id: traineeId, trainingCourseId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
-  if (n.count === 0) throw new HttpError(404, "Trainee not found");
+  if (n.count === 0) throw new HttpError(404, "Không tìm thấy học viên");
   return { id: traineeId };
 }
 
@@ -428,7 +428,7 @@ export async function addScheduleSessionService(trainingCourseId: string, payloa
     where: { id: trainingCourseId, deletedAt: null },
     select: { id: true },
   });
-  if (!course) throw new HttpError(404, "Training course not found");
+  if (!course) throw new HttpError(404, "Không tìm thấy khóa huấn luyện");
 
   return prisma.scheduleSession.create({
     data: {
@@ -448,7 +448,7 @@ export async function updateScheduleSessionService(trainingCourseId: string, ses
     where: { id: sessionId, trainingCourseId, deletedAt: null },
     select: { id: true },
   });
-  if (!row) throw new HttpError(404, "Session not found");
+  if (!row) throw new HttpError(404, "Không tìm thấy buổi học");
 
   const data: Record<string, unknown> = {};
   if (payload.date !== undefined) data.date = payload.date;
@@ -469,7 +469,7 @@ export async function softDeleteScheduleSessionService(trainingCourseId: string,
     where: { id: sessionId, trainingCourseId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
-  if (n.count === 0) throw new HttpError(404, "Session not found");
+  if (n.count === 0) throw new HttpError(404, "Không tìm thấy buổi học");
   return { id: sessionId };
 }
 

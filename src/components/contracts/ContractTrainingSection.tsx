@@ -178,7 +178,7 @@ export function ContractTrainingSection({
     <div className="space-y-4">
       {courseId ? (
         <p className="text-xs text-muted-foreground">
-          Khoa HL: <span className="font-mono">{detail?.code ?? linkedTraining?.code}</span>
+          Khóa HL: <span className="font-mono">{detail?.code ?? linkedTraining?.code}</span>
         </p>
       ) : (
         <p className="text-xs text-muted-foreground">Mỗi hợp đồng chỉ một khóa huấn luyện.</p>

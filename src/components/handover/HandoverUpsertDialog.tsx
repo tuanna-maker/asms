@@ -42,7 +42,7 @@ import { resolveInitialWorkflowStepTabId } from "@/lib/workflow-step-tab";
 import { workflowStepTabTriggerClass } from "@/components/workflow/WorkflowStepSegments";
 import { cn } from "@/lib/utils";
 
-type ContractOption = { id: string; code: string; title: string | null; products: number };
+type ContractOption = { id: string; code: string; title: string | null; products?: number };
 
 type Props = {
   open: boolean;
