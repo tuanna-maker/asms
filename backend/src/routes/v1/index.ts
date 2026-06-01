@@ -21,6 +21,13 @@ import reportsRoutes from "../../modules/reports/route";
 import contactsRoutes from "../../modules/contacts/route";
 import crmActivitiesRoutes from "../../modules/crm-activities/route";
 import customerFeedbacksRoutes from "../../modules/customer-feedbacks/route";
+import {
+  feedbackAnalyticsByCustomerController,
+  feedbackAnalyticsByMaterialController,
+  feedbackAnalyticsByProductController,
+  feedbackAnalyticsCustomerDetailController,
+} from "../../modules/customer-feedbacks/controller";
+import feedbackExecutionUnitsRoutes from "../../modules/feedback-execution-units/route";
 import rolePermissionsRoutes from "../../modules/role-permissions/route";
 import definitionsRoutes from "../../modules/definitions/route";
 import {
@@ -44,7 +51,34 @@ router.use("/notifications", notificationsRoutes);
 router.use("/customers", customersRoutes);
 router.use("/contacts", contactsRoutes);
 router.use("/crm-activities", crmActivitiesRoutes);
+/** Analytics trước mount router con — tránh `/:id` nuốt `analytics` (404). */
+const feedbackReadRoles = ["admin", "manager", "technician", "viewer", "sales"];
+router.get(
+  "/customer-feedbacks/analytics/by-customer",
+  requireAuth,
+  requireRoles(feedbackReadRoles),
+  feedbackAnalyticsByCustomerController,
+);
+router.get(
+  "/customer-feedbacks/analytics/by-product",
+  requireAuth,
+  requireRoles(feedbackReadRoles),
+  feedbackAnalyticsByProductController,
+);
+router.get(
+  "/customer-feedbacks/analytics/by-material",
+  requireAuth,
+  requireRoles(feedbackReadRoles),
+  feedbackAnalyticsByMaterialController,
+);
+router.get(
+  "/customer-feedbacks/analytics/customer/:customerId/detail",
+  requireAuth,
+  requireRoles(feedbackReadRoles),
+  feedbackAnalyticsCustomerDetailController,
+);
 router.use("/customer-feedbacks", customerFeedbacksRoutes);
+router.use("/feedback-execution-units", feedbackExecutionUnitsRoutes);
 router.use("/role-permissions", rolePermissionsRoutes);
 router.use("/contracts", contractsRoutes);
 router.use("/handovers", handoversRoutes);

@@ -164,11 +164,6 @@ export function FieldSchemaBuilder({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs">Placeholder (tùy chọn)</Label>
-                <Input value={field.placeholder ?? ""} onChange={(e) => updateAt(index, { placeholder: e.target.value || undefined })} />
-              </div>
-
               {field.type === "select" ? (
                 <div className="space-y-2 rounded border border-dashed border-border/50 p-2">
                   <div className="space-y-1">
@@ -198,56 +193,6 @@ export function FieldSchemaBuilder({
                   ) : null}
                 </div>
               ) : null}
-
-              <div className="space-y-2 rounded border border-dashed border-border/50 p-2">
-                <Label className="text-xs">Hiển thị khi (tùy chọn)</Label>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Select
-                    value={field.showWhen?.field ?? "__none__"}
-                    onValueChange={(v) => {
-                      if (v === "__none__") {
-                        updateAt(index, { showWhen: undefined });
-                        return;
-                      }
-                      updateAt(index, { showWhen: { field: v, value: field.showWhen?.value ?? "" } });
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Trường điều kiện" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">— Luôn hiển thị —</SelectItem>
-                      {value
-                        .filter((_, i) => i !== index && value[i]?.key)
-                        .map((f) => (
-                          <SelectItem key={f.key} value={f.key}>
-                            {f.label || f.key}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  {field.showWhen ? (
-                    <Input
-                      placeholder="Giá trị (vd: outsource)"
-                      value={
-                        Array.isArray(field.showWhen.value)
-                          ? field.showWhen.value.join(",")
-                          : String(field.showWhen.value ?? "")
-                      }
-                      onChange={(e) =>
-                        updateAt(index, {
-                          showWhen: {
-                            field: field.showWhen!.field,
-                            value: e.target.value.includes(",")
-                              ? e.target.value.split(",").map((s) => s.trim())
-                              : e.target.value,
-                          },
-                        })
-                      }
-                    />
-                  ) : null}
-                </div>
-              </div>
             </div>
             );
           })}

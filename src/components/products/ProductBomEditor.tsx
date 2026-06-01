@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -131,8 +132,7 @@ function MaterialAttributesPanel({
       });
       toast.success(`Đã cập nhật vật tư ${materialCode}`);
       onSaved();
-    } catch {
-      toast.error("Không cập nhật được thuộc tính vật tư");
+    } catch (e) { toastApiError(e, "Không cập nhật được thuộc tính vật tư");
     }
   };
 
@@ -324,8 +324,7 @@ export function ProductBomEditor({
       }
       toast.success("Đã lưu số lượng linh kiện");
       invalidateBom();
-    } catch {
-      toast.error("Không lưu được BOM");
+    } catch (e) { toastApiError(e, "Không lưu được BOM");
     } finally {
       setSavingBom(false);
     }
@@ -352,8 +351,7 @@ export function ProductBomEditor({
       setAddMaterialQty("1");
       toast.success("Đã thêm linh kiện vào BOM");
       invalidateBom();
-    } catch {
-      toast.error("Không thêm được linh kiện");
+    } catch (e) { toastApiError(e, "Không thêm được linh kiện");
     }
   };
 
@@ -364,8 +362,7 @@ export function ProductBomEditor({
       toast.success("Đã xóa linh kiện khỏi BOM");
       if (expandedMaterialId === materialId) setExpandedMaterialId(null);
       invalidateBom();
-    } catch {
-      toast.error("Không xóa được linh kiện");
+    } catch (e) { toastApiError(e, "Không xóa được linh kiện");
     }
   };
 
@@ -377,8 +374,7 @@ export function ProductBomEditor({
         payload: { serialNumbers },
       });
       invalidateBom();
-    } catch {
-      toast.error("Không lưu được serial");
+    } catch (e) { toastApiError(e, "Không lưu được serial");
     }
   };
 

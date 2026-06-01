@@ -46,6 +46,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { api } from "@/lib/api";
 import { TrainingCourse, typeLabel, statusLabel, statusColor } from "@/data/trainingData";
@@ -72,14 +73,6 @@ const emptyTrainingForm = (): Omit<TrainingCourse, "id"> => ({
   contractId: null,
 });
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as { response?: { data?: { message?: string } }; message?: string };
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 const Training = () => {
   const navigate = useNavigate();
@@ -464,7 +457,7 @@ const Training = () => {
                   <SelectContent>
                     <SelectItem value="internal">Nội bộ</SelectItem>
                     <SelectItem value="external">Khách hàng</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="online">Trực tuyến</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

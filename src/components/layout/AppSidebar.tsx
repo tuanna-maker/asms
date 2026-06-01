@@ -29,13 +29,13 @@ const menuItems: Array<{
   path: string;
   badge?: BadgeKey;
 }> = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Bảng điều khiển", path: "/" },
   { icon: FileText, label: "Hợp đồng", path: "/hop-dong", badge: "overdueContracts" },
   { icon: Truck, label: "Bàn giao & HL", path: "/ban-giao", badge: "overdueHandovers" },
   { icon: Wrench, label: "Bảo hành / SC", path: "/bao-hanh", badge: "openWarranties" },
   { icon: Boxes, label: "Sản phẩm", path: "/san-pham" },
   { icon: Package, label: "Vật tư", path: "/vat-tu" },
-  { icon: Users, label: "CRM", path: "/khach-hang" },
+  { icon: Users, label: "Khách hàng", path: "/khach-hang" },
   { icon: MessageSquareWarning, label: "Phản ánh", path: "/phan-anh" },
   { icon: BarChart3, label: "Báo cáo", path: "/bao-cao" },
   { icon: FlaskConical, label: "Đề tài NC", path: "/de-tai" },
@@ -77,7 +77,7 @@ const AppSidebar = ({ onNavigate }: AppSidebarProps) => {
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
           ERP
         </div>
-        {!isCollapsed && <span className="font-semibold text-sidebar-primary-foreground text-lg">ERP System</span>}
+        {!isCollapsed && <span className="font-semibold text-sidebar-primary-foreground text-lg">Hệ thống ASMS</span>}
       </div>
 
       <nav className="flex-1 space-y-1 p-3 overflow-y-auto">

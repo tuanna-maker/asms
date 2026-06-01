@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { Check, CircleDot, Clock3, FileText, History, Paperclip, Trash2, Upload, X } from "lucide-react";
+import { Check, CircleDot, FileText, History, Paperclip, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,12 +45,7 @@ function formatDateTime(iso: string | null | undefined) {
 }
 
 function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Có lỗi xảy ra";
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
 type Props = {
@@ -226,13 +222,8 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <div className="mt-0.5 text-xs text-muted-foreground">
                       <span>{ROLE_LABEL[step.roleCode] ?? step.roleCode}</span>
-                      {step.slaHours != null ? (
-                        <span className="inline-flex items-center gap-1">
-                          <Clock3 className="h-3 w-3" /> {step.slaHours} giờ
-                        </span>
-                      ) : null}
                     </div>
                   </div>
                 </li>

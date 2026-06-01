@@ -93,7 +93,7 @@ export const WARRANTY_STEP_SCHEMAS: FieldDef[][] = [
       ],
     },
     { key: "handlingPlan", label: "Phương án xử lý (PA)", type: "textarea" },
-    { key: "plannedHours", label: "Thời gian xử lý (dự kiến)", type: "number", placeholder: "Giờ" },
+    { key: "plannedHours", label: "Thời gian xử lý (dự kiến)", type: "number" },
     { key: "costEstimate", label: "Chi phí (nếu có)", type: "text" },
     { key: "customerDisagreedClose", label: "KH không đồng ý PA → đóng sự cố", type: "boolean" },
   ],
@@ -220,7 +220,6 @@ export type ModuleStandardStep = {
   name: string;
   actionCode: string;
   roleCode: string;
-  slaHours: number;
   phaseCode: string;
   requireDocument?: boolean;
   description?: string;
@@ -228,13 +227,12 @@ export type ModuleStandardStep = {
 };
 
 const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Lập Kế hoạch BG", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "handover" },
+  { order: 10, name: "Lập Kế hoạch BG", actionCode: "submit", roleCode: "technician", phaseCode: "handover" },
   {
     order: 20,
     name: "Lập Tờ trình kinh phí",
     actionCode: "approve",
     roleCode: "manager",
-    slaHours: 72,
     phaseCode: "handover",
     requireDocument: true,
     description: "Gợi ý: TTr xin KP BG",
@@ -244,7 +242,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     name: "Chuẩn bị hàng hóa",
     actionCode: "approve",
     roleCode: "technician",
-    slaHours: 120,
     phaseCode: "handover",
     requireDocument: true,
     description: "Gợi ý: Checklist kiểm tra ĐK · bảo dưỡng · Hợp đồng",
@@ -254,7 +251,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     name: "QT huấn luyện",
     actionCode: "approve",
     roleCode: "manager",
-    slaHours: 168,
     phaseCode: "training",
     requireDocument: true,
     description: "Gợi ý: KH HL · TTr HL · BBBG tạm · Báo cáo KT · QĐ công nhận KQ HL",
@@ -264,7 +260,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     name: "Bàn giao chính thức",
     actionCode: "release",
     roleCode: "manager",
-    slaHours: 48,
     phaseCode: "handover",
     requireDocument: true,
     description: "Gợi ý: BBBG cuối cùng",
@@ -272,37 +267,35 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
 ];
 
 const WARRANTY_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Tiếp nhận yêu cầu", actionCode: "submit", roleCode: "technician", slaHours: 8, phaseCode: "warranty" },
+  { order: 10, name: "Tiếp nhận yêu cầu", actionCode: "submit", roleCode: "technician", phaseCode: "warranty" },
   {
     order: 20,
     name: "Phân tích, đề xuất PA và KH BHSC",
     actionCode: "approve",
     roleCode: "technician",
-    slaHours: 48,
     phaseCode: "warranty",
     requireDocument: true,
   },
-  { order: 30, name: "Thực hiện BHSC", actionCode: "approve", roleCode: "technician", slaHours: 72, phaseCode: "warranty", requireDocument: true },
-  { order: 40, name: "Kiểm tra sau BHSC", actionCode: "approve", roleCode: "manager", slaHours: 24, phaseCode: "warranty" },
-  { order: 50, name: "Bàn giao SP cho KH", actionCode: "release", roleCode: "technician", slaHours: 24, phaseCode: "warranty" },
+  { order: 30, name: "Thực hiện BHSC", actionCode: "approve", roleCode: "technician", phaseCode: "warranty", requireDocument: true },
+  { order: 40, name: "Kiểm tra sau BHSC", actionCode: "approve", roleCode: "manager", phaseCode: "warranty" },
+  { order: 50, name: "Bàn giao SP cho KH", actionCode: "release", roleCode: "technician", phaseCode: "warranty" },
 ];
 
 const CONTRACT_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Kế hoạch bàn giao", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "handover" },
-  { order: 20, name: "Tờ trình kinh phí", actionCode: "approve", roleCode: "manager", slaHours: 72, phaseCode: "handover", requireDocument: true },
-  { order: 30, name: "Chuẩn bị hàng hóa", actionCode: "approve", roleCode: "technician", slaHours: 120, phaseCode: "handover", requireDocument: true },
-  { order: 40, name: "Huấn luyện", actionCode: "approve", roleCode: "manager", slaHours: 168, phaseCode: "training", requireDocument: true },
-  { order: 50, name: "Bàn giao chính thức", actionCode: "release", roleCode: "manager", slaHours: 48, phaseCode: "handover", requireDocument: true },
+  { order: 10, name: "Kế hoạch bàn giao", actionCode: "submit", roleCode: "technician", phaseCode: "handover" },
+  { order: 20, name: "Tờ trình kinh phí", actionCode: "approve", roleCode: "manager", phaseCode: "handover", requireDocument: true },
+  { order: 30, name: "Chuẩn bị hàng hóa", actionCode: "approve", roleCode: "technician", phaseCode: "handover", requireDocument: true },
+  { order: 40, name: "Huấn luyện", actionCode: "approve", roleCode: "manager", phaseCode: "training", requireDocument: true },
+  { order: 50, name: "Bàn giao chính thức", actionCode: "release", roleCode: "manager", phaseCode: "handover", requireDocument: true },
 ];
 
 const COACHING_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Lập kế hoạch huấn luyện", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "training" },
+  { order: 10, name: "Lập kế hoạch huấn luyện", actionCode: "submit", roleCode: "technician", phaseCode: "training" },
   {
     order: 20,
     name: "Phê duyệt tờ trình HL",
     actionCode: "approve",
     roleCode: "manager",
-    slaHours: 72,
     phaseCode: "training",
     requireDocument: true,
   },
@@ -311,34 +304,31 @@ const COACHING_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     name: "Báo cáo và công nhận KQ",
     actionCode: "release",
     roleCode: "manager",
-    slaHours: 48,
     phaseCode: "training",
     requireDocument: true,
   },
 ];
 
 const TRAINING_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Lên kế hoạch khoá đào tạo", actionCode: "submit", roleCode: "manager", slaHours: 48, phaseCode: "training" },
+  { order: 10, name: "Lên kế hoạch khoá đào tạo", actionCode: "submit", roleCode: "manager", phaseCode: "training" },
   {
     order: 20,
     name: "Phê duyệt nội dung",
     actionCode: "approve",
     roleCode: "admin",
-    slaHours: 48,
     phaseCode: "training",
     requireDocument: true,
   },
-  { order: 30, name: "Tổng kết và đóng khoá", actionCode: "release", roleCode: "manager", slaHours: 24, phaseCode: "training" },
+  { order: 30, name: "Tổng kết và đóng khoá", actionCode: "release", roleCode: "manager", phaseCode: "training" },
 ];
 
 const PRODUCT_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
-  { order: 10, name: "Đang sản xuất", actionCode: "submit", roleCode: "technician", slaHours: 0, phaseCode: "product" },
+  { order: 10, name: "Đang sản xuất", actionCode: "submit", roleCode: "technician", phaseCode: "product" },
   {
     order: 20,
     name: "Nghiệm thu cấp Bộ",
     actionCode: "approve",
     roleCode: "admin",
-    slaHours: 168,
     phaseCode: "product",
     requireDocument: true,
   },
@@ -347,7 +337,6 @@ const PRODUCT_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     name: "Đưa vào trang bị",
     actionCode: "release",
     roleCode: "admin",
-    slaHours: 168,
     phaseCode: "product",
     requireDocument: true,
   },

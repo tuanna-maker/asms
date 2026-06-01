@@ -17,6 +17,10 @@ import Materials from "./pages/Materials";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
 import Feedbacks from "./pages/Feedbacks";
+import FeedbackCreate from "./pages/FeedbackCreate";
+import FeedbackDetail from "./pages/FeedbackDetail";
+import FeedbackEdit from "./pages/FeedbackEdit";
+import FeedbackStatistics from "./pages/FeedbackStatistics";
 import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
 import AttributeSettingsPage from "./pages/AttributeSettingsPage";
@@ -62,6 +66,10 @@ const App = () => (
                   <Route path="/vat-tu" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
                   <Route path="/san-pham" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                   <Route path="/khach-hang" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+                  <Route path="/phan-anh/thong-ke" element={<ProtectedRoute><FeedbackStatistics /></ProtectedRoute>} />
+                  <Route path="/phan-anh/moi" element={<ProtectedRoute><FeedbackCreate /></ProtectedRoute>} />
+                  <Route path="/phan-anh/:id/sua" element={<ProtectedRoute><FeedbackEdit /></ProtectedRoute>} />
+                  <Route path="/phan-anh/:id" element={<ProtectedRoute><FeedbackDetail /></ProtectedRoute>} />
                   <Route path="/phan-anh" element={<ProtectedRoute><Feedbacks /></ProtectedRoute>} />
                   <Route path="/bao-cao" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                   <Route path="/de-tai" element={<ProtectedRoute><ResearchProjects /></ProtectedRoute>} />

@@ -38,7 +38,7 @@ function SelectField({
   return (
     <Select value={strVal} onValueChange={(v) => onChange(v === "__none__" ? "" : v)} disabled={readOnly}>
       <SelectTrigger>
-        <SelectValue placeholder={def.placeholder ?? "Chọn"} />
+        <SelectValue placeholder="Chọn" />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">— Chưa chọn —</SelectItem>
@@ -99,7 +99,6 @@ function FieldRow({
               id={id}
               value={val == null ? "" : String(val)}
               onChange={(e) => onChange(def.key, e.target.value)}
-              placeholder={def.placeholder}
               readOnly={readOnly}
               rows={4}
             />
@@ -126,7 +125,6 @@ function FieldRow({
               onChange={(e) =>
                 onChange(def.key, e.target.value === "" ? null : Number(e.target.value))
               }
-              placeholder={def.placeholder}
               readOnly={readOnly}
             />
           ) : (
@@ -134,7 +132,6 @@ function FieldRow({
               id={id}
               value={val == null ? "" : String(val)}
               onChange={(e) => onChange(def.key, e.target.value)}
-              placeholder={def.placeholder}
               readOnly={readOnly}
             />
           )}

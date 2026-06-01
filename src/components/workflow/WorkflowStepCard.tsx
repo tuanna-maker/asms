@@ -123,7 +123,6 @@ export function WorkflowStepCard({
             <UserRound className="h-3.5 w-3.5" />
             {roleText}
           </span>
-          <span>{step.slaHours != null ? `${step.slaHours} giờ` : "Không hạn"}</span>
           {(step.assigneeIds?.length ?? 0) > 0 ? (
             <span>{step.assigneeIds.length} người xử lý</span>
           ) : null}

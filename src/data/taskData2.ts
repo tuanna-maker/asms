@@ -28,6 +28,7 @@ export const statusLabels: Record<string, string> = {
   in_progress: "Đang thực hiện",
   review: "Đang xét duyệt",
   completed: "Hoàn thành",
+  delayed: "Trễ hạn",
 };
 
 export const priorityLabels: Record<string, string> = {

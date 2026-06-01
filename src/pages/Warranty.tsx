@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { api } from "@/lib/api";
@@ -213,6 +214,7 @@ function WarrantyTicketsTabContent({
 }
 
 const Warranty = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useRole();
   const [search, setSearch] = useState("");
   const [mainTab, setMainTab] = useState<"list" | "stats">("list");
@@ -250,6 +252,11 @@ const Warranty = () => {
   const closeSheet = () => {
     setShowCreate(false);
     setSelectedTicket(null);
+    if (searchParams.has("view")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("view");
+      setSearchParams(next, { replace: true });
+    }
   };
   type ApiSuccess<T> = { success: true; data: T; message?: string };
 
@@ -286,6 +293,18 @@ const Warranty = () => {
       })),
     [warrantyRows],
   );
+
+  useEffect(() => {
+    const viewId = searchParams.get("view");
+    if (!viewId) return;
+    const target = tickets.find((t) => t.apiId === viewId || t.code === viewId);
+    if (target) {
+      setShowCreate(false);
+      setDetailMode("view");
+      setSelectedTicket(target);
+    }
+    return undefined;
+  }, [searchParams, tickets]);
 
   const { data: customerOptions = [] } = useQuery({
     queryKey: ["warranty-customers"],

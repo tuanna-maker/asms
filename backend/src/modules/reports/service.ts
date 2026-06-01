@@ -489,6 +489,10 @@ export async function getDashboardSummaryService(filters: ReportDateFilters) {
   if (range) warrantyWhere.createdAt = { gte: range.start, lte: range.end };
   if (customerId) warrantyWhere.customerId = customerId;
 
+  const feedbackWhere: Prisma.CustomerFeedbackWhereInput = { deletedAt: null };
+  if (range) feedbackWhere.feedbackAt = { gte: range.start, lte: range.end };
+  if (customerId) feedbackWhere.customerId = customerId;
+
   const productWhere: Prisma.ProductWhereInput = { deletedAt: null };
 
   const customerWhere: Prisma.CustomerWhereInput = { deletedAt: null };
@@ -507,6 +511,7 @@ export async function getDashboardSummaryService(filters: ReportDateFilters) {
     materials,
     researchProjects,
     anniversaries,
+    customerFeedbacks,
     contractProductsByCustomer,
   ] = await Promise.all([
     prisma.product.findMany({ where: productWhere, select: { status: true } }),
@@ -556,6 +561,10 @@ export async function getDashboardSummaryService(filters: ReportDateFilters) {
         recurringYearly: true,
         customer: { select: { name: true } },
       },
+    }),
+    prisma.customerFeedback.findMany({
+      where: feedbackWhere,
+      select: { status: true, slaDueAt: true },
     }),
     prisma.contractProduct.groupBy({
       by: ["contractId"],
@@ -687,6 +696,20 @@ export async function getDashboardSummaryService(filters: ReportDateFilters) {
   const pakdMaterials = buildPakdMaterials(materials, now);
   const pakdResearch = buildPakdResearch(researchProjects, now);
 
+  const feedbackNew = customerFeedbacks.filter((f) => f.status === "new").length;
+  const feedbackAssigned = customerFeedbacks.filter((f) => f.status === "assigned").length;
+  const feedbackInProgress = customerFeedbacks.filter(
+    (f) => f.status === "in_progress" || f.status === "reopened",
+  ).length;
+  const feedbackPendingClose = customerFeedbacks.filter((f) => f.status === "pending_close").length;
+  const feedbackResolved = customerFeedbacks.filter((f) => f.status === "resolved").length;
+  const feedbackOverdue = customerFeedbacks.filter(
+    (f) =>
+      f.status !== "resolved" &&
+      f.slaDueAt != null &&
+      f.slaDueAt.getTime() < now.getTime(),
+  ).length;
+
   return {
     productProgress,
     contractProgress: {
@@ -702,6 +725,15 @@ export async function getDashboardSummaryService(filters: ReportDateFilters) {
       processing: warrantyProcessing,
       completedOnTime: warrantyOnTime,
       completedLate: warrantyLate,
+    },
+    feedbackProgress: {
+      total: customerFeedbacks.length,
+      new: feedbackNew,
+      assigned: feedbackAssigned,
+      inProgress: feedbackInProgress,
+      pendingClose: feedbackPendingClose,
+      resolved: feedbackResolved,
+      overdue: feedbackOverdue,
     },
     handoverProgress: {
       total: handovers.length,

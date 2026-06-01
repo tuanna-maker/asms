@@ -3,6 +3,8 @@ import type { Request, Response } from "express";
 import { HttpError } from "../../lib/errors/HttpError";
 import { sendSuccess } from "../../lib/response";
 
+import { syncPendingFeedbackNotificationsForUser } from "../customer-feedbacks/feedback-notification-sync";
+
 import {
   listNotificationsService,
   markAllReadService,
@@ -18,6 +20,7 @@ function requireUserId(req: Request): string {
 
 export async function listNotificationsController(req: Request, res: Response) {
   const userId = requireUserId(req);
+  await syncPendingFeedbackNotificationsForUser(userId, req.user?.role ?? null);
   const unread = req.query.unread === "1" || req.query.unread === "true";
   const limit = Number(req.query.limit ?? 50);
   const data = await listNotificationsService(userId, { unread, limit });
@@ -26,6 +29,7 @@ export async function listNotificationsController(req: Request, res: Response) {
 
 export async function unreadCountController(req: Request, res: Response) {
   const userId = requireUserId(req);
+  await syncPendingFeedbackNotificationsForUser(userId, req.user?.role ?? null);
   const count = await unreadCountService(userId);
   return sendSuccess(res, { count });
 }

@@ -9,7 +9,7 @@ import {
 describe("customer-feedback-labels", () => {
   it("maps severity and status to Vietnamese", () => {
     expect(SEVERITY_LABELS.high).toBe("Cao");
-    expect(STATUS_LABELS.processing).toBe("Đang xử lý");
+    expect(STATUS_LABELS.in_progress).toBe("Đang xử lý");
   });
 
   it("formatFeedbackDate returns dd/mm/yyyy", () => {

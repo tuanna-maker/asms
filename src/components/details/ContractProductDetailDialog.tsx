@@ -9,6 +9,7 @@ import { ProductBomEditor } from "@/components/products/ProductBomEditor";
 import type { ProductBomLine } from "@/components/products/ProductBomEditor";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import type { ProductSpec } from "@/hooks/use-products-api";
 import { useUpdateContractProduct } from "@/hooks/use-contracts-api";
 
@@ -142,8 +143,8 @@ const ContractProductDetailDialog = ({
       });
       toast.success("Đã cập nhật thông số");
       onOpenChange(false);
-    } catch {
-      toast.error("Không thể cập nhật thông số");
+    } catch (e) {
+      toastApiError(e, "Không thể cập nhật thông số");
     }
   };
 

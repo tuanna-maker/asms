@@ -195,6 +195,7 @@ export async function listContractsService(filters: {
       status: row.status,
       slaHours: row.slaHours,
       updatedAt: row.updatedAt,
+      endDate: row.endDate,
     })),
   );
   const counts = await getContractProductCounts(rows.map((row) => row.id));
@@ -202,9 +203,9 @@ export async function listContractsService(filters: {
     rows.map((row) => row.workflowInstanceId),
   );
   return rows.map((row) => {
-    const status = overdueIds.has(row.id) ? ("late" as const) : row.status;
+    const afterSla = overdueIds.has(row.id) ? ("late" as const) : row.status;
     return {
-      ...withDisplayStatus({ ...row, status }),
+      ...withDisplayStatus({ ...row, status: afterSla }),
       statusSlaHours: toStatusSlaHoursRecord(row.statusSlaHours),
       slaHours: row.slaHours,
       products: counts.get(row.id) ?? 0,

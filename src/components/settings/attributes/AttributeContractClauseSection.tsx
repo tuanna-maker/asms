@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -121,8 +122,7 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
         toast.success("Đã thêm điều khoản");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error("Không lưu được điều khoản");
+    } catch (e) { toastApiError(e, "Không lưu được điều khoản");
     }
   };
 
@@ -132,8 +132,7 @@ export function AttributeContractClauseSection({ section, canWrite }: Props) {
       await deleteMut.mutateAsync(deleteId);
       toast.success("Đã xóa điều khoản");
       setDeleteId(null);
-    } catch {
-      toast.error("Không xóa được điều khoản");
+    } catch (e) { toastApiError(e, "Không xóa được điều khoản");
     }
   };
 

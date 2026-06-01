@@ -15,12 +15,7 @@ export function AttributeModulePanel({ moduleKey }: AttributeModulePanelProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-border/50 bg-card px-4 py-3 shadow-sm">
-        <h2 className="text-lg font-semibold text-card-foreground">{moduleDef.label}</h2>
-        <p className="text-sm text-muted-foreground">
-          Quản lý danh mục thuộc tính cho module {moduleDef.label.toLowerCase()}.
-        </p>
-      </div>
+      <h2 className="text-lg font-semibold text-card-foreground px-1">{moduleDef.label}</h2>
       {moduleDef.sections.map((section) => {
         if (section.dataSource === "contract_clauses") {
           return <AttributeContractClauseSection key={section.id} section={section} canWrite={canWrite} />;

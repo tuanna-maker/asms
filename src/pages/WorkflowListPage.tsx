@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, History, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,12 +59,7 @@ function isValidModule(key: string | undefined): key is WorkflowModuleKey {
 }
 
 function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Có lỗi xảy ra";
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
 function formatDate(iso: string | null | undefined) {
@@ -187,7 +183,6 @@ const WorkflowListPage = () => {
               <TableHead className="w-40">Mã</TableHead>
               <TableHead>Tên</TableHead>
               <TableHead className="w-20 text-center">Bước</TableHead>
-              <TableHead className="w-32">Tổng SLA</TableHead>
               <TableHead className="w-32">Trạng thái</TableHead>
               <TableHead className="w-40">Cập nhật</TableHead>
               <TableHead className="w-40 text-right">Thao tác</TableHead>
@@ -196,13 +191,13 @@ const WorkflowListPage = () => {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
                   Đang tải…
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
                   Chưa có quy trình nào.
                 </TableCell>
               </TableRow>
@@ -222,7 +217,6 @@ const WorkflowListPage = () => {
                     </div>
                   </TableCell>
                   <TableCell className="text-center">{row.stepCount}</TableCell>
-                  <TableCell>{row.totalSlaHours} giờ</TableCell>
                   <TableCell>
                     {row.isActive ? (
                       <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15">Hoạt động</Badge>

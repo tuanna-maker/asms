@@ -36,7 +36,7 @@ const intervalOptions = [
   { value: "60", label: "1 phút" },
 ];
 
-const Index = () => {
+export default function Index() {
   const [year, setYear] = useState(DEFAULT_YEAR);
   const [quarter, setQuarter] = useState("all");
   const [customer, setCustomer] = useState("all");
@@ -225,7 +225,7 @@ const Index = () => {
       <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setAutoRotate(false); }} className="w-full">
         <div className="relative">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto gap-0.5 bg-muted/50 p-1 no-scrollbar">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">CEO Dashboard</TabsTrigger>
+            <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Tổng quan điều hành</TabsTrigger>
             <TabsTrigger value="customer" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Khách hàng</TabsTrigger>
             <TabsTrigger value="revenue" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Doanh thu</TabsTrigger>
             <TabsTrigger value="project" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Dự án</TabsTrigger>
@@ -292,6 +292,4 @@ const Index = () => {
       `}</style>
     </div>
   );
-};
-
-export default Index;
+}

@@ -27,6 +27,7 @@ import {
   useUpdateResearchProject,
 } from "@/hooks/use-research-projects-api";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
@@ -107,8 +108,8 @@ const ResearchProjects = () => {
       }
       setShowCreate(false);
       setEditProject(null);
-    } catch {
-      toast.error(editProject ? "Không thể cập nhật đề tài" : "Không thể tạo đề tài");
+    } catch (e) {
+      toastApiError(e, editProject ? "Không thể cập nhật đề tài" : "Không thể tạo đề tài");
     }
   };
 

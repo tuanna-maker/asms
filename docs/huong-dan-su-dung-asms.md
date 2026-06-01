@@ -460,10 +460,45 @@ Mở bằng nút **Xem** trên danh sách. Các tab:
 | Khách hàng | Thống kê theo KH |
 | Hợp đồng | Thống kê theo HĐ |
 | Dòng sản phẩm | Theo `Product.category` — sản xuất / giao / phiếu BH |
-| Phản ánh | 3 sub-tab: theo KH, theo dòng SP, vật tư/LK hỏng |
+| Phản ánh | 3 sub-tab: theo KH, theo dòng SP, vật tư/LK hỏng (**dữ liệu phiếu BH**, không phải ticket `/phan-anh`) |
 | Đơn vị thực hiện | Theo vai trò gán trên Task |
 
 **Xuất báo cáo:** Nút xuất **Excel** / **In PDF** theo tab đang xem.
+
+---
+
+### 4.13 Phản ánh khách hàng (`/phan-anh`)
+
+**Mục đích:** Quản lý ticket phản ánh khách hàng, liên kết HĐ/SP/VT, phân công và theo dõi xử lý.
+
+**Hai phần (sub-nav trên cùng):**
+
+| Phần | Đường dẫn | Nội dung |
+|---|---|---|
+| Danh sách | `/phan-anh` | Lọc, KPI nhanh, bảng ticket; tạo/sửa/xem chi tiết |
+| Thống kê | `/phan-anh/thong-ke` | 2 tab: **Khách hàng** \| **Sản phẩm & Vật tư**; lọc kỳ preset |
+
+**Báo cáo tổng hợp:** Vẫn dùng menu **Báo cáo** (`/bao-cao`) như trước — không đổi.
+
+**Bộ lọc kỳ (Thống kê):** Hôm nay, 1/3/6 tháng, 1 năm, Tất cả — áp dụng ngay khi chọn (URL `?period=...&tab=...`).
+
+**Tab Khách hàng:** Bảng mã/tên KH, số ticket, đang mở/đã đóng. Bấm dòng → **Sheet** chi tiết: từng ticket (tiêu đề, nội dung, ngày, SP/VT gắn kèm), link sang `/phan-anh/:id`.
+
+**Tab Sản phẩm & Vật tư:** Hai bảng — vật tư (mã, tên, lần gắn, ticket, SP) và sản phẩm (mỗi SP một dòng; cột vật tư gộp `MãVT (số lần) · ...`, cột tổng lần gắn SP).
+
+**Tạo / chi tiết:** `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua` (wizard, liên kết HĐ lọc SP/VT, phân công, comment Sự cố/Đã sửa).
+
+**Thông báo lỗi khi Lưu:**
+
+| Tình huống | Bạn sẽ thấy |
+|---|---|
+| Thiếu khách hàng, tiêu đề, nội dung, lời KH hoặc phân công | Toast tiếng Việt *trước khi* gọi máy chủ |
+| Gắn SP/VT nhưng chưa chọn HĐ (nhiều HĐ) | Yêu cầu chọn HĐ hoặc thu hẹp SP/VT |
+| Có SP nhưng chưa cấu hình đơn vị xử lý (routing) | Hộp xác nhận: vẫn tạo ticket trạng thái *mới* hoặc hủy |
+| HĐ không thuộc khách hàng / SP không trong HĐ | Message từ máy chủ (vd. *Hợp đồng không thuộc khách hàng này*) |
+| Ticket đã xóa nhưng còn trên bảng | Toast *Không tìm thấy phản ánh* — làm mới danh sách |
+
+> **So với `/bao-cao` tab Phản ánh:** Tab đó thống kê **phiếu bảo hành**; màn **Thống kê** trong `/phan-anh` dùng **ticket phản ánh** và `linkage_items` đã ghi trên ticket.
 
 ---
 

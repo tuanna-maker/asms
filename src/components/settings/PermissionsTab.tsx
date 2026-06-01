@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { PERMISSION_MODULE_DEFS } from "@/lib/route-module-map";
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -204,8 +205,7 @@ export function PermissionsTab({ enabled = true, canWrite = false }: Props) {
       await updateMut.mutateAsync(items);
       toast.success("Đã lưu phân quyền");
       closeDetail();
-    } catch {
-      toast.error("Không lưu được phân quyền");
+    } catch (e) { toastApiError(e, "Không lưu được phân quyền");
     }
   };
 

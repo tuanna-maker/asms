@@ -11,7 +11,7 @@ interface DashboardHeaderProps {
   onMenuClick?: () => void;
 }
 
-const DashboardHeader = ({ title = "Dashboard", subtitle = "Tổng quan hệ thống ERP", onMenuClick }: DashboardHeaderProps) => {
+const DashboardHeader = ({ title = "Bảng điều khiển", subtitle = "Tổng quan hệ thống ASMS", onMenuClick }: DashboardHeaderProps) => {
   const { theme, toggle } = useTheme();
 
   return (
@@ -42,7 +42,7 @@ const DashboardHeader = ({ title = "Dashboard", subtitle = "Tổng quan hệ th�
           <RoleSwitcher />
         </div>
 
-        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggle} aria-label="Toggle theme">
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={toggle} aria-label="Đổi giao diện sáng/tối">
           {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
         </Button>
 

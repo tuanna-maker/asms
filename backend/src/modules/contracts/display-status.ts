@@ -16,7 +16,7 @@ export function endOfDay(d: Date): Date {
   return x;
 }
 
-/** Gợi ý trạng thái theo ngày (không ghi đè giá trị đã lưu). */
+/** Gợi ý trạng thái theo ngày (không tính SLA). */
 export function suggestContractStatusFromDates(input: {
   startDate: Date | string;
   endDate: Date | string;
@@ -27,9 +27,62 @@ export function suggestContractStatusFromDates(input: {
   const start = startOfDay(new Date(input.startDate));
   const end = endOfDay(new Date(input.endDate));
 
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "draft";
   if (todayStart < start) return "draft";
   if (todayStart <= end) return "active";
-  return "late";
+  return "liquidated";
+}
+
+function isSlaOverdueForStatus(input: {
+  status: string;
+  slaHours?: number | null;
+  updatedAt?: Date;
+  now?: Date;
+}): boolean {
+  if (input.slaHours == null || input.slaHours <= 0 || !input.updatedAt) return false;
+  if (isTerminalContractStatus(input.status) || input.status === "late") return false;
+  if (input.status !== "active" && input.status !== "draft") return false;
+  const now = input.now ?? new Date();
+  const deadline = input.updatedAt.getTime() + input.slaHours * 60 * 60 * 1000;
+  return now.getTime() > deadline;
+}
+
+/** Trạng thái vận hành theo ngày + SLA. */
+export function computeContractOperationalStatus(input: {
+  status: ContractStatus | string;
+  startDate?: Date | string;
+  endDate?: Date | string;
+  slaHours?: number | null;
+  updatedAt?: Date;
+  now?: Date;
+}): ContractStatus {
+  const now = input.now ?? new Date();
+  const stored = input.status as ContractStatus;
+
+  if (stored === "completed") {
+    if (input.endDate) {
+      const end = endOfDay(new Date(input.endDate));
+      if (!Number.isNaN(end.getTime()) && startOfDay(now) > end) return "liquidated";
+    }
+    return "completed";
+  }
+
+  if (stored === "liquidated") return "liquidated";
+
+  if (input.startDate && input.endDate) {
+    const start = startOfDay(new Date(input.startDate));
+    const end = endOfDay(new Date(input.endDate));
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      const today = startOfDay(now);
+      if (today > end) return "liquidated";
+      if (isSlaOverdueForStatus(input)) return "late";
+      if (today < start) return "draft";
+      return "active";
+    }
+  }
+
+  if (ALL_STATUSES.includes(stored)) return stored;
+  return "draft";
 }
 
 export function resolveContractDisplayStatus(input: {
@@ -68,11 +121,17 @@ export function sanitizeStoredContractStatus(
   return undefined;
 }
 
-export function withDisplayStatus<T extends { status: ContractStatus }>(
-  row: T,
-): T & { displayStatus: DisplayContractStatus } {
+export function withDisplayStatus<
+  T extends {
+    status: ContractStatus;
+    startDate?: Date;
+    endDate?: Date;
+    slaHours?: number | null;
+    updatedAt?: Date;
+  },
+>(row: T, now?: Date): T & { displayStatus: DisplayContractStatus } {
   return {
     ...row,
-    displayStatus: resolveContractDisplayStatus({ status: row.status }),
+    displayStatus: computeContractOperationalStatus({ ...row, now }),
   };
 }

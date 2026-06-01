@@ -1,7 +1,7 @@
 # BRD — Yêu cầu nghiệp vụ tổng thể (ASMS)
 
 > **Tài liệu yêu cầu nghiệp vụ — Hệ thống quản lý hậu mãi (ASMS)**  
-> Phiên bản: 1.2 — Khớp với cách hệ thống đang vận hành. Phần kỹ thuật chi tiết xem [SRS-ASMS.md](SRS-ASMS.md).  
+> Phiên bản: 1.5 — Khớp với cách hệ thống đang vận hành. Phần kỹ thuật chi tiết xem [SRS-ASMS.md](SRS-ASMS.md).  
 > **Cách đọc:** Ưu tiên **tiếng Việt dễ hiểu**. Tên trong `code` (mã màn, tên trường, API) giữ nguyên vì trùng với chương trình.
 
 ## Mục lục
@@ -15,7 +15,7 @@
    - 5.2 Hợp đồng và Chi tiết hợp đồng
    - 5.3 Bàn giao và Huấn luyện
    - 5.4 Bảo hành và Sửa chữa
-   - 5.5 Khách hàng và CRM
+  - 5.5 Khách hàng, CRM và Phản ánh
    - 5.6 Sản phẩm và BOM
    - 5.7 Vật tư và Điều chuyển
    - 5.8 Đào tạo và Chi tiết khóa đào tạo
@@ -37,8 +37,8 @@
 | Thuộc tính | Giá trị |
 |------------|---------|
 | Tên tài liệu | BRD - Tài liệu Yêu cầu Nghiệp vụ Tổng thể (ASMS) |
-| Mã tài liệu | BRD-ASMS-v1.2 |
-| Phiên bản | 1.2 |
+| Mã tài liệu | BRD-ASMS-v1.4 |
+| Phiên bản | 1.4 |
 | Loại tài liệu | Tài liệu yêu cầu nghiệp vụ |
 | Phạm vi | Toàn bộ hệ thống ASMS (giao diện + máy chủ) |
 | Tài liệu liên quan | [docs/SRS-ASMS.md](SRS-ASMS.md), [docs/BRD-chuc-nang-tung-man-ASMS.md](BRD-chuc-nang-tung-man-ASMS.md), [docs/data-model.md](data-model.md), [docs/ra-soat-chuc-nang-he-thong.md](ra-soat-chuc-nang-he-thong.md), [docs/frontend-backend-mapping.md](frontend-backend-mapping.md), [docs/uat-checklist.md](uat-checklist.md) |
@@ -113,6 +113,11 @@ Hệ thống có **5 vai trò**. Ai vào được màn nào: [src/hooks/use-role
 | `/san-pham` | Sản phẩm | x | x | x | x | x |
 | `/vat-tu` | Vật tư | x | x | x | - | - |
 | `/khach-hang` | Khách hàng và CRM | x | x | - | x | x |
+| `/phan-anh` | Phản ánh khách hàng — danh sách | x | x | x | x | x |
+| `/phan-anh/thong-ke` | Thống kê khiếu nại dạng bảng (KH + SP/VT), lọc kỳ preset | x | x | x | x | x |
+| `/phan-anh/moi` | Tạo phản ánh | x | x | x | - | x |
+| `/phan-anh/:id` | Chi tiết phản ánh | x | x | x | x | x |
+| `/phan-anh/:id/sua` | Sửa phản ánh | x | x | x | - | x |
 | `/bao-cao` | Báo cáo | x | x | - | x | x |
 | `/de-tai` | Đề tài NCKH | x | x | x | - | - |
 | `/de-tai/:id` | Chi tiết đề tài | x | x | x | - | - |
@@ -412,7 +417,7 @@ flowchart LR
 
 ---
 
-### 5.5 Khách hàng và CRM
+### 5.5 Khách hàng, CRM và Phản ánh
 
 **Mã yêu cầu:** `BR-KH`
 **Đường dẫn:** `/khach-hang`
@@ -421,7 +426,7 @@ flowchart LR
 
 #### 5.5.1 Mục tiêu nghiệp vụ
 
-Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt động chăm sóc và xếp hạng (loyalty), phục vụ tái ký kết hợp đồng và chăm sóc lâu dài.
+Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt động chăm sóc, xếp hạng (loyalty) và ticket phản ánh khách hàng; phục vụ tái ký kết hợp đồng và chăm sóc lâu dài.
 
 #### 5.5.2 Nhu cầu người dùng chính
 
@@ -432,18 +437,85 @@ Quản lý hồ sơ khách hàng quân đội, đầu mối liên lạc, hoạt 
 | BR-KH-03 | Là nhân viên bán hàng, tôi muốn ghi nhận hoạt động chăm sóc (gọi điện, email, họp, ghi chú) với trạng thái lên lịch hoặc hoàn thành |
 | BR-KH-04 | Là quản lý, tôi muốn xem xếp hạng khách hàng dựa trên tổng giá trị hợp đồng và số hợp đồng đang hoạt động |
 | BR-KH-05 | Là quản lý, tôi muốn nhắc lịch các dịp quan trọng (ngày truyền thống đơn vị, sinh nhật lãnh đạo, ngày đón nhận danh hiệu) |
+| BR-KH-06 | Là người vận hành, tôi muốn tạo phản ánh khách hàng trên trang riêng, gắn hợp đồng/sản phẩm/vật tư để làm đầu vào xử lý |
+| BR-KH-07 | Là quản lý, tôi muốn phân công phản ánh theo người cụ thể hoặc theo vai trò để điều phối xử lý |
+| BR-KH-08 | Là người được phân công, tôi muốn ghi cập nhật “Sự cố” hoặc “Đã sửa” trực tiếp trong chi tiết phản ánh |
+| BR-KH-09 | Là người dùng không đặc quyền, tôi chỉ muốn thấy phản ánh nằm trong phạm vi được giao/được phép |
+| BR-KH-10 | Là quản lý kỹ thuật, tôi muốn thống kê khách hàng/sản phẩm/vật tư nào hay được gắn trên phản ánh để ưu tiên xử lý |
 
 #### 5.5.3 Quy trình thao tác
 
-1. Truy cập `/khach-hang`.
+1. Truy cập `/khach-hang` để quản lý hồ sơ khách hàng, đầu mối, hoạt động chăm sóc và xếp hạng.
 2. 4 tab: `Hoạt động`, `Đầu mối`, `Khách hàng`, `Xếp hạng khách hàng`.
-3. thêm / sửa / xóa trên từng tab. Hoạt động và đầu mối có filter theo customer.
+3. Thêm / sửa / xóa trên từng tab; hoạt động và đầu mối có filter theo customer.
+4. Truy cập `/phan-anh` để quản lý ticket phản ánh theo danh sách (sub-nav: Danh sách | Thống kê). Báo cáo tổng hợp đa module vẫn dùng `/bao-cao` như trước.
+5. Tại `/phan-anh/thong-ke`: xem thống kê theo kỳ và tab (chi tiết mục [5.5.5](#555-thống-kê-phản-ánh-phan-anhthong-ke)).
+6. Tạo mới tại `/phan-anh/moi` (wizard): nhập thông tin thu thập, chọn liên kết HĐ/SP/VT, xem trước đơn vị được giao.
+7. Tại `/phan-anh/:id/sua`, người có quyền cập nhật nội dung và phân công.
+8. Tại `/phan-anh/:id`, theo dõi “Hoạt động & cập nhật xử lý” (timeline hệ thống + comment người dùng), và cập nhật trạng thái xử lý.
 
 #### 5.5.4 Ràng buộc
 
 - `Customer.code` duy nhất.
 - `Contact.customerId` bắt buộc; nếu xóa khách hàng (mềm), các contact và activity vẫn còn nhưng được ẩn theo lọc.
 - `CrmActivity.activityAt` là thời điểm chăm sóc (có thể là quá khứ hoặc tương lai).
+- Phản ánh dùng cơ chế phân công:
+  - `assigneeType = user|role`
+  - `assignedUserId` hoặc `assignedRoleCode`
+- Quyền xem phản ánh:
+  - `admin`/`manager` xem toàn bộ
+  - Vai trò còn lại chỉ thấy ticket thuộc phạm vi được giao hoặc được phép theo RBAC backend
+- Quyền comment phản ánh:
+  - Người được phân công, người tạo ticket, `admin`/`manager`
+  - Dạng comment: `issue` (sự cố), `fix` (đã sửa)
+
+#### 5.5.5 Thống kê phản ánh (`/phan-anh/thong-ke`)
+
+**Mã yêu cầu:** `BR-KH-10` (mở rộng)  
+**Đường dẫn:** `/phan-anh/thong-ke`  
+**File giao diện:** [src/pages/FeedbackStatistics.tsx](../src/pages/FeedbackStatistics.tsx)
+
+##### Mục tiêu
+
+Cho phép quản lý kỹ thuật xem **khách hàng**, **sản phẩm** và **vật tư** nào hay xuất hiện trên ticket phản ánh (theo `linkage_items`), trong kỳ đã chọn — **không** trùng với tab Phản ánh tại `/bao-cao` (dữ liệu phiếu bảo hành).
+
+##### Bộ lọc kỳ (preset)
+
+| Giá trị URL `period` | Ý nghĩa |
+|----------------------|---------|
+| `day` | Ticket có `feedbackAt` trong ngày hiện tại (UTC) |
+| `1m` / `3m` / `6m` / `1y` | Lùi N ngày tính từ hôm nay đến cuối ngày hiện tại |
+| `all` | Không giới hạn kỳ |
+
+- Mặc định: `period=1y`, `tab=customer`.
+- Đổi kỳ hoặc tab cập nhật URL ngay (`?period=...&tab=...`); FE chuyển thành `from`/`to` gửi API analytics.
+
+##### Tab Khách hàng (`tab=customer`)
+
+| Cột bảng | Mô tả |
+|----------|--------|
+| Mã KH, Tên KH | Từ master khách hàng |
+| Ticket | Số ticket phản ánh trong kỳ |
+| Đang mở / Đã đóng | Theo trạng thái ticket |
+
+- Bấm một dòng → **Sheet** bên phải: danh sách ticket (tiêu đề, nội dung, ngày, trạng thái, SP/VT gắn kèm), link sang `/phan-anh/:id`.
+- **Không** dùng biểu đồ cột; **không** chuyển sang danh sách ticket khi bấm dòng (drill-down qua Sheet).
+
+##### Tab Sản phẩm & Vật tư (`tab=catalog`)
+
+Hai bảng song song (desktop: 2 cột; mobile: xếp dọc):
+
+1. **Vật tư:** mã, tên, lần gắn (`linkageLineCount`), số ticket, số SP liên quan.
+2. **Sản phẩm:** mỗi SP **một dòng** — mã SP, tên SP, cột **Vật tư (số lần)** gộp chuỗi `MãVT (count) · ...` trên **cùng một dòng**, cột **Tổng** = tổng lần gắn SP.
+
+- Danh sách vật tư con của SP lấy **đầy đủ** từ API (không giới hạn top 3).
+- **Không** tách mỗi vật tư thành dòng phụ riêng dưới SP.
+
+##### Phạm vi không làm (màn thống kê)
+
+- Xuất Excel/PDF thống kê phản ánh.
+- Trang drill-down riêng cho từng SP (chỉ xem ticket trong Sheet KH).
+- Thay đổi module `/bao-cao`.
 
 ---
 
@@ -820,6 +892,7 @@ Quản trị dữ liệu nền và bảo mật truy cập: người dùng, vai t
 | Chi tiết hợp đồng | Hợp đồng + Sản phẩm trong hợp đồng (`ContractProduct`) + Tài liệu + Khóa đào tạo + Bảo hành |
 | Bàn giao | Hợp đồng (n-1), Khách hàng (n-1), Người tạo (User) |
 | Bảo hành | Khách hàng (bắt buộc); hợp đồng, sản phẩm, người xử lý (có thể để trống) |
+| Phản ánh khách hàng | Khách hàng (bắt buộc), hợp đồng (tùy chọn), linkage HĐ/SP/VT, phân công user/role, đơn vị xử lý, timeline và comment |
 | Khách hàng | Hợp đồng (1-n), Đầu mối (1-n), Hoạt động CRM (1-n), Bàn giao, Bảo hành, Sản phẩm, Đào tạo, Tài liệu |
 | Sản phẩm | Hợp đồng (nhiều-nhiều qua `ContractProduct`), khách hàng (tùy chọn), vật tư (BOM), bảo hành, tài liệu |
 | Vật tư | Sản phẩm (BOM), phiếu điều chuyển (một vật tư — nhiều phiếu) |
@@ -875,6 +948,18 @@ Tiêu chí **nghiệm thu với người dùng** từng nhóm chức năng. Mỗ
 - AC-KH-01 - Có thể thêm / sửa / xóa khách hàng, đầu mối, hoạt động.
 - AC-KH-02 - Hoạt động chăm sóc lưu đầy đủ thời điểm và người tạo.
 - AC-KH-03 - Tab xếp hạng khách hàng hiển thị đúng tổng giá trị hợp đồng.
+
+### 8.6a Phản ánh khách hàng
+
+- AC-PA-01 - Có thể tạo phản ánh tại `/phan-anh/moi` với thông tin thu thập, liên kết HĐ/SP/VT và phân công bắt buộc.
+- AC-PA-02 - Có thể chọn phân công theo người cụ thể hoặc theo vai trò.
+- AC-PA-03 - Màn chi tiết phản ánh hiển thị khối “Hoạt động & cập nhật xử lý” gộp timeline hệ thống và comment người dùng.
+- AC-PA-04 - Người có quyền có thể ghi comment loại `Sự cố` hoặc `Đã sửa`; người không đủ quyền không thấy form ghi.
+- AC-PA-05 - API cập nhật phản ánh không trả lỗi 500 khi đổi phân công user/role.
+- AC-PA-06 - Màn `/phan-anh/thong-ke` có 2 tab Khách hàng / Sản phẩm & Vật tư; lọc kỳ `day|1m|3m|6m|1y|all`; hiển thị **bảng** (không biểu đồ cột); số liệu từ `linkage_items` trên ticket phản ánh.
+- AC-PA-07 - Thống kê tuân thủ RBAC visibility (technician chỉ thấy KH/ticket trong phạm vi `buildFeedbackAccessFilter`).
+- AC-PA-08 - Tab Khách hàng: bấm dòng mở Sheet chi tiết ticket + linkage + link `/phan-anh/:id`.
+- AC-PA-09 - Tab Sản phẩm & Vật tư: bảng SP hiển thị **toàn bộ** VT con trên **một dòng** dạng `mã (số lần) · ...`; bảng VT độc lập đầy đủ cột thống kê.
 
 ### 8.7 Đào tạo
 
@@ -979,6 +1064,8 @@ Tiêu chí **nghiệm thu với người dùng** từng nhóm chức năng. Mỗ
 | BR-BG | SRS §3.7 + §6.2 |
 | BR-BH | SRS §3.8 + §6.3 |
 | BR-KH | SRS §3.3 + §3.4 + §3.5 |
+| BR-KH-06..09 (Phản ánh) | SRS §5.3 + §6 + §7 + §8 |
+| BR-KH-10 (Thống kê phản ánh) | SRS §5.3 + §6.4 + §6.4.1 + TECHSPEC §9.4 |
 | BR-SP | SRS §3.10 + §4 |
 | BR-VT | SRS §3.9 + §6.5 |
 | BR-DT (đào tạo) | SRS §3.13 + §6.4 |
@@ -995,7 +1082,10 @@ Tiêu chí **nghiệm thu với người dùng** từng nhóm chức năng. Mỗ
 | 1.0 | (theo ngày commit) | Đội phát triển ASMS | Phát hành lần đầu, tổng hợp 13 nhóm màn |
 | 1.1 | 07/05/2026 | Đội phát triển ASMS | Đồng bộ tham chiếu chéo § SRS (cấu trúc mục 3.x), sửa anchor RBAC mục 7 |
 | 1.2 | 11/05/2026 | Đội phát triển ASMS | Rút gọn từ ngữ, thêm hướng dẫn đọc; sửa mã BR-RD cho đề tài NCKH |
+| 1.3 | 27/05/2026 | Đội phát triển ASMS | Cập nhật luồng phản ánh: trang riêng, phân công user/role, comment xử lý và tiêu chí nghiệm thu liên quan |
+| 1.4 | 27/05/2026 | Đội phát triển ASMS | Thêm thống kê VT/SP/KH (`/phan-anh/thong-ke`); báo cáo tổng hợp giữ tại `/bao-cao` |
+| 1.5 | 27/05/2026 | Đội phát triển ASMS | Thống kê phản ánh dạng bảng: 2 tab, lọc kỳ preset, Sheet chi tiết KH, VT con SP gộp một dòng; API `analytics/customer/:id/detail` |
 
 ---
 
-> **Kết thúc BRD-ASMS-v1.2.** Chi tiết kỹ thuật (API, cơ sở dữ liệu, phân quyền, đăng nhập, Dashboard): [SRS-ASMS.md](SRS-ASMS.md).
+> **Kết thúc BRD-ASMS-v1.5.** Chi tiết kỹ thuật (API, cơ sở dữ liệu, phân quyền, đăng nhập, Dashboard): [SRS-ASMS.md](SRS-ASMS.md).

@@ -17,6 +17,7 @@ import {
 } from "@/data/taskData2";
 import TaskDialog from "@/components/tasks/TaskDialog";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/list-pagination";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
@@ -94,6 +95,10 @@ const Tasks = () => {
   const avgProgress = tasks.length > 0 ? Math.round(tasks.reduce((s, t) => s + t.progress, 0) / tasks.length) : 0;
 
   const handleSave = useCallback(async (data: Partial<TaskItem>) => {
+    if (!data.title?.trim()) {
+      toast.error("Vui lòng nhập tiêu đề công việc");
+      return;
+    }
     try {
       if (editingTask) {
         await updateTaskMutation.mutateAsync({
@@ -124,8 +129,8 @@ const Tasks = () => {
         });
         toast.success("Đã tạo công việc");
       }
-    } catch {
-      toast.error("Không thể lưu công việc");
+    } catch (e) {
+      toastApiError(e, "Không thể lưu công việc");
     }
   }, [createTaskMutation, editingTask, updateTaskMutation]);
 
@@ -136,8 +141,8 @@ const Tasks = () => {
         setEditingTask(null);
         setShowDialog(false);
         toast.success("Đã xóa công việc");
-      } catch {
-        toast.error("Không xóa được công việc");
+      } catch (e) {
+        toastApiError(e, "Không xóa được công việc");
       }
     },
     [deleteTaskMutation],

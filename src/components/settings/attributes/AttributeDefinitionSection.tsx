@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GripVertical, History, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import {
   DndContext,
   PointerSensor,
@@ -60,20 +61,12 @@ import {
 const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 type StatusFilter = "all" | "active" | "inactive";
 
-function formatDate(iso: string | null | undefined) {
-  if (!iso) return "—";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("vi-VN");
+function errMessage(e: unknown) {
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
-function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Có lỗi xảy ra";
+function nextDefinitionSortOrder(definitions: DefinitionItem[]) {
+  return definitions.length ? Math.max(...definitions.map((r) => r.sortOrder)) + 10 : 0;
 }
 
 type AttributeDefinitionSectionProps = {
@@ -102,14 +95,12 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const [createForm, setCreateForm] = useState({
     code: "",
     label: "",
-    sortOrder: 0,
     isActive: true,
     slaHours: "" as string,
   });
   const [editForm, setEditForm] = useState({
     code: "",
     label: "",
-    sortOrder: 0,
     isActive: true,
     slaHours: "" as string,
   });
@@ -137,12 +128,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     return rows.filter((row) => {
       if (statusFilter !== "all" && row.status !== statusFilter) return false;
       if (!q) return true;
-      return (
-        row.name.toLowerCase().includes(q) ||
-        row.code.toLowerCase().includes(q) ||
-        row.createdBy.toLowerCase().includes(q) ||
-        row.updatedBy.toLowerCase().includes(q)
-      );
+      return row.name.toLowerCase().includes(q) || row.code.toLowerCase().includes(q);
     });
   }, [rows, search, statusFilter]);
 
@@ -151,7 +137,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const currentPage = Math.min(page, totalPages);
   const isPaginatedView = totalPages > 1 || statusFilter !== "all" || search.trim().length > 0;
   const allowDrag = canWrite && !isPaginatedView;
-  const tableColSpan = (canWrite ? 8 : 7) + (showSlaHours ? 1 : 0) + (allowDrag ? 1 : 0);
+  const tableColSpan = (canWrite ? 5 : 4) + (showSlaHours ? 1 : 0) + (allowDrag ? 1 : 0);
 
   const pageRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -197,7 +183,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     setCreateForm({
       code: "",
       label: "",
-      sortOrder: definitions.length ? Math.max(...definitions.map((r) => r.sortOrder)) + 10 : 0,
       isActive: true,
       slaHours: "",
     });
@@ -208,7 +193,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     setEditForm({
       code: item.code,
       label: item.label,
-      sortOrder: item.sortOrder,
       isActive: item.isActive,
       slaHours: item.slaHours != null ? String(item.slaHours) : "",
     });
@@ -236,7 +220,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         category: definitionCategory,
         code,
         label,
-        sortOrder: Number.isFinite(createForm.sortOrder) ? createForm.sortOrder : 0,
+        sortOrder: nextDefinitionSortOrder(definitions),
         isActive: createForm.isActive,
         ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
       });
@@ -270,7 +254,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         payload: {
           code,
           label,
-          sortOrder: Number.isFinite(editForm.sortOrder) ? editForm.sortOrder : 0,
+          sortOrder: editRow.sortOrder,
           isActive: editForm.isActive,
           ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
         },
@@ -354,6 +338,11 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         </div>
       </div>
 
+      {allowDrag && !hasDragChanges ? (
+        <p className="border-b border-border/50 px-4 py-2 text-xs text-muted-foreground">
+          Kéo thả dòng để sắp xếp thứ tự hiển thị (khi không lọc hoặc phân trang).
+        </p>
+      ) : null}
       {hasDragChanges ? (
         <div className="flex items-center justify-between gap-2 border-b border-border/50 bg-amber-50/60 px-4 py-2 text-sm">
           <span className="text-amber-700">Thứ tự đang chỉnh sửa cục bộ. Lưu để áp dụng.</span>
@@ -393,8 +382,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
             <TableHead className="w-40">Mã</TableHead>
             <TableHead>Tên</TableHead>
             {showSlaHours ? <TableHead className="w-28">SLA (giờ)</TableHead> : null}
-            <TableHead>Người sửa</TableHead>
-            <TableHead>Ngày sửa</TableHead>
             <TableHead>Trạng thái</TableHead>
             {canWrite ? <TableHead className="w-32 text-right">Thao tác</TableHead> : null}
           </TableRow>
@@ -437,7 +424,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
             </DndContext>
           ) : (
             pageRows.map((row, index) => (
-              <StaticAttributeRow
+              <AttributeTableRow
                 key={row.id}
                 row={row}
                 index={(currentPage - 1) * pageSize + index}
@@ -457,6 +444,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         </TableBody>
       </Table>
 
+      {total > 0 ? (
       <div className="flex flex-col gap-3 border-t border-border/50 p-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">Tổng {total} mục</p>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -513,6 +501,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
           </Pagination>
         </div>
       </div>
+      ) : null}
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
@@ -535,15 +524,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 id="attr-def-label"
                 value={createForm.label}
                 onChange={(e) => setCreateForm((s) => ({ ...s, label: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="attr-def-sort">Thứ tự</Label>
-              <Input
-                id="attr-def-sort"
-                type="number"
-                value={createForm.sortOrder}
-                onChange={(e) => setCreateForm((s) => ({ ...s, sortOrder: Number(e.target.value) }))}
               />
             </div>
             {showSlaHours ? (
@@ -602,15 +582,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 onChange={(e) => setEditForm((s) => ({ ...s, label: e.target.value }))}
               />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="attr-edit-sort">Thứ tự</Label>
-              <Input
-                id="attr-edit-sort"
-                type="number"
-                value={editForm.sortOrder}
-                onChange={(e) => setEditForm((s) => ({ ...s, sortOrder: Number(e.target.value) }))}
-              />
-            </div>
             {showSlaHours ? (
               <div className="space-y-1.5">
                 <Label htmlFor="attr-def-sla-edit">SLA mặc định (giờ)</Label>
@@ -662,26 +633,6 @@ type RowProps = {
   onEdit: () => void;
   onDelete: () => void;
 };
-
-function StaticAttributeRow({
-  row,
-  index,
-  canWrite,
-  onEdit,
-  onDelete,
-  showSlaHours,
-}: RowProps & { showSlaHours: boolean }) {
-  return (
-    <AttributeTableRow
-      row={row}
-      index={index}
-      canWrite={canWrite}
-      onEdit={onEdit}
-      onDelete={onDelete}
-      showSlaHours={showSlaHours}
-    />
-  );
-}
 
 function SortableAttributeRow(props: RowProps & { showSlaHours: boolean }) {
   const { row } = props;
@@ -737,8 +688,6 @@ function AttributeTableRow({
           {row.slaHours != null ? `${row.slaHours}h` : "—"}
         </TableCell>
       ) : null}
-      <TableCell>{row.updatedBy || "—"}</TableCell>
-      <TableCell>{formatDate(row.updatedAt)}</TableCell>
       <TableCell>
         {row.status === "active" ? (
           <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15">Hoạt động</Badge>

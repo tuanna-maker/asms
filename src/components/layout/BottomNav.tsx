@@ -11,7 +11,7 @@ const navItems: Array<{
   path: string;
   badge?: BadgeKey;
 }> = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: LayoutDashboard, label: "Bảng điều khiển", path: "/" },
   { icon: FileText, label: "Hợp đồng", path: "/hop-dong", badge: "overdueContracts" },
   { icon: Wrench, label: "Bảo hành", path: "/bao-hanh", badge: "openWarranties" },
   { icon: Package, label: "Vật tư", path: "/vat-tu" },

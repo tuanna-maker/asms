@@ -115,7 +115,7 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
-            Quét mã QR / Barcode
+            Quét mã QR / mã vạch
           </DialogTitle>
         </DialogHeader>
 
@@ -144,7 +144,7 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
         {mode === "manual" ? (
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Nhập Serial / Barcode / QR Code / RFID</label>
+              <label className="text-sm font-medium text-foreground">Nhập số seri / mã vạch / mã QR / RFID</label>
               <div className="flex gap-2">
                 <Input
                   placeholder="VD: SN-RF100-042, 6901234567890..."
@@ -161,8 +161,8 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
 
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: Barcode, label: "Barcode", hint: "Mã vạch sản phẩm" },
-                { icon: QrCode, label: "QR Code", hint: "Mã QR vật tư" },
+                { icon: Barcode, label: "Mã vạch", hint: "Mã vạch sản phẩm" },
+                { icon: QrCode, label: "Mã QR", hint: "Mã QR vật tư" },
               ].map(({ icon: Icon, label, hint }) => (
                 <div key={label} className="flex items-center gap-2 p-3 rounded-lg border border-border/50 bg-muted/30">
                   <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -175,7 +175,7 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
             </div>
 
             <p className="text-xs text-muted-foreground text-center">
-              Hỗ trợ tìm kiếm theo Serial, Barcode, QR Code và RFID
+              Hỗ trợ tìm kiếm theo số seri, mã vạch, mã QR và RFID
             </p>
           </div>
         ) : (
@@ -214,7 +214,7 @@ const BarcodeScannerDialog = ({ open, onClose, onScan }: BarcodeScannerDialogPro
 
             <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center">
               <ScanLine className="h-3.5 w-3.5" />
-              Hướng camera vào mã QR hoặc Barcode để quét tự động
+              Hướng camera vào mã QR hoặc mã vạch để quét tự động
             </div>
           </div>
         )}

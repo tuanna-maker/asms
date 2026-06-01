@@ -191,10 +191,39 @@ enum CustomerFeedbackSeverity {
   high
 }
 
+enum CustomerFeedbackSource {
+  external
+  internal
+}
+
 enum CustomerFeedbackStatus {
   new
-  processing
+  assigned
+  in_progress
+  pending_close
   resolved
+  reopened
+}
+
+enum CustomerFeedbackAssignmentStatus {
+  pending
+  in_progress
+  done
+}
+
+enum CustomerFeedbackTimelineEvent {
+  created
+  assigned
+  unit_updated
+  pending_close
+  resolved
+  reopened
+}
+
+enum CustomerFeedbackCommentKind {
+  issue
+  fix
+  note
 }
 
 model Role {
@@ -252,7 +281,12 @@ model User {
   courses       TrainingCourse[] @relation("CourseInstructor")
   documents     Document[] @relation("DocumentOwner")
   crmActivities CrmActivity[] @relation("CrmActivityCreatedBy")
-  customerFeedbacks CustomerFeedback[] @relation("CustomerFeedbackCreatedBy")
+  customerFeedbacks       CustomerFeedback[]           @relation("CustomerFeedbackCreatedBy")
+  customerFeedbacksClosed CustomerFeedback[]           @relation("CustomerFeedbackClosedBy")
+  feedbacksAssigned       CustomerFeedback[]           @relation("FeedbackAssigneeUser")
+  feedbackAssignmentsUpdated CustomerFeedbackAssignment[] @relation("FeedbackAssignmentUpdatedBy")
+  feedbackTimelineEvents  CustomerFeedbackTimeline[]   @relation("FeedbackTimelineActor")
+  feedbackComments        CustomerFeedbackComment[]    @relation("FeedbackCommentAuthor")
   refreshTokens          RefreshToken[]
   notificationPreferences UserNotificationPreference[]
   notifications           Notification[]
@@ -427,33 +461,140 @@ model CrmActivity {
   @@map("crm_activities")
 }
 
+model FeedbackExecutionUnit {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  name           String
+  roleCodes      String[]  @default([]) @map("role_codes")
+  notifyUserIds  String[]  @default([]) @map("notify_user_ids")
+  isActive       Boolean   @default(true) @map("is_active")
+  sortOrder      Int       @default(0) @map("sort_order")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  routingRules FeedbackProductRoutingRule[]
+  assignments  CustomerFeedbackAssignment[]
+
+  @@index([deletedAt], map: "idx_feedback_execution_units_deleted_at")
+  @@map("feedback_execution_units")
+}
+
+model FeedbackProductRoutingRule {
+  id              String    @id @default(cuid())
+  unitId          String    @map("unit_id")
+  productId       String?   @map("product_id")
+  productCategory String?   @map("product_category")
+  priority        Int       @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
+
+  unit FeedbackExecutionUnit @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@index([unitId], map: "idx_feedback_routing_rules_unit_id")
+  @@index([productId], map: "idx_feedback_routing_rules_product_id")
+  @@index([deletedAt], map: "idx_feedback_routing_rules_deleted_at")
+  @@map("feedback_product_routing_rules")
+}
+
 model CustomerFeedback {
   id          String                   @id @default(cuid())
   customerId  String                   @map("customer_id")
   contractId  String?                  @map("contract_id")
   warrantyId  String?                  @map("warranty_id")
   createdById String?                  @map("created_by_id")
+  closedById  String?                  @map("closed_by_id")
   title       String
   content     String                   @db.Text
   severity    CustomerFeedbackSeverity @default(medium)
+  assigneeType      String?  @map("assignee_type")
+  assignedUserId    String?  @map("assigned_user_id")
+  assignedRoleCode  String?  @map("assigned_role_code")
   status      CustomerFeedbackStatus   @default(new)
-  feedbackAt  DateTime                 @map("feedback_at")
-  createdAt   DateTime                 @default(now()) @map("created_at")
-  updatedAt   DateTime                 @updatedAt @map("updated_at")
-  deletedAt   DateTime?                @map("deleted_at")
+  source      CustomerFeedbackSource   @default(external)
+  intake      Json                     @default("{}")
+  feedbackAt     DateTime                 @map("feedback_at")
+  slaDueAt       DateTime?                @map("sla_due_at")
+  closedAt       DateTime?                @map("closed_at")
+  linkageItems   Json                     @default("[]") @map("linkage_items")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+  updatedAt      DateTime                 @updatedAt @map("updated_at")
+  deletedAt      DateTime?                @map("deleted_at")
 
-  customer  Customer  @relation(fields: [customerId], references: [id])
-  contract  Contract? @relation(fields: [contractId], references: [id])
-  warranty  Warranty? @relation(fields: [warrantyId], references: [id])
-  createdBy User?     @relation("CustomerFeedbackCreatedBy", fields: [createdById], references: [id])
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  contract     Contract? @relation(fields: [contractId], references: [id])
+  warranty     Warranty? @relation(fields: [warrantyId], references: [id])
+  createdBy    User?     @relation("CustomerFeedbackCreatedBy", fields: [createdById], references: [id])
+  closedBy     User?     @relation("CustomerFeedbackClosedBy", fields: [closedById], references: [id])
+  assignedUser User?     @relation("FeedbackAssigneeUser", fields: [assignedUserId], references: [id])
+  assignments  CustomerFeedbackAssignment[]
+  timeline     CustomerFeedbackTimeline[]
+  comments     CustomerFeedbackComment[]
 
   @@index([customerId], map: "idx_customer_feedbacks_customer_id")
   @@index([contractId], map: "idx_customer_feedbacks_contract_id")
   @@index([warrantyId], map: "idx_customer_feedbacks_warranty_id")
   @@index([feedbackAt], map: "idx_customer_feedbacks_feedback_at")
   @@index([status], map: "idx_customer_feedbacks_status")
+  @@index([slaDueAt], map: "idx_customer_feedbacks_sla_due_at")
+  @@index([assignedUserId], map: "idx_customer_feedbacks_assigned_user_id")
+  @@index([assignedRoleCode], map: "idx_customer_feedbacks_assigned_role_code")
   @@index([deletedAt], map: "idx_customer_feedbacks_deleted_at")
   @@map("customer_feedbacks")
+}
+
+model CustomerFeedbackAssignment {
+  id           String                           @id @default(cuid())
+  feedbackId   String                           @map("feedback_id")
+  unitId       String                           @map("unit_id")
+  status       CustomerFeedbackAssignmentStatus @default(pending)
+  responseNote String?                          @map("response_note") @db.Text
+  updatedById  String?                          @map("updated_by_id")
+  createdAt    DateTime                         @default(now()) @map("created_at")
+  updatedAt    DateTime                         @updatedAt @map("updated_at")
+
+  feedback  CustomerFeedback      @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  unit      FeedbackExecutionUnit @relation(fields: [unitId], references: [id])
+  updatedBy User?                 @relation("FeedbackAssignmentUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([feedbackId, unitId], map: "uniq_feedback_assignment_feedback_unit")
+  @@index([feedbackId], map: "idx_feedback_assignments_feedback_id")
+  @@index([unitId], map: "idx_feedback_assignments_unit_id")
+  @@index([status], map: "idx_feedback_assignments_status")
+  @@map("customer_feedback_assignments")
+}
+
+model CustomerFeedbackTimeline {
+  id         String                        @id @default(cuid())
+  feedbackId String                        @map("feedback_id")
+  event      CustomerFeedbackTimelineEvent
+  message    String?                       @db.Text
+  actorId    String?                       @map("actor_id")
+  createdAt  DateTime                      @default(now()) @map("created_at")
+
+  feedback CustomerFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  actor    User?            @relation("FeedbackTimelineActor", fields: [actorId], references: [id])
+
+  @@index([feedbackId], map: "idx_feedback_timeline_feedback_id")
+  @@index([createdAt], map: "idx_feedback_timeline_created_at")
+  @@map("customer_feedback_timeline")
+}
+
+model CustomerFeedbackComment {
+  id         String                      @id @default(cuid())
+  feedbackId String                      @map("feedback_id")
+  authorId   String                      @map("author_id")
+  kind       CustomerFeedbackCommentKind
+  body       String                      @db.Text
+  createdAt  DateTime                    @default(now()) @map("created_at")
+
+  feedback CustomerFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  author   User               @relation("FeedbackCommentAuthor", fields: [authorId], references: [id])
+
+  @@index([feedbackId], map: "idx_feedback_comments_feedback_id")
+  @@index([createdAt], map: "idx_feedback_comments_created_at")
+  @@map("customer_feedback_comments")
 }
 
 model Contract {

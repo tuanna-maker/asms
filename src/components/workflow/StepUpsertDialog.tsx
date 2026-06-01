@@ -63,7 +63,6 @@ export function StepUpsertDialog({
   const [name, setName] = useState("");
   const [roleCode, setRoleCode] = useState("");
   const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-  const [slaHours, setSlaHours] = useState<number | "">(24);
   const [requireDocument, setRequireDocument] = useState(false);
   const [fieldSchema, setFieldSchema] = useState<FieldDef[]>([]);
 
@@ -73,7 +72,6 @@ export function StepUpsertDialog({
       setName(initial.name);
       setRoleCode(initial.roleCode);
       setAssigneeIds(initial.assigneeIds ?? []);
-      setSlaHours(initial.slaHours ?? "");
       setRequireDocument(Boolean(initial.requireDocument));
       const parsed = parseFieldSchema(initial.fieldSchema);
       setFieldSchema(
@@ -87,7 +85,6 @@ export function StepUpsertDialog({
       setName("");
       setRoleCode("");
       setAssigneeIds([]);
-      setSlaHours(24);
       setRequireDocument(false);
       // Thêm bước thủ công: không gán sẵn field — dùng «Tạo N bước chuẩn» nếu cần mẫu đầy đủ
       setFieldSchema([]);
@@ -126,7 +123,6 @@ export function StepUpsertDialog({
       actionCode: initial?.actionCode ?? "approve",
       roleCode,
       assigneeIds,
-      slaHours: slaHours === "" ? null : Number(slaHours),
       description: null,
       phaseCode: initial?.phaseCode ?? defaultPhaseForModule(moduleKey),
       requireDocument,
@@ -204,16 +200,6 @@ export function StepUpsertDialog({
               hint="Tìm theo tên hoặc email. Để trống = mọi người có vai trò xử lý đều được duyệt bước này."
               addButtonLabel="Tìm và thêm người xử lý…"
             />
-            <div className="space-y-1.5">
-              <Label htmlFor="step-sla">Thời hạn (giờ)</Label>
-              <Input
-                id="step-sla"
-                type="number"
-                min={0}
-                value={slaHours}
-                onChange={(e) => setSlaHours(e.target.value === "" ? "" : Number(e.target.value))}
-              />
-            </div>
             <div className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2">
               <div className="space-y-0.5">
                 <Label htmlFor="step-require-doc" className="cursor-pointer text-sm">

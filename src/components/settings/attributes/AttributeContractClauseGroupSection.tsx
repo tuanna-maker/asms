@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link2, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,7 +49,6 @@ type Props = {
 const emptyForm = () => ({
   code: "",
   label: "",
-  sortOrder: "0",
   isActive: true,
 });
 
@@ -103,7 +103,6 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
     setForm({
       code: row.code,
       label: row.label,
-      sortOrder: String(row.sortOrder),
       isActive: row.isActive,
     });
     setDialogOpen(true);
@@ -140,7 +139,7 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
     const payload = {
       code: form.code.trim(),
       label: form.label.trim(),
-      sortOrder: Number(form.sortOrder) || 0,
+      sortOrder: editing ? editing.sortOrder : sorted.length > 0 ? Math.max(...sorted.map((g) => g.sortOrder)) + 1 : 0,
       isActive: form.isActive,
     };
     try {
@@ -152,8 +151,7 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
         toast.success("Đã thêm nhóm");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error("Không lưu được nhóm");
+    } catch (e) { toastApiError(e, "Không lưu được nhóm");
     }
   };
 
@@ -163,8 +161,7 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
       await setMembersMut.mutateAsync({ groupId: membersGroup.id, clauseIds: selectedClauseIds });
       toast.success("Đã gán điều khoản vào nhóm");
       setMembersOpen(false);
-    } catch {
-      toast.error("Không gán được điều khoản");
+    } catch (e) { toastApiError(e, "Không gán được điều khoản");
     }
   };
 
@@ -174,8 +171,7 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
       await deleteMut.mutateAsync(deleteId);
       toast.success("Đã xóa nhóm");
       setDeleteId(null);
-    } catch {
-      toast.error("Không xóa được nhóm");
+    } catch (e) { toastApiError(e, "Không xóa được nhóm");
     }
   };
 
@@ -272,14 +268,6 @@ export function AttributeContractClauseGroupSection({ section, canWrite }: Props
             <div>
               <Label>Tên nhóm *</Label>
               <Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
-            </div>
-            <div>
-              <Label>Thứ tự</Label>
-              <Input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => setForm({ ...form, sortOrder: e.target.value })}
-              />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={form.isActive} onCheckedChange={(v) => setForm({ ...form, isActive: v })} />

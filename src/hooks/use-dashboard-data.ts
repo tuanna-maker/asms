@@ -206,10 +206,21 @@ function buildDashboardFromSummary(
     huanLuyen: Number(m.training ?? 0),
   }));
 
+  const fp = summary.feedbackProgress ?? {
+    total: 0,
+    new: 0,
+    assigned: 0,
+    inProgress: 0,
+    pendingClose: 0,
+    resolved: 0,
+    overdue: 0,
+  };
+
   return {
     productProgress: summary.productProgress,
     contractProgress: summary.contractProgress,
     complaintProgress: summary.complaintProgress,
+    feedbackProgress: fp,
     handoverProgress: summary.handoverProgress,
     trainingProgress: summary.trainingProgress,
     customerCare: summary.customerCare,
@@ -260,6 +271,12 @@ function buildDashboardFromSummary(
       done: summary.complaintProgress.completedOnTime + summary.complaintProgress.completedLate,
       onTime: summary.complaintProgress.completedOnTime,
       late: summary.complaintProgress.completedLate,
+    },
+    feedback: {
+      total: fp.total,
+      open: fp.new + fp.assigned + fp.inProgress + fp.pendingClose,
+      overdue: fp.overdue,
+      resolved: fp.resolved,
     },
     customerProducts,
     customerRevenue,

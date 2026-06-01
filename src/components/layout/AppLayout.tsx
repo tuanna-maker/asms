@@ -7,25 +7,41 @@ import BottomNav from "./BottomNav";
 import { useAuth } from "@/hooks/use-auth";
 import { useNotificationToast } from "@/hooks/use-notification-toast";
 import DashboardHeader from "../dashboard/DashboardHeader";
-
 const pageTitles: Record<string, { title: string; subtitle: string }> = {
-  "/": { title: "Dashboard", subtitle: "Tổng quan hệ thống ERP" },
+  "/": { title: "Bảng điều khiển", subtitle: "Tổng quan hệ thống ASMS" },
   "/hop-dong": { title: "Quản lý hợp đồng", subtitle: "Danh sách và theo dõi tiến độ hợp đồng" },
   "/ban-giao": { title: "Bàn giao & Huấn luyện", subtitle: "Quản lý bàn giao và huấn luyện sản phẩm" },
   "/bao-hanh": { title: "Bảo hành / Sửa chữa", subtitle: "Tiếp nhận và xử lý yêu cầu bảo hành, sửa chữa" },
   "/vat-tu": { title: "Quản lý vật tư", subtitle: "Nhập, xuất và điều chuyển vật tư" },
   "/khach-hang": { title: "Khách hàng", subtitle: "Quản lý thông tin khách hàng" },
   "/phan-anh": { title: "Phản ánh", subtitle: "Danh sách phản ánh khách hàng toàn hệ thống" },
+  "/phan-anh/thong-ke": { title: "Thống kê phản ánh", subtitle: "VT, SP và KH hay phản ánh" },
   "/bao-cao": { title: "Báo cáo & Thống kê", subtitle: "Báo cáo theo khách hàng, hợp đồng, sản phẩm" },
   "/quy-trinh": { title: "Quy trình", subtitle: "Cấu hình luồng xử lý theo từng module nghiệp vụ" },
   "/cai-dat": { title: "Cài đặt", subtitle: "Quản lý người dùng và phân quyền" },
   "/thong-bao": { title: "Thông báo", subtitle: "Danh sách thông báo trong ứng dụng" },
 };
 
+function resolvePageMeta(pathname: string): { title: string; subtitle: string } {
+  if (pathname === "/phan-anh/moi") {
+    return { title: "Thêm phản ánh", subtitle: "Tạo ticket phản ánh khách hàng" };
+  }
+  if (pathname === "/phan-anh/thong-ke") {
+    return pageTitles[pathname] ?? { title: "Phản ánh", subtitle: "" };
+  }
+  if (/^\/phan-anh\/[^/]+\/sua$/.test(pathname)) {
+    return { title: "Sửa phản ánh", subtitle: "Cập nhật ticket phản ánh" };
+  }
+  if (/^\/phan-anh\/[^/]+$/.test(pathname) && pathname !== "/phan-anh/moi") {
+    return { title: "Chi tiết phản ánh", subtitle: "Xem và xử lý ticket" };
+  }
+  return pageTitles[pathname] ?? { title: "ASMS", subtitle: "" };
+}
+
 const AppLayout = () => {
   const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const page = pageTitles[location.pathname] || { title: "ERP", subtitle: "" };
+  const page = resolvePageMeta(location.pathname);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useNotificationToast(isAuthenticated);

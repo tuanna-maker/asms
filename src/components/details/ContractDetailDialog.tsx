@@ -19,11 +19,12 @@ import { useAuditLogs } from "@/hooks/use-audit-logs-api";
 import { useContractDetail } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
-import type { DisplayContractStatus } from "@/lib/contract-display-status";
+import { getProductStatusLabel } from "@/lib/display-labels";
 import {
-  formatSlaDeadline,
-  isContractExecutionSlaOverdue,
-} from "@/lib/contract-execution-sla";
+  computeContractOperationalStatus,
+  type DisplayContractStatus,
+} from "@/lib/contract-display-status";
+import { formatSlaDeadline } from "@/lib/contract-execution-sla";
 import {
   normalizeClauseEntriesFromDetail,
   type ContractClauseEntry,
@@ -114,9 +115,11 @@ interface Props {
   contract: Contract | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Chỉ xem — ẩn nút Chỉnh sửa (vd. từ icon mắt trên danh sách HĐ). */
+  readOnly?: boolean;
 }
 
-const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
+const ContractDetailDialog = ({ contract, open, onOpenChange, readOnly = false }: Props) => {
   const [editing, setEditing] = useState(false);
   const [editTab, setEditTab] = useState("info");
   const [selectedProduct, setSelectedProduct] = useState<DetailProduct | null>(null);
@@ -152,20 +155,23 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
     setEditing(true);
   };
 
-  const displayStatus = (
-    detail?.displayStatus ?? contract?.status ?? "draft"
-  ) as DisplayContractStatus;
+  const displayStatus = useMemo(() => {
+    const base = (detail?.displayStatus ?? detail?.status ?? contract?.status ?? "draft") as DisplayContractStatus;
+    const startDate = detail?.startDate ?? contract?.startDate;
+    const endDate = detail?.endDate ?? contract?.endDate;
+    if (!startDate || !endDate) return base;
+    return computeContractOperationalStatus({
+      status: detail?.status ?? contract?.status ?? base,
+      startDate,
+      endDate,
+      slaHours: detail?.slaHours ?? null,
+      updatedAt: detail?.updatedAt,
+    });
+  }, [detail, contract]);
   const cfg = statusConfig[displayStatus] || statusConfig.active;
 
   const slaHours = detail?.slaHours ?? null;
-  const slaOverdue = useMemo(() => {
-    if (slaHours == null || slaHours <= 0 || !detail?.updatedAt) return false;
-    return isContractExecutionSlaOverdue({
-      status: displayStatus,
-      slaHours,
-      updatedAt: detail.updatedAt,
-    });
-  }, [slaHours, detail?.updatedAt, displayStatus]);
+  const slaOverdue = displayStatus === "late";
 
   const clauseDisplayEntries = useMemo(() => {
     if (!contract) return [];
@@ -188,9 +194,11 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
             <FileText className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
             <span className="truncate leading-6">Chi tiết hợp đồng {contract.id}</span>
           </SheetTitle>
-          <Button variant="outline" size="sm" onClick={() => openEdit("info")} className="shrink-0">
-            <Edit className="h-4 w-4" /> Chỉnh sửa
-          </Button>
+          {!readOnly ? (
+            <Button variant="outline" size="sm" onClick={() => openEdit("info")} className="shrink-0">
+              <Edit className="h-4 w-4" /> Chỉnh sửa
+            </Button>
+          ) : null}
         </SheetHeader>
 
         <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
@@ -330,7 +338,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
                         <TableCell>{p.category ?? "—"}</TableCell>
                         <TableCell>{p.manufacturer ?? "—"}</TableCell>
                         <TableCell className="text-right">{p.totalProduced ?? 0}</TableCell>
-                        <TableCell className="text-right">{p.status ?? "—"}</TableCell>
+                        <TableCell className="text-right">{getProductStatusLabel(p.status)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
@@ -400,15 +408,17 @@ const ContractDetailDialog = ({ contract, open, onOpenChange }: Props) => {
 
         </Tabs>
       </SheetContent>
-      <ContractEditDialog
-        contract={contract}
-        open={editing}
-        initialTab={editTab}
-        onOpenChange={(next) => {
-          setEditing(next);
-          if (!next) setEditTab("info");
-        }}
-      />
+      {!readOnly ? (
+        <ContractEditDialog
+          contract={contract}
+          open={editing}
+          initialTab={editTab}
+          onOpenChange={(next) => {
+            setEditing(next);
+            if (!next) setEditTab("info");
+          }}
+        />
+      ) : null}
       <ContractProductDetailDialog
         contractId={(detailData as { id?: string } | null)?.id ?? contract.dbId ?? contract.id}
         contractCode={contract.id}

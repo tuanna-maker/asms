@@ -42,12 +42,7 @@ export type AttributeRow = {
   id: string;
   code: string;
   name: string;
-  createdAt: string;
-  createdBy: string;
-  updatedAt: string;
-  updatedBy: string;
   status: AttributeRowStatus;
-  isSystem: boolean;
   slaHours?: number | null;
 };
 
@@ -69,7 +64,6 @@ export type AttributeSectionDef = {
 export type AttributeModuleDef = {
   key: AttributeModuleKey;
   label: string;
-  menuPath: string;
   sections: AttributeSectionDef[];
 };
 
@@ -79,7 +73,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "hop-dong",
     label: "Hợp đồng",
-    menuPath: "/hop-dong",
     sections: [
       {
         id: "contract_type",
@@ -120,7 +113,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "ban-giao",
     label: "Bàn giao & HL",
-    menuPath: "/ban-giao",
     sections: [
       {
         id: "handover_type",
@@ -145,7 +137,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "bao-hanh",
     label: "Bảo hành / SC",
-    menuPath: "/bao-hanh",
     sections: [
       {
         id: "warranty_priority",
@@ -179,7 +170,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "san-pham",
     label: "Sản phẩm",
-    menuPath: "/san-pham",
     sections: [
       {
         id: "product_category",
@@ -204,7 +194,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "vat-tu",
     label: "Vật tư",
-    menuPath: "/vat-tu",
     sections: [
       {
         id: "warehouse",
@@ -256,7 +245,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "khach-hang",
     label: "CRM / Khách hàng",
-    menuPath: "/khach-hang",
     sections: [
       {
         id: "customer_source",
@@ -281,7 +269,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "de-tai",
     label: "Đề tài NC",
-    menuPath: "/de-tai",
     sections: [
       {
         id: "research_stage",
@@ -297,7 +284,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "cong-viec",
     label: "Công việc",
-    menuPath: "/cong-viec",
     sections: [
       {
         id: "task_priority",
@@ -331,7 +317,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "dao-tao",
     label: "Đào tạo & HL",
-    menuPath: "/dao-tao",
     sections: [
       {
         id: "training_type",
@@ -356,7 +341,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "tai-lieu",
     label: "Tài liệu",
-    menuPath: "/tai-lieu",
     sections: [
       {
         id: "document_type",
@@ -372,7 +356,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
   {
     key: "quy-trinh",
     label: "Quy trình",
-    menuPath: "/quy-trinh",
     sections: [
       {
         id: "workflow_step_action",

@@ -17,6 +17,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
@@ -180,8 +181,8 @@ const Documents = () => {
         toast.success("Đã tải lên tài liệu");
       }
       setDialogOpen(false);
-    } catch {
-      toast.error("Không thể lưu tài liệu");
+    } catch (e) {
+      toastApiError(e, "Không thể lưu tài liệu");
     }
   };
 
@@ -191,8 +192,8 @@ const Documents = () => {
       await deleteDocumentMutation.mutateAsync(deletingId);
       toast.success("Đã xóa tài liệu");
       setDeletingId(null);
-    } catch {
-      toast.error("Không thể xóa tài liệu");
+    } catch (e) {
+      toastApiError(e, "Không thể xóa tài liệu");
     }
   };
 

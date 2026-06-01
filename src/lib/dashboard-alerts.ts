@@ -32,6 +32,8 @@ export function computeDashboardAlertMetrics(data: DashboardData): DashboardAler
   if (data.complaint.late > 0) criticalCount++;
   if (data.training.late > 0) warningCount++;
   if (data.complaint.processing > 0) warningCount++;
+  if (data.feedback.overdue > 0) criticalCount++;
+  if (data.feedback.open > 0) warningCount++;
 
   const pakdMaterialItems = data.pakd.materials?.items ?? data.pakd.items ?? [];
   const pakdHighRemaining = pakdMaterialItems.filter(
@@ -50,7 +52,11 @@ export function computeDashboardAlertMetrics(data: DashboardData): DashboardAler
     overdueContracts: data.contract.late,
     pendingComplaints: data.complaint.processing,
     complaintLate: data.complaint.late,
-    hasIssues: totalLate > 0 || data.complaint.processing > 0 || actionableAlertCount > 0,
+    hasIssues:
+      totalLate > 0 ||
+      data.complaint.processing > 0 ||
+      data.feedback.overdue > 0 ||
+      actionableAlertCount > 0,
   };
 }
 
@@ -106,6 +112,22 @@ export function buildDashboardAlertSummaries(data: DashboardData): DashboardAler
       title: `${data.complaint.late} khiếu nại xử lý trễ hạn`,
       description: `${data.complaint.late} khiếu nại không hoàn thành đúng thời hạn cam kết.`,
       severity: "critical",
+    });
+  }
+  if (data.feedback.overdue > 0) {
+    alerts.push({
+      id: "feedback-overdue",
+      title: `${data.feedback.overdue} phản ánh KH quá hạn SLA`,
+      description: "Cần đơn vị xử lý cập nhật tiến độ hoặc người tạo đóng ticket.",
+      severity: "critical",
+    });
+  }
+  if (data.feedback.open > 0) {
+    alerts.push({
+      id: "feedback-open",
+      title: `${data.feedback.open} phản ánh KH đang mở`,
+      description: `${data.feedback.resolved} đã đóng trong kỳ lọc.`,
+      severity: "warning",
     });
   }
   if (pakdHighRemaining.length > 0) {

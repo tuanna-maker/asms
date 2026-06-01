@@ -16,7 +16,6 @@ export type FieldDef = {
   label: string;
   type: FieldInputType;
   required?: boolean;
-  placeholder?: string;
   definitionCategory?: string;
   dataSource?: FieldDataSource;
   options?: FieldOption[];
@@ -45,7 +44,6 @@ export function parseFieldSchema(raw: unknown): FieldDef[] {
     if (!FIELD_INPUT_TYPES.some((t) => t.value === type)) continue;
     const def: FieldDef = { key, label, type };
     if (typeof o.required === "boolean") def.required = o.required;
-    if (typeof o.placeholder === "string" && o.placeholder.trim()) def.placeholder = o.placeholder.trim();
     if (typeof o.definitionCategory === "string" && o.definitionCategory.trim()) {
       def.definitionCategory = o.definitionCategory.trim();
     }

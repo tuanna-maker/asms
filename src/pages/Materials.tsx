@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Plus, Search, Package, ArrowRightLeft, ArrowDownToLine, Filter, Eye, Edit, QrCode, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MaterialDetailDialog from "@/components/details/MaterialDetailDialog";
+import { getApiErrorMessage, toastApiError } from "@/lib/api-errors";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
 import BarcodeScannerDialog from "@/components/scanner/BarcodeScannerDialog";
@@ -70,6 +72,7 @@ const transferTypeBadge = (t: string) => {
 };
 
 const Materials = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
   const [importForm, setImportForm] = useState({
     type: "consumable" as MaterialRow["type"],
@@ -150,6 +153,13 @@ const Materials = () => {
   const [transferPatchTarget, setTransferPatchTarget] = useState<MaterialTransferListRow | null>(null);
   const [transferDeleteTarget, setTransferDeleteTarget] = useState<MaterialTransferListRow | null>(null);
 
+  useEffect(() => {
+    const viewId = searchParams.get("view");
+    if (!viewId) return;
+    setSelectedMaterialId(viewId);
+    setShowDetail(true);
+  }, [searchParams]);
+
   const [editMatForm, setEditMatForm] = useState({
     name: "",
     type: "consumable" as MaterialRow["type"],
@@ -224,8 +234,7 @@ const Materials = () => {
         unit: "bộ",
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không nhập được vật tư";
-      toast.error(msg);
+      toastApiError(e, "Không nhập được vật tư");
     }
   };
 
@@ -278,8 +287,7 @@ const Materials = () => {
         status: "pending",
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không tạo được phiếu điều chuyển";
-      toast.error(msg);
+      toastApiError(e, "Không tạo được phiếu điều chuyển");
     }
   };
 
@@ -306,7 +314,7 @@ const Materials = () => {
       setEditMaterialOpen(false);
       setEditingMaterialRow(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không cập nhật được");
+      toastApiError(e, "Không cập nhật được");
     }
   };
 
@@ -625,8 +633,8 @@ const Materials = () => {
                           try {
                             await updateMaterialTransfer.mutateAsync({ id: t.id, payload: { status } });
                             toast.success("Đã cập nhật trạng thái phiếu");
-                          } catch {
-                            toast.error("Không cập nhật được");
+                          } catch (e) {
+                            toastApiError(e, "Không cập nhật được");
                           }
                         }}
                       >
@@ -672,6 +680,11 @@ const Materials = () => {
         onClose={() => {
           setShowDetail(false);
           setSelectedMaterialId(null);
+          if (searchParams.has("view")) {
+            const next = new URLSearchParams(searchParams);
+            next.delete("view");
+            setSearchParams(next, { replace: true });
+          }
         }}
         materialId={selectedMaterialId}
       />
@@ -783,8 +796,8 @@ const Materials = () => {
                       });
                       toast.success("Đã cập nhật phiếu");
                       setTransferPatchTarget(null);
-                    } catch {
-                      toast.error("Không cập nhật được (cần ít nhất một trường thay đổi)");
+                    } catch (e) {
+                      toastApiError(e, "Không cập nhật được (cần ít nhất một trường thay đổi)");
                     }
                   }}
                   disabled={updateMaterialTransfer.isPending}
@@ -817,7 +830,7 @@ const Materials = () => {
                     toast.success("Đã xóa vật tư");
                     setMaterialDeleteTarget(null);
                   })
-                  .catch(() => toast.error("Không xóa được"));
+                  .catch((e) => toastApiError(e, "Không xóa được"));
               }}
             >
               Xóa
@@ -846,7 +859,7 @@ const Materials = () => {
                     toast.success("Đã xóa phiếu");
                     setTransferDeleteTarget(null);
                   })
-                  .catch(() => toast.error("Không xóa được"));
+                  .catch((e) => toastApiError(e, "Không xóa được"));
               }}
             >
               Xóa phiếu

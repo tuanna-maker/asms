@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { sortByNewestFirst } from "@/lib/sort-by-time";
 
 type Customer = {
@@ -280,8 +281,8 @@ const Customers = () => {
       }
       setContactDialogOpen(false);
       setEditingContactId(null);
-    } catch {
-      toast.error(editingContactId ? "Không thể cập nhật liên hệ" : "Không thể thêm liên hệ");
+    } catch (e) {
+      toastApiError(e, editingContactId ? "Không thể cập nhật liên hệ" : "Không thể thêm liên hệ");
     }
   };
 
@@ -292,8 +293,8 @@ const Customers = () => {
       await deleteCustomerContactMutation.mutateAsync(id);
       toast.success("Đã xóa liên hệ");
       setDeletingContactId(null);
-    } catch {
-      toast.error("Không thể xóa liên hệ");
+    } catch (e) {
+      toastApiError(e, "Không thể xóa liên hệ");
     }
   };
 
@@ -340,8 +341,8 @@ const Customers = () => {
         },
       });
       toast.success(`Đã cập nhật khách hàng ${updated.name}`);
-    } catch {
-      toast.error("Không thể cập nhật khách hàng");
+    } catch (e) {
+      toastApiError(e, "Không thể cập nhật khách hàng");
     }
   };
 
@@ -353,8 +354,8 @@ const Customers = () => {
       toast.success(`Đã xóa khách hàng ${c.name}`);
       setDeletingCustomer(null);
       if (editingCustomer?.id === c.id) setEditingCustomer(null);
-    } catch {
-      toast.error("Không thể xóa khách hàng");
+    } catch (e) {
+      toastApiError(e, "Không thể xóa khách hàng");
     }
   };
 
@@ -375,8 +376,8 @@ const Customers = () => {
       toast.success("Đã thêm khách hàng");
       setShowCreate(false);
       setCreateForm({ name: "", contact: "", phone: "", email: "", address: "" });
-    } catch {
-      toast.error("Không thể thêm khách hàng");
+    } catch (e) {
+      toastApiError(e, "Không thể thêm khách hàng");
     }
   };
 
@@ -430,8 +431,8 @@ const Customers = () => {
       }
       setActivityDialogOpen(false);
       setEditingActivityId(null);
-    } catch {
-      toast.error(editingActivityId ? "Không thể cập nhật hoạt động" : "Không thể thêm hoạt động");
+    } catch (e) {
+      toastApiError(e, editingActivityId ? "Không thể cập nhật hoạt động" : "Không thể thêm hoạt động");
     }
   };
 
@@ -441,8 +442,8 @@ const Customers = () => {
       await deleteCrmActivityMutation.mutateAsync(deletingActivityId);
       toast.success("Đã xóa hoạt động");
       setDeletingActivityId(null);
-    } catch {
-      toast.error("Không thể xóa hoạt động");
+    } catch (e) {
+      toastApiError(e, "Không thể xóa hoạt động");
     }
   };
 

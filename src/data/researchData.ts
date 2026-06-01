@@ -1,3 +1,5 @@
+import { formatDisplayLabel } from "@/lib/display-labels";
+
 export interface ResearchProject {
   /** Mã/route UI (code) */
   id: string;
@@ -105,7 +107,7 @@ const statusColors: Record<string, string> = {
   suspended: "bg-muted text-muted-foreground",
 };
 
-export const getStatusLabel = (status: string) => statusLabels[status] || status;
+export const getStatusLabel = (status: string) => statusLabels[status] || formatDisplayLabel(status);
 export const getStatusColor = (status: string) => statusColors[status] || "bg-muted text-muted-foreground";
 
 export const mockResearchProjects: ResearchProject[] = [

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useDeleteContract } from "@/hooks/use-contracts-api";
@@ -7,6 +8,7 @@ import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
 import { Plus, Search, Eye, Edit, FileText, CheckCircle, Clock, AlertTriangle, Trash2 } from "lucide-react";
+import ContractDetailDialog from "@/components/details/ContractDetailDialog";
 import ContractEditDialog from "@/components/details/ContractEditDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
@@ -34,10 +37,12 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 };
 
 const Contracts = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showCreate, setShowCreate] = useState(false);
+  const [viewingContract, setViewingContract] = useState<Contract | null>(null);
   const [editingContract, setEditingContract] = useState<Contract | null>(null);
   const [deletingContractId, setDeletingContractId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -161,6 +166,13 @@ const Contracts = () => {
     return Array.isArray(apiContracts) ? apiContracts : [];
   }, [apiContracts]);
 
+  useEffect(() => {
+    const viewId = searchParams.get("view");
+    if (!viewId || viewingContract || editingContract) return;
+    const target = contracts.find((c) => c.dbId === viewId || c.id === viewId);
+    if (target) setViewingContract(target);
+  }, [searchParams, contracts, viewingContract, editingContract]);
+
   const { data: customers } = useQuery({
     queryKey: ["contracts-customers"],
     queryFn: async () => {
@@ -213,8 +225,8 @@ const Contracts = () => {
       toast.success(`Đã xóa hợp đồng ${code}`);
       setDeletingContractId(null);
       if (editingContract?.id === code) setEditingContract(null);
-    } catch {
-      toast.error("Không thể xóa hợp đồng");
+    } catch (e) {
+      toastApiError(e, "Không thể xóa hợp đồng");
     }
   };
 
@@ -354,7 +366,7 @@ const Contracts = () => {
         <ContractTable
           contracts={pagedContracts}
           contractTypeOptions={contractTypeOptions}
-          onView={setEditingContract}
+          onView={setViewingContract}
           onEdit={setEditingContract}
           onRequestDelete={setDeletingContractId}
         />
@@ -368,10 +380,27 @@ const Contracts = () => {
         />
       </div>
 
+      <ContractDetailDialog
+        contract={viewingContract}
+        open={!!viewingContract}
+        readOnly
+        onOpenChange={(o) => {
+          if (o) return;
+          setViewingContract(null);
+          if (searchParams.has("view")) {
+            const next = new URLSearchParams(searchParams);
+            next.delete("view");
+            setSearchParams(next, { replace: true });
+          }
+        }}
+      />
       <ContractEditDialog
         contract={editingContract}
         open={!!editingContract}
-        onOpenChange={(o) => !o && setEditingContract(null)}
+        onOpenChange={(o) => {
+          if (o) return;
+          setEditingContract(null);
+        }}
         onContractSaved={handleContractSaved}
       />
       <ContractEditDialog

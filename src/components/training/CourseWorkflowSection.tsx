@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GitBranch, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,14 +58,6 @@ type Props = {
   workflowSelectHint?: string;
 };
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as { response?: { data?: { message?: string } }; message?: string };
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 const DEFAULT_WORKFLOW_CODE: Record<"training" | "coaching", string> = {
   training: "WF_TRAINING_DEFAULT",

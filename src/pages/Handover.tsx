@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
@@ -51,23 +52,6 @@ function formatShortDate(iso: string) {
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as {
-      response?: { data?: { message?: string; data?: { fieldErrors?: Record<string, string[]> } } };
-      message?: string;
-    };
-    const fieldErrors = maybe.response?.data?.data?.fieldErrors;
-    if (fieldErrors && typeof fieldErrors === "object") {
-      const firstKey = Object.keys(fieldErrors)[0];
-      const firstValue = firstKey ? fieldErrors[firstKey]?.[0] : undefined;
-      if (firstValue) return firstValue;
-    }
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 const statusBadge = (status: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -725,7 +709,7 @@ const Handover = () => {
                   <SelectContent>
                     <SelectItem value="internal">Nội bộ</SelectItem>
                     <SelectItem value="external">Khách hàng</SelectItem>
-                    <SelectItem value="online">Online</SelectItem>
+                    <SelectItem value="online">Trực tuyến</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

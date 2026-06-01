@@ -6,7 +6,7 @@ export type ApiSuccess<T> = {
 
 export type ApiError = {
   success: false;
-  data: null;
+  data: unknown;
   message?: string;
 };
 

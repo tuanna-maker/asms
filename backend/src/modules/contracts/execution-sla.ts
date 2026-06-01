@@ -14,10 +14,17 @@ export type ContractSlaClockRow = {
 };
 
 export function isExecutionSlaOverdue(
-  row: ContractSlaClockRow,
+  row: ContractSlaClockRow & { endDate?: Date },
   now: Date = new Date(),
 ): boolean {
   if (row.slaHours == null || row.slaHours <= 0) return false;
+  if (row.endDate) {
+    const end = new Date(row.endDate);
+    end.setHours(23, 59, 59, 999);
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    if (today > end) return false;
+  }
   const status = row.status as ContractStatus;
   if (isTerminalContractStatus(status) || status === "late") return false;
   if (!SLA_WATCH_STATUSES.includes(status)) return false;

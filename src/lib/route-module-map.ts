@@ -8,7 +8,7 @@ export const PERMISSION_MODULE_DEFS: ReadonlyArray<{
   paths: (keyof typeof ROUTE_PERMISSIONS)[];
   children?: ReadonlyArray<{ key: string; label: string }>;
 }> = [
-  { key: "dashboard", label: "Dashboard", paths: ["/"] },
+  { key: "dashboard", label: "Bảng điều khiển", paths: ["/"] },
   {
     key: "hop-dong",
     label: "Hợp đồng",
@@ -64,7 +64,7 @@ export const PERMISSION_MODULE_DEFS: ReadonlyArray<{
   { key: "phan-anh", label: "Phản ánh", paths: ["/phan-anh"] },
   {
     key: "khach-hang",
-    label: "CRM / Khách hàng",
+    label: "Khách hàng",
     paths: ["/khach-hang"],
     children: [
       { key: "khach-hang.hoat-dong", label: "Hoạt động" },

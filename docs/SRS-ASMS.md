@@ -1,7 +1,7 @@
 # SRS - Yeu cau chi tiet phan mem ASMS (As-is)
 
 > Tai lieu dac ta yeu cau phan mem cho he thong ASMS, viet theo hien trang code hien tai.  
-> Phien ban: 2.0  
+> Phien ban: 2.3  
 > Co so doi chieu: `docs/BRD-TONG-THE-ASMS.md`, `backend/src/routes/v1/index.ts`, `backend/prisma/schema.prisma`.
 
 ## Muc luc
@@ -103,6 +103,11 @@ Nguon: `src/App.tsx`
 - `/vat-tu`
 - `/san-pham`
 - `/khach-hang`
+- `/phan-anh`
+- `/phan-anh/thong-ke`
+- `/phan-anh/moi`
+- `/phan-anh/:id`
+- `/phan-anh/:id/sua`
 - `/bao-cao`
 - `/de-tai`
 - `/de-tai/:id`
@@ -140,7 +145,13 @@ Nguon: `src/App.tsx`
 - Customers: CRUD, search/filter, thong ke contracts count.
 - Contacts: CRUD theo customer.
 - CRM activities: CRUD hoat dong cham soc (`call|email|meeting|note`).
-- Customer feedbacks: CRUD, severity/status, lien ket contract/warranty neu co.
+- Customer feedbacks: CRUD tren trang rieng, assignee theo user/role, linkage HĐ/SP/VT, timeline + comment xu ly.
+- **Thong ke phan anh** (`/phan-anh/thong-ke`, `FR-CRM-STATS`):
+  - URL state: `period` (`day|1m|3m|6m|1y|all`, default `1y`), `tab` (`customer|catalog`, default `customer`).
+  - FE `periodToDateRange()` -> query `from`/`to` ISO (UTC) cho analytics API.
+  - Tab `customer`: bang KH + Sheet chi tiết (goi `GET .../analytics/customer/:customerId/detail`).
+  - Tab `catalog`: song song `by-product` + `by-material`; bang SP: VT con hien thi tren **mot dong** (`ma (count) · ...`).
+  - Khong bieu do cot; khong tab VT rieng (gop vao `catalog`).
 - Customer anniversaries + subscriptions: quan ly su kien va user theo doi.
 
 ### 5.4 Contracts (`FR-CT`)
@@ -237,12 +248,22 @@ Base URL: `/api/v1`
 
 ### 6.2 Quy uoc loi
 
-- 400: validation/business rule fail.
-- 401: chua auth/invalid token.
-- 403: role khong du quyen.
-- 404: khong tim thay resource.
-- 409: xung dot du lieu (neu service throw tuong ung).
+Envelope: `{ success: false, message: string, data?: unknown }`.
+
+- `message`: **uu tien tieng Viet**, mo ta ly do cu the (vd. thieu truong, HĐ khong thuoc KH, khong tim thay phan anh).
+- `data` (tuy chon): `fieldErrors` / `formErrors` tu Zod flatten — FE doc qua `getApiErrorMessage` (`src/lib/api-errors.ts`).
+- BE Zod: `formatValidationError` + `validateBody` / `zodParseOrThrow` — khong tra `"Invalid request body"` tieng Anh.
+
+HTTP status:
+
+- 400: validation / rule nghiep vu.
+- 401: chua auth / token khong hop le.
+- 403: role khong du quyen (message VN khi co).
+- 404: khong tim thay resource (message VN module P0+).
+- 409: trung ma / xung dot du lieu.
 - 500: loi he thong.
+
+FE: moi thao tac Luu/Tao/Cap nhat/Xoa dung `toastApiError` hoac guard client; khong `catch {}` voi message co dinh khi API da tra ly do.
 
 ### 6.3 API contract muc cao theo module
 
@@ -254,6 +275,7 @@ Base URL: `/api/v1`
 | customers | admin,manager,viewer,sales | admin,manager,sales | code unique |
 | contacts | admin,manager,technician,viewer,sales (read) | admin,manager,sales | theo customer |
 | crm-activities | admin,manager,technician,viewer,sales | admin,manager,technician,sales | co createdBy |
+| customer-feedbacks | admin,manager,technician,viewer,sales (read endpoint-level) | admin,manager,technician,sales | visibility filter theo assignee/access + comment RBAC |
 | contracts | admin,manager,viewer,sales | admin,manager,sales | set products endpoint |
 | handovers | admin,manager,technician,viewer | admin,manager,technician | workflow payload |
 | warranties | admin,manager,technician | admin,manager,technician | stats endpoint |
@@ -268,6 +290,52 @@ Base URL: `/api/v1`
 | notification-preferences | all authenticated | all authenticated | per user |
 | workflows | broad read | admin/manager + step actor runtime | moduleKey scoped |
 
+### 6.4 Customer Feedback API (chi tiet bo sung)
+
+- GET `/customer-feedbacks`
+  - Filter: `customerId`, `contractId`, `warrantyId`, `status`, `assignedToMe`, `unitId`, `myUnits`, `feedbackFrom`, `feedbackTo`, `search`.
+  - Non-admin/manager duoc ap visibility filter theo assignee/access filter backend.
+- GET `/customer-feedbacks/:id`
+  - Tra ve them: `assigneeType`, `assignedUserId`, `assignedRoleCode`, `assignedUser`, `timeline[]`, `comments[]`, `canComment`.
+- POST `/customer-feedbacks`
+  - Body bat buoc co `assignee`.
+  - `severity` duoc giu internal (default medium) de SLA legacy, khong hien tren UI.
+- PUT `/customer-feedbacks/:id`
+  - Update noi dung + assignee + linkage + feedbackAt.
+  - Assignee update su dung relation `assignedUser.connect/disconnect` de tranh Prisma validation error.
+- POST `/customer-feedbacks/:id/comments`
+  - Body: `{ kind: "issue" | "fix", body: string }`.
+  - Quyen ghi comment: `admin/manager`, creator, assignee user/role.
+- PATCH `/customer-feedbacks/:id/assignments/:assignmentId`
+  - Update trang thai/phan hoi don vi xu ly.
+- POST `/customer-feedbacks/:id/request-close`, `/close`, `/reopen`, DELETE `/:id`
+  - Dong/mo lai/xoa mem ticket theo quyen writeRoles.
+- Query chung analytics (`feedbackAnalyticsQuerySchema`): `from`, `to` (ISO), optional `customerId`, `contractId`, `status`, `limit` (max 100). FE preset `period` **khong** gui len BE — chi convert thanh `from`/`to`.
+- GET `/customer-feedbacks/analytics/by-customer`
+  - Response `{ items[] }`: `customerId`, `code`, `name`, `ticketCount`, `linkageLineCount`, `openCount`, `resolvedCount`.
+- GET `/customer-feedbacks/analytics/by-product`
+  - Response `{ items[] }`: `productId`, `code`, `name`, `linkageLineCount`, `ticketCount`, `materials[]` (`materialId`, `code`, `name`, `count`) — **day du**, sort `count` desc (legacy field `topMaterials` co the map o FE).
+- GET `/customer-feedbacks/analytics/by-material`
+  - Response `{ items[] }`: `materialId`, `code`, `name`, `linkageLineCount`, `ticketCount`, `productCount`, `customerCount`.
+- GET `/customer-feedbacks/analytics/customer/:customerId/detail`
+  - Query: `from`, `to` (cung schema analytics).
+  - Response: `customer`, `summary` (`ticketCount`, `openCount`, `resolvedCount`, `linkageLineCount`), `tickets[]` (`id`, `title`, `content`, `status`, `feedbackAt`, `linkageItems`) — sap xep `feedbackAt` desc.
+- Route registration: cac path `analytics/*` dang ky **truoc** mount `GET /customer-feedbacks/:id` tai `backend/src/routes/v1/index.ts` va `route.ts` sub-router `/analytics` (tranh 404).
+- Tat ca analytics ap dung `buildFeedbackAccessFilter` giong list/detail; filter `customerId` tren detail + by-customer list.
+
+#### 6.4.1 FE components (`/phan-anh/thong-ke`)
+
+| Component | Vai tro |
+|-----------|---------|
+| `FeedbackStatsPeriodBar` | 6 nut preset kỳ |
+| `FeedbackStatsCustomerTable` | Bang KH + phan trang |
+| `FeedbackCustomerStatsSheet` | Sheet chi tiet ticket |
+| `FeedbackStatsCatalogPanel` | Layout 2 bang VT + SP |
+| `FeedbackStatsMaterialsTable` | Bang vat tu |
+| `FeedbackStatsProductsTable` | Bang SP, VT tren 1 dong |
+
+Hooks: `useFeedbackStatsCustomerList`, `useFeedbackStatsCatalog`, `useFeedbackCustomerStatsDetail` — file `src/hooks/use-feedback-analytics-api.ts`.
+
 ---
 
 ## 7. Mo hinh du lieu va vong doi trang thai
@@ -278,6 +346,7 @@ Base URL: `/api/v1`
 - Contract: `draft|active|completed|late|liquidated`
 - Handover: `pending|active|completed|late`
 - Warranty: `open|processing|completed|cancelled`
+- CustomerFeedback: `new|assigned|in_progress|pending_close|resolved|reopened`
 - MaterialTransfer: `pending|processing|completed`
 - ProductStatus: `developing|producing|produced|inspection_submitted|inspecting|inspection_passed|decision_approved|equip_decided|equipped|stopped`
 - Task: `todo|in_progress|review|completed|delayed`
@@ -288,7 +357,7 @@ Base URL: `/api/v1`
 ### 7.2 Nhom thuc the
 
 - IAM: `Role`, `RolePermission`, `User`, `RefreshToken`
-- CRM: `Customer`, `Contact`, `CrmActivity`, `CustomerFeedback`, `CustomerAnniversary`, `AnniversarySubscription`
+- CRM: `Customer`, `Contact`, `CrmActivity`, `CustomerFeedback`, `CustomerFeedbackAssignment`, `CustomerFeedbackTimeline`, `CustomerFeedbackComment`, `CustomerAnniversary`, `AnniversarySubscription`
 - Core: `Contract`, `Handover`, `Warranty`, `TrainingCourse`, `Document`
 - Inventory/Product: `Material`, `MaterialTransfer`, `Product`, `ProductBom`, `ContractProduct`
 - Execution: `ResearchProject`, `Task`
@@ -359,6 +428,7 @@ erDiagram
 |---|:---:|:---:|:---:|:---:|:---:|
 | Dashboard | x | x | x | x | x |
 | Contracts/CRM/Reports | x | x | gioi han | x(read) | x |
+| Customer Feedback (`/phan-anh`) | x | x | x (theo assignee/access filter) | x (read-only theo assignee/access filter) | x (theo assignee/access filter) |
 | Handover/Warranty/Materials | x | x | x | - | - |
 | Products | x | x | x | x(read) | x(read) |
 | Training | x | x | x(phan lon) | - | - |
@@ -432,6 +502,8 @@ erDiagram
 | Bao hanh/sua chua | 5.6 | `/warranties`, `/warranties/stats` |
 | Vat tu/BOM | 5.7, 5.8 | `/materials`, `/materials/transfers`, `/products/:id/bom` |
 | CRM/khach hang | 5.3 | `/customers`, `/contacts`, `/crm-activities`, `/customer-feedbacks` |
+| Feedback assignment/comment flow | 5.3, 6.4, 8 | `/customer-feedbacks`, `/customer-feedbacks/:id/comments` |
+| Feedback analytics (`BR-KH-10`) | 5.3, 6.4, 6.4.1 | `/customer-feedbacks/analytics/*`, FE `/phan-anh/thong-ke` |
 | Bao cao | 5.12, 6 | `/reports`, `/reports/*` |
 | Quan tri he thong | 5.2, 5.13 | `/users`, `/roles`, `/definitions`, `/system-settings`, `/audit-logs` |
 | Workflow runtime | 5.14 | `/workflows`, `/workflow-instances` |
@@ -481,4 +553,4 @@ Nguon: `backend/src/routes/v1/index.ts`
 
 ---
 
-**Ket thuc SRS-ASMS v2.0 (as-is).**
+**Ket thuc SRS-ASMS v2.2 (as-is).** Cap nhat v2.2: thong ke phan anh dang bang, API analytics customer detail, layout VT SP mot dong.

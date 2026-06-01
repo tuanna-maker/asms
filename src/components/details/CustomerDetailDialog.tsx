@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { useCustomerDetail } from "@/hooks/use-customers-api";
 import {
   useContactsList,
@@ -215,8 +216,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
         await subscribeAnniversary.mutateAsync(anniversaryId);
         toast.success("Đã đăng ký nhận nhắc");
       }
-    } catch {
-      toast.error("Không thể cập nhật đăng ký nhắc");
+    } catch (e) { toastApiError(e, "Không thể cập nhật đăng ký nhắc");
     }
   };
 
@@ -301,16 +301,14 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
         toast.success("Đã thêm kỷ niệm");
       }
       setAnnDialogOpen(false);
-    } catch {
-      toast.error("Không thể lưu kỷ niệm");
+    } catch (e) { toastApiError(e, "Không thể lưu kỷ niệm");
     }
   };
   const onDeleteAnniversary = async (id: string) => {
     try {
       await deleteAnniversary.mutateAsync(id);
       toast.success("Đã xoá");
-    } catch {
-      toast.error("Không xoá được");
+    } catch (e) { toastApiError(e, "Không xoá được");
     }
   };
 
@@ -366,8 +364,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
         toast.success("Đã thêm liên hệ");
       }
       setContactDialogOpen(false);
-    } catch {
-      toast.error("Không thể lưu liên hệ");
+    } catch (e) { toastApiError(e, "Không thể lưu liên hệ");
     }
   };
   const handleDeleteContact = async () => {
@@ -376,8 +373,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
       await deleteContactMut.mutateAsync(deletingContactId);
       toast.success("Đã xoá liên hệ");
       setDeletingContactId(null);
-    } catch {
-      toast.error("Không thể xoá");
+    } catch (e) { toastApiError(e, "Không thể xoá");
     }
   };
 
@@ -440,8 +436,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
       });
       toast.success("Đã thêm hoạt động");
       setCrmDialogOpen(false);
-    } catch {
-      toast.error("Không thể thêm");
+    } catch (e) { toastApiError(e, "Không thể thêm");
     }
   };
   const handleDeleteCrm = async () => {
@@ -450,8 +445,7 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
       await deleteCrmMut.mutateAsync(deletingCrmId);
       toast.success("Đã xoá hoạt động");
       setDeletingCrmId(null);
-    } catch {
-      toast.error("Không thể xoá");
+    } catch (e) { toastApiError(e, "Không thể xoá");
     }
   };
 

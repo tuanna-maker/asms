@@ -3,9 +3,17 @@ export function isContractExecutionSlaOverdue(input: {
   status: string;
   slaHours: number | null | undefined;
   updatedAt: string | Date;
+  endDate?: string | Date;
   now?: Date;
 }): boolean {
   if (input.slaHours == null || input.slaHours <= 0) return false;
+  if (input.endDate) {
+    const end = new Date(input.endDate);
+    end.setHours(23, 59, 59, 999);
+    const today = new Date(input.now ?? new Date());
+    today.setHours(0, 0, 0, 0);
+    if (!Number.isNaN(end.getTime()) && today > end) return false;
+  }
   if (input.status === "completed" || input.status === "liquidated" || input.status === "late") {
     return false;
   }

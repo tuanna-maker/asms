@@ -138,7 +138,7 @@ function EntityFieldRow({
           onValueChange={(v) => onChange(def.key, v === "__none__" ? "" : v)}
         >
           <SelectTrigger id={id}>
-            <SelectValue placeholder={def.placeholder ?? "Chọn"} />
+            <SelectValue placeholder="Chọn" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__none__">— Chưa chọn —</SelectItem>
@@ -159,7 +159,6 @@ function EntityFieldRow({
         id={id}
         value={val == null ? "" : String(val)}
         onChange={(e) => onChange(def.key, e.target.value)}
-        placeholder={def.placeholder}
       />
     </FieldWrap>
   );

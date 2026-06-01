@@ -8,6 +8,9 @@ export type NotificationPrefKey =
   | "contract_execution_sla"
   | "new_ticket"
   | "feedback_new"
+  | "feedback_assigned"
+  | "feedback_unit_reminder"
+  | "feedback_pending_close"
   | "task_late"
   | "material_low"
   | "warranty_expiry"
@@ -36,6 +39,18 @@ export const NOTIFICATION_PREF_LABELS: Record<NotificationPrefKey, { label: stri
   feedback_new: {
     label: "Phản ánh khách hàng mới",
     desc: "Khi có phản ánh mới được ghi nhận",
+  },
+  feedback_assigned: {
+    label: "Phản ánh cần xử lý",
+    desc: "Khi bạn được phân công hoặc có ticket đang chờ xử lý",
+  },
+  feedback_unit_reminder: {
+    label: "Nhắc phản ánh quá hạn",
+    desc: "Ticket phản ánh vượt SLA cần xử lý",
+  },
+  feedback_pending_close: {
+    label: "Đơn vị cập nhật phản ánh",
+    desc: "Khi đơn vị cập nhật nội dung (người tạo)",
   },
   task_late: {
     label: "Nhiệm vụ trễ (người phụ trách)",

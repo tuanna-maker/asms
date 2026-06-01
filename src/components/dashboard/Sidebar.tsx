@@ -12,7 +12,7 @@ import {
 import { useState } from "react";
 
 const menuItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: true },
+  { icon: LayoutDashboard, label: "Bảng điều khiển", active: true },
   { icon: FileText, label: "Hợp đồng" },
   { icon: Truck, label: "Bàn giao & HL" },
   { icon: Wrench, label: "Bảo hành / SC" },
@@ -36,7 +36,7 @@ const Sidebar = () => {
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground font-bold text-sm">
           ERP
         </div>
-        {!collapsed && <span className="font-semibold text-sidebar-primary-foreground text-lg">ERP System</span>}
+        {!collapsed && <span className="font-semibold text-sidebar-primary-foreground text-lg">Hệ thống ASMS</span>}
       </div>
 
       {/* Menu */}

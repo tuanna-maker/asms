@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 import { Badge } from "@/components/ui/badge";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
@@ -12,12 +13,7 @@ import {
 } from "@/hooks/use-sessions-api";
 
 function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Có lỗi xảy ra";
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
 function formatDate(iso: string | null) {

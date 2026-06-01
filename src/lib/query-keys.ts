@@ -24,6 +24,11 @@ export const qk = {
     all: ["customer-feedbacks"] as const,
     list: (key: string) => ["customer-feedbacks", "list", key] as const,
     detail: (id: string) => ["customer-feedbacks", id] as const,
+    analyticsByCustomer: (key: string) => ["customer-feedbacks", "analytics", "by-customer", key] as const,
+    analyticsByProduct: (key: string) => ["customer-feedbacks", "analytics", "by-product", key] as const,
+    analyticsByMaterial: (key: string) => ["customer-feedbacks", "analytics", "by-material", key] as const,
+    analyticsCustomerDetail: (customerId: string, key: string) =>
+      ["customer-feedbacks", "analytics", "customer-detail", customerId, key] as const,
   },
   contracts: {
     all: ["contracts"] as const,

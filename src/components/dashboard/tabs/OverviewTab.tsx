@@ -86,7 +86,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 h-full">
         <StatCard title="Tổng sản phẩm" value={data.stats.totalProducts} icon={Package} color="primary" />
         <StatCard
           title="HĐ chậm tiến độ"
@@ -102,6 +102,14 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
           icon={AlertTriangle}
           color="destructive"
           alertLevel={data.stats.pendingComplaints > 0 ? "critical" : undefined}
+        />
+        <StatCard
+          title="Phản ánh KH mở"
+          value={data.feedback.open}
+          icon={AlertTriangle}
+          color="destructive"
+          alertLevel={data.feedback.overdue > 0 ? "critical" : data.feedback.open > 0 ? "warning" : undefined}
+          subtitle={data.feedback.overdue > 0 ? `${data.feedback.overdue} quá hạn` : undefined}
         />
         <StatCard
           title="Chậm tiến độ (tổng)"

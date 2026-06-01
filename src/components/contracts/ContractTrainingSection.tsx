@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,14 +49,6 @@ type Props = {
   onSaved?: () => void;
 };
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as { response?: { data?: { message?: string } }; message?: string };
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 export function ContractTrainingSection({
   contractId,

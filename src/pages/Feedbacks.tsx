@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Edit,
   Eye,
@@ -9,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -40,33 +42,34 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CustomerSearchSelect } from "@/components/common/CustomerSearchSelect";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
-import { CustomerFeedbackDetailSheet } from "@/components/feedback/CustomerFeedbackDetailSheet";
-import { CustomerFeedbackFormDialog } from "@/components/feedback/CustomerFeedbackFormDialog";
+import { FeedbackModuleNav } from "@/components/feedback/FeedbackModuleNav";
+import { feedbackCreateUrl, feedbackPaths } from "@/lib/feedback-routes";
 import {
   useAllCustomerFeedbacksList,
   useDeleteCustomerFeedback,
   type CustomerFeedbackListFilters,
   type CustomerFeedbackRow,
-  type CustomerFeedbackSeverity,
   type CustomerFeedbackStatus,
 } from "@/hooks/use-customer-feedbacks-api";
 import { useRole } from "@/hooks/use-role";
 import {
-  SEVERITY_LABELS,
   STATUS_LABELS,
+  formatAssigneeLabel,
   formatFeedbackDate,
-  severityVariant,
+  isFeedbackOverdue,
   statusVariant,
 } from "@/lib/customer-feedback-labels";
+import { formatLinkageSummaryShort } from "@/lib/customer-feedback-linkage";
 
 const Feedbacks = () => {
+  const navigate = useNavigate();
   const { canDo } = useRole();
   const canWrite = canDo("phan-anh", "create") || canDo("phan-anh", "update");
+  const [searchParams] = useSearchParams();
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [customerFilter, setCustomerFilter] = useState<string | null>(null);
   const [feedbackFrom, setFeedbackFrom] = useState("");
   const [feedbackTo, setFeedbackTo] = useState("");
@@ -76,50 +79,48 @@ const Feedbacks = () => {
     return () => window.clearTimeout(t);
   }, [search]);
 
+  const myUnitsOnly = searchParams.get("myUnits") === "1";
+
+  useEffect(() => {
+    const cid = searchParams.get("customerId");
+    if (cid) setCustomerFilter(cid);
+  }, [searchParams]);
+
   const apiFilters = useMemo((): CustomerFeedbackListFilters => {
     const f: CustomerFeedbackListFilters = {};
     if (debouncedSearch) f.search = debouncedSearch;
     if (statusFilter !== "all") f.status = statusFilter as CustomerFeedbackStatus;
-    if (severityFilter !== "all") f.severity = severityFilter as CustomerFeedbackSeverity;
     if (customerFilter) f.customerId = customerFilter;
     if (feedbackFrom) f.feedbackFrom = feedbackFrom;
     if (feedbackTo) f.feedbackTo = feedbackTo;
+    if (myUnitsOnly) f.myUnits = true;
     return f;
-  }, [debouncedSearch, statusFilter, severityFilter, customerFilter, feedbackFrom, feedbackTo]);
+  }, [debouncedSearch, statusFilter, customerFilter, feedbackFrom, feedbackTo, myUnitsOnly]);
 
   const { data: rows = [], isLoading, isError } = useAllCustomerFeedbacksList(apiFilters);
   const deleteMut = useDeleteCustomerFeedback();
 
   const kpis = useMemo(() => {
-    const total = rows.length;
-    const byStatus = { new: 0, processing: 0, resolved: 0 };
+    let open = 0;
+    let resolved = 0;
+    let overdue = 0;
+    let fresh = 0;
     for (const r of rows) {
-      if (r.status in byStatus) byStatus[r.status as keyof typeof byStatus]++;
+      if (r.status === "new" || r.status === "assigned") fresh += 1;
+      if (r.status === "resolved") resolved += 1;
+      else open += 1;
+      if (isFeedbackOverdue(r)) overdue += 1;
     }
-    return { total, ...byStatus };
+    return { total: rows.length, fresh, open, resolved, overdue };
   }, [rows]);
 
   const resetDeps = useMemo(
-    () => [debouncedSearch, statusFilter, severityFilter, customerFilter, feedbackFrom, feedbackTo],
-    [debouncedSearch, statusFilter, severityFilter, customerFilter, feedbackFrom, feedbackTo],
+    () => [debouncedSearch, statusFilter, customerFilter, feedbackFrom, feedbackTo],
+    [debouncedSearch, statusFilter, customerFilter, feedbackFrom, feedbackTo],
   );
   const { pagedItems, footerProps } = usePaginatedSlice(rows, resetDeps);
 
-  const [detailRow, setDetailRow] = useState<CustomerFeedbackRow | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const [editing, setEditing] = useState<CustomerFeedbackRow | null>(null);
   const [deleteRow, setDeleteRow] = useState<CustomerFeedbackRow | null>(null);
-
-  const openCreate = () => {
-    setEditing(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (row: CustomerFeedbackRow) => {
-    setDetailRow(null);
-    setEditing(row);
-    setFormOpen(true);
-  };
 
   const onConfirmDelete = async () => {
     if (!deleteRow) return;
@@ -127,14 +128,13 @@ const Feedbacks = () => {
       await deleteMut.mutateAsync(deleteRow.id);
       toast.success("Đã xóa phản ánh");
       setDeleteRow(null);
-      if (detailRow?.id === deleteRow.id) setDetailRow(null);
-    } catch {
-      toast.error("Không xóa được phản ánh");
+    } catch (e) {
+      toastApiError(e, "Không xóa được phản ánh");
     }
   };
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 w-full max-w-none -m-3 sm:-m-6 p-4 sm:p-6 min-h-[calc(100dvh-7rem)]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-card-foreground flex items-center gap-2">
@@ -145,13 +145,15 @@ const Feedbacks = () => {
             Danh sách toàn bộ phản ánh trong hệ thống
           </p>
         </div>
-        {canWrite && (
-          <Button onClick={openCreate}>
+        {canDo("phan-anh", "create") && (
+          <Button onClick={() => navigate(feedbackCreateUrl())}>
             <Plus className="h-4 w-4 mr-1" />
             Thêm phản ánh
           </Button>
         )}
       </div>
+
+      <FeedbackModuleNav />
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Card>
@@ -163,19 +165,19 @@ const Feedbacks = () => {
         <Card>
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Mới</p>
-            <p className="text-2xl font-semibold">{kpis.new}</p>
+            <p className="text-2xl font-semibold">{kpis.fresh}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Đang xử lý</p>
-            <p className="text-2xl font-semibold">{kpis.processing}</p>
+            <p className="text-xs text-muted-foreground">Đang mở</p>
+            <p className="text-2xl font-semibold">{kpis.open}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Đã xử lý</p>
-            <p className="text-2xl font-semibold">{kpis.resolved}</p>
+            <p className="text-xs text-muted-foreground">Quá hạn</p>
+            <p className="text-2xl font-semibold text-destructive">{kpis.overdue}</p>
           </CardContent>
         </Card>
       </div>
@@ -204,21 +206,7 @@ const Feedbacks = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={severityFilter} onValueChange={setSeverityFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Mức độ" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả mức độ</SelectItem>
-              {(Object.keys(SEVERITY_LABELS) as CustomerFeedbackSeverity[]).map((k) => (
-                <SelectItem key={k} value={k}>
-                  {SEVERITY_LABELS[k]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="space-y-1">
-            <span className="text-xs text-muted-foreground px-1">Khách hàng</span>
+          <div className="space-y-1 sm:col-span-2">
             <CustomerSearchSelect
               value={customerFilter}
               onChange={setCustomerFilter}
@@ -256,11 +244,11 @@ const Feedbacks = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Khách hàng</TableHead>
-                <TableHead>Tiêu đề / Nội dung</TableHead>
+                <TableHead>Tiêu đề</TableHead>
+                <TableHead>Sản phẩm / Vật tư</TableHead>
                 <TableHead>Hợp đồng</TableHead>
-                <TableHead>Bảo hành</TableHead>
-                <TableHead>Mức độ</TableHead>
+                <TableHead>Khách hàng</TableHead>
+                <TableHead>Phân công</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ngày phản ánh</TableHead>
                 <TableHead>Người tạo</TableHead>
@@ -270,10 +258,6 @@ const Feedbacks = () => {
             <TableBody>
               {pagedItems.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="text-sm whitespace-nowrap">
-                    <span className="font-mono text-xs text-muted-foreground block">{row.customer.code}</span>
-                    <span className="font-medium">{row.customer.name}</span>
-                  </TableCell>
                   <TableCell className="max-w-[220px]">
                     <p className="font-medium truncate" title={row.title}>
                       {row.title}
@@ -283,32 +267,42 @@ const Feedbacks = () => {
                     </p>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground max-w-[140px]">
+                    {row.linkageItems?.length ? (
+                      <span title={formatLinkageSummaryShort(row.linkageItems)}>
+                        {formatLinkageSummaryShort(row.linkageItems)}
+                      </span>
+                    ) : row.warranty ? (
+                      <span className="text-muted-foreground">BH: {row.warranty.code} (cũ)</span>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[140px]">
                     {row.contract ? (
                       <>
-                        <span className="font-mono">{row.contract.code}</span>
+                        <span className="font-mono block">{row.contract.code}</span>
                         <span className="line-clamp-1">{row.contract.title}</span>
                       </>
                     ) : (
                       "—"
                     )}
                   </TableCell>
-                  <TableCell className="text-xs text-muted-foreground max-w-[120px]">
-                    {row.warranty ? (
-                      <>
-                        <span className="font-mono">{row.warranty.code}</span>
-                        <span className="line-clamp-1">{row.warranty.issue}</span>
-                      </>
-                    ) : (
-                      "—"
-                    )}
+                  <TableCell className="text-sm whitespace-nowrap">
+                    <span className="font-mono text-xs text-muted-foreground block">{row.customer.code}</span>
+                    <span className="font-medium">{row.customer.name}</span>
+                  </TableCell>
+                  <TableCell className="text-sm whitespace-nowrap">
+                    {formatAssigneeLabel(row)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={severityVariant[row.severity]}>
-                      {SEVERITY_LABELS[row.severity]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={statusVariant[row.status]}>{STATUS_LABELS[row.status]}</Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge variant={statusVariant[row.status]}>{STATUS_LABELS[row.status]}</Badge>
+                      {isFeedbackOverdue(row) ? (
+                        <Badge variant="destructive" className="text-[10px]">
+                          Quá hạn
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
                     {formatFeedbackDate(row.feedbackAt)}
@@ -322,7 +316,7 @@ const Feedbacks = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8"
-                        onClick={() => setDetailRow(row)}
+                        onClick={() => navigate(feedbackPaths.detail(row.id))}
                         aria-label="Xem"
                       >
                         <Eye className="h-4 w-4" />
@@ -333,7 +327,7 @@ const Feedbacks = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => openEdit(row)}
+                            onClick={() => navigate(feedbackPaths.edit(row.id))}
                             aria-label="Sửa"
                           >
                             <Edit className="h-4 w-4" />
@@ -357,40 +351,9 @@ const Feedbacks = () => {
               ))}
             </TableBody>
           </Table>
-          <PaginatedTableFooter {...footerProps} />
+          {footerProps.totalPages > 1 ? <PaginatedTableFooter {...footerProps} /> : null}
         </div>
       )}
-
-      <CustomerFeedbackDetailSheet
-        row={detailRow}
-        open={Boolean(detailRow)}
-        onOpenChange={(o) => !o && setDetailRow(null)}
-        readonly={!canWrite}
-        onEdit={
-          canWrite
-            ? (r) => {
-                setDetailRow(null);
-                openEdit(r);
-              }
-            : undefined
-        }
-        onDelete={
-          canDo("phan-anh", "delete")
-            ? (r) => {
-                setDetailRow(null);
-                setDeleteRow(r);
-              }
-            : undefined
-        }
-      />
-
-      <CustomerFeedbackFormDialog
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        editing={editing}
-        requireCustomerSelect
-        onSuccess={() => setEditing(null)}
-      />
 
       <AlertDialog open={Boolean(deleteRow)} onOpenChange={(o) => !o && setDeleteRow(null)}>
         <AlertDialogContent>

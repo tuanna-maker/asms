@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { GitBranch, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,15 +54,6 @@ type Props = {
   onStepPayloadsChange: (next: ContractStepPayloadRecord) => void;
   onProgressHintChange?: (percent: number) => void;
 };
-
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as { response?: { data?: { message?: string } }; message?: string };
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 export function ContractWorkflowSection({
   open,

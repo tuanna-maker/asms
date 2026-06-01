@@ -89,12 +89,7 @@ const initial = {
 };
 
 function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Không tạo được sản phẩm";
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
 const CreateProductDialog = ({

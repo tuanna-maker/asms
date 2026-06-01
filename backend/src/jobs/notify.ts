@@ -5,6 +5,7 @@
  */
 import { prisma } from "../utils/prisma";
 import { runContractExecutionSlaScan } from "../modules/contracts/execution-sla";
+import { scanFeedbackSlaOverdue } from "../modules/customer-feedbacks/feedback-sla-scan";
 import { getSettingNumber } from "../modules/system-settings/service";
 import { createNotificationForUser, notifyByPreference } from "../modules/notifications/service";
 import { resolveContractDisplayStatus } from "../modules/contracts/display-status";
@@ -27,6 +28,10 @@ export async function startNotificationCron() {
     try {
       const intervalMin = await getSettingNumber("notification_sla_scan_interval_minutes");
       await runContractExecutionSlaScan();
+      await scanFeedbackSlaOverdue().catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error("[notify] feedback SLA scan failed", err);
+      });
       return Math.max(5, intervalMin) * 60 * 1000;
     } catch (e) {
       // eslint-disable-next-line no-console

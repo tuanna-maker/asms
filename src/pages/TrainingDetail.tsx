@@ -21,6 +21,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { api } from "@/lib/api";
 import { typeLabel, statusLabel, statusColor, Trainee, ScheduleSession } from "@/data/trainingData";
 import { useTrainingCourse } from "@/hooks/use-training";
@@ -115,7 +116,7 @@ const TrainingDetail = () => {
       await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
       toast.success("Đã lưu nội dung quy trình");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Không lưu được quy trình");
+      toast.error(getApiErrorMessage(e, "Không lưu được quy trình"));
     } finally {
       setWorkflowSaving(false);
     }
@@ -173,8 +174,7 @@ const TrainingDetail = () => {
       await refreshCourse();
       toast.success(`Đã chuyển trạng thái: ${statusLabel[status]}`);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không thể cập nhật trạng thái";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không thể cập nhật trạng thái"));
     }
   };
 
@@ -205,8 +205,7 @@ const TrainingDetail = () => {
       toast.success(editingTrainee ? "Đã cập nhật học viên" : "Đã thêm học viên");
       setTraineeDialog(false);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không lưu được học viên";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không lưu được học viên"));
     }
   };
   const removeTrainee = async (tid: string) => {
@@ -215,8 +214,7 @@ const TrainingDetail = () => {
       await refreshCourse();
       toast.success("Đã xóa học viên");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không xóa được học viên";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không xóa được học viên"));
     }
   };
   const toggleAttendance = async (tid: string) => {
@@ -229,8 +227,7 @@ const TrainingDetail = () => {
       await api.put(`/api/v1/training/${course.id}/trainees/${tid}`, { attendance: next });
       await refreshCourse();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không cập nhật điểm danh";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không cập nhật điểm danh"));
     }
   };
 
@@ -261,8 +258,7 @@ const TrainingDetail = () => {
       toast.success(editingSession ? "Đã cập nhật buổi học" : "Đã thêm buổi học");
       setSessionDialog(false);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không lưu được buổi học";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không lưu được buổi học"));
     }
   };
   const removeSession = async (sid: string) => {
@@ -271,8 +267,7 @@ const TrainingDetail = () => {
       await refreshCourse();
       toast.success("Đã xóa buổi học");
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không xóa được buổi học";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không xóa được buổi học"));
     }
   };
   const quickUpdateSessionStatus = async (sid: string, status: ScheduleSession["status"]) => {
@@ -281,8 +276,7 @@ const TrainingDetail = () => {
       await refreshCourse();
       toast.success(`Đã chuyển: ${sessionStatusLabel[status]}`);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không cập nhật được trạng thái buổi học";
-      toast.error(msg);
+      toast.error(getApiErrorMessage(e, "Không cập nhật được trạng thái buổi học"));
     }
   };
 

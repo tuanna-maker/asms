@@ -105,6 +105,15 @@ export type DashboardSummaryApi = {
     completedOnTime: number;
     completedLate: number;
   };
+  feedbackProgress: {
+    total: number;
+    new: number;
+    assigned: number;
+    inProgress: number;
+    pendingClose: number;
+    resolved: number;
+    overdue: number;
+  };
   handoverProgress: { total: number; active: number; completedOnTime: number; completedLate: number };
   trainingProgress: {
     totalBatches: number;

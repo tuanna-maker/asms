@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Shield, Monitor, User, Clock, CheckCircle, Trash2, FileText, ExternalLink, Loader2, Package, GitBranch } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { useContractDetail, useContractsList, useContractProducts } from "@/hooks/use-contracts-api";
 import { useProductDetail } from "@/hooks/use-products-api";
 import { useCreateWarranty, useDeleteWarranty, useUpdateWarranty, useWarrantyDetail } from "@/hooks/use-warranties-api";
@@ -101,23 +102,6 @@ function formatContractSummary(c: unknown): string {
   return line || "—";
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as {
-      response?: { data?: { message?: string; data?: { fieldErrors?: Record<string, string[]> } } };
-      message?: string;
-    };
-    const fieldErrors = maybe.response?.data?.data?.fieldErrors;
-    if (fieldErrors && typeof fieldErrors === "object") {
-      const firstKey = Object.keys(fieldErrors)[0];
-      const firstValue = firstKey ? fieldErrors[firstKey]?.[0] : undefined;
-      if (firstValue) return firstValue;
-    }
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 function toDatetimeLocalValue(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -1057,7 +1041,7 @@ const WarrantyDetailDialog = ({
             {!isCreateMode && customerId && ticket ? (
               <CustomerFeedbackSection
                 customerId={customerId}
-                warrantyId={ticket.apiId}
+                contractId={detail?.contractId ?? undefined}
                 readonly={readOnly}
               />
             ) : null}

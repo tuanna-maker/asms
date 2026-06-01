@@ -46,7 +46,7 @@ const AddWidgetDialog = ({ open, onClose, templates, existingWidgetIds, onAdd }:
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
-            Thêm widget vào Dashboard
+            Thêm widget vào bảng điều khiển
           </DialogTitle>
         </DialogHeader>
 

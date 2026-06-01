@@ -24,6 +24,16 @@ export type ComplaintProgress = {
   completedLate: number;
 };
 
+export type FeedbackProgress = {
+  total: number;
+  new: number;
+  assigned: number;
+  inProgress: number;
+  pendingClose: number;
+  resolved: number;
+  overdue: number;
+};
+
 export type TrainingProgress = {
   totalBatches: number;
   active: number;
@@ -94,6 +104,7 @@ export type DashboardData = {
   productProgress: ProductProgress;
   contractProgress: ProgressSummary;
   complaintProgress: ComplaintProgress;
+  feedbackProgress: FeedbackProgress;
   handoverProgress: ProgressSummary;
   trainingProgress: TrainingProgress;
   customerCare: {
@@ -146,6 +157,12 @@ export type DashboardData = {
     onTime: number;
     late: number;
   };
+  feedback: {
+    total: number;
+    open: number;
+    overdue: number;
+    resolved: number;
+  };
   customerProducts: { name: string; products: number }[];
   customerRevenue: { name: string; revenue: number }[];
   trend: {
@@ -174,6 +191,15 @@ export const emptyDashboardData: DashboardData = {
     completedOnTime: 0,
     completedLate: 0,
   },
+  feedbackProgress: {
+    total: 0,
+    new: 0,
+    assigned: 0,
+    inProgress: 0,
+    pendingClose: 0,
+    resolved: 0,
+    overdue: 0,
+  },
   handoverProgress: { total: 0, active: 0, completedOnTime: 0, completedLate: 0 },
   trainingProgress: { totalBatches: 0, active: 0, completedOnTime: 0, completedLate: 0 },
   customerCare: { totalCustomers: 0, customerBreakdown: [], upcomingAnniversaries: [] },
@@ -191,6 +217,7 @@ export const emptyDashboardData: DashboardData = {
   handover: { total: 0, active: 0, completed: 0, onTime: 0, late: 0 },
   training: { total: 0, active: 0, completed: 0, onTime: 0, late: 0 },
   complaint: { total: 0, warranty: 0, repair: 0, processing: 0, done: 0, onTime: 0, late: 0 },
+  feedback: { total: 0, open: 0, overdue: 0, resolved: 0 },
   customerProducts: [],
   customerRevenue: [],
   trend: [],

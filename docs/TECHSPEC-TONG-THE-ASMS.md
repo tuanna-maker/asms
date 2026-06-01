@@ -1,7 +1,7 @@
 # TECHSPEC Tong The ASMS (As-is)
 
 > Tai lieu dac ta ky thuat tong the cho he thong ASMS, dung cho dev, QA, DevOps, va review kien truc.  
-> Phien ban: 1.0  
+> Phien ban: 1.2  
 > Pham vi: Toan bo nen tang hien co trong codebase.
 
 ## 1. Muc tieu tai lieu
@@ -96,6 +96,7 @@ flowchart LR
 - Materials: `/vat-tu`
 - Products: `/san-pham`
 - Customers/CRM: `/khach-hang`
+- Customer Feedback: `/phan-anh`, `/phan-anh/thong-ke`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`
 - Reports: `/bao-cao`
 - Research/Tasks: `/de-tai`, `/cong-viec`
 - Training: `/dao-tao`
@@ -145,6 +146,7 @@ Moi module theo pattern:
 
 - IAM: `User`, `Role`, `RolePermission`, `RefreshToken`
 - CRM: `Customer`, `Contact`, `CrmActivity`, `CustomerFeedback`, `CustomerAnniversary`, `AnniversarySubscription`
+- Feedback detail entities: `CustomerFeedbackAssignment`, `CustomerFeedbackTimeline`, `CustomerFeedbackComment`
 - Core: `Contract`, `Handover`, `Warranty`, `TrainingCourse`, `Document`
 - Product/inventory: `Product`, `ProductBom`, `Material`, `MaterialTransfer`, `ContractProduct`
 - Execution: `ResearchProject`, `Task`
@@ -156,6 +158,7 @@ Moi module theo pattern:
 - Contract: `draft|active|completed|late|liquidated`
 - Handover: `pending|active|completed|late`
 - Warranty: `open|processing|completed|cancelled`
+- CustomerFeedback: `new|assigned|in_progress|pending_close|resolved|reopened`
 - MaterialTransfer: `pending|processing|completed`
 - Task: `todo|in_progress|review|completed|delayed`
 - Training: `planned|ongoing|completed|cancelled`
@@ -164,6 +167,8 @@ Moi module theo pattern:
 
 - Material transfer phai check `available` trong transaction.
 - Warranty co rang buoc lien ket product/material theo rule service.
+- Customer feedback su dung assignee model (`assigneeType`, `assignedUserId`, `assignedRoleCode`) va visibility filter theo user/role.
+- Comment feedback la entity rieng (`CustomerFeedbackComment`) gom `kind`, `body`, `authorId`, `feedbackId`.
 - Contract-product relation luu qua `ContractProduct` va `specValues`.
 - Workflow step co role-based advance va optional document requirement.
 
@@ -195,6 +200,23 @@ Moi module theo pattern:
 - Password hashing (bcrypt).
 - Refresh token hash (sha256).
 - Upload restriction (size + extension whitelist).
+- Feedback update voi assignee user duoc cap nhat qua relation `assignedUser.connect/disconnect` de dam bao Prisma compatibility.
+
+## 7.5 Customer Feedback activity feed (implementation notes)
+
+- UI detail page gop 2 nguon thanh 1 feed:
+  - System timeline (`CustomerFeedbackTimeline`)
+  - User comments (`CustomerFeedbackComment`)
+- Composer cho phep 2 loai update:
+  - `issue` (su co)
+  - `fix` (da sua)
+- Quyen post comment:
+  - `admin`, `manager`
+  - creator ticket
+  - assignee user hoac assignee role
+- API surface:
+  - `POST /api/v1/customer-feedbacks/:id/comments`
+  - response detail gom `comments[]` + `canComment`
 
 ## 8. Workflow Engine Technical Spec
 
@@ -238,6 +260,30 @@ Moi module theo pattern:
 
 - FE dashboard dung tong hop tu nhieu hooks + reports endpoint.
 - Alert tab hien tai co thanh phan tinh toan tren FE data aggregate.
+
+### 9.4 Customer Feedback Analytics (`/phan-anh/thong-ke`)
+
+**Tach biet** module `/bao-cao` (reports warranty/contract aggregate). Nguon: `CustomerFeedback.linkage_items` JSON, loc `feedbackAt`, RBAC `buildFeedbackAccessFilter`.
+
+#### Backend
+
+- Module: `backend/src/modules/customer-feedbacks/analytics.ts`
+- Aggregates: `aggregateByCustomer`, `aggregateByProduct` (tra `materials[]` day du), `aggregateByMaterial`, `getFeedbackAnalyticsCustomerDetailService`
+- Controllers: `feedbackAnalyticsByCustomerController`, `ByProduct`, `ByMaterial`, `feedbackAnalyticsCustomerDetailController`
+- Routes (prefix `/api/v1/customer-feedbacks/analytics/...`):
+  - `by-customer`, `by-product`, `by-material`
+  - `customer/:customerId/detail` — **dang ky truoc** `GET /:id` (xem `backend/src/routes/v1/index.ts` lines analytics mount)
+
+#### Frontend
+
+- Page: `src/pages/FeedbackStatistics.tsx`
+- URL: `period` + `tab` (`customer`|`catalog`); `src/lib/feedback-analytics-filters.ts` — `periodToDateRange()`, `parseFeedbackStatsFromSearch()`
+- React Query: `useFeedbackStatsCustomerList`, `useFeedbackStatsCatalog` (2 query song song), `useFeedbackCustomerStatsDetail` (khi Sheet mo)
+- UI: bang thuan, **khong** Recharts; SP table gop VT: `formatMaterialsInline` -> `code (count) · ...`
+
+#### Query cache keys
+
+- `qk.customerFeedbacks.analyticsByCustomer|ByProduct|ByMaterial|analyticsCustomerDetail`
 
 ## 10. NFR (Non-Functional Requirements)
 
@@ -341,9 +387,12 @@ Moi module theo pattern:
 | Contract lifecycle | contracts, training, handovers | `/contracts`, `/training`, `/handovers` | `Contract`, `ContractProduct`, `TrainingCourse`, `Handover` |
 | Warranty ops | warranties, materials, products | `/warranties`, `/materials`, `/products/:id/bom` | `Warranty`, `Material`, `ProductBom` |
 | CRM ops | customers, contacts, crm-activities | `/customers`, `/contacts`, `/crm-activities` | `Customer`, `Contact`, `CrmActivity` |
+| Customer feedback ops | customer-feedbacks | `/customer-feedbacks`, `/customer-feedbacks/:id/comments`, `/customer-feedbacks/analytics/*` | `CustomerFeedback`, `CustomerFeedbackAssignment`, `CustomerFeedbackTimeline`, `CustomerFeedbackComment` |
 | Governance | users, roles, settings, audit | `/users`, `/roles`, `/system-settings`, `/audit-logs` | `User`, `Role`, `SystemSetting`, `AuditLog` |
 | Workflow runtime | workflows, workflow-instances | `/workflows`, `/workflow-instances` | `WorkflowDefinition`, `WorkflowStep`, `WorkflowInstance` |
 
 ---
 
 Tai lieu nay la baseline tech spec tong the cho ASMS theo hien trang code, co the dung lam tai lieu design review va implementation guide cho cac phase tiep theo.
+
+**Lich su cap nhat:** v1.1 — Customer Feedback assignment + activity comments; v1.2 — Analytics `/phan-anh/thong-ke` (bang 2 tab, API customer detail, `materials[]` day du).

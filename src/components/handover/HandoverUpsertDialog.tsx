@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileText, GitBranch, Loader2, Package, Save, Truck } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -57,14 +58,6 @@ function toDateInput(iso: string) {
   return d.toISOString().slice(0, 10);
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (typeof error === "object" && error !== null) {
-    const maybe = error as { response?: { data?: { message?: string } }; message?: string };
-    if (maybe.response?.data?.message) return maybe.response.data.message;
-    if (maybe.message) return maybe.message;
-  }
-  return fallback;
-}
 
 function SummaryFieldCard({
   icon,
@@ -303,9 +296,9 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
           </div>
         </SheetHeader>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           {/* Phần 1: Thông tin bàn giao */}
-          <section className="shrink-0 border-b border-border/50 bg-card/50 px-6 py-5 space-y-4 max-h-[42vh] overflow-y-auto">
+          <section className="border-b border-border/50 bg-card/50 px-6 py-5 space-y-4">
             <SectionHeading
               title="Thông tin bàn giao"
               description="Hợp đồng, quy trình, trạng thái và thời hạn của phiếu bàn giao."
@@ -404,69 +397,57 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
           </section>
 
           {/* Phần 2: Các bước */}
-          <section className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 py-5">
+          <section className="px-6 py-5 pb-8 space-y-4">
             <SectionHeading
               title="Các bước"
               description="Nội dung từng bước theo quy trình bàn giao đã chọn."
             />
 
-            <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden">
-              {!hasWorkflowSelected ? (
-                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  Chọn quy trình bàn giao ở phần trên để hiển thị các bước.
-                </div>
-              ) : workflowDetailLoading ? (
-                <div className="flex flex-1 items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Đang tải các bước từ quy trình…
-                </div>
-              ) : !showDynamicTabs ? (
-                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-                  Quy trình chưa có bước hoặc chưa cấu hình trường bước.
-                </div>
-              ) : (
-                <Tabs
-                  value={formTab}
-                  onValueChange={setFormTab}
-                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
-                >
-                  <div className="shrink-0 border-b border-border overflow-x-auto">
-                    <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
-                      {stepsForTabs.map((step) => (
-                        <TabsTrigger key={step.id} value={step.id} className={workflowStepTabTriggerClass}>
-                          {stepTabLabel(step.order, step.name)}
-                        </TabsTrigger>
-                      ))}
-                    </TabsList>
-                  </div>
-                  <div className="relative min-h-0 flex-1">
+            {!hasWorkflowSelected ? (
+              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                Chọn quy trình bàn giao ở phần trên để hiển thị các bước.
+              </div>
+            ) : workflowDetailLoading ? (
+              <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                Đang tải các bước từ quy trình…
+              </div>
+            ) : !showDynamicTabs ? (
+              <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+                Quy trình chưa có bước hoặc chưa cấu hình trường bước.
+              </div>
+            ) : (
+              <Tabs value={formTab} onValueChange={setFormTab} className="w-full">
+                <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/80 overflow-x-auto">
+                  <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
                     {stepsForTabs.map((step) => (
-                      <TabsContent
-                        key={step.id}
-                        value={step.id}
-                        className="absolute inset-0 mt-0 overflow-y-auto py-4 space-y-4 data-[state=inactive]:hidden"
-                      >
-                        <DynamicStepFormFields
-                          fieldSchema={step.fieldSchema}
-                          values={stepPayloads[step.id] ?? {}}
-                          onChange={(key, value) => patchStepPayload(step.id, key, value)}
-                          stepDescription={step.description}
-                          workflowEditHref={workflowEditHref}
-                        />
-                        {editing ? (
-                          <WorkflowInstancePanel
-                            moduleKey="handover"
-                            entityId={editing.id}
-                            focusStepId={step.id}
-                            compact
-                          />
-                        ) : null}
-                      </TabsContent>
+                      <TabsTrigger key={step.id} value={step.id} className={workflowStepTabTriggerClass}>
+                        {stepTabLabel(step.order, step.name)}
+                      </TabsTrigger>
                     ))}
-                  </div>
-                </Tabs>
-              )}
-            </div>
+                  </TabsList>
+                </div>
+                {stepsForTabs.map((step) => (
+                  <TabsContent key={step.id} value={step.id} className="mt-0 space-y-4 py-4">
+                    <DynamicStepFormFields
+                      fieldSchema={step.fieldSchema}
+                      values={stepPayloads[step.id] ?? {}}
+                      onChange={(key, value) => patchStepPayload(step.id, key, value)}
+                      stepDescription={step.description}
+                      workflowEditHref={workflowEditHref}
+                    />
+                    {editing ? (
+                      <WorkflowInstancePanel
+                        moduleKey="handover"
+                        entityId={editing.id}
+                        focusStepId={step.id}
+                        compact
+                      />
+                    ) : null}
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
           </section>
         </div>
       </SheetContent>

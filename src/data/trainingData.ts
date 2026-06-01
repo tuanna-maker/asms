@@ -45,7 +45,7 @@ export interface TrainingCourse {
   schedule?: ScheduleSession[];
 }
 
-export const typeLabel = { internal: "Nội bộ", external: "Khách hàng", online: "Online" } as const;
+export const typeLabel = { internal: "Nội bộ", external: "Khách hàng", online: "Trực tuyến" } as const;
 export const statusLabel = { planned: "Lên kế hoạch", ongoing: "Đang diễn ra", completed: "Hoàn thành" } as const;
 export const statusColor = {
   planned: "bg-info/10 text-info",

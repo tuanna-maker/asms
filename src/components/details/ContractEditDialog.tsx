@@ -12,18 +12,20 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  FileText, Calendar, DollarSign, Package, Shield, Users,
+  FileText, Calendar, Clock, CircleDot, DollarSign, Package, Shield, Users,
   Info, ListChecks, Boxes, Files, MessageSquareWarning,
 } from "lucide-react";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
-import type { DisplayContractStatus } from "@/lib/contract-display-status";
 import {
-  formatSlaDeadline,
-  isContractExecutionSlaOverdue,
-} from "@/lib/contract-execution-sla";
+  computeContractOperationalStatus,
+  type DisplayContractStatus,
+} from "@/lib/contract-display-status";
+import { formatSlaDeadline } from "@/lib/contract-execution-sla";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
+import { getProductStatusLabel } from "@/lib/display-labels";
 import { toast } from "sonner";
+import { getApiErrorMessage, toastApiError } from "@/lib/api-errors";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
 import { useContractDetail, useCreateContract, useUpdateContract } from "@/hooks/use-contracts-api";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
@@ -154,14 +156,6 @@ function toDocType(file: File): "pdf" | "doc" | "xls" | "img" | "other" {
   return "other";
 }
 
-function getApiErrorMessage(error: unknown, fallback: string) {
-  if (error && typeof error === "object" && "response" in error) {
-    const r = (error as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (error instanceof Error) return error.message;
-  return fallback;
-}
 
 const ContractEditDialog = ({
   contract,
@@ -207,6 +201,7 @@ const ContractEditDialog = ({
   const updateContract = useUpdateContract();
   const { data: contractTypeOptions = [] } = useDefinitionsList("contract_type");
   const { data: contractStatusOptions = [] } = useDefinitionsList("contract_status");
+  const statusManualOverrideRef = useRef(false);
   const detail = detailData as ContractDetailData | null;
   const uploadDocument = useUploadDocument();
   const deleteDocument = useDeleteDocument();
@@ -307,22 +302,20 @@ const ContractEditDialog = ({
   useEffect(() => {
     if (!open || isCreateMode || !detail) return;
     const cid = detail.customerId ?? detail.customer?.id ?? "";
-    const storedStatus = (detail.displayStatus ?? detail.status ?? "draft") as DisplayContractStatus;
+    const loaded = (detail.displayStatus ?? detail.status ?? "draft") as DisplayContractStatus;
+    statusManualOverrideRef.current = loaded === "completed";
     setForm((f) => ({
       ...f,
       ...(cid ? { customerId: cid } : {}),
       ...(detail.customer?.name ? { customer: detail.customer.name } : {}),
       ...(detail.title ? { title: detail.title } : {}),
-      status: storedStatus,
+      status: loaded,
+      slaHours:
+        detail.slaHours != null && detail.slaHours >= 0 ? String(detail.slaHours) : "",
     }));
     if (typeof detail.endReminderDays === "number") {
       setForm((f) => ({ ...f, endReminderDays: String(detail.endReminderDays) }));
     }
-    setForm((f) => ({
-      ...f,
-      slaHours:
-        detail.slaHours != null && detail.slaHours >= 0 ? String(detail.slaHours) : "",
-    }));
   }, [
     open,
     isCreateMode,
@@ -389,16 +382,19 @@ const ContractEditDialog = ({
     return Number.isFinite(n) && n >= 0 ? Math.floor(n) : null;
   }, [form.slaHours]);
 
-  const slaOverduePreview = useMemo(() => {
-    if (slaHoursValue == null || slaHoursValue <= 0) return false;
-    const updatedAt = detail?.updatedAt;
-    if (!updatedAt) return false;
-    return isContractExecutionSlaOverdue({
-      status: form.status,
-      slaHours: slaHoursValue,
-      updatedAt,
-    });
-  }, [slaHoursValue, detail?.updatedAt, form.status]);
+  const suggestedStatus = useMemo(
+    () =>
+      computeContractOperationalStatus({
+        status: "draft",
+        startDate: form.startDate,
+        endDate: form.endDate,
+        slaHours: slaHoursValue,
+        updatedAt: detail?.updatedAt ?? new Date().toISOString(),
+      }),
+    [form.startDate, form.endDate, slaHoursValue, detail?.updatedAt],
+  );
+
+  const slaOverduePreview = form.status === "late" || suggestedStatus === "late";
 
   const statusSelectOptions = useMemo(() => {
     if (contractStatusOptions.length > 0) {
@@ -412,6 +408,16 @@ const ContractEditDialog = ({
       label: CONTRACT_STATUS_LABELS[code] ?? code,
     }));
   }, [contractStatusOptions]);
+
+  useEffect(() => {
+    if (!open) {
+      statusManualOverrideRef.current = false;
+      return;
+    }
+    if (form.status === "completed" || statusManualOverrideRef.current) return;
+    if (!form.startDate || !form.endDate) return;
+    setForm((f) => (f.status === suggestedStatus ? f : { ...f, status: suggestedStatus }));
+  }, [open, suggestedStatus, form.startDate, form.endDate, form.status]);
 
   if (!contract && !isCreateMode) return null;
   const contractCode = contract?.id ?? "";
@@ -492,8 +498,8 @@ const ContractEditDialog = ({
       }
       toast.success("Đã tạo hợp đồng");
       onOpenChange(false);
-    } catch {
-      toast.error("Không thể tạo hợp đồng");
+    } catch (e) {
+      toastApiError(e, "Không thể tạo hợp đồng");
     }
   };
 
@@ -581,8 +587,8 @@ const ContractEditDialog = ({
       }
       toast.success("Đã cập nhật hợp đồng");
       onOpenChange(false);
-    } catch {
-      toast.error("Không thể cập nhật hợp đồng");
+    } catch (e) {
+      toastApiError(e, "Không thể cập nhật hợp đồng");
     }
   };
 
@@ -682,38 +688,7 @@ const ContractEditDialog = ({
 
           <div className="relative min-h-0 flex-1">
           <TabsContent value="info" className="absolute inset-0 mt-0 overflow-y-auto p-6 space-y-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Trạng thái</p>
-                  <Select
-                    value={form.status}
-                    onValueChange={(v) => setForm({ ...form, status: v as DisplayContractStatus })}
-                  >
-                    <SelectTrigger className="w-48">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusSelectOptions.map((item) => (
-                        <SelectItem key={item.value} value={item.value}>
-                          {item.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">SLA thực hiện (giờ)</p>
-                  <Input
-                    type="number"
-                    min={0}
-                    className="w-28 h-9"
-                    placeholder="VD: 72"
-                    value={form.slaHours ?? ""}
-                    onChange={(e) => setForm((f) => ({ ...f, slaHours: e.target.value }))}
-                  />
-                </div>
-              </div>
+            <div className="flex flex-wrap items-end justify-end gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-muted-foreground">Tiến độ:</span>
                 <Input
@@ -730,21 +705,6 @@ const ContractEditDialog = ({
             <div className="h-3 w-full rounded-full bg-secondary">
               <div className="h-3 rounded-full bg-primary transition-all" style={{ width: `${progressValue}%` }} />
             </div>
-
-            {slaHoursValue != null && slaHoursValue > 0 && detail?.updatedAt ? (
-              <p
-                className={`text-xs ${slaOverduePreview ? "text-destructive font-medium" : "text-muted-foreground"}`}
-              >
-                {slaOverduePreview
-                  ? "Đã quá SLA kể từ lần cập nhật cuối — hệ thống sẽ tự chuyển sang Chậm tiến độ khi tải lại."
-                  : `Hạn SLA: ${formatSlaDeadline(detail.updatedAt, slaHoursValue)} (tính từ lần cập nhật cuối).`}
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Nhập SLA (giờ) để theo dõi thời gian thực hiện. Quá hạn mà hợp đồng không được cập nhật sẽ tự
-                chuyển sang Chậm tiến độ.
-              </p>
-            )}
 
             <Separator />
 
@@ -806,6 +766,58 @@ const ContractEditDialog = ({
                   onChange={(e) => setForm({ ...form, endReminderDays: e.target.value })}
                 />
               </InfoItem>
+              <InfoItem icon={<CircleDot className="h-4 w-4" />} label="Trạng thái">
+                <Select
+                  value={form.status}
+                  onValueChange={(v) => {
+                    const next = v as DisplayContractStatus;
+                    statusManualOverrideRef.current = next === "completed";
+                    setForm({ ...form, status: next });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusSelectOptions.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {form.status === "completed" ? (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Đã chọn Hoàn thành — không tự đổi theo ngày/SLA.
+                  </p>
+                ) : form.status !== suggestedStatus ? (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Gợi ý theo ngày/SLA: {CONTRACT_STATUS_LABELS[suggestedStatus] ?? suggestedStatus}
+                  </p>
+                ) : null}
+              </InfoItem>
+              <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA thực hiện (giờ)">
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="VD: 72"
+                  value={form.slaHours ?? ""}
+                  onChange={(e) => setForm((f) => ({ ...f, slaHours: e.target.value }))}
+                />
+                {slaHoursValue != null && slaHoursValue > 0 && detail?.updatedAt && form.status !== "liquidated" ? (
+                  <p
+                    className={`text-[11px] mt-1 ${slaOverduePreview ? "text-destructive font-medium" : "text-muted-foreground"}`}
+                  >
+                    {slaOverduePreview
+                      ? "Đã quá hạn SLA kể từ lần cập nhật cuối."
+                      : `Hạn SLA: ${formatSlaDeadline(detail.updatedAt, slaHoursValue)}`}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Quá SLA mà chưa cập nhật → Chậm tiến độ; quá ngày kết thúc → Đã thanh lý.
+                  </p>
+                )}
+              </InfoItem>
             </div>
           </TabsContent>
 
@@ -857,7 +869,7 @@ const ContractEditDialog = ({
                             className="ml-auto h-8 w-24 text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">{p.status ?? "—"}</TableCell>
+                        <TableCell className="text-right">{getProductStatusLabel(p.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button

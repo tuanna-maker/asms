@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Users, Shield, Bell, Trash2, Tags, ChevronRight, KeyRound, Sliders, ScrollText, Smartphone } from "lucide-react";
+import { Users, Shield, Bell, Trash2, Tags, ChevronRight, KeyRound, Sliders, ScrollText, Smartphone, MessageSquareWarning } from "lucide-react";
 import { toast } from "sonner";
+import { getApiErrorMessage } from "@/lib/api-errors";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import {
 import { RolesTab } from "@/components/settings/RolesTab";
 import { AuditLogsTab } from "@/components/settings/AuditLogsTab";
 import { SystemSettingsTab } from "@/components/settings/SystemSettingsTab";
+import { FeedbackUnitsSettingsTab } from "@/components/settings/FeedbackUnitsSettingsTab";
 import { SessionsTab } from "@/components/settings/SessionsTab";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
 
@@ -81,12 +83,7 @@ const STATUS_OPTIONS = [
 ] as const;
 
 function errMessage(e: unknown) {
-  if (e && typeof e === "object" && "response" in e) {
-    const r = (e as { response?: { data?: { message?: string } } }).response?.data?.message;
-    if (typeof r === "string") return r;
-  }
-  if (e instanceof Error) return e.message;
-  return "Có lỗi xảy ra";
+  return getApiErrorMessage(e, "Có lỗi xảy ra");
 }
 
 function NotificationPrefsPanel({ enabled }: { enabled: boolean }) {
@@ -326,6 +323,7 @@ const SettingsPage = () => {
           <TabsTrigger value="roles"><KeyRound className="h-4 w-4 mr-1" /> Vai trò</TabsTrigger>
           <TabsTrigger value="permissions"><Shield className="h-4 w-4 mr-1" /> Phân quyền</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="h-4 w-4 mr-1" /> Thông báo</TabsTrigger>
+          <TabsTrigger value="feedback-units"><MessageSquareWarning className="h-4 w-4 mr-1" /> Đơn vị PA</TabsTrigger>
           <TabsTrigger value="system"><Sliders className="h-4 w-4 mr-1" /> Hệ thống</TabsTrigger>
           <TabsTrigger value="sessions"><Smartphone className="h-4 w-4 mr-1" /> Phiên đăng nhập</TabsTrigger>
           {role === "admin" ? (
@@ -422,6 +420,12 @@ const SettingsPage = () => {
 
         <TabsContent value="notifications">
           <NotificationPrefsPanel enabled={!authLoading && isAuthenticated} />
+        </TabsContent>
+
+        <TabsContent value="feedback-units">
+          <div className="rounded-xl bg-card border border-border/50 shadow-sm p-4">
+            <FeedbackUnitsSettingsTab />
+          </div>
         </TabsContent>
 
         <TabsContent value="system">

@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
 import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSection";
 import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
 import { qk } from "@/lib/query-keys";
@@ -285,8 +286,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, editable = false, on
       setDocName("");
       setDocFile(null);
       toast.success("Đã thêm tài liệu");
-    } catch {
-      toast.error("Không thể thêm tài liệu");
+    } catch (e) { toastApiError(e, "Không thể thêm tài liệu");
     }
   };
 
@@ -296,8 +296,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, editable = false, on
       await deleteDocument.mutateAsync(docId);
       await queryClient.invalidateQueries({ queryKey: ["product-documents", product.id] });
       toast.success("Đã xóa tài liệu");
-    } catch {
-      toast.error("Không thể xóa tài liệu");
+    } catch (e) { toastApiError(e, "Không thể xóa tài liệu");
     }
   };
 
