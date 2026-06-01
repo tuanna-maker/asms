@@ -32,6 +32,7 @@ import {
   useCreateWorkflow,
   useDeleteWorkflow,
   useWorkflowsList,
+  type CreateWorkflowPayload,
   type WorkflowListItem,
   type WorkflowModuleKey,
 } from "@/hooks/use-workflows-api";
@@ -121,12 +122,14 @@ const WorkflowListPage = () => {
       return;
     }
     try {
-      const res = await createWf.mutateAsync({
+      const payload: CreateWorkflowPayload = {
         name,
         moduleKey: validKey,
-        description: form.description.trim() || null,
         isActive: form.isActive,
-      });
+      };
+      const description = form.description.trim();
+      if (description) payload.description = description;
+      const res = await createWf.mutateAsync(payload);
       toast.success("Đã tạo quy trình");
       setCreateOpen(false);
       const created = res.data.data;
@@ -173,7 +176,9 @@ const WorkflowListPage = () => {
             Danh sách quy trình được áp dụng cho module {MODULE_LABEL[validKey].toLowerCase()}.
             {validKey === "training"
               ? " Chuẩn 3 bước: Lên kế hoạch khoá đào tạo → Phê duyệt nội dung → Tổng kết và đóng khoá."
-              : null}
+              : validKey === "product"
+                ? " Chuẩn 3 bước: Đang sản xuất → Nghiệm thu cấp Bộ → Đưa vào trang bị."
+                : null}
           </p>
         </div>
         <Table>

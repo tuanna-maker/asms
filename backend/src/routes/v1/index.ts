@@ -10,7 +10,6 @@ import customersRoutes from "../../modules/customers/route";
 import contractsRoutes from "../../modules/contracts/route";
 import handoversRoutes from "../../modules/handovers/route";
 import warrantiesRoutes from "../../modules/warranties/route";
-import { listWarrantyStatsController } from "../../modules/warranties/controller";
 import materialsRoutes from "../../modules/materials/route";
 import productsRoutes from "../../modules/products/route";
 import researchProjectsRoutes from "../../modules/research-projects/route";
@@ -82,9 +81,6 @@ router.use("/feedback-execution-units", feedbackExecutionUnitsRoutes);
 router.use("/role-permissions", rolePermissionsRoutes);
 router.use("/contracts", contractsRoutes);
 router.use("/handovers", handoversRoutes);
-/** Đăng ký trước mount `/warranties` để `stats` không bị nuốt bởi `/:id` của router con (tránh 404). */
-const warrantyReadRoles = ["admin", "manager", "technician"];
-router.get("/warranties/stats", requireAuth, requireRoles(warrantyReadRoles), listWarrantyStatsController);
 router.use("/warranties", warrantiesRoutes);
 router.use("/materials", materialsRoutes);
 router.use("/products", productsRoutes);

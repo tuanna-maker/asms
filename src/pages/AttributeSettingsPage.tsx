@@ -5,6 +5,7 @@ import { AttributeModulePanel } from "@/components/settings/attributes/Attribute
 import { AttributeSettingsLayout } from "@/components/settings/attributes/AttributeSettingsLayout";
 import { Button } from "@/components/ui/button";
 import {
+  ATTRIBUTE_MODULES_FOR_SETTINGS,
   ATTRIBUTE_SETTINGS_BASE_PATH,
   DEFAULT_ATTRIBUTE_MODULE_KEY,
   isAttributeModuleKey,
@@ -19,6 +20,12 @@ export default function AttributeSettingsPage() {
 
   if (!isAttributeModuleKey(moduleKey)) {
     return <Navigate to={`${ATTRIBUTE_SETTINGS_BASE_PATH}/${DEFAULT_ATTRIBUTE_MODULE_KEY}`} replace />;
+  }
+
+  const moduleInSettings = ATTRIBUTE_MODULES_FOR_SETTINGS.some((m) => m.key === moduleKey);
+  if (!moduleInSettings) {
+    const fallback = ATTRIBUTE_MODULES_FOR_SETTINGS[0]?.key ?? DEFAULT_ATTRIBUTE_MODULE_KEY;
+    return <Navigate to={`${ATTRIBUTE_SETTINGS_BASE_PATH}/${fallback}`} replace />;
   }
 
   return (

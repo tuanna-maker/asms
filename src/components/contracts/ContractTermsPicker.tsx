@@ -288,17 +288,17 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
           <p className="px-3 py-2 text-xs text-muted-foreground border-b border-border/60 bg-muted/20">
             Chọn tiêu đề từ danh mục, nhập nội dung riêng cho hợp đồng này. Kéo thả để sắp xếp thứ tự.
           </p>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10" />
-                <TableHead className="w-[28%]">Tiêu đề</TableHead>
-                <TableHead>Nội dung (trên hợp đồng)</TableHead>
-                <TableHead className="w-12" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10" />
+                  <TableHead className="w-[28%]">Tiêu đề</TableHead>
+                  <TableHead>Nội dung (trên hợp đồng)</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 <SortableContext
                   items={value.map((e) => e.clauseId)}
                   strategy={verticalListSortingStrategy}
@@ -314,9 +314,9 @@ export function ContractTermsPicker({ value, onChange, disabled }: Props) {
                     />
                   ))}
                 </SortableContext>
-              </DndContext>
-            </TableBody>
-          </Table>
+              </TableBody>
+            </Table>
+          </DndContext>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">Chưa chọn điều khoản nào.</p>

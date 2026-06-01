@@ -33,7 +33,7 @@ void (async () => {
   const sample = workflows.find((w) => w.isActive && w.code.includes("HANDOVER"));
   console.log("workflows handover:", workflows.map((w) => w.code).join(", "));
 
-  const contracts = await req<Array<{ id: string; code: string }>>("/api/v1/contracts", { headers });
+  const contracts = await req<Array<{ id: string; code: string }>>("/api/v1/contracts?eligibleFor=handover", { headers });
   if (!contracts[0]) throw new Error("Không có hợp đồng để test");
   const contractId = contracts[0].id;
 

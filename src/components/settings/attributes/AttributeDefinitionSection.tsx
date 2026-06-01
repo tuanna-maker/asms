@@ -91,18 +91,15 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const [createOpen, setCreateOpen] = useState(false);
   const [editRow, setEditRow] = useState<DefinitionItem | null>(null);
   const [deleteRow, setDeleteRow] = useState<DefinitionItem | null>(null);
-  const showSlaHours = definitionCategory === "contract_status";
   const [createForm, setCreateForm] = useState({
     code: "",
     label: "",
     isActive: true,
-    slaHours: "" as string,
   });
   const [editForm, setEditForm] = useState({
     code: "",
     label: "",
     isActive: true,
-    slaHours: "" as string,
   });
 
   const [orderedIds, setOrderedIds] = useState<string[]>([]);
@@ -137,7 +134,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
   const currentPage = Math.min(page, totalPages);
   const isPaginatedView = totalPages > 1 || statusFilter !== "all" || search.trim().length > 0;
   const allowDrag = canWrite && !isPaginatedView;
-  const tableColSpan = (canWrite ? 5 : 4) + (showSlaHours ? 1 : 0) + (allowDrag ? 1 : 0);
+  const tableColSpan = (canWrite ? 5 : 4) + (allowDrag ? 1 : 0);
 
   const pageRows = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
@@ -171,20 +168,11 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     }
   };
 
-  const parseSlaHoursInput = (raw: string): number | null | undefined => {
-    const t = raw.trim();
-    if (!t) return showSlaHours ? null : undefined;
-    const n = Number(t);
-    if (!Number.isFinite(n) || n < 0) return undefined;
-    return Math.floor(n);
-  };
-
   const openCreate = () => {
     setCreateForm({
       code: "",
       label: "",
       isActive: true,
-      slaHours: "",
     });
     setCreateOpen(true);
   };
@@ -194,7 +182,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       code: item.code,
       label: item.label,
       isActive: item.isActive,
-      slaHours: item.slaHours != null ? String(item.slaHours) : "",
     });
     setEditRow(item);
   };
@@ -211,18 +198,12 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       return;
     }
     try {
-      const slaParsed = parseSlaHoursInput(createForm.slaHours);
-      if (showSlaHours && createForm.slaHours.trim() && slaParsed === undefined) {
-        toast.error("SLA mặc định phải là số nguyên không âm (giờ).");
-        return;
-      }
       await createDef.mutateAsync({
         category: definitionCategory,
         code,
         label,
         sortOrder: nextDefinitionSortOrder(definitions),
         isActive: createForm.isActive,
-        ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
       });
       toast.success("Đã thêm mục");
       setCreateOpen(false);
@@ -244,11 +225,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       return;
     }
     try {
-      const slaParsed = parseSlaHoursInput(editForm.slaHours);
-      if (showSlaHours && editForm.slaHours.trim() && slaParsed === undefined) {
-        toast.error("SLA mặc định phải là số nguyên không âm (giờ).");
-        return;
-      }
       await updateDef.mutateAsync({
         id: editRow.id,
         payload: {
@@ -256,7 +232,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
           label,
           sortOrder: editRow.sortOrder,
           isActive: editForm.isActive,
-          ...(showSlaHours && slaParsed !== undefined ? { slaHours: slaParsed } : {}),
         },
       });
       toast.success("Đã cập nhật");
@@ -277,6 +252,17 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
     }
   };
 
+  const wrapRowHandlers = (row: AttributeRow) => ({
+    onEdit: () => {
+      const item = definitions.find((d) => d.id === row.id);
+      if (item) openEdit(item);
+    },
+    onDelete: () => {
+      const item = definitions.find((d) => d.id === row.id);
+      if (item) setDeleteRow(item);
+    },
+  });
+
   const disableInsteadOfDelete = async () => {
     if (!deleteRow) return;
     try {
@@ -290,6 +276,68 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
       toast.error(errMessage(e));
     }
   };
+
+  const definitionTable = (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {allowDrag ? <TableHead className="w-8" /> : null}
+          <TableHead className="w-14">STT</TableHead>
+          <TableHead className="w-40">Mã</TableHead>
+          <TableHead>Tên</TableHead>
+          <TableHead>Trạng thái</TableHead>
+          {canWrite ? <TableHead className="w-32 text-right">Thao tác</TableHead> : null}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {isLoading ? (
+          <TableRow>
+            <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
+              <Loader2 className="mr-2 inline h-5 w-5 animate-spin align-middle" />
+              Đang tải…
+            </TableCell>
+          </TableRow>
+        ) : pageRows.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
+              Không có dữ liệu phù hợp.
+            </TableCell>
+          </TableRow>
+        ) : allowDrag ? (
+          <SortableContext items={pageRows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
+            {pageRows.map((row, index) => (
+              <SortableAttributeRow
+                key={row.id}
+                row={row}
+                index={(currentPage - 1) * pageSize + index}
+                canWrite={canWrite}
+                {...wrapRowHandlers(row)}
+              />
+            ))}
+          </SortableContext>
+        ) : (
+          pageRows.map((row, index) => (
+            <AttributeTableRow
+              key={row.id}
+              row={row}
+              index={(currentPage - 1) * pageSize + index}
+              canWrite={canWrite}
+              {...wrapRowHandlers(row)}
+            />
+          ))
+        )}
+      </TableBody>
+    </Table>
+  );
+
+  const definitionTableWithDnd =
+    allowDrag && !isLoading && pageRows.length > 0 ? (
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        {definitionTable}
+      </DndContext>
+    ) : (
+      definitionTable
+    );
 
   return (
     <section className="rounded-xl border border-border/50 bg-card shadow-sm">
@@ -374,75 +422,7 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
         </div>
       ) : null}
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {allowDrag ? <TableHead className="w-8" /> : null}
-            <TableHead className="w-14">STT</TableHead>
-            <TableHead className="w-40">Mã</TableHead>
-            <TableHead>Tên</TableHead>
-            {showSlaHours ? <TableHead className="w-28">SLA (giờ)</TableHead> : null}
-            <TableHead>Trạng thái</TableHead>
-            {canWrite ? <TableHead className="w-32 text-right">Thao tác</TableHead> : null}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
-            <TableRow>
-              <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
-                <Loader2 className="mr-2 inline h-5 w-5 animate-spin align-middle" />
-                Đang tải…
-              </TableCell>
-            </TableRow>
-          ) : pageRows.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={tableColSpan} className="py-8 text-center text-sm text-muted-foreground">
-                Không có dữ liệu phù hợp.
-              </TableCell>
-            </TableRow>
-          ) : allowDrag ? (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={pageRows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
-                {pageRows.map((row, index) => (
-                  <SortableAttributeRow
-                    key={row.id}
-                    row={row}
-                    index={(currentPage - 1) * pageSize + index}
-                    canWrite={canWrite}
-                    showSlaHours={showSlaHours}
-                    onEdit={() => {
-                      const item = definitions.find((d) => d.id === row.id);
-                      if (item) openEdit(item);
-                    }}
-                    onDelete={() => {
-                      const item = definitions.find((d) => d.id === row.id);
-                      if (item) setDeleteRow(item);
-                    }}
-                  />
-                ))}
-              </SortableContext>
-            </DndContext>
-          ) : (
-            pageRows.map((row, index) => (
-              <AttributeTableRow
-                key={row.id}
-                row={row}
-                index={(currentPage - 1) * pageSize + index}
-                canWrite={canWrite}
-                showSlaHours={showSlaHours}
-                onEdit={() => {
-                  const item = definitions.find((d) => d.id === row.id);
-                  if (item) openEdit(item);
-                }}
-                onDelete={() => {
-                  const item = definitions.find((d) => d.id === row.id);
-                  if (item) setDeleteRow(item);
-                }}
-              />
-            ))
-          )}
-        </TableBody>
-      </Table>
+      {definitionTableWithDnd}
 
       {total > 0 ? (
       <div className="flex flex-col gap-3 border-t border-border/50 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -526,19 +506,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 onChange={(e) => setCreateForm((s) => ({ ...s, label: e.target.value }))}
               />
             </div>
-            {showSlaHours ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="attr-def-sla-create">SLA mặc định (giờ)</Label>
-                <Input
-                  id="attr-def-sla-create"
-                  type="number"
-                  min={0}
-                  placeholder="Để trống nếu không áp dụng"
-                  value={createForm.slaHours}
-                  onChange={(e) => setCreateForm((s) => ({ ...s, slaHours: e.target.value }))}
-                />
-              </div>
-            ) : null}
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
               <Label htmlFor="attr-def-active-create">Hoạt động</Label>
               <Switch
@@ -582,19 +549,6 @@ export function AttributeDefinitionSection({ section, definitionCategory, canWri
                 onChange={(e) => setEditForm((s) => ({ ...s, label: e.target.value }))}
               />
             </div>
-            {showSlaHours ? (
-              <div className="space-y-1.5">
-                <Label htmlFor="attr-def-sla-edit">SLA mặc định (giờ)</Label>
-                <Input
-                  id="attr-def-sla-edit"
-                  type="number"
-                  min={0}
-                  placeholder="Để trống nếu không áp dụng"
-                  value={editForm.slaHours}
-                  onChange={(e) => setEditForm((s) => ({ ...s, slaHours: e.target.value }))}
-                />
-              </div>
-            ) : null}
             <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3 py-2">
               <Label htmlFor="attr-def-active-edit">Hoạt động</Label>
               <Switch
@@ -634,13 +588,12 @@ type RowProps = {
   onDelete: () => void;
 };
 
-function SortableAttributeRow(props: RowProps & { showSlaHours: boolean }) {
+function SortableAttributeRow(props: RowProps) {
   const { row } = props;
   const sortable = useSortable({ id: row.id });
   return (
     <AttributeTableRow
       {...props}
-      showSlaHours={props.showSlaHours}
       dragHandleProps={{
         ref: sortable.setNodeRef,
         style: {
@@ -668,9 +621,8 @@ function AttributeTableRow({
   canWrite,
   onEdit,
   onDelete,
-  showSlaHours,
   dragHandleProps,
-}: RowProps & { showSlaHours?: boolean; dragHandleProps?: DragHandleProps }) {
+}: RowProps & { dragHandleProps?: DragHandleProps }) {
   return (
     <TableRow ref={dragHandleProps?.ref ?? undefined} style={dragHandleProps?.style}>
       {dragHandleProps ? (
@@ -683,11 +635,6 @@ function AttributeTableRow({
       <TableCell>{index + 1}</TableCell>
       <TableCell className="font-mono text-xs text-muted-foreground">{row.code}</TableCell>
       <TableCell className="font-medium">{row.name}</TableCell>
-      {showSlaHours ? (
-        <TableCell className="text-muted-foreground">
-          {row.slaHours != null ? `${row.slaHours}h` : "—"}
-        </TableCell>
-      ) : null}
       <TableCell>
         {row.status === "active" ? (
           <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15">Hoạt động</Badge>

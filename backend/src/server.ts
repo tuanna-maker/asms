@@ -1,6 +1,7 @@
 import app from "./app";
 import { env } from "./config/env";
 import { seedAuthUsers } from "./config/seed-auth";
+import { seedDataDefinitions } from "./config/seed-definitions";
 import { ensureDefaultSystemSettings } from "./modules/system-settings/service";
 import { ensureRolePermissionsSeeded } from "./modules/role-permissions/service";
 import { ensureNotificationPreferencesForAllUsers } from "./modules/notification-preferences/service";
@@ -37,6 +38,7 @@ export async function startServer() {
     await seedAuthUsers();
   }
 
+  await seedDataDefinitions();
   await ensureDefaultSystemSettings();
   await ensureRolePermissionsSeeded();
   await ensureNotificationPreferencesForAllUsers();

@@ -1,7 +1,5 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
 
-import { HttpError } from "../../lib/errors/HttpError";
 import { zodParseOrThrow } from "../../lib/errors/zodParse";
 import { sendSuccess } from "../../lib/response";
 import { writeAudit } from "../../lib/audit";
@@ -11,43 +9,15 @@ import {
   listWarrantiesQuerySchema,
   updateWarrantySchema,
   warrantyIdParamSchema,
-  warrantyStatsQuerySchema,
 } from "./schema";
 
 import {
   createWarrantyService,
   getWarrantyDetailService,
   listWarrantiesService,
-  listWarrantyStatsService,
   softDeleteWarrantyService,
   updateWarrantyService,
 } from "./service";
-
-function parseWarrantyStatsTypes(input: unknown): ("warranty" | "repair" | "maintenance")[] | undefined {
-  if (input == null || input === "") return undefined;
-  const allowed = new Set<string>(["warranty", "repair", "maintenance"]);
-  if (Array.isArray(input)) {
-    const out = input.filter((t): t is "warranty" | "repair" | "maintenance" => typeof t === "string" && allowed.has(t));
-    return out.length ? out : undefined;
-  }
-  if (typeof input === "string") {
-    const parts = input.split(",").map((s) => s.trim()).filter(Boolean);
-    const out = parts.filter((p): p is "warranty" | "repair" | "maintenance" => allowed.has(p));
-    return out.length ? out : undefined;
-  }
-  return undefined;
-}
-
-export async function listWarrantyStatsController(req: Request, res: Response) {
-  const parsed = zodParseOrThrow(warrantyStatsQuerySchema, req.query);
-  const types = parseWarrantyStatsTypes(parsed.types);
-  const data = await listWarrantyStatsService({
-    from: parsed.from,
-    to: parsed.to,
-    ...(types && types.length > 0 ? { types } : {}),
-  });
-  return sendSuccess(res, data);
-}
 
 export async function listWarrantiesController(req: Request, res: Response) {
   const query = zodParseOrThrow(listWarrantiesQuerySchema, req.query);

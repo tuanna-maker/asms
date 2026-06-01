@@ -21,7 +21,7 @@ export const createWorkflowSchema = z.object({
   code: codeSchema.optional(),
   name: z.string().min(1).max(255),
   moduleKey: moduleKeySchema,
-  description: z.string().max(2000).optional(),
+  description: z.string().max(2000).nullable().optional(),
   isActive: z.coerce.boolean().optional(),
 });
 

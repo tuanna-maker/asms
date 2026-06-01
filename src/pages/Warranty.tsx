@@ -3,19 +3,15 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { api } from "@/lib/api";
-import { useWarrantiesList, type WarrantyListRow, useWarrantyStats } from "@/hooks/use-warranties-api";
+import { useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-api";
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
-import { cn } from "@/lib/utils";
 import { Plus, Search, Eye, Pencil, Inbox } from "lucide-react";
 import { useRole } from "@/hooks/use-role";
 import WarrantyDetailDialog, { type WarrantyTicketUi } from "@/components/details/WarrantyDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegments";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
@@ -48,23 +44,6 @@ function warrantyListErrorMessage(error: unknown): string {
   return "Không tải được danh sách phiếu. Kiểm tra kết nối hoặc quyền truy cập.";
 }
 
-function warrantyStatsErrorMessage(error: unknown): string {
-  if (isAxiosError(error)) {
-    const status = error.response?.status;
-    if (status === 403) return "Không có quyền xem thống kê.";
-    if (status === 401) return "Phiên đăng nhập hết hạn — vui lòng đăng nhập lại.";
-    const data = error.response?.data;
-    if (data && typeof data === "object" && "message" in data && typeof (data as { message: unknown }).message === "string") {
-      return (data as { message: string }).message;
-    }
-    if (status === 400) return "Tham số không hợp lệ (từ ngày / đến ngày / loại phiếu).";
-    if (status === 500) {
-      return "Lỗi máy chủ khi tính thống kê. Thường do chưa chạy migration thêm cột material_ids trên bảng warranties — chạy prisma migrate rồi thử lại.";
-    }
-  }
-  return "Không tải được thống kê. Kiểm tra kết nối hoặc thử lại sau.";
-}
-
 const typeBadge = (t: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
     warranty: { label: "Bảo hành", variant: "default" },
@@ -72,7 +51,11 @@ const typeBadge = (t: string) => {
     maintenance: { label: "Bảo trì", variant: "outline" },
   };
   const cfg = map[t] || map.maintenance;
-  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
+  return (
+    <Badge variant={cfg.variant} className="whitespace-nowrap">
+      {cfg.label}
+    </Badge>
+  );
 };
 
 function WarrantyListProgressPill({
@@ -102,6 +85,7 @@ function WarrantyListProgressPill({
       status={status}
       label={label}
       emphasis={emphasis}
+      className="max-w-[9.5rem] sm:max-w-[10.5rem]"
     />
   );
 }
@@ -133,36 +117,49 @@ function WarrantyTicketsTabContent({
   const pag = usePaginatedSlice(items, [tab, filtered]);
 
   return (
-    <TabsContent value={tab}>
-      <div className="rounded-lg border border-border/60 overflow-hidden">
+    <TabsContent value={tab} className="mt-3">
+      <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mã phiếu</TableHead>
-              <TableHead>Khách hàng</TableHead>
-              <TableHead>Thiết bị</TableHead>
-              <TableHead>Loại</TableHead>
-              <TableHead>Ưu tiên</TableHead>
-              <TableHead className="min-w-[200px] sm:min-w-[240px]">Tiến trình</TableHead>
-              <TableHead>Đơn vị xử lý</TableHead>
-              <TableHead>SLA</TableHead>
-              <TableHead className="text-right">Thao tác</TableHead>
+              <TableHead className="px-4 py-3">Mã phiếu</TableHead>
+              <TableHead className="px-4 py-3">Khách hàng</TableHead>
+              <TableHead className="px-4 py-3">Thiết bị</TableHead>
+              <TableHead className="px-4 py-3 min-w-[6.75rem] w-max whitespace-nowrap pr-8">Loại</TableHead>
+              <TableHead className="px-4 py-3 pl-8 w-[8.5rem] whitespace-nowrap">Ưu tiên</TableHead>
+              <TableHead className="px-4 py-3 w-[10.5rem] max-w-[10.5rem]">Tiến trình</TableHead>
+              <TableHead className="px-4 py-3">Đơn vị xử lý</TableHead>
+              <TableHead className="px-4 py-3 text-right w-28">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {!isLoading &&
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                  Đang tải danh sách…
+                </TableCell>
+              </TableRow>
+            ) : items.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                  {isError ? "Không tải được danh sách." : "Không có phiếu nào."}
+                </TableCell>
+              </TableRow>
+            ) : (
               pag.pagedItems.map((t) => (
                 <TableRow
                   key={t.apiId}
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => onOpenTicket(t, "view")}
                 >
-                  <TableCell className="font-medium text-primary">{t.code}</TableCell>
-                  <TableCell>{t.customer}</TableCell>
-                  <TableCell>{t.device}</TableCell>
-                  <TableCell>{typeBadge(t.type)}</TableCell>
-                  <TableCell>{priorityBadge(t.priority)}</TableCell>
-                  <TableCell className="align-top py-3">
+                  <TableCell className="px-4 py-3.5 font-medium text-primary">{t.code}</TableCell>
+                  <TableCell className="px-4 py-3.5">{t.customer}</TableCell>
+                  <TableCell className="px-4 py-3.5">{t.device}</TableCell>
+                  <TableCell className="px-4 py-3.5 min-w-[6.75rem] w-max whitespace-nowrap pr-8">
+                    {typeBadge(t.type)}
+                  </TableCell>
+                  <TableCell className="px-4 py-3.5 pl-8 w-[8.5rem]">{priorityBadge(t.priority)}</TableCell>
+                  <TableCell className="px-4 py-3.5 align-top w-[10.5rem] max-w-[10.5rem]">
                     {t.workflow ? (
                       <WarrantyListProgressPill
                         workflow={t.workflow}
@@ -174,11 +171,8 @@ function WarrantyTicketsTabContent({
                       <span className="text-xs text-muted-foreground">Chưa gắn quy trình</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{t.assignee}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{t.sla}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">{t.assignee}</TableCell>
+                  <TableCell className="px-4 py-3.5 text-right">
                     <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                       <Button
                         variant="ghost"
@@ -201,14 +195,12 @@ function WarrantyTicketsTabContent({
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ))
+            )}
           </TableBody>
         </Table>
+        <PaginatedTableFooter className="px-4 pb-4" {...pag.footerProps} disabled={isLoading} />
       </div>
-      {!isLoading && !isError && items.length === 0 && (
-        <p className="text-sm text-muted-foreground py-4 text-center">Không có phiếu nào.</p>
-      )}
-      {items.length > 0 && <PaginatedTableFooter className="mt-3" {...pag.footerProps} />}
     </TabsContent>
   );
 }
@@ -217,30 +209,6 @@ const Warranty = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useRole();
   const [search, setSearch] = useState("");
-  const [mainTab, setMainTab] = useState<"list" | "stats">("list");
-  const [statsFrom, setStatsFrom] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 89);
-    return d.toISOString().slice(0, 10);
-  });
-  const [statsTo, setStatsTo] = useState(() => new Date().toISOString().slice(0, 10));
-  const [statsTypeWarranty, setStatsTypeWarranty] = useState(true);
-  const [statsTypeRepair, setStatsTypeRepair] = useState(true);
-  const [statsTypeMaintenance, setStatsTypeMaintenance] = useState(false);
-
-  const statsTypesParam = useMemo(() => {
-    const t: string[] = [];
-    if (statsTypeWarranty) t.push("warranty");
-    if (statsTypeRepair) t.push("repair");
-    if (statsTypeMaintenance) t.push("maintenance");
-    if (t.length === 0 || t.length === 3) return undefined;
-    return t.join(",");
-  }, [statsTypeWarranty, statsTypeRepair, statsTypeMaintenance]);
-
-  const { data: statsData, isLoading: statsLoading, isError: statsError, error: statsErr } = useWarrantyStats(
-    { from: statsFrom, to: statsTo, types: statsTypesParam },
-    mainTab === "stats",
-  );
   const [showCreate, setShowCreate] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<WarrantyTicketUi | null>(null);
   const [detailMode, setDetailMode] = useState<"view" | "edit">("view");
@@ -288,7 +256,6 @@ const Warranty = () => {
         backendStatus: row.status,
         tabStatus: mapUiStatus(row.status),
         assignee: row.assignee?.fullName ?? "",
-        sla: row.slaHours != null ? `${row.slaHours}h` : "—",
         createdAt: formatISODate(row.createdAt),
       })),
     [warrantyRows],
@@ -327,16 +294,6 @@ const Warranty = () => {
     [tickets, search]
   );
 
-  const statLine = useMemo(() => {
-    const total = tickets.length;
-    const proc = tickets.filter((t) => t.tabStatus === "processing").length;
-    const done = tickets.filter((t) => t.tabStatus === "completed").length;
-    const wr = tickets.filter((t) => t.type === "warranty").length;
-    const rp = tickets.filter((t) => t.type === "repair").length;
-    const mt = tickets.filter((t) => t.type === "maintenance").length;
-    return { total, proc, done, wr, rp, mt };
-  }, [tickets]);
-
   const needsProcessingTickets = useMemo(
     () =>
       tickets.filter(
@@ -355,13 +312,6 @@ const Warranty = () => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={mainTab} onValueChange={(v) => setMainTab(v as "list" | "stats")} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="list">Danh sách phiếu</TabsTrigger>
-          <TabsTrigger value="stats">Thống kê</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="list" className="space-y-6 mt-4">
       {!isLoading && needsProcessingTickets.length > 0 ? (
       <div className="rounded-xl bg-card p-5 shadow-sm border border-border/50">
         <div className="flex items-center gap-2 mb-4">
@@ -418,168 +368,60 @@ const Warranty = () => {
       </div>
       ) : null}
 
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="relative flex-1 max-w-full sm:max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input placeholder="Tìm phiếu..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-            </div>
-            <Button
-              className="shrink-0"
-              onClick={() => {
-                setSelectedTicket(null);
-                setShowCreate(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Tạo phiếu
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Tổng <span className="font-medium text-foreground">{statLine.total}</span> phiếu · Đang xử lý{" "}
-            <span className="font-medium text-foreground">{statLine.proc}</span> · Hoàn thành{" "}
-            <span className="font-medium text-foreground">{statLine.done}</span>
-            <span className="hidden sm:inline">
-              {" "}
-              · BH / SC / BT: <span className="font-medium text-foreground">{statLine.wr}</span> /{" "}
-              <span className="font-medium text-foreground">{statLine.rp}</span> /{" "}
-              <span className="font-medium text-foreground">{statLine.mt}</span>
-            </span>
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="relative flex-1 max-w-full sm:max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Tìm phiếu..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          size="sm"
+          className="shrink-0 gap-1.5"
+          onClick={() => {
+            setSelectedTicket(null);
+            setShowCreate(true);
+          }}
+        >
+          <Plus className="h-4 w-4" />
+          Tạo phiếu
+        </Button>
+      </div>
 
-          {isError && <p className="text-sm text-destructive">{warrantyListErrorMessage(error)}</p>}
-          {isLoading && !isError && <p className="text-sm text-muted-foreground">Đang tải danh sách…</p>}
+      {isError ? (
+        <p className="text-sm text-destructive" role="alert">
+          {warrantyListErrorMessage(error)}
+        </p>
+      ) : null}
 
-          <Tabs defaultValue="all">
-            <TabsList>
-              <TabsTrigger value="all">Tất cả ({tickets.length})</TabsTrigger>
-              <TabsTrigger value="processing">Đang xử lý ({tickets.filter((t) => t.tabStatus === "processing").length})</TabsTrigger>
-              <TabsTrigger value="completed">Hoàn thành ({tickets.filter((t) => t.tabStatus === "completed").length})</TabsTrigger>
-            </TabsList>
+      <Tabs defaultValue="all">
+        <TabsList>
+          <TabsTrigger value="all">Tất cả ({tickets.length})</TabsTrigger>
+          <TabsTrigger value="processing">
+            Đang xử lý ({tickets.filter((t) => t.tabStatus === "processing").length})
+          </TabsTrigger>
+          <TabsTrigger value="completed">
+            Hoàn thành ({tickets.filter((t) => t.tabStatus === "completed").length})
+          </TabsTrigger>
+        </TabsList>
 
-            {["all", "processing", "completed"].map((tab) => (
-              <WarrantyTicketsTabContent
-                key={tab}
-                tab={tab}
-                filtered={filtered}
-                isLoading={isLoading}
-                isError={isError}
-                onOpenTicket={(t, mode) => {
-                  setShowCreate(false);
-                  setDetailMode(mode);
-                  setSelectedTicket(t);
-                }}
-              />
-            ))}
-          </Tabs>
-        </CardContent>
-      </Card>
-        </TabsContent>
-
-        <TabsContent value="stats" className="mt-4 space-y-4">
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-end">
-                <div className="space-y-1">
-                  <Label htmlFor="wst-from">Từ ngày (createdAt)</Label>
-                  <Input id="wst-from" type="date" value={statsFrom} onChange={(e) => setStatsFrom(e.target.value)} className="w-[11rem]" />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="wst-to">Đến ngày</Label>
-                  <Input id="wst-to" type="date" value={statsTo} onChange={(e) => setStatsTo(e.target.value)} className="w-[11rem]" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Loại phiếu</Label>
-                  <div className="flex flex-wrap gap-3 items-center text-sm">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox checked={statsTypeWarranty} onCheckedChange={(c) => setStatsTypeWarranty(c === true)} />
-                      Bảo hành
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox checked={statsTypeRepair} onCheckedChange={(c) => setStatsTypeRepair(c === true)} />
-                      Sửa chữa
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox checked={statsTypeMaintenance} onCheckedChange={(c) => setStatsTypeMaintenance(c === true)} />
-                      Bảo trì
-                    </label>
-                  </div>
-                </div>
-              </div>
-              {statsError && <p className="text-sm text-destructive">{warrantyStatsErrorMessage(statsErr)}</p>}
-              {statsLoading && !statsError && <p className="text-sm text-muted-foreground">Đang tải thống kê…</p>}
-              {!statsLoading && !statsError && statsData && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Thiết bị hay ghi nhận nhất</h3>
-                    <div className="rounded-lg border border-border/60 overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Mã / tên</TableHead>
-                            <TableHead className="text-right w-24">Số phiếu</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {statsData.topProducts.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={2} className="text-muted-foreground text-sm">
-                                Không có dữ liệu (cần phiếu có gắn thiết bị).
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            statsData.topProducts.map((r) => (
-                              <TableRow key={r.productId}>
-                                <TableCell>
-                                  <div className="font-medium">{r.name || "—"}</div>
-                                  <div className="text-xs text-muted-foreground">{r.code}</div>
-                                </TableCell>
-                                <TableCell className="text-right tabular-nums">{r.ticketCount}</TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-semibold">Vật tư được ghi nhận nhiều nhất</h3>
-                    <div className="rounded-lg border border-border/60 overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Mã / tên</TableHead>
-                            <TableHead className="text-right w-24">Lần ghi</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {statsData.topMaterials.length === 0 ? (
-                            <TableRow>
-                              <TableCell colSpan={2} className="text-muted-foreground text-sm">
-                                Không có dữ liệu (cần phiếu có chọn vật tư BOM).
-                              </TableCell>
-                            </TableRow>
-                          ) : (
-                            statsData.topMaterials.map((r) => (
-                              <TableRow key={r.materialId}>
-                                <TableCell>
-                                  <div className="font-medium">{r.name || "—"}</div>
-                                  <div className="text-xs text-muted-foreground">{r.code}</div>
-                                </TableCell>
-                                <TableCell className="text-right tabular-nums">{r.ticketCount}</TableCell>
-                              </TableRow>
-                            ))
-                          )}
-                        </TableBody>
-                      </Table>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {["all", "processing", "completed"].map((tab) => (
+          <WarrantyTicketsTabContent
+            key={tab}
+            tab={tab}
+            filtered={filtered}
+            isLoading={isLoading}
+            isError={isError}
+            onOpenTicket={(t, mode) => {
+              setShowCreate(false);
+              setDetailMode(mode);
+              setSelectedTicket(t);
+            }}
+          />
+        ))}
       </Tabs>
 
       <WarrantyDetailDialog

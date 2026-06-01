@@ -251,8 +251,17 @@ export function pickWarrantyHeaderFromStepPayloads(
 } {
   const out: ReturnType<typeof pickWarrantyHeaderFromStepPayloads> = {};
 
+  for (const step of steps) {
+    const raw = payloads[step.id]?.issue;
+    if (raw == null) continue;
+    const trimmed = String(raw).trim();
+    if (trimmed) {
+      out.issue = trimmed;
+      break;
+    }
+  }
+
   const p0 = payloads[steps[0]?.id ?? ""] ?? {};
-  if (p0.issue != null) out.issue = String(p0.issue).trim();
   if (p0.type != null) out.type = String(p0.type);
   if (p0.priorityCode != null) out.priorityCode = String(p0.priorityCode);
   if (p0.statusCode != null) out.statusCode = String(p0.statusCode);
@@ -324,6 +333,29 @@ export function pickWarrantyHeaderFromStepPayloads(
 }
 
 export type WarrantyHeaderFromPayloads = ReturnType<typeof pickWarrantyHeaderFromStepPayloads>;
+
+const ISSUE_PAYLOAD_KEYS = ["issue", "mo_ta_su_co", "moTaSuCo", "description", "problemDescription"] as const;
+
+/** Mô tả sự cố: state header + mọi bước (key `issue` hoặc alias thường gặp). */
+export function resolveWarrantyIssueText(
+  steps: Array<{ id: string }>,
+  payloads: WarrantyStepPayloadRecord,
+  fallbackIssue = "",
+): string {
+  const fromState = fallbackIssue.trim();
+  if (fromState) return fromState;
+  for (const step of steps) {
+    const row = payloads[step.id];
+    if (!row) continue;
+    for (const key of ISSUE_PAYLOAD_KEYS) {
+      const raw = row[key];
+      if (raw == null) continue;
+      const trimmed = String(raw).trim();
+      if (trimmed) return trimmed;
+    }
+  }
+  return "";
+}
 
 /** Map header trích từ bước → payload cột legacy warranty (buildBhPayload). */
 export function buildBhPayloadFromStepHeader(h: WarrantyHeaderFromPayloads) {

@@ -53,7 +53,7 @@ import { getModuleStandardStepCount, getModuleStandardSteps } from "@/lib/workfl
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
   warranty: "Bảo hành",
-  training: "ĝào tạo",
+  training: "Đào tạo",
   coaching: "Huấn luyện",
   contract: "Hợp đồng",
   product: "Sản phẩm",
@@ -180,7 +180,7 @@ const WorkflowEditorPage = () => {
           isActive: form.isActive,
         },
       });
-      toast.success("ĝã lưu quy trình");
+      toast.success("Đã lưu quy trình");
     } catch (e) {
       toast.error(errMessage(e));
     }
@@ -190,10 +190,10 @@ const WorkflowEditorPage = () => {
     try {
       if (editingStep) {
         await updateStep.mutateAsync({ workflowId, stepId: editingStep.id, payload });
-        toast.success("ĝã cập nhật bước");
+        toast.success("Đã cập nhật bước");
       } else {
         await addStep.mutateAsync({ workflowId, payload });
-        toast.success("ĝã thêm bước");
+        toast.success("Đã thêm bước");
       }
       setStepDialogOpen(false);
       setEditingStep(null);
@@ -206,7 +206,7 @@ const WorkflowEditorPage = () => {
     if (!deletingStep) return;
     try {
       await deleteStep.mutateAsync({ workflowId, stepId: deletingStep.id });
-      toast.success("ĝã xoá bước");
+      toast.success("Đã xoá bước");
       setDeletingStep(null);
     } catch (e) {
       toast.error(errMessage(e));
@@ -233,7 +233,7 @@ const WorkflowEditorPage = () => {
           },
         });
       }
-      toast.success(`ĝã tạo ${standard.length} bước chuẩn (kèm trường nhập từ màn nghiệp vụ)`);
+      toast.success(`Đã tạo ${standard.length} bước chuẩn (kèm trường nhập từ màn nghiệp vụ)`);
     } catch (e) {
       toast.error(errMessage(e));
     } finally {
@@ -300,7 +300,7 @@ const WorkflowEditorPage = () => {
           {canWrite ? (
             <Button onClick={() => void submitWorkflow()} disabled={submitting}>
               <Save className="mr-1 h-4 w-4" />
-              {submitting ? "ĝang lưu…" : "Cập nhật quy trình"}
+              {submitting ? "Đang lưu…" : "Cập nhật quy trình"}
             </Button>
           ) : null}
         </div>
@@ -391,7 +391,7 @@ const WorkflowEditorPage = () => {
                     disabled={creatingStandardSteps || addStep.isPending}
                     onClick={() => void createStandardSteps()}
                   >
-                    {creatingStandardSteps ? "ĝang tạo…" : `Tạo ${standardStepCount} bước chuẩn`}
+                    {creatingStandardSteps ? "Đang tạo…" : `Tạo ${standardStepCount} bước chuẩn`}
                   </Button>
                 ) : null}
                 <Button
@@ -411,11 +411,11 @@ const WorkflowEditorPage = () => {
           <div className="space-y-3">
             <div className="flex justify-center">
               <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-white shadow-sm">
-                ◝ BẮT ĝẦU
+                ◝ BẮT ĐẦU
               </span>
             </div>
             {isLoading ? (
-              <p className="py-6 text-center text-sm text-muted-foreground">ĝang tải các bước…</p>
+              <p className="py-6 text-center text-sm text-muted-foreground">Đang tải các bước…</p>
             ) : steps.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 Chưa có bước nào.
@@ -494,7 +494,7 @@ const WorkflowEditorPage = () => {
               }}
               disabled={deleteStep.isPending}
             >
-              {deleteStep.isPending ? "ĝang xoá…" : "Xoá"}
+              {deleteStep.isPending ? "Đang xoá…" : "Xoá"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -118,16 +118,17 @@ export function StepUpsertDialog({
       toast.error(`Mã trường bị trùng: ${duplicateKeys.join(", ")}`);
       return;
     }
-    await onSubmit({
+    const payload: UpsertStepPayload = {
       name: nm,
       actionCode: initial?.actionCode ?? "approve",
       roleCode,
       assigneeIds,
-      description: null,
       phaseCode: initial?.phaseCode ?? defaultPhaseForModule(moduleKey),
       requireDocument,
       fieldSchema: cleanedSchema.length > 0 ? cleanedSchema : null,
-    });
+    };
+    if (initial?.description) payload.description = initial.description;
+    await onSubmit(payload);
   };
 
   const title = initial ? `Sửa bước: ${initial.name}` : "Thêm bước mới";

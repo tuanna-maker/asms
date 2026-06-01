@@ -54,12 +54,3 @@ export const listWarrantiesQuerySchema = z.object({
   customerId: z.string().optional(),
   productId: z.string().optional(),
 });
-
-export const warrantyStatsQuerySchema = z.object({
-  from: z.coerce.date(),
-  to: z.coerce.date(),
-  /** Lọc loại phiếu; mặc định FE gửi warranty,repair */
-  types: z
-    .union([z.string(), z.array(z.enum(["warranty", "repair", "maintenance"]))])
-    .optional(),
-});

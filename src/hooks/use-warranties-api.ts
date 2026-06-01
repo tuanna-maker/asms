@@ -153,21 +153,3 @@ export function useDeleteWarranty() {
     },
   });
 }
-
-export type WarrantyStatsResponse = {
-  topProducts: Array<{ productId: string; ticketCount: number; code: string; name: string }>;
-  topMaterials: Array<{ materialId: string; ticketCount: number; code: string; name: string }>;
-};
-
-export function useWarrantyStats(params: { from: string; to: string; types?: string }, enabled = true) {
-  return useQuery({
-    queryKey: [...qk.warranties.all, "stats", params.from, params.to, params.types ?? "all"],
-    enabled,
-    queryFn: async () => {
-      const sp = new URLSearchParams({ from: params.from, to: params.to });
-      if (params.types) sp.set("types", params.types);
-      const res = await api.get<ApiSuccess<WarrantyStatsResponse>>(`/api/v1/warranties/stats?${sp.toString()}`);
-      return res.data.data ?? { topProducts: [], topMaterials: [] };
-    },
-  });
-}

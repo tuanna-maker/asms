@@ -13,12 +13,10 @@ import {
   Tags,
   Warehouse,
   Ruler,
-  Workflow,
   CircleDot,
   ListChecks,
   Package,
   ArrowLeftRight,
-  Gauge,
   Shield,
   Layers,
 } from "lucide-react";
@@ -33,8 +31,7 @@ export type AttributeModuleKey =
   | "de-tai"
   | "cong-viec"
   | "dao-tao"
-  | "tai-lieu"
-  | "quy-trinh";
+  | "tai-lieu";
 
 export type AttributeRowStatus = "active" | "inactive";
 
@@ -61,6 +58,15 @@ export type AttributeSectionDef = {
   definitionCategory?: string;
 };
 
+/** Danh mục chỉ dùng nội bộ (seed), không chỉnh trên màn Thuộc tính. */
+export const SYSTEM_MANAGED_DEFINITION_CATEGORIES = new Set([
+  "contract_status",
+  "product_status",
+  "handover_status",
+  "workflow_step_action",
+  "workflow_phase",
+]);
+
 export type AttributeModuleDef = {
   key: AttributeModuleKey;
   label: string;
@@ -82,15 +88,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         iconClassName: "bg-blue-500/15 text-blue-600",
         dataSource: "definitions",
         definitionCategory: "contract_type",
-      },
-      {
-        id: "contract_status",
-        title: "Trạng thái hợp đồng",
-        description: "Giá trị trạng thái trên danh sách / chi tiết hợp đồng (khớp mã lưu trong hệ thống).",
-        icon: CircleDot,
-        iconClassName: "bg-violet-500/15 text-violet-600",
-        dataSource: "definitions",
-        definitionCategory: "contract_status",
       },
       {
         id: "contract_clause_groups",
@@ -122,15 +119,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         iconClassName: "bg-orange-500/15 text-orange-600",
         dataSource: "definitions",
         definitionCategory: "handover_type",
-      },
-      {
-        id: "handover_status",
-        title: "Trạng thái phiếu bàn giao",
-        description: "Trạng thái tiến độ phiếu bàn giao trên màn Bàn giao.",
-        icon: ListChecks,
-        iconClassName: "bg-amber-500/15 text-amber-700",
-        dataSource: "definitions",
-        definitionCategory: "handover_status",
       },
     ],
   },
@@ -179,15 +167,6 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
         iconClassName: "bg-sky-500/15 text-sky-600",
         dataSource: "definitions",
         definitionCategory: "product_category",
-      },
-      {
-        id: "product_status",
-        title: "Trạng thái sản phẩm",
-        description: "Trạng thái vòng đời sản phẩm trên danh mục / lọc.",
-        icon: Gauge,
-        iconClassName: "bg-emerald-500/15 text-emerald-700",
-        dataSource: "definitions",
-        definitionCategory: "product_status",
       },
     ],
   },
@@ -353,35 +332,24 @@ export const ATTRIBUTE_MODULES: AttributeModuleDef[] = [
       },
     ],
   },
-  {
-    key: "quy-trinh",
-    label: "Quy trình",
-    sections: [
-      {
-        id: "workflow_step_action",
-        title: "Hành động bước quy trình",
-        description: "Mã hành động khi cấu hình bước (trình ký, ký duyệt…).",
-        icon: Workflow,
-        iconClassName: "bg-purple-500/15 text-purple-700",
-        dataSource: "definitions",
-        definitionCategory: "workflow_step_action",
-      },
-      {
-        id: "workflow_phase",
-        title: "Giai đoạn bước quy trình",
-        description: "Mã giai đoạn (bàn giao, huấn luyện, bảo hành…) trong biên tập quy trình.",
-        icon: Layers,
-        iconClassName: "bg-violet-500/15 text-violet-800",
-        dataSource: "definitions",
-        definitionCategory: "workflow_phase",
-      },
-    ],
-  },
 ];
+
+export function getVisibleAttributeSections(module: AttributeModuleDef): AttributeSectionDef[] {
+  return module.sections.filter(
+    (s) => !s.definitionCategory || !SYSTEM_MANAGED_DEFINITION_CATEGORIES.has(s.definitionCategory),
+  );
+}
+
+export const ATTRIBUTE_MODULES_FOR_SETTINGS = ATTRIBUTE_MODULES.map((mod) => ({
+  ...mod,
+  sections: getVisibleAttributeSections(mod),
+})).filter((mod) => mod.sections.length > 0);
 
 /** Tất cả nhóm danh mục dùng trong Cài đặt → Thuộc tính (cho FieldSchemaBuilder, v.v.). */
 export const ALL_DEFINITION_CATEGORIES = ATTRIBUTE_MODULES.flatMap((m) =>
-  m.sections.map((s) => s.definitionCategory ?? s.id),
+  getVisibleAttributeSections(m)
+    .map((s) => s.definitionCategory ?? s.id)
+    .filter((c) => !SYSTEM_MANAGED_DEFINITION_CATEGORIES.has(c)),
 ).sort();
 
 export const DEFAULT_ATTRIBUTE_MODULE_KEY: AttributeModuleKey = "hop-dong";

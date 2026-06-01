@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -41,7 +41,9 @@ import {
   buildBhPayloadFromStepHeader,
   buildStepPayloadsFromForm,
   initWarrantyStepPayloads,
+  mergeWarrantyFormIntoStepPayloads,
   pickWarrantyHeaderFromStepPayloads,
+  resolveWarrantyIssueText,
   stepTabLabel,
   type WarrantyFormSnapshot,
   type WarrantyStepPayloadRecord,
@@ -65,7 +67,6 @@ export type WarrantyTicketUi = {
   tabStatus: "processing" | "completed";
   backendStatus: "open" | "processing" | "completed" | "cancelled";
   assignee: string;
-  sla: string;
   createdAt: string;
   /** Snapshot tiến độ từ API danh sách (khi có workflowInstanceId) */
   workflow?: WorkflowInstanceListSnapshot | null;
@@ -180,6 +181,9 @@ const WarrantyDetailDialog = ({
   const [warrantyFormTab, setWarrantyFormTab] = useState("1");
   const [genericNotesByStepId, setGenericNotesByStepId] = useState<Record<string, string>>({});
   const [stepPayloads, setStepPayloads] = useState<WarrantyStepPayloadRecord>({});
+  const stepPayloadsRef = useRef(stepPayloads);
+  const issueRef = useRef("");
+  const stepPayloadsInitKeyRef = useRef<string | null>(null);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState("");
 
   const { data: warrantyWorkflows = [] } = useWorkflowsList("warranty", { enabled: open });
@@ -250,6 +254,9 @@ const WarrantyDetailDialog = ({
     setHandoverNotes("");
     setGenericNotesByStepId({});
     setStepPayloads({});
+    stepPayloadsRef.current = {};
+    issueRef.current = "";
+    stepPayloadsInitKeyRef.current = null;
   }
 
   function handleWorkflowSelect(workflowId: string) {
@@ -287,11 +294,23 @@ const WarrantyDetailDialog = ({
     }
   };
 
+  stepPayloadsRef.current = stepPayloads;
+  issueRef.current = issue;
+
   const patchStepPayload = (stepId: string, key: string, value: unknown) => {
-    setStepPayloads((prev) => ({
-      ...prev,
-      [stepId]: { ...(prev[stepId] ?? {}), [key]: value },
-    }));
+    if (key === "issue") {
+      const text = value == null ? "" : String(value);
+      issueRef.current = text;
+      setIssue(text);
+    }
+    setStepPayloads((prev) => {
+      const next = {
+        ...prev,
+        [stepId]: { ...(prev[stepId] ?? {}), [key]: value },
+      };
+      stepPayloadsRef.current = next;
+      return next;
+    });
   };
 
   const [receiptCategory, setReceiptCategory] = useState<string>("incident");
@@ -414,17 +433,34 @@ const WarrantyDetailDialog = ({
   }, [contractDetail?.workflowId, contractId, isCreateMode, open]);
 
   useEffect(() => {
-    if (!open || stepsForTabs.length === 0) return;
+    if (!open) {
+      stepPayloadsInitKeyRef.current = null;
+      return;
+    }
+    if (stepsForTabs.length === 0) return;
+
+    const initKey = isCreateMode
+      ? `create:${selectedWorkflowId}:${stepsForTabs.map((s) => s.id).join("|")}`
+      : `edit:${ticket?.apiId ?? ""}:${stepsForTabs.map((s) => s.id).join("|")}`;
+
+    if (stepPayloadsInitKeyRef.current === initKey) return;
+    stepPayloadsInitKeyRef.current = initKey;
+
     const payloads = detail?.stepPayloads
       ? initWarrantyStepPayloads(stepsForTabs, detail.stepPayloads)
       : isCreateMode && selectedWorkflowId
         ? initWarrantyStepPayloads(stepsForTabs)
         : null;
     if (!payloads) return;
+
+    stepPayloadsRef.current = payloads;
     setStepPayloads(payloads);
     if (showDynamicTabs) {
       applyWarrantyPayloadsToFormState(stepsForTabs, payloads, {
-        setIssue,
+        setIssue: (v) => {
+          issueRef.current = v;
+          setIssue(v);
+        },
         setReceiptCategory,
         setOccurredAtLocal,
         setProductSerialSnapshot,
@@ -446,7 +482,7 @@ const WarrantyDetailDialog = ({
         setHandoverNotes,
       });
     }
-  }, [open, detail?.stepPayloads, stepsForTabs, isCreateMode, selectedWorkflowId, showDynamicTabs]);
+  }, [open, detail?.stepPayloads, stepsForTabs, isCreateMode, selectedWorkflowId, showDynamicTabs, ticket?.apiId]);
 
   const displayStatus = status === "completed" ? "completed" : status === "cancelled" ? "completed" : "processing";
 
@@ -523,11 +559,20 @@ const WarrantyDetailDialog = ({
   }
 
   const handleSave = async () => {
+    const payloadsLive = stepPayloadsRef.current;
+    const formAtSave: WarrantyFormSnapshot = { ...formSnapshot, issue: issueRef.current };
+    const payloadsMerged =
+      showDynamicTabs && stepsForTabs.length > 0
+        ? mergeWarrantyFormIntoStepPayloads(stepsForTabs, payloadsLive, formAtSave)
+        : payloadsLive;
+    stepPayloadsRef.current = payloadsMerged;
+
     const useDynamicStepPayload =
-      showDynamicTabs && stepsForTabs.length > 0 && Object.keys(stepPayloads).length > 0;
+      showDynamicTabs && stepsForTabs.length > 0 && Object.keys(payloadsMerged).length > 0;
     const headerFromSteps = useDynamicStepPayload
-      ? pickWarrantyHeaderFromStepPayloads(stepsForTabs, stepPayloads)
+      ? pickWarrantyHeaderFromStepPayloads(stepsForTabs, payloadsMerged)
       : null;
+    const issueToSave = resolveWarrantyIssueText(stepsForTabs, payloadsMerged, issueRef.current);
 
     if (isCreateMode) {
       if (!customerId) {
@@ -538,7 +583,6 @@ const WarrantyDetailDialog = ({
         toast.error("Vui lòng chọn quy trình áp dụng");
         return;
       }
-      const issueToSave = (headerFromSteps?.issue ?? issue).trim();
       if (!issueToSave) {
         toast.error("Vui lòng mô tả sự cố");
         return;
@@ -569,7 +613,7 @@ const WarrantyDetailDialog = ({
           ...(stepsForTabs.length > 0
             ? {
                 stepPayloads: useDynamicStepPayload
-                  ? stepPayloads
+                  ? payloadsMerged
                   : buildStepPayloadsFromForm(
                       stepsForTabs.map((s) => s.id),
                       formSnapshot,
@@ -594,7 +638,7 @@ const WarrantyDetailDialog = ({
           contractId: contractId === NO_CONTRACT ? null : contractId,
           productId: productId === NO_PRODUCT ? null : productId,
           materialIds: productId === NO_PRODUCT ? [] : selectedMaterialIds,
-          issue: headerFromSteps?.issue ?? issue,
+          issue: issueToSave,
           priorityCode: headerFromSteps?.priorityCode ?? priority,
           type: (headerFromSteps?.type ?? type) as "warranty" | "repair" | "maintenance",
           source:
@@ -613,7 +657,7 @@ const WarrantyDetailDialog = ({
           ...(hasEngineSteps && stepsForTabs.length > 0
             ? {
                 stepPayloads: useDynamicStepPayload
-                  ? stepPayloads
+                  ? payloadsMerged
                   : buildStepPayloadsFromForm(
                       stepsForTabs.map((s) => s.id),
                       formSnapshot,

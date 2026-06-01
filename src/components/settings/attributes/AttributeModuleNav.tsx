@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { ATTRIBUTE_MODULES, attributeModulePath, type AttributeModuleKey } from "@/lib/attribute-settings-config";
+import {
+  ATTRIBUTE_MODULES_FOR_SETTINGS,
+  attributeModulePath,
+  type AttributeModuleKey,
+} from "@/lib/attribute-settings-config";
 
 type AttributeModuleNavProps = {
   activeKey: AttributeModuleKey;
@@ -14,7 +18,7 @@ export function AttributeModuleNav({ activeKey }: AttributeModuleNavProps) {
         <p className="text-xs text-muted-foreground">Chọn nhóm tương ứng menu chính</p>
       </div>
       <ul className="max-h-[min(70vh,560px)] overflow-y-auto p-2">
-        {ATTRIBUTE_MODULES.map((mod) => (
+        {ATTRIBUTE_MODULES_FOR_SETTINGS.map((mod) => (
           <li key={mod.key}>
             <NavLink
               to={attributeModulePath(mod.key)}
