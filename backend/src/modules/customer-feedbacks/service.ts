@@ -332,14 +332,21 @@ export async function createCustomerFeedbackService(
     contractId = contract.id;
   }
 
-  const linkageInputs = payload.linkageItems ?? [];
+  const linkageInputs = (payload.linkageItems ?? []).map((item) => {
+    const normalized: { productId: string; materialId?: string | null } = { productId: item.productId };
+    if (item.materialId !== undefined) normalized.materialId = item.materialId;
+    return normalized;
+  });
   const linkageItems = await enrichAndValidateLinkageItems(
     customerId,
     contractId,
     linkageInputs,
   );
 
-  const assignee = await validateAndNormalizeAssignee(payload.assignee);
+  const assigneeInput: FeedbackAssigneeInput = { type: payload.assignee.type };
+  if (payload.assignee.userId !== undefined) assigneeInput.userId = payload.assignee.userId;
+  if (payload.assignee.roleCode !== undefined) assigneeInput.roleCode = payload.assignee.roleCode;
+  const assignee = await validateAndNormalizeAssignee(assigneeInput);
   const slaDueAt = computeSlaDueAt("medium", payload.feedbackAt);
   const intake = payload.intake ?? {};
 
@@ -377,22 +384,24 @@ export async function createCustomerFeedbackService(
 
   const assigneeUserIds = await resolveUserIdsForAssignee(assignee);
   if (assigneeUserIds.length > 0) {
-    await notifyFeedbackUsers(assigneeUserIds, {
+    const notifyInput: Parameters<typeof notifyFeedbackUsers>[1] = {
       key: "feedback_assigned",
       title: `Phản ánh được phân công: ${row.title}`,
-      message: row.customer?.name ? `Khách hàng ${row.customer.name}` : undefined,
       feedbackId: row.id,
-    });
+    };
+    if (row.customer?.name) notifyInput.message = `Khách hàng ${row.customer.name}`;
+    await notifyFeedbackUsers(assigneeUserIds, notifyInput);
   }
 
-  await notifyByPreference({
+  const prefInput: Parameters<typeof notifyByPreference>[0] = {
     key: "feedback_new",
     title: `Phản ánh mới: ${row.title}`,
-    message: row.customer?.name ? `Khách hàng ${row.customer.name}` : undefined,
-      link: `/phan-anh/${row.id}`,
+    link: `/phan-anh/${row.id}`,
     refType: "customer_feedback",
     refId: row.id,
-  }).catch((e) => {
+  };
+  if (row.customer?.name) prefInput.message = `Khách hàng ${row.customer.name}`;
+  await notifyByPreference(prefInput).catch((e) => {
     // eslint-disable-next-line no-console
     console.error("[notify] feedback_new failed", e);
   });
@@ -464,11 +473,15 @@ export async function updateCustomerFeedbackService(
   }
 
   if (payload.linkageItems !== undefined) {
-    const inputs = Array.isArray(payload.linkageItems) ? payload.linkageItems : [];
+    const inputs = (Array.isArray(payload.linkageItems) ? payload.linkageItems : []).map((item) => {
+      const normalized: { productId: string; materialId?: string | null } = { productId: item.productId };
+      if (item.materialId !== undefined) normalized.materialId = item.materialId;
+      return normalized;
+    });
     const enriched = await enrichAndValidateLinkageItems(
       customerId,
       resolvedContractId ?? null,
-      inputs as { productId: string; materialId?: string | null }[],
+      inputs,
     );
     data.linkageItems = enriched as unknown as Prisma.InputJsonValue;
     if (enriched.length > 0 && resolvedContractId == null) {
@@ -515,12 +528,13 @@ export async function updateCustomerFeedbackService(
   if (assigneeChanged && newAssignee) {
     const assigneeUserIds = await resolveUserIdsForAssignee(newAssignee);
     if (assigneeUserIds.length > 0) {
-      await notifyFeedbackUsers(assigneeUserIds, {
+      const notifyInput: Parameters<typeof notifyFeedbackUsers>[1] = {
         key: "feedback_assigned",
         title: `Phản ánh được phân công: ${existing.title}`,
-        message: existing.customer?.name ? `Khách hàng ${existing.customer.name}` : undefined,
         feedbackId: resolvedId,
-      });
+      };
+      if (existing.customer?.name) notifyInput.message = `Khách hàng ${existing.customer.name}`;
+      await notifyFeedbackUsers(assigneeUserIds, notifyInput);
     }
   }
 

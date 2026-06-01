@@ -38,18 +38,18 @@ export async function notifyFeedbackUsers(
   },
 ) {
   const link = `/phan-anh/${input.feedbackId}`;
+  const notificationInput: Omit<Parameters<typeof createNotificationForUser>[0], "userId"> = {
+    key: input.key,
+    title: input.title,
+    link,
+    refType: "customer_feedback",
+    refId: input.feedbackId,
+  };
+  if (input.message !== undefined) notificationInput.message = input.message;
   for (const userId of userIds) {
     const enabled = await isNotificationEnabledForUser(userId, input.key);
     if (!enabled) continue;
-    await createNotificationForUser({
-      userId,
-      key: input.key,
-      title: input.title,
-      message: input.message,
-      link,
-      refType: "customer_feedback",
-      refId: input.feedbackId,
-    }).catch(() => undefined);
+    await createNotificationForUser({ userId, ...notificationInput }).catch(() => undefined);
   }
 }
 

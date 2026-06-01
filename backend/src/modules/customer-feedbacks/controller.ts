@@ -58,12 +58,13 @@ export async function linkageOptionsController(req: Request, res: Response) {
       : query.contractId
         ? [query.contractId]
         : undefined;
-  const data = await getFeedbackLinkageOptionsService({
+  const input: Parameters<typeof getFeedbackLinkageOptionsService>[0] = {
     customerId: query.customerId,
-    contractIds,
-    productIds: query.productIds,
-    materialIds: query.materialIds,
-  });
+  };
+  if (contractIds !== undefined) input.contractIds = contractIds;
+  if (query.productIds !== undefined) input.productIds = query.productIds;
+  if (query.materialIds !== undefined) input.materialIds = query.materialIds;
+  const data = await getFeedbackLinkageOptionsService(input);
   return sendSuccess(res, data);
 }
 
@@ -81,7 +82,16 @@ export async function feedbackSummaryController(req: Request, res: Response) {
 }
 
 function parseAnalyticsFilters(req: Request) {
-  return zodParseOrThrow(feedbackAnalyticsQuerySchema, req.query);
+  const raw = zodParseOrThrow(feedbackAnalyticsQuerySchema, req.query);
+  const filters: Parameters<typeof getFeedbackAnalyticsByCustomerService>[0] = {};
+  if (raw.year !== undefined) filters.year = raw.year;
+  if (raw.from !== undefined) filters.from = raw.from;
+  if (raw.to !== undefined) filters.to = raw.to;
+  if (raw.customerId !== undefined) filters.customerId = raw.customerId;
+  if (raw.contractId !== undefined) filters.contractId = raw.contractId;
+  if (raw.status !== undefined) filters.status = raw.status;
+  if (raw.limit !== undefined) filters.limit = raw.limit;
+  return filters;
 }
 
 export async function feedbackAnalyticsByCustomerController(req: Request, res: Response) {
@@ -179,12 +189,12 @@ export async function updateAssignmentController(req: Request, res: Response) {
   const payload = zodParseOrThrow(updateAssignmentSchema, req.body);
   const viewer = viewerFromReq(req);
   if (!viewer.userId) throw new HttpError(401, "Unauthorized");
-  const data = await updateAssignmentService(
-    assignmentId,
-    viewer.userId,
-    viewer.roleCode,
-    payload,
-  );
+  const input: Parameters<typeof updateAssignmentService>[3] = {};
+  if (payload.status !== undefined) input.status = payload.status;
+  if (payload.responseNote !== undefined && payload.responseNote !== null) {
+    input.responseNote = payload.responseNote;
+  }
+  const data = await updateAssignmentService(assignmentId, viewer.userId, viewer.roleCode, input);
   return sendSuccess(res, data, "Đã cập nhật");
 }
 
@@ -202,10 +212,11 @@ export async function closeFeedbackController(req: Request, res: Response) {
   const body = zodParseOrThrow(closeFeedbackSchema, req.body);
   const viewer = viewerFromReq(req);
   if (!viewer.userId) throw new HttpError(401, "Unauthorized");
-  const data = await closeFeedbackServiceWrapped(id, viewer.userId, viewer.roleCode, {
+  const input: Parameters<typeof closeFeedbackServiceWrapped>[3] = {
     customerVerified: body.customerVerified,
-    note: body.note ?? undefined,
-  });
+  };
+  if (body.note !== undefined && body.note !== null) input.note = body.note;
+  const data = await closeFeedbackServiceWrapped(id, viewer.userId, viewer.roleCode, input);
   return sendSuccess(res, data, "Đã đóng phản ánh");
 }
 

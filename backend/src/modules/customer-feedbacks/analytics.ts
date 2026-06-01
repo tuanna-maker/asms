@@ -410,7 +410,11 @@ export async function getFeedbackAnalyticsCustomerDetailService(
     };
   });
 
-  const c = rows[0].customer!;
+  const firstRow = rows[0];
+  if (!firstRow?.customer) {
+    throw new HttpError(404, "Không tìm thấy khách hàng");
+  }
+  const c = firstRow.customer;
   return {
     customer: { id: c.id, code: c.code, name: c.name },
     summary: {

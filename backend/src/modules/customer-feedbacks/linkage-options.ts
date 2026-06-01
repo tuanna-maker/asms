@@ -192,16 +192,16 @@ export async function getFeedbackLinkageOptionsService(input: {
   const materialFilter = input.materialIds?.length ? input.materialIds : undefined;
 
   const contractRows = filterRows(allRows, {
-    productIds: productFilter,
-    materialIds: materialFilter,
+    ...(productFilter ? { productIds: productFilter } : {}),
+    ...(materialFilter ? { materialIds: materialFilter } : {}),
   });
   const productRows = filterRows(allRows, {
-    contractIds: contractFilter,
-    materialIds: materialFilter,
+    ...(contractFilter ? { contractIds: contractFilter } : {}),
+    ...(materialFilter ? { materialIds: materialFilter } : {}),
   });
   const materialRows = filterRows(allRows, {
-    contractIds: contractFilter,
-    productIds: productFilter,
+    ...(contractFilter ? { contractIds: contractFilter } : {}),
+    ...(productFilter ? { productIds: productFilter } : {}),
   });
 
   const contracts = buildOptionsFromRows(contractRows).contracts;

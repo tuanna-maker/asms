@@ -130,8 +130,10 @@ export function withDisplayStatus<
     updatedAt?: Date;
   },
 >(row: T, now?: Date): T & { displayStatus: DisplayContractStatus } {
+  const statusInput: Parameters<typeof computeContractOperationalStatus>[0] =
+    now === undefined ? row : { ...row, now };
   return {
     ...row,
-    displayStatus: computeContractOperationalStatus({ ...row, now }),
+    displayStatus: computeContractOperationalStatus(statusInput),
   };
 }
