@@ -12,16 +12,21 @@
 - Missing/invalid refresh token clears session and returns to `/login`.
 - Logout clears local session and blocks protected routes.
 
-## RBAC
-- `viewer` can access read-only pages and cannot execute write actions.
-- `technician` can access operational modules per role matrix.
-- `manager` can access managerial modules and write actions allowed by backend.
-- `admin` can access all routes including settings.
+## RBAC (đồng bộ FE ↔ API qua `role_permissions`)
+- Đăng nhập lần lượt 5 role: `admin`, `manager`, `technician`, `viewer`, `sales`.
+- Menu sidebar khớp `ROUTE_PERMISSIONS` / ma trận DB (technician **không** thấy Hợp đồng; viewer **không** thấy Đề tài).
+- Nút Tạo/Sửa/Xóa trên từng màn ẩn/hiện theo `canDo(moduleKey, action)` (Contracts, Handover, Warranty, Products, Materials, Customers, Tasks, Training, Workflow, Research, Settings).
+- Gọi API trực tiếp (DevTools): role không có quyền → HTTP **403** (ví dụ technician `GET /api/v1/contracts`, viewer `GET /api/v1/research-projects`).
+- Admin sửa ma trận tại Cài đặt → Phân quyền → lưu → refresh trang: menu + nút CRUD + API phản ánh quyền mới.
+- `viewer` chỉ đọc; không thấy nút ghi trên module read-only.
+- `technician` thao tác được Bàn giao, Bảo hành, Vật tư theo matrix; không tạo Hợp đồng.
+- `manager` đọc Nhật ký (`cai-dat.nhat-ky`); chỉ admin tạo/sửa người dùng và vai trò tùy matrix con.
+- Module `bao-hanh.thong-ke` đã gỡ — không còn trong tab Phân quyền.
 
 ## Module CRUD
 - Users (Settings): list/create/update/delete works with RBAC (`admin` write, `manager` read).
 - Settings - Roles tab: list system + custom roles; cannot edit code / disable / delete system roles; cannot delete a role still assigned to users; admin can create custom role and audit log records the action.
-- Settings - Phân quyền tab: read-only matrix loads for each role and reflects current code-level RBAC.
+- Settings - Phân quyền tab: ma trận CRUD theo module; admin cập nhật và API `/role-permissions` đồng bộ cache BE.
 - Settings - Notifications tab: each preference key toggles persist per user.
 - Settings - Hệ thống tab: defaults are seeded on first load; admin can update SLA / threshold / remind days / grace hours / cron hour / channels; non-admin sees disabled inputs.
 - Settings - Phiên đăng nhập tab: current device is marked, other sessions can be revoked, "Đăng xuất tất cả thiết bị khác" leaves the current session alive.

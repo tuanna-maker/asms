@@ -37,6 +37,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
 import { sortByNewestFirst } from "@/lib/sort-by-time";
+import { useChildModulePermissions } from "@/hooks/use-module-permissions";
 
 type Customer = {
   id: string;
@@ -168,6 +169,9 @@ const nextTierThreshold = (t: Tier) =>
   t === "Vàng" ? tierMeta["Bạch kim"].min : null;
 
 const Customers = () => {
+  const activityPerm = useChildModulePermissions("khach-hang", "khach-hang.hoat-dong");
+  const contactPerm = useChildModulePermissions("khach-hang", "khach-hang.lien-he");
+  const customerPerm = useChildModulePermissions("khach-hang", "khach-hang.khach-hang");
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
@@ -490,9 +494,11 @@ const Customers = () => {
         <TabsContent value="activities" className="mt-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground">Dòng thời gian hoạt động</h3>
-            <Button size="sm" variant="outline" onClick={openCreateActivity}>
-              <Plus className="h-4 w-4 mr-1" />Thêm hoạt động
-            </Button>
+            {activityPerm.canCreate && (
+              <Button size="sm" variant="outline" onClick={openCreateActivity}>
+                <Plus className="h-4 w-4 mr-1" />Thêm hoạt động
+              </Button>
+            )}
           </div>
           {activitiesError && (
             <p className="text-sm text-destructive">Không tải được hoạt động CRM. Thử lại sau.</p>
@@ -528,12 +534,16 @@ const Customers = () => {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {a.status === "done" && <CheckCircle2 className="h-4 w-4 text-success mr-1" />}
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditActivity(a)} aria-label="Sửa">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingActivityId(a.id)} aria-label="Xóa">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {activityPerm.canUpdate && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditActivity(a)} aria-label="Sửa">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {activityPerm.canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingActivityId(a.id)} aria-label="Xóa">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               );
@@ -657,7 +667,9 @@ const Customers = () => {
         <TabsContent value="contacts" className="mt-4 space-y-3">
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-foreground">Danh sách liên hệ ({contacts.length})</h3>
-            <Button size="sm" variant="outline" onClick={openCreateContact}><Plus className="h-4 w-4 mr-1" />Thêm liên hệ</Button>
+            {contactPerm.canCreate && (
+              <Button size="sm" variant="outline" onClick={openCreateContact}><Plus className="h-4 w-4 mr-1" />Thêm liên hệ</Button>
+            )}
           </div>
           {contactsError && (
             <p className="text-sm text-destructive">Không tải được danh sách liên hệ. Thử lại sau.</p>
@@ -686,12 +698,16 @@ const Customers = () => {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(c)} aria-label="Sửa liên hệ">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingContactId(c.id)} aria-label="Xóa liên hệ">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {contactPerm.canUpdate && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(c)} aria-label="Sửa liên hệ">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {contactPerm.canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingContactId(c.id)} aria-label="Xóa liên hệ">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -839,10 +855,11 @@ const Customers = () => {
                 )}
               </div>
             </div>
-            <Dialog open={showCreate} onOpenChange={setShowCreate}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Thêm khách hàng</Button>
-              </DialogTrigger>
+            {customerPerm.canCreate && (
+              <Dialog open={showCreate} onOpenChange={setShowCreate}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="h-4 w-4 mr-1" /> Thêm khách hàng</Button>
+                </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle>Thêm khách hàng mới</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -860,6 +877,7 @@ const Customers = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           {/* Desktop table */}
@@ -898,9 +916,13 @@ const Customers = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Eye className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Xem"><Eye className="h-4 w-4" /></Button>
+                        {customerPerm.canUpdate && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
+                        )}
+                        {customerPerm.canDelete && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -921,9 +943,13 @@ const Customers = () => {
                     <p className="text-xs text-muted-foreground truncate">{c.contact}</p>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Eye className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Xem"><Eye className="h-4 w-4" /></Button>
+                    {customerPerm.canUpdate && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditingCustomer(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
+                    )}
+                    {customerPerm.canDelete && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeletingCustomer(c)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-1 text-xs text-muted-foreground">

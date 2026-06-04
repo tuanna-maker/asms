@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useRole } from "@/hooks/use-role";
+import { useCanWriteModule } from "@/hooks/use-module-permissions";
 import {
   useCreateWorkflow,
   useDeleteWorkflow,
@@ -38,6 +38,7 @@ import {
 } from "@/hooks/use-workflows-api";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
+import { isWorkflowModuleHidden } from "@/lib/workflow-visibility";
 
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
@@ -73,10 +74,10 @@ function formatDate(iso: string | null | undefined) {
 const WorkflowListPage = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();
   const navigate = useNavigate();
-  const { role } = useRole();
-  const canWrite = role === "admin" || role === "manager";
+  const canWrite = useCanWriteModule("quy-trinh");
 
-  const validKey = isValidModule(moduleKey) ? moduleKey : null;
+  const validKey =
+    isValidModule(moduleKey) && !isWorkflowModuleHidden(moduleKey) ? moduleKey : null;
   const { data: workflows = [], isLoading } = useWorkflowsList(validKey ?? undefined, {
     enabled: Boolean(validKey),
   });

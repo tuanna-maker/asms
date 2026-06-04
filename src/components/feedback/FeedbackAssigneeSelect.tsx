@@ -1,96 +1,72 @@
-import { useEffect, useState } from "react";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { UserSearchSelect } from "@/components/common/UserSearchSelect";
-import { useRolesList } from "@/hooks/use-roles-api";
-import type { FeedbackAssignee } from "@/hooks/use-customer-feedbacks-api";
+import { UserMultiSelect } from "@/components/workflow/UserMultiSelect";
+import { RoleMultiSelect } from "@/components/common/RoleMultiSelect";
+import type { CustomerFeedbackRow, FeedbackAssignees } from "@/hooks/use-customer-feedbacks-api";
 
 type Props = {
-  value: FeedbackAssignee;
-  onChange: (value: FeedbackAssignee) => void;
+  value: FeedbackAssignees;
+  onChange: (value: FeedbackAssignees) => void;
   disabled?: boolean;
-  userDisplayName?: string;
+  compact?: boolean;
 };
 
-export function FeedbackAssigneeSelect({
-  value,
-  onChange,
-  disabled,
-  userDisplayName,
-}: Props) {
-  const [mode, setMode] = useState<"user" | "role">(value.type);
-  const { data: roles = [] } = useRolesList(true);
-  const activeRoles = roles.filter((r) => r.isActive);
-
-  useEffect(() => {
-    setMode(value.type);
-  }, [value.type]);
-
-  const onModeChange = (next: "user" | "role") => {
-    setMode(next);
-    onChange({ type: next, userId: null, roleCode: null });
-  };
-
+export function FeedbackAssigneeSelect({ value, onChange, disabled, compact }: Props) {
   return (
-    <div className="space-y-2">
-      <Label>Phân công *</Label>
-      <Select value={mode} onValueChange={(v) => onModeChange(v as "user" | "role")} disabled={disabled}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="user">Người cụ thể</SelectItem>
-          <SelectItem value="role">Theo vai trò</SelectItem>
-        </SelectContent>
-      </Select>
-      {mode === "user" ? (
-        <UserSearchSelect
-          value={value.userId ?? null}
-          onChange={(id) => onChange({ type: "user", userId: id, roleCode: null })}
+    <div
+      className={
+        compact
+          ? "space-y-3"
+          : "rounded-lg border border-border/60 bg-muted/20 p-4 sm:p-5 space-y-4"
+      }
+    >
+      {!compact ? (
+        <div>
+          <p className="text-sm font-medium text-foreground">Phân công *</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Chọn một hoặc nhiều người và/hoặc vai trò được giao xử lý phản ánh.
+          </p>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+        <UserMultiSelect
+          value={value.userIds}
+          onChange={(userIds) => onChange({ ...value, userIds })}
           disabled={disabled}
-          placeholder="Chọn người xử lý…"
-          displayName={userDisplayName}
+          label="Người được phân công"
+          hint=""
+          addButtonLabel="Thêm người…"
         />
-      ) : (
-        <Select
-          value={value.roleCode ?? ""}
-          onValueChange={(code) => onChange({ type: "role", userId: null, roleCode: code })}
+        <RoleMultiSelect
+          value={value.roleCodes}
+          onChange={(roleCodes) => onChange({ ...value, roleCodes })}
           disabled={disabled}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn vai trò…" />
-          </SelectTrigger>
-          <SelectContent>
-            {activeRoles.map((r) => (
-              <SelectItem key={r.id} value={r.code}>
-                {r.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
+          label="Vai trò được phân công"
+          addButtonLabel="Thêm vai trò…"
+        />
+      </div>
     </div>
   );
 }
 
-export function isAssigneeComplete(assignee: FeedbackAssignee): boolean {
-  if (assignee.type === "user") return Boolean(assignee.userId?.trim());
-  return Boolean(assignee.roleCode?.trim());
+export function emptyAssignees(): FeedbackAssignees {
+  return { userIds: [], roleCodes: [] };
 }
 
-export function rowToAssignee(row: {
-  assigneeType?: string | null;
-  assignedUserId?: string | null;
-  assignedRoleCode?: string | null;
-}): FeedbackAssignee {
-  if (row.assigneeType === "role" && row.assignedRoleCode) {
-    return { type: "role", userId: null, roleCode: row.assignedRoleCode };
+export function isAssigneeComplete(assignees: FeedbackAssignees): boolean {
+  return assignees.userIds.length > 0 || assignees.roleCodes.length > 0;
+}
+
+export function rowToAssignees(row: Pick<
+  CustomerFeedbackRow,
+  "assignees" | "assigneeType" | "assignedUserId" | "assignedRoleCode"
+>): FeedbackAssignees {
+  if (row.assignees) {
+    return { userIds: [...row.assignees.userIds], roleCodes: [...row.assignees.roleCodes] };
   }
-  return { type: "user", userId: row.assignedUserId ?? null, roleCode: null };
+  if (row.assigneeType === "role" && row.assignedRoleCode) {
+    return { userIds: [], roleCodes: [row.assignedRoleCode] };
+  }
+  if (row.assignedUserId) {
+    return { userIds: [row.assignedUserId], roleCodes: [] };
+  }
+  return emptyAssignees();
 }

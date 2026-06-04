@@ -3,6 +3,11 @@
 Tài liệu được sinh sau khi quét **toàn bộ route frontend** (`src/App.tsx`), **menu sidebar** và **pattern gọi API/mock** trong mã nguồn.  
 Mục đích: liệt kê **đã hoàn thiện / chỉ một phần / chưa khớp dữ liệu thực**, để **không bỏ sót chức năng đáng chú ý**.
 
+**Tổng hợp bảng (cập nhật 03/06/2026):**
+
+- [chuc-nang-hoan-thanh.md](./chuc-nang-hoan-thanh.md) — toàn bộ chức năng đã chạy ổn
+- [chuc-nang-sua-va-moi-sau-hop.md](./chuc-nang-sua-va-moi-sau-hop.md) — chức năng sửa & mới sau cuộc họp ASMS
+
 **Chú thích trạng thái**
 
 | Trạng thái | Ý nghĩa |

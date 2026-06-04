@@ -40,7 +40,6 @@ export const PERMISSION_MODULES: ReadonlyArray<PermissionModuleNode> = [
     label: "Bảo hành / SC",
     children: [
       { key: "bao-hanh.danh-sach", label: "Danh sách phiếu" },
-      { key: "bao-hanh.thong-ke", label: "Thống kê" },
     ],
   },
   {

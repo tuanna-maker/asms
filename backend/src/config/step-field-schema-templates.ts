@@ -175,6 +175,7 @@ export const COACHING_STEP_SCHEMAS: FieldSchemaTemplate[][] = [
     { key: "trainingReportNote", label: "Báo cáo KT thực hành", type: "textarea" },
     { key: "trainingDecision", label: "QĐ công nhận KQ huấn luyện", type: "textarea" },
   ],
+  [{ key: "trainingDecision", label: "QĐ công nhận kết quả HL", type: "textarea" }],
 ];
 
 export const TRAINING_STEP_SCHEMAS: FieldSchemaTemplate[][] = [

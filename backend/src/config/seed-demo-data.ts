@@ -1,5 +1,6 @@
 import { ContractStatus, Prisma, TaskPriority, TaskStatus, TaskType } from "@prisma/client";
 
+import { seedCoachingWorkflowDemo } from "./seed-coaching-workflow-demo";
 import { prisma } from "../utils/prisma";
 
 /** Ngày cố định UTC trưa để tránh lệch TZ */
@@ -665,6 +666,7 @@ export async function seedDemoBusinessData() {
         participants: c.participants,
         status: c.status,
         location: c.location,
+        courseKind: "coaching",
         description: "Chương trình chuẩn theo quyết định giao nhiệm vụ và phê duyệt kế hoạch huấn luyện năm.",
       },
       create: {
@@ -679,6 +681,7 @@ export async function seedDemoBusinessData() {
         participants: c.participants,
         status: c.status,
         location: c.location,
+        courseKind: "coaching",
         description: "Chương trình chuẩn theo quyết định giao nhiệm vụ và phê duyệt kế hoạch huấn luyện năm.",
       },
     });
@@ -729,6 +732,8 @@ export async function seedDemoBusinessData() {
       ],
     });
   }
+
+  await seedCoachingWorkflowDemo(admin.id);
 
   // ── Tài liệu ─────────────────────────────────────────────────
   const docSpecs: Array<Omit<Prisma.DocumentCreateInput, "category" | "fileType"> & {

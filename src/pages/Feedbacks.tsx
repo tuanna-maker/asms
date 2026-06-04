@@ -63,7 +63,7 @@ import { formatLinkageSummaryShort } from "@/lib/customer-feedback-linkage";
 
 const Feedbacks = () => {
   const navigate = useNavigate();
-  const { canDo } = useRole();
+  const { canDo, role } = useRole();
   const canWrite = canDo("phan-anh", "create") || canDo("phan-anh", "update");
   const [searchParams] = useSearchParams();
 
@@ -142,7 +142,9 @@ const Feedbacks = () => {
             Phản ánh khách hàng
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Danh sách toàn bộ phản ánh trong hệ thống
+            {role === "admin"
+              ? "Danh sách toàn bộ phản ánh trong hệ thống"
+              : ""}
           </p>
         </div>
         {canDo("phan-anh", "create") && (

@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRole } from "@/hooks/use-role";
+import { useCanWriteModule } from "@/hooks/use-module-permissions";
 import {
   useAddStep,
   useDeleteStep,
@@ -49,6 +49,7 @@ import {
 import { StepUpsertDialog } from "@/components/workflow/StepUpsertDialog";
 import { WorkflowStepCard } from "@/components/workflow/WorkflowStepCard";
 import { getModuleStandardStepCount, getModuleStandardSteps } from "@/lib/workflow-field-catalog";
+import { isWorkflowModuleHidden } from "@/lib/workflow-visibility";
 
 const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
   handover: "Bàn giao",
@@ -60,6 +61,7 @@ const MODULE_LABEL: Record<WorkflowModuleKey, string> = {
 };
 
 function isValidModule(key: string | undefined): key is WorkflowModuleKey {
+  if (!key || isWorkflowModuleHidden(key)) return false;
   return (
     key === "handover" ||
     key === "warranty" ||
@@ -113,8 +115,7 @@ function errMessage(e: unknown) {
 const WorkflowEditorPage = () => {
   const params = useParams<{ moduleKey: string; workflowId: string }>();
   const navigate = useNavigate();
-  const { role } = useRole();
-  const canWrite = role === "admin" || role === "manager";
+  const canWrite = useCanWriteModule("quy-trinh");
 
   const validKey = isValidModule(params.moduleKey) ? params.moduleKey : null;
   const workflowId = params.workflowId ?? "";

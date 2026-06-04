@@ -7,10 +7,23 @@ import { qk } from "@/lib/query-keys";
 export type CustomerFeedbackSeverity = "low" | "medium" | "high";
 export type FeedbackAssigneeType = "user" | "role";
 
+/** @deprecated Dùng FeedbackAssignees */
 export type FeedbackAssignee = {
   type: FeedbackAssigneeType;
   userId?: string | null;
   roleCode?: string | null;
+};
+
+export type FeedbackAssignees = {
+  userIds: string[];
+  roleCodes: string[];
+};
+
+export type FeedbackAssigneeSummary = {
+  userIds: string[];
+  roleCodes: string[];
+  users: Array<{ id: string; fullName: string }>;
+  roles: Array<{ code: string }>;
 };
 export type CustomerFeedbackStatus =
   | "new"
@@ -77,6 +90,7 @@ export type CustomerFeedbackRow = {
   assignedUserId: string | null;
   assignedRoleCode: string | null;
   assignedUser?: { id: string; fullName: string } | null;
+  assignees?: FeedbackAssigneeSummary;
   status: CustomerFeedbackStatus;
   source: FeedbackSource;
   intake: FeedbackIntake;
@@ -104,7 +118,9 @@ export type CustomerFeedbackPayload = {
   contractId?: string | null;
   title: string;
   content: string;
-  assignee: FeedbackAssignee;
+  assignees: FeedbackAssignees;
+  /** @deprecated Gửi assignees thay thế */
+  assignee?: FeedbackAssignee;
   source?: FeedbackSource;
   intake?: FeedbackIntake;
   feedbackAt: string;
@@ -273,6 +289,25 @@ export function useCloseFeedback() {
       note?: string;
     }) => api.post(`/api/v1/customer-feedbacks/${id}/close`, { customerVerified, note }),
     onSuccess: () => void qc.invalidateQueries({ queryKey: qk.customerFeedbacks.all }),
+  });
+}
+
+export function useCompleteRepairCloseFeedback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, note }: { id: string; note?: string }) => {
+      const res = await api.post<ApiSuccess<CustomerFeedbackRow>>(
+        `/api/v1/customer-feedbacks/${id}/complete-repair-close`,
+        { note: note ?? null },
+      );
+      return res.data.data!;
+    },
+    onSuccess: (data) => {
+      void qc.invalidateQueries({ queryKey: qk.customerFeedbacks.all });
+      if (data?.id) {
+        void qc.invalidateQueries({ queryKey: qk.customerFeedbacks.detail(data.id) });
+      }
+    },
   });
 }
 

@@ -36,7 +36,6 @@ export const PERMISSION_MODULE_DEFS: ReadonlyArray<{
     paths: ["/bao-hanh"],
     children: [
       { key: "bao-hanh.danh-sach", label: "Danh sách phiếu" },
-      { key: "bao-hanh.thong-ke", label: "Thống kê" },
     ],
   },
   {

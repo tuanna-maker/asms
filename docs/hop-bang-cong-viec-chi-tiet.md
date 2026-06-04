@@ -6,6 +6,7 @@
 | **Mục đích file** | Một bảng duy nhất liệt kê **toàn bộ việc cần làm** sau cuộc họp, đủ chi tiết để theo dõi backlog |
 | **Phiên bản** | 1.0 |
 | **Ngày lập** | 21/05/2026 |
+| **Tổng hợp đã làm** | [chuc-nang-sua-va-moi-sau-hop.md](./chuc-nang-sua-va-moi-sau-hop.md), [chuc-nang-hoan-thanh.md](./chuc-nang-hoan-thanh.md) |
 
 **Chú thích cột**
 

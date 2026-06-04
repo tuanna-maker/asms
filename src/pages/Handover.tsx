@@ -28,6 +28,9 @@ import type { ApiSuccess } from "@/lib/api-types";
 import { qk } from "@/lib/query-keys";
 import { useDeleteHandover, useHandoversList, type HandoverListItem } from "@/hooks/use-handovers-api";
 import { useRole } from "@/hooks/use-role";
+import { useAuth } from "@/hooks/use-auth";
+import { canUserActOnWorkflowSnapshot } from "@/lib/workflow-step-access";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import { useTrainingCoursesQuery } from "@/hooks/use-training";
 import { CourseWorkflowSection } from "@/components/training/CourseWorkflowSection";
 import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
@@ -121,6 +124,11 @@ const statusBadge = (status: string) => {
 const Handover = () => {
   const qc = useQueryClient();
   const { role } = useRole();
+  const { user } = useAuth();
+  const { canCreate: canCreateHandover, canUpdate: canUpdateHandover, canDelete: canDeleteHandover } =
+    useModulePermissions("ban-giao");
+  const { canCreate: canCreateTraining, canUpdate: canUpdateTraining, canDelete: canDeleteTraining } =
+    useModulePermissions("dao-tao");
   const { data: handoverRows = [], isLoading, isError, error } = useHandoversList();
   const { data: trainingRows = [], isLoading: isTrainingLoading, isError: isTrainingError, error: trainingError } =
     useTrainingCoursesQuery({ courseKind: "coaching" });
@@ -251,26 +259,19 @@ const Handover = () => {
   );
 
   const needsProcessingRows = useMemo<NeedsProcessingRow[]>(() => {
-    const matchRole = (roleCode: string | null | undefined) => roleCode === role;
+    const matchAssigned = (workflow: HandoverListItem["workflow"]) =>
+      canUserActOnWorkflowSnapshot(role, user?.id, workflow ?? null);
 
     const handovers: NeedsProcessingRow[] = syncedHandoverRows
-      .filter(
-        (h) =>
-          h.workflow?.status === "running" &&
-          matchRole(h.workflow.currentStepRoleCode),
-      )
+      .filter((h) => matchAssigned(h.workflow))
       .map((h) => ({ kind: "handover", item: h }));
 
     const trainings: NeedsProcessingRow[] = syncedTrainingRows
-      .filter(
-        (t) =>
-          t.workflow?.status === "running" &&
-          matchRole(t.workflow.currentStepRoleCode),
-      )
+      .filter((t) => matchAssigned(t.workflow))
       .map((t) => ({ kind: "training", item: t }));
 
     return [...handovers, ...trainings];
-  }, [syncedHandoverRows, syncedTrainingRows, role]);
+  }, [syncedHandoverRows, syncedTrainingRows, role, user?.id]);
 
   const activeCount = syncedHandoverRows.filter((h) => h.displayStatus === "active").length;
   const completedCount = syncedHandoverRows.filter((h) => h.displayStatus === "completed").length;
@@ -539,17 +540,19 @@ const Handover = () => {
 
         <TabsContent value="handover">
           <div className="flex justify-end mb-3">
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={() => {
-                setEditingHandover(null);
-                setUpsertOpen(true);
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              Thêm bàn giao
-            </Button>
+            {canCreateHandover && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  setEditingHandover(null);
+                  setUpsertOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Thêm bàn giao
+              </Button>
+            )}
           </div>
           <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-x-auto">
             <Table>
@@ -612,20 +615,24 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(h.displayStatus)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setEditingHandover(h);
-                              setUpsertOpen(true);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingHandover(h)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canUpdateHandover && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingHandover(h);
+                                setUpsertOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDeleteHandover && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingHandover(h)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -639,14 +646,16 @@ const Handover = () => {
 
         <TabsContent value="training">
           <div className="flex justify-end mb-3">
-            <Button
-              size="sm"
-              className="gap-1.5"
-              onClick={openCreateTraining}
-            >
-              <Plus className="h-4 w-4" />
-              Tạo huấn luyện
-            </Button>
+            {canCreateTraining && (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={openCreateTraining}
+              >
+                <Plus className="h-4 w-4" />
+                Tạo huấn luyện
+              </Button>
+            )}
           </div>
           <div className="rounded-xl bg-card border border-border/50 shadow-sm overflow-x-auto">
             <Table>
@@ -691,21 +700,27 @@ const Handover = () => {
                       <TableCell className="px-4 py-3.5 align-middle text-center min-w-[8rem]">{statusBadge(t.displayStatus)}</TableCell>
                       <TableCell className="px-4 py-3.5 text-right align-middle">
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Xử lý quy trình"
-                            onClick={() => openWorkflowDialog(t)}
-                          >
-                            <GitBranch className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingTrainingId(t.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {canUpdateTraining && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Xử lý quy trình"
+                              onClick={() => openWorkflowDialog(t)}
+                            >
+                              <GitBranch className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canUpdateTraining && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {canDeleteTraining && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setDeletingTrainingId(t.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createResearchProjectSchema, updateResearchProjectSchema } from "./schema";
@@ -12,18 +12,16 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "de-tai";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer"];
-const writeRoles = ["admin", "manager", "technician"];
+router.get("/", requireModulePermission(M, "read"), listResearchProjectsController);
+router.get("/:id", requireModulePermission(M, "read"), getResearchProjectDetailController);
 
-router.get("/", requireRoles(readRoles), listResearchProjectsController);
-router.get("/:id", requireRoles(readRoles), getResearchProjectDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createResearchProjectSchema), createResearchProjectController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateResearchProjectSchema), updateResearchProjectController);
-router.delete("/:id", requireRoles(writeRoles), deleteResearchProjectController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createResearchProjectSchema), createResearchProjectController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateResearchProjectSchema), updateResearchProjectController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteResearchProjectController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -16,29 +16,28 @@ import {
 import { createRoutingRuleSchema, createUnitSchema, updateRoutingRuleSchema, updateUnitSchema } from "./schema";
 
 const router = Router();
+const M = "phan-anh";
+
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager"];
+router.get("/", requireModulePermission(M, "read"), listUnitsController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createUnitSchema), createUnitController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateUnitSchema), updateUnitController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteUnitController);
 
-router.get("/", requireRoles(readRoles), listUnitsController);
-router.post("/", requireRoles(writeRoles), validateBody(createUnitSchema), createUnitController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateUnitSchema), updateUnitController);
-router.delete("/:id", requireRoles(writeRoles), deleteUnitController);
-
-router.get("/routing-rules/list", requireRoles(readRoles), listRoutingRulesController);
+router.get("/routing-rules/list", requireModulePermission(M, "read"), listRoutingRulesController);
 router.post(
   "/routing-rules",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "create"),
   validateBody(createRoutingRuleSchema),
   createRoutingRuleController,
 );
 router.put(
   "/routing-rules/:ruleId",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(updateRoutingRuleSchema),
   updateRoutingRuleController,
 );
-router.delete("/routing-rules/:ruleId", requireRoles(writeRoles), deleteRoutingRuleController);
+router.delete("/routing-rules/:ruleId", requireModulePermission(M, "delete"), deleteRoutingRuleController);
 
 export default router;

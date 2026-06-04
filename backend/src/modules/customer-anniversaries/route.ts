@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -12,14 +12,13 @@ import {
 import { createAnniversarySchema, updateAnniversarySchema } from "./schema";
 
 const router = Router();
+const M = "khach-hang.loyalty";
+
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "sales", "viewer"];
-const writeRoles = ["admin", "manager", "sales"];
-
-router.get("/", requireRoles(readRoles), listController);
-router.post("/", requireRoles(writeRoles), validateBody(createAnniversarySchema), createController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateAnniversarySchema), updateController);
-router.delete("/:id", requireRoles(writeRoles), deleteController);
+router.get("/", requireModulePermission(M, "read"), listController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createAnniversarySchema), createController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateAnniversarySchema), updateController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteController);
 
 export default router;

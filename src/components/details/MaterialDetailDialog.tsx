@@ -1,30 +1,30 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Package,
   MapPin,
-  ArrowRightLeft,
-  Shield,
-  TrendingDown,
-  Calculator,
-  Barcode,
-  QrCode,
-  Radio,
-  Hash,
-  Calendar,
   ChevronRight,
   Loader2,
+  Save,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { toastApiError } from "@/lib/api-errors";
+import { useDefinitionsList } from "@/hooks/use-definitions-api";
+import {
+  MaterialUpsertFields,
+  type MaterialFormValues,
+} from "@/components/materials/MaterialUpsertFields";
+import { DETAIL_SHEET_CLASS } from "@/lib/detail-sheet-layout";
 import {
   useMaterialDetail,
   useMaterialTransfersList,
+  useUpdateMaterial,
   type MaterialDetailRow,
-  type MaterialTransferListRow,
 } from "@/hooks/use-materials-api";
 
 const TRANSFER_TYPE_LABEL: Record<string, string> = {
@@ -39,6 +39,18 @@ const TRANSFER_STATUS_LABEL: Record<string, string> = {
   pending: "Chờ duyệt",
 };
 
+const FALLBACK_WAREHOUSES = [
+  { value: "Kho chính", label: "Kho chính" },
+  { value: "Kho phụ", label: "Kho phụ" },
+];
+
+const FALLBACK_UNITS = [
+  { value: "bộ", label: "Bộ" },
+  { value: "cái", label: "Cái" },
+  { value: "mét", label: "Mét" },
+  { value: "kg", label: "Kilogram" },
+];
+
 function formatDisplayDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -48,12 +60,6 @@ function formatDisplayDate(iso: string | null | undefined): string {
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
 
-const copyToClipboard = (text: string, label: string) => {
-  if (!text || text === "—") return;
-  navigator.clipboard.writeText(text);
-  toast.success(`Đã sao chép ${label}`);
-};
-
 const EmptyTab = ({ text }: { text: string }) => (
   <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-8 text-center text-sm text-muted-foreground">
     {text}
@@ -62,12 +68,46 @@ const EmptyTab = ({ text }: { text: string }) => (
 
 interface MaterialDetailDialogProps {
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
   materialId: string | null;
+  /** true = cùng layout xem chi tiết nhưng tab Tổng quan cho phép sửa */
+  editable?: boolean;
 }
 
-const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialogProps) => {
+const MaterialDetailDialog = ({
+  open,
+  onOpenChange,
+  materialId,
+  editable = false,
+}: MaterialDetailDialogProps) => {
   const [activeTab, setActiveTab] = useState("general");
+  const [submitting, setSubmitting] = useState(false);
+  const [editForm, setEditForm] = useState<MaterialFormValues>({
+    code: "",
+    name: "",
+    type: "consumable",
+    serial: "",
+    quantity: 0,
+    available: 0,
+    unit: "bộ",
+    warehouse: "Kho chính",
+    description: "",
+  });
+
+  const updateMaterial = useUpdateMaterial();
+  const { data: warehouseDefs } = useDefinitionsList("warehouse");
+  const { data: unitDefs } = useDefinitionsList("material_unit");
+
+  const warehouseOptions = useMemo(() => {
+    const mapped = warehouseDefs?.map((d) => ({ value: d.code, label: d.label }));
+    return mapped?.length ? mapped : FALLBACK_WAREHOUSES;
+  }, [warehouseDefs]);
+
+  const unitOptions = useMemo(() => {
+    const mapped = unitDefs?.map((d) => ({ value: d.code, label: d.label }));
+    return mapped?.length ? mapped : FALLBACK_UNITS;
+  }, [unitDefs]);
+
   const { data: apiMaterial, isLoading, isError } = useMaterialDetail(materialId, {
     enabled: open && Boolean(materialId),
   });
@@ -79,17 +119,74 @@ const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialo
   );
 
   const m = apiMaterial as MaterialDetailRow | null | undefined;
+
+  useEffect(() => {
+    if (!open) setActiveTab("general");
+  }, [open]);
+
+  useEffect(() => {
+    if (!m || !editable) return;
+    setEditForm({
+      code: m.code,
+      name: m.name,
+      type: m.type,
+      serial: m.serial ?? "",
+      quantity: m.quantity,
+      available: m.available,
+      unit: m.unit,
+      warehouse: m.warehouse,
+      description: m.description ?? "",
+    });
+  }, [m, editable, materialId]);
+
+  const displayQuantity = editable ? editForm.quantity : (m?.quantity ?? 0);
+  const displayAvailable = editable ? editForm.available : (m?.available ?? 0);
   const usagePct =
-    m && m.quantity > 0 ? Math.round(((m.quantity - m.available) / m.quantity) * 100) : 0;
+    displayQuantity > 0
+      ? Math.round(((displayQuantity - displayAvailable) / displayQuantity) * 100)
+      : 0;
+
+  const handleSave = async () => {
+    if (!m || !materialId) return;
+    if (!editForm.name.trim()) {
+      toast.error("Nhập tên vật tư");
+      return;
+    }
+    if (editForm.available > editForm.quantity) {
+      toast.error("Khả dụng không được lớn hơn tổng số lượng");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await updateMaterial.mutateAsync({
+        id: materialId,
+        payload: {
+          name: editForm.name.trim(),
+          type: editForm.type,
+          serial: editForm.type === "identified" ? editForm.serial.trim() || null : null,
+          quantity: editForm.quantity,
+          available: editForm.available,
+          unit: editForm.unit,
+          warehouse: editForm.warehouse,
+          description: editForm.description.trim() || undefined,
+        },
+      });
+      toast.success("Đã cập nhật vật tư");
+      onOpenChange(false);
+    } catch (e) {
+      toastApiError(e, "Không cập nhật được vật tư");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (!open) return null;
-
   if (!materialId) return null;
 
   if (isLoading) {
     return (
-      <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl flex items-center justify-center">
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className={`${DETAIL_SHEET_CLASS} flex items-center justify-center`}>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
             Đang tải chi tiết vật tư…
@@ -101,8 +198,8 @@ const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialo
 
   if (isError || !m) {
     return (
-      <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl p-6">
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className={`${DETAIL_SHEET_CLASS} p-6`}>
           <p className="text-sm text-muted-foreground">Không tải được chi tiết vật tư.</p>
         </SheetContent>
       </Sheet>
@@ -110,53 +207,44 @@ const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialo
   }
 
   const typeLabel = m.type === "identified" ? "Định danh" : "Tiêu hao";
+  const editTypeLabel = editForm.type === "identified" ? "Định danh" : "Tiêu hao";
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl lg:max-w-3xl overflow-y-auto p-4 sm:p-6">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className={`${DETAIL_SHEET_CLASS} p-4 sm:p-6`}>
         <SheetHeader className="space-y-1">
-          <SheetTitle className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pr-8">
+            <SheetTitle className="flex items-center gap-3 text-left">
               <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Package className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-base sm:text-lg leading-tight">{m.name}</span>
+                  <span className="text-base sm:text-lg leading-tight">
+                    {editable ? `Chỉnh sửa: ${editForm.name || m.name}` : m.name}
+                  </span>
                   <Badge variant="secondary" className="text-[10px] shrink-0">
-                    {typeLabel}
+                    {editable ? editTypeLabel : typeLabel}
                   </Badge>
                 </div>
                 <p className="text-xs font-normal text-muted-foreground mt-0.5">
-                  {m.code} • {m.unit} • {m.warehouse}
+                  {m.code} • {editable ? editForm.unit : m.unit} • {editable ? editForm.warehouse : m.warehouse}
                 </p>
               </div>
-            </div>
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-muted/50 border border-border/50 mt-3">
-          {[
-            { icon: Hash, label: "Serial", value: m.serial ?? "—" },
-            { icon: Barcode, label: "Mã vật tư", value: m.code },
-            { icon: QrCode, label: "QR / Mã", value: m.code },
-            { icon: Radio, label: "RFID", value: "—" },
-          ].map(({ icon: Icon, label, value }) => (
-            <button
-              key={label}
-              type="button"
-              className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-md hover:bg-background transition-colors text-left group"
-              onClick={() => copyToClipboard(value, label)}
-              title={`Sao chép ${label}`}
-            >
-              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0" />
-              <div className="min-w-0 flex-1">
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase tracking-wider">{label}</p>
-                <p className="text-[11px] sm:text-xs font-mono text-foreground truncate">{value}</p>
+            </SheetTitle>
+            {editable ? (
+              <div className="flex shrink-0 gap-2">
+                <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={submitting}>
+                  Hủy
+                </Button>
+                <Button size="sm" onClick={() => void handleSave()} disabled={submitting}>
+                  <Save className="h-4 w-4 mr-1.5" />
+                  {submitting ? "Đang lưu…" : "Lưu"}
+                </Button>
               </div>
-            </button>
-          ))}
-        </div>
+            ) : null}
+          </div>
+        </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-3">
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
@@ -183,25 +271,41 @@ const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialo
           </div>
 
           <TabsContent value="general" className="space-y-4 mt-3">
-            <div className="space-y-2 text-sm">
-              {[
-                ["Mã vật tư", m.code],
-                ["Tên", m.name],
-                ["Loại", typeLabel],
-                ["Đơn vị", m.unit],
-                ["Kho", m.warehouse],
-                ["Tổng SL", m.quantity.toLocaleString()],
-                ["Khả dụng", m.available.toLocaleString()],
-                ["Đã cấp phát", (m.quantity - m.available).toLocaleString()],
-                ["Ngày tạo", formatDisplayDate(m.createdAt)],
-                ...(m.description ? [["Mô tả", m.description] as [string, string]] : []),
-              ].map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-4">
-                  <span className="text-muted-foreground shrink-0">{label}</span>
-                  <span className="font-medium text-foreground text-right">{value}</span>
-                </div>
-              ))}
-            </div>
+            {editable ? (
+              <div className="space-y-4 rounded-xl border border-border/50 bg-card/50 p-4">
+                <MaterialUpsertFields
+                  values={editForm}
+                  onChange={(patch) => setEditForm((s) => ({ ...s, ...patch }))}
+                  warehouseOptions={warehouseOptions}
+                  unitOptions={unitOptions}
+                  codeReadOnly
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ngày tạo: {formatDisplayDate(m.createdAt)} • Đã cấp phát:{" "}
+                  {Math.max(0, editForm.quantity - editForm.available).toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 text-sm">
+                {[
+                  ["Mã vật tư", m.code],
+                  ["Tên", m.name],
+                  ["Loại", typeLabel],
+                  ["Đơn vị", m.unit],
+                  ["Kho", m.warehouse],
+                  ["Tổng SL", m.quantity.toLocaleString()],
+                  ["Khả dụng", m.available.toLocaleString()],
+                  ["Đã cấp phát", (m.quantity - m.available).toLocaleString()],
+                  ["Ngày tạo", formatDisplayDate(m.createdAt)],
+                  ...(m.description ? [["Mô tả", m.description] as [string, string]] : []),
+                ].map(([label, value]) => (
+                  <div key={label} className="flex justify-between gap-4">
+                    <span className="text-muted-foreground shrink-0">{label}</span>
+                    <span className="font-medium text-foreground text-right">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="pt-2">
               <div className="flex justify-between text-xs text-muted-foreground mb-1">
                 <span>Tỷ lệ sử dụng</span>
@@ -218,7 +322,7 @@ const MaterialDetailDialog = ({ open, onClose, materialId }: MaterialDetailDialo
               </h4>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Kho hiện tại</span>
-                <span className="font-medium">{m.warehouse}</span>
+                <span className="font-medium">{editable ? editForm.warehouse : m.warehouse}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Tổng lần điều chuyển</span>

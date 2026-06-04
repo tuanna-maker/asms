@@ -22,15 +22,13 @@ const FeedbackCreate = () => {
       subtitle="Thu thập thông tin và giao đơn vị xử lý"
       backTo={feedbackPaths.list}
     >
-      <div className="max-w-6xl">
-        <FeedbackIntakeWizard
+      <FeedbackIntakeWizard
           fixedCustomerId={customerId}
           fixedContractId={contractId}
           requireCustomerSelect={!customerId}
           onSuccess={(createdId) => navigate(feedbackPaths.detail(createdId))}
           onCancel={() => navigate(feedbackPaths.list)}
-        />
-      </div>
+      />
     </FeedbackPageShell>
   );
 };

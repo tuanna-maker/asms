@@ -107,7 +107,10 @@ export function useUpdateMaterial() {
   return useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: Partial<MaterialPayload> }) =>
       api.put(`/api/v1/materials/${id}`, payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: qk.materials.all }),
+    onSuccess: (_data, { id }) => {
+      void qc.invalidateQueries({ queryKey: qk.materials.all });
+      void qc.invalidateQueries({ queryKey: qk.materials.detail(id) });
+    },
   });
 }
 

@@ -11,6 +11,7 @@ import {
   resolveUnitIdsForUser,
   resolveUnitsFromProductIds,
 } from "./routing";
+import { viewerMatchesAssignees } from "./assignee";
 
 export async function appendTimelineEvent(input: {
   feedbackId: string;
@@ -228,6 +229,59 @@ export async function closeFeedbackService(
     message: input.customerVerified
       ? `Đã xác nhận với KH và đóng. ${input.note ?? ""}`.trim()
       : `Đóng (chưa xác nhận KH). ${input.note ?? ""}`.trim(),
+    actorId: userId,
+  });
+}
+
+export async function completeRepairAndCloseFeedbackService(
+  feedbackId: string,
+  userId: string,
+  roleCode: string | null,
+  note?: string,
+) {
+  const feedback = await prisma.customerFeedback.findFirst({
+    where: { id: feedbackId, deletedAt: null },
+    select: {
+      id: true,
+      status: true,
+      createdById: true,
+      assigneeTargets: { select: { userId: true, roleCode: true } },
+    },
+  });
+  if (!feedback) throw new HttpError(404, "Không tìm thấy phản ánh");
+  if (feedback.status === "resolved") {
+    throw new HttpError(400, "Phản ánh đã đóng");
+  }
+
+  const assignees = {
+    userIds: feedback.assigneeTargets.map((t) => t.userId).filter(Boolean) as string[],
+    roleCodes: feedback.assigneeTargets.map((t) => t.roleCode).filter(Boolean) as string[],
+  };
+  const isAdmin = roleCode === "admin" || roleCode === "manager";
+  const isCreator = feedback.createdById === userId;
+  const isAssignee = viewerMatchesAssignees({ userId, roleCode }, assignees);
+
+  if (!isAdmin && !isCreator && !isAssignee) {
+    throw new HttpError(403, "Chỉ người được phân công mới đóng phản ánh sau sửa chữa");
+  }
+
+  const now = new Date();
+  await prisma.customerFeedback.update({
+    where: { id: feedbackId },
+    data: {
+      status: "resolved",
+      closedAt: now,
+      closedById: userId,
+    },
+  });
+  await prisma.customerFeedbackAssignment.updateMany({
+    where: { feedbackId, status: { not: "done" } },
+    data: { status: "done", updatedById: userId },
+  });
+  await appendTimelineEvent({
+    feedbackId,
+    event: "resolved",
+    message: `Hoàn thành sửa chữa và đóng. ${note ?? ""}`.trim(),
     actorId: userId,
   });
 }

@@ -10,6 +10,23 @@ export const feedbackAssigneeSchema = z.object({
   userId: z.string().optional().nullable(),
   roleCode: z.string().optional().nullable(),
 });
+
+export const feedbackAssigneesSchema = z.object({
+  userIds: z.array(z.string().min(1)).default([]),
+  roleCodes: z.array(z.string().min(1)).default([]),
+});
+
+function hasAssigneeSelection(
+  assignee?: z.infer<typeof feedbackAssigneeSchema> | null,
+  assignees?: z.infer<typeof feedbackAssigneesSchema> | null,
+): boolean {
+  if (assignees) {
+    return assignees.userIds.length > 0 || assignees.roleCodes.length > 0;
+  }
+  if (!assignee) return false;
+  if (assignee.type === "user") return Boolean(assignee.userId?.trim());
+  return Boolean(assignee.roleCode?.trim());
+}
 const statusEnum = z.enum([
   "new",
   "assigned",
@@ -26,29 +43,43 @@ const linkageInputSchema = z.object({
   materialId: z.string().optional().nullable(),
 });
 
-export const createCustomerFeedbackSchema = z.object({
-  customerId: z.string().min(1),
-  contractId: z.string().optional().nullable(),
-  title: z.string().min(1),
-  content: z.string().min(1),
-  assignee: feedbackAssigneeSchema,
-  source: sourceEnum.default("external"),
-  intake: feedbackIntakeSchema.optional().default({}),
-  feedbackAt: z.coerce.date(),
-  linkageItems: z.array(linkageInputSchema).optional().default([]),
-});
+export const createCustomerFeedbackSchema = z
+  .object({
+    customerId: z.string().min(1),
+    contractId: z.string().optional().nullable(),
+    title: z.string().min(1),
+    content: z.string().min(1),
+    assignee: feedbackAssigneeSchema.optional(),
+    assignees: feedbackAssigneesSchema.optional(),
+    source: sourceEnum.default("external"),
+    intake: feedbackIntakeSchema.optional().default({}),
+    feedbackAt: z.coerce.date(),
+    linkageItems: z.array(linkageInputSchema).optional().default([]),
+  })
+  .refine((v) => hasAssigneeSelection(v.assignee, v.assignees), {
+    message: "Vui lòng chọn ít nhất một người hoặc vai trò phân công",
+  });
 
-export const updateCustomerFeedbackSchema = z.object({
-  customerId: z.string().min(1).optional(),
-  contractId: z.string().optional().nullable(),
-  title: z.string().min(1).optional(),
-  content: z.string().min(1).optional(),
-  assignee: feedbackAssigneeSchema.optional().nullable(),
-  source: sourceEnum.optional(),
-  intake: feedbackIntakeSchema.optional(),
-  feedbackAt: z.coerce.date().optional(),
-  linkageItems: z.array(linkageInputSchema).optional(),
-});
+export const updateCustomerFeedbackSchema = z
+  .object({
+    customerId: z.string().min(1).optional(),
+    contractId: z.string().optional().nullable(),
+    title: z.string().min(1).optional(),
+    content: z.string().min(1).optional(),
+    assignee: feedbackAssigneeSchema.optional().nullable(),
+    assignees: feedbackAssigneesSchema.optional().nullable(),
+    source: sourceEnum.optional(),
+    intake: feedbackIntakeSchema.optional(),
+    feedbackAt: z.coerce.date().optional(),
+    linkageItems: z.array(linkageInputSchema).optional(),
+  })
+  .refine(
+    (v) =>
+      v.assignee === undefined && v.assignees === undefined
+        ? true
+        : hasAssigneeSelection(v.assignee ?? undefined, v.assignees ?? undefined),
+    { message: "Vui lòng chọn ít nhất một người hoặc vai trò phân công" },
+  );
 
 export const customerFeedbackIdParamSchema = z.object({
   id: z.string().min(1),

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createCrmActivitySchema, updateCrmActivitySchema } from "./schema";
@@ -12,18 +12,16 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "khach-hang.hoat-dong";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager", "technician", "sales"];
+router.get("/", requireModulePermission(M, "read"), listCrmActivitiesController);
+router.get("/:id", requireModulePermission(M, "read"), getCrmActivityDetailController);
 
-router.get("/", requireRoles(readRoles), listCrmActivitiesController);
-router.get("/:id", requireRoles(readRoles), getCrmActivityDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createCrmActivitySchema), createCrmActivityController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateCrmActivitySchema), updateCrmActivityController);
-router.delete("/:id", requireRoles(writeRoles), deleteCrmActivityController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createCrmActivitySchema), createCrmActivityController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateCrmActivitySchema), updateCrmActivityController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteCrmActivityController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

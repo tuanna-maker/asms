@@ -36,6 +36,7 @@ import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegm
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 
 function apiProductToDefense(p: ProductListItem): DefenseProduct {
   return {
@@ -80,6 +81,7 @@ const statusLabel: Record<string, { label: string; cls: string }> = {
 };
 
 const Products = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("san-pham");
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data: apiProducts = [], isLoading: productsLoading } = useProductsList(!authLoading && isAuthenticated);
   const createProduct = useCreateProduct();
@@ -189,10 +191,12 @@ const Products = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button className="shrink-0 md:ml-auto" onClick={() => setCreateOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm sản phẩm
-            </Button>
+            {canCreate && (
+              <Button className="shrink-0 md:ml-auto" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Thêm sản phẩm
+              </Button>
+            )}
           </div>
 
           {/* Desktop table */}
@@ -259,12 +263,16 @@ const Products = () => {
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="ghost" onClick={() => openDetail(p)}><Eye className="h-4 w-4" /></Button>
-                        <Button size="sm" variant="ghost" onClick={() => { setProductToEdit(p); setEditOpen(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setProductToDelete(p)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {canUpdate && (
+                          <Button size="sm" variant="ghost" onClick={() => { setProductToEdit(p); setEditOpen(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setProductToDelete(p)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

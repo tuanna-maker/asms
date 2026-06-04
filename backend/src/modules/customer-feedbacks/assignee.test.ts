@@ -7,30 +7,31 @@ import {
 } from "./assignee";
 
 describe("feedback assignee visibility", () => {
-  it("admin and manager see all", () => {
+  it("only admin sees all", () => {
     expect(canViewAllFeedbacks("admin")).toBe(true);
-    expect(canViewAllFeedbacks("manager")).toBe(true);
+    expect(canViewAllFeedbacks("manager")).toBe(false);
     expect(canViewAllFeedbacks("technician")).toBe(false);
   });
 
-  it("builds OR filter for user, creator and role", () => {
+  it("builds OR filter for assignee user, role targets and legacy columns", () => {
     const filter = buildAssigneeVisibilityFilter({
       userId: "u1",
       roleCode: "technician",
     });
     expect(filter.OR).toEqual([
+      { assigneeTargets: { some: { userId: "u1" } } },
       { assigneeType: "user", assignedUserId: "u1" },
-      { createdById: "u1" },
+      { assigneeTargets: { some: { roleCode: "technician" } } },
       { assigneeType: "role", assignedRoleCode: "technician" },
     ]);
   });
 
-  it("access filter adds unit assignments", async () => {
+  it("access filter matches assignee visibility", async () => {
     const filter = await buildFeedbackAccessFilter({
       userId: "u1",
       roleCode: "technician",
     });
-    expect(filter.OR?.length).toBeGreaterThanOrEqual(3);
+    expect(filter.OR).toHaveLength(4);
   });
 
   it("returns empty filter for admin", () => {

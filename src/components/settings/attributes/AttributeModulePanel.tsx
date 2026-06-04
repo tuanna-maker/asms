@@ -6,15 +6,14 @@ import {
 import { AttributeDefinitionSection } from "@/components/settings/attributes/AttributeDefinitionSection";
 import { AttributeContractClauseSection } from "@/components/settings/attributes/AttributeContractClauseSection";
 import { AttributeContractClauseGroupSection } from "@/components/settings/attributes/AttributeContractClauseGroupSection";
-import { useRole } from "@/hooks/use-role";
+import { useCanWriteModule } from "@/hooks/use-module-permissions";
 
 type AttributeModulePanelProps = {
   moduleKey: AttributeModuleKey;
 };
 
 export function AttributeModulePanel({ moduleKey }: AttributeModulePanelProps) {
-  const { role } = useRole();
-  const canWrite = role === "admin" || role === "manager";
+  const canWrite = useCanWriteModule("cai-dat.thuoc-tinh");
   const moduleDef = getAttributeModule(moduleKey);
   const sections = getVisibleAttributeSections(moduleDef);
 

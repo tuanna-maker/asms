@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createUserSchema, updateUserSchema } from "./schema";
@@ -12,18 +12,16 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "cai-dat.nguoi-dung";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager"];
-const writeRoles = ["admin"];
+router.get("/", requireModulePermission(M, "read"), listUsersController);
+router.get("/:id", requireModulePermission(M, "read"), getUserDetailController);
 
-router.get("/", requireRoles(readRoles), listUsersController);
-router.get("/:id", requireRoles(readRoles), getUserDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createUserSchema), createUserController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateUserSchema), updateUserController);
-router.delete("/:id", requireRoles(writeRoles), deleteUserController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createUserSchema), createUserController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateUserSchema), updateUserController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteUserController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

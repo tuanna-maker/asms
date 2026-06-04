@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -10,13 +10,12 @@ import {
 import { putNotificationPrefsSchema } from "./schema";
 
 const router = Router();
+const M = "cai-dat.thong-bao";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-
-router.get("/", requireRoles(readRoles), listNotificationPreferencesController);
-router.put("/", requireRoles(readRoles), validateBody(putNotificationPrefsSchema), putNotificationPreferencesController);
+router.get("/", requireModulePermission(M, "read"), listNotificationPreferencesController);
+router.put("/", requireModulePermission(M, "update"), validateBody(putNotificationPrefsSchema), putNotificationPreferencesController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

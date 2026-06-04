@@ -6,6 +6,7 @@ import {
   moduleActionAllowedFromMap,
   resolveModuleKeyFromPath,
 } from "@/lib/route-module-map";
+import { isAppRouteHidden } from "@/lib/nav-visibility";
 import type { CrudPermission } from "@/lib/permission-types";
 
 export type Role = "admin" | "manager" | "technician" | "viewer" | "sales";
@@ -96,6 +97,7 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
 
   const canAccess = useCallback(
     (path: string) => {
+      if (isAppRouteHidden(path)) return false;
       if (role === "admin") return true;
       const moduleKey = resolveModuleKeyFromPath(path);
       if (moduleKey && permissionsByRole) {

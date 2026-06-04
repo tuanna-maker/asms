@@ -284,6 +284,7 @@ model User {
   customerFeedbacks       CustomerFeedback[]           @relation("CustomerFeedbackCreatedBy")
   customerFeedbacksClosed CustomerFeedback[]           @relation("CustomerFeedbackClosedBy")
   feedbacksAssigned       CustomerFeedback[]           @relation("FeedbackAssigneeUser")
+  feedbackAssigneeTargets CustomerFeedbackAssigneeTarget[]
   feedbackAssignmentsUpdated CustomerFeedbackAssignment[] @relation("FeedbackAssignmentUpdatedBy")
   feedbackTimelineEvents  CustomerFeedbackTimeline[]   @relation("FeedbackTimelineActor")
   feedbackComments        CustomerFeedbackComment[]    @relation("FeedbackCommentAuthor")
@@ -528,6 +529,7 @@ model CustomerFeedback {
   createdBy    User?     @relation("CustomerFeedbackCreatedBy", fields: [createdById], references: [id])
   closedBy     User?     @relation("CustomerFeedbackClosedBy", fields: [closedById], references: [id])
   assignedUser User?     @relation("FeedbackAssigneeUser", fields: [assignedUserId], references: [id])
+  assigneeTargets CustomerFeedbackAssigneeTarget[]
   assignments  CustomerFeedbackAssignment[]
   timeline     CustomerFeedbackTimeline[]
   comments     CustomerFeedbackComment[]
@@ -542,6 +544,24 @@ model CustomerFeedback {
   @@index([assignedRoleCode], map: "idx_customer_feedbacks_assigned_role_code")
   @@index([deletedAt], map: "idx_customer_feedbacks_deleted_at")
   @@map("customer_feedbacks")
+}
+
+model CustomerFeedbackAssigneeTarget {
+  id         String   @id @default(cuid())
+  feedbackId String   @map("feedback_id")
+  targetKey  String   @map("target_key")
+  userId     String?  @map("user_id")
+  roleCode   String?  @map("role_code")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  feedback CustomerFeedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user     User?            @relation(fields: [userId], references: [id])
+
+  @@unique([feedbackId, targetKey], map: "uniq_feedback_assignee_target")
+  @@index([feedbackId], map: "idx_feedback_assignee_targets_feedback_id")
+  @@index([userId], map: "idx_feedback_assignee_targets_user_id")
+  @@index([roleCode], map: "idx_feedback_assignee_targets_role_code")
+  @@map("customer_feedback_assignee_targets")
 }
 
 model CustomerFeedbackAssignment {

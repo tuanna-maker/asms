@@ -2,13 +2,11 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
   createDocumentSchema,
-  documentIdParamSchema,
-  listDocumentsQuerySchema,
   updateDocumentSchema,
 } from "./schema";
 import {
@@ -21,11 +19,10 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "tai-lieu";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager", "technician", "sales"];
 const uploadDir = path.join(process.cwd(), "uploads", "documents");
 fs.mkdirSync(uploadDir, { recursive: true });
 
@@ -51,16 +48,15 @@ const upload = multer({
   },
 });
 
-router.post("/upload", requireRoles(writeRoles), upload.single("file"), uploadDocumentController);
+router.post("/upload", requireModulePermission(M, "create"), upload.single("file"), uploadDocumentController);
 
-router.get("/", requireRoles(readRoles), listDocumentsController);
-router.get("/:id", requireRoles(readRoles), getDocumentDetailController);
+router.get("/", requireModulePermission(M, "read"), listDocumentsController);
+router.get("/:id", requireModulePermission(M, "read"), getDocumentDetailController);
 
-router.post("/", requireRoles(writeRoles), validateBody(createDocumentSchema), createDocumentController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateDocumentSchema), updateDocumentController);
-router.delete("/:id", requireRoles(writeRoles), deleteDocumentController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createDocumentSchema), createDocumentController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateDocumentSchema), updateDocumentController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteDocumentController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-

@@ -3,7 +3,7 @@ import type { CustomerFeedbackCommentKind } from "@prisma/client";
 import { HttpError } from "../../lib/errors/HttpError";
 import { prisma } from "../../utils/prisma";
 
-import { canViewAllFeedbacks } from "./assignee";
+import { canViewAllFeedbacks, viewerMatchesAssignees } from "./assignee";
 
 export type FeedbackCommentViewer = {
   userId: string;
@@ -14,9 +14,10 @@ export type FeedbackForCommentAccess = {
   id: string;
   status: string;
   createdById: string | null;
-  assigneeType: string | null;
-  assignedUserId: string | null;
-  assignedRoleCode: string | null;
+  assigneeType?: string | null;
+  assignedUserId?: string | null;
+  assignedRoleCode?: string | null;
+  assignees?: { userIds: string[]; roleCodes: string[] };
 };
 
 export function canCommentOnFeedback(
@@ -29,6 +30,9 @@ export function canCommentOnFeedback(
   }
   if (canViewAllFeedbacks(viewer.roleCode)) return true;
   if (feedback.createdById === viewer.userId) return true;
+  if (feedback.assignees) {
+    return viewerMatchesAssignees(viewer, feedback.assignees);
+  }
   if (feedback.assigneeType === "user" && feedback.assignedUserId === viewer.userId) {
     return true;
   }
@@ -73,11 +77,32 @@ export async function createCommentService(
       assigneeType: true,
       assignedUserId: true,
       assignedRoleCode: true,
+      assigneeTargets: {
+        select: { userId: true, roleCode: true },
+      },
     },
   });
   if (!feedback) throw new HttpError(404, "Không tìm thấy phản ánh");
 
-  if (!canCommentOnFeedback(feedback, viewer)) {
+  const assignees = {
+    userIds: feedback.assigneeTargets.map((t) => t.userId).filter(Boolean) as string[],
+    roleCodes: feedback.assigneeTargets.map((t) => t.roleCode).filter(Boolean) as string[],
+  };
+
+  if (
+    !canCommentOnFeedback(
+      {
+        id: feedback.id,
+        status: feedback.status,
+        createdById: feedback.createdById,
+        assigneeType: feedback.assigneeType,
+        assignedUserId: feedback.assignedUserId,
+        assignedRoleCode: feedback.assignedRoleCode,
+        assignees,
+      },
+      viewer,
+    )
+  ) {
     throw new HttpError(403, "Bạn không có quyền ghi cập nhật trên phản ánh này");
   }
 

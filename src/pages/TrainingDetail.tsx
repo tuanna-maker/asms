@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { api } from "@/lib/api";
@@ -73,6 +74,7 @@ const getDuration = (start: string, end: string) => {
 };
 
 const TrainingDetail = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("dao-tao");
   const { id } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -405,7 +407,9 @@ const TrainingDetail = () => {
           <Card className="p-4">
             <div className="flex justify-between items-center mb-3">
               <h3 className="font-semibold">Danh sách học viên</h3>
-              <Button size="sm" onClick={openCreateTrainee}><Plus className="h-4 w-4 mr-1" /> Thêm</Button>
+              {canCreate && (
+                <Button size="sm" onClick={openCreateTrainee}><Plus className="h-4 w-4 mr-1" /> Thêm</Button>
+              )}
             </div>
 
             {trainees.length === 0 ? (
@@ -441,7 +445,9 @@ const TrainingDetail = () => {
                           <TableCell>{t.score ?? "—"}</TableCell>
                           <TableCell className="text-right">
                             <Button size="icon" variant="ghost" onClick={() => openEditTrainee(t)}><Edit className="h-4 w-4" /></Button>
-                            <Button size="icon" variant="ghost" onClick={() => removeTrainee(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            {canDelete && (
+                              <Button size="icon" variant="ghost" onClick={() => removeTrainee(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -468,7 +474,9 @@ const TrainingDetail = () => {
                         </div>
                         <div className="flex gap-1 shrink-0">
                           <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditTrainee(t)}><Edit className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeTrainee(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          {canDelete && (
+                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeTrainee(t.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                          )}
                         </div>
                       </div>
                     </Card>
@@ -494,7 +502,9 @@ const TrainingDetail = () => {
           <Card className="p-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold">Lịch học</h3>
-              <Button size="sm" onClick={openCreateSession}><Plus className="h-4 w-4 mr-1" /> Thêm buổi</Button>
+              {canCreate && (
+                <Button size="sm" onClick={openCreateSession}><Plus className="h-4 w-4 mr-1" /> Thêm buổi</Button>
+              )}
             </div>
 
             {schedule.length === 0 ? (
@@ -560,7 +570,9 @@ const TrainingDetail = () => {
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                                 <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEditSession(s)}><Edit className="h-4 w-4" /></Button>
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeSession(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                {canDelete && (
+                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeSession(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                )}
                               </div>
                             </div>
                           </Card>

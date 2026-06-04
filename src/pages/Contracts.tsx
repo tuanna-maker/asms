@@ -21,6 +21,7 @@ import { toastApiError } from "@/lib/api-errors";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 
 type Contract = {
   id: string; dbId?: string; customer: string; value: number; products: number; startDate: string; endDate: string; warrantyEnd: string; status: string; displayStatus: string; progress: number; terms?: string | null;
@@ -37,6 +38,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
 };
 
 const Contracts = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("hop-dong");
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
@@ -307,7 +309,9 @@ const Contracts = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
+            {canCreate && (
+              <Button size="sm" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4 mr-1" /> Tạo hợp đồng</Button>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-2 rounded-md border border-border/50 bg-card/40 p-3 lg:flex-row lg:items-center lg:gap-4">
@@ -367,8 +371,8 @@ const Contracts = () => {
           contracts={pagedContracts}
           contractTypeOptions={contractTypeOptions}
           onView={setViewingContract}
-          onEdit={setEditingContract}
-          onRequestDelete={setDeletingContractId}
+          onEdit={canUpdate ? setEditingContract : undefined}
+          onRequestDelete={canDelete ? setDeletingContractId : undefined}
         />
         <ListPaginationBar
           className="rounded-b-xl border border-t-0 border-border/50 bg-card px-4 pb-4"
@@ -444,8 +448,8 @@ const ContractTable = ({
   contracts: Contract[];
   contractTypeOptions: Array<{ id: string; code: string; label: string }>;
   onView: (c: Contract) => void;
-  onEdit: (c: Contract) => void;
-  onRequestDelete: (contractCode: string) => void;
+  onEdit?: (c: Contract) => void;
+  onRequestDelete?: (contractCode: string) => void;
 }) => (
   <div className="rounded-xl bg-card border border-border/50 shadow-sm">
     <Table>
@@ -492,8 +496,12 @@ const ContractTable = ({
             <TableCell className="text-right">
               <div className="flex justify-end gap-1">
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(c)} aria-label="Xem"><Eye className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onRequestDelete(c.id)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                {onEdit && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(c)} aria-label="Sửa"><Edit className="h-4 w-4" /></Button>
+                )}
+                {onRequestDelete && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onRequestDelete(c.id)} aria-label="Xóa"><Trash2 className="h-4 w-4" /></Button>
+                )}
               </div>
             </TableCell>
           </TableRow>

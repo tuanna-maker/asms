@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 
 interface DocItem {
   id: string;
@@ -54,6 +55,7 @@ const fileIcon = (t: DocItem["fileType"]) => {
 };
 
 const Documents = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("tai-lieu");
   const [docs, setDocs] = useState<DocItem[]>([]);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
@@ -206,7 +208,9 @@ const Documents = () => {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Kho tài liệu chung của toàn hệ thống</p>
         </div>
-        <Button onClick={openCreate} className="gap-2"><Upload className="h-4 w-4" /> Tải lên</Button>
+        {canCreate && (
+          <Button onClick={openCreate} className="gap-2"><Upload className="h-4 w-4" /> Tải lên</Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -260,8 +264,12 @@ const Documents = () => {
                     </div>
                     <div className="flex justify-end gap-1 mt-3 pt-3 border-t border-border">
                       <Button size="icon" variant="ghost" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDeletingId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      {canUpdate && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(d)}><Edit className="h-4 w-4" /></Button>
+                      )}
+                      {canDelete && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setDeletingId(d.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      )}
                     </div>
                   </Card>
                 ))}

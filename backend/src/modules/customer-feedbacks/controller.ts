@@ -30,6 +30,7 @@ import { getFeedbackLinkageOptionsService } from "./linkage-options";
 
 import {
   closeFeedbackServiceWrapped,
+  completeRepairAndCloseFeedbackServiceWrapped,
   createCustomerFeedbackService,
   getCustomerFeedbackDetailService,
   getFeedbackAssignmentSummaryService,
@@ -218,6 +219,20 @@ export async function closeFeedbackController(req: Request, res: Response) {
   if (body.note !== undefined && body.note !== null) input.note = body.note;
   const data = await closeFeedbackServiceWrapped(id, viewer.userId, viewer.roleCode, input);
   return sendSuccess(res, data, "Đã đóng phản ánh");
+}
+
+export async function completeRepairAndCloseFeedbackController(req: Request, res: Response) {
+  const { id } = zodParseOrThrow(customerFeedbackIdParamSchema, req.params);
+  const body = zodParseOrThrow(noteBodySchema, req.body ?? {});
+  const viewer = viewerFromReq(req);
+  if (!viewer.userId) throw new HttpError(401, "Unauthorized");
+  const data = await completeRepairAndCloseFeedbackServiceWrapped(
+    id,
+    viewer.userId,
+    viewer.roleCode,
+    body.note ?? undefined,
+  );
+  return sendSuccess(res, data, "Đã hoàn thành sửa chữa và đóng phản ánh");
 }
 
 export async function reopenFeedbackController(req: Request, res: Response) {

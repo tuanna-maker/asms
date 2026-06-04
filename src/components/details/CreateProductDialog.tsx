@@ -19,6 +19,7 @@ import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSec
 import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
 import { api } from "@/lib/api";
 import { FileText, GitBranch, Layers, Plus, Trash2 } from "lucide-react";
+import { DETAIL_SHEET_CLASS } from "@/lib/detail-sheet-layout";
 
 const productStatusValues = [
   "developing",
@@ -337,7 +338,7 @@ const CreateProductDialog = ({
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+      <SheetContent side="right" className={DETAIL_SHEET_CLASS}>
         <SheetHeader>
           <SheetTitle className="text-xl">Tạo sản phẩm quốc phòng</SheetTitle>
           <SheetDescription>

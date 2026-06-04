@@ -16,6 +16,7 @@ import { intakeToJson, parseIntakeJson } from "./intake";
 import {
   appendTimelineEvent,
   closeFeedbackService,
+  completeRepairAndCloseFeedbackService,
   computeSlaDueAt,
   createAssignmentsForFeedback,
   getCustomerFeedbackDetailWithRelations,
@@ -26,12 +27,15 @@ import {
 import { resolveUnitIdsForUser, resolveUnitsFromProductIds } from "./routing";
 import {
   buildAssigneeVisibilityFilter,
-  buildFeedbackAccessFilter,
   canViewAllFeedbacks,
-  validateAndNormalizeAssignee,
-  resolveUserIdsForAssignee,
-  applyAssigneeToPrismaUpdate,
+  validateAndNormalizeAssignees,
+  resolveUserIdsForAssignees,
+  applyLegacyAssigneeColumns,
+  replaceFeedbackAssigneeTargets,
+  mapAssigneeTargetsFromRow,
   type FeedbackAssigneeInput,
+  type FeedbackAssigneesInput,
+  type NormalizedAssignees,
 } from "./assignee";
 import { notifyFeedbackUsers } from "./workflow";
 import { canCommentOnFeedback, createCommentService } from "./comments";
@@ -99,6 +103,13 @@ const listSelect = {
   createdBy: { select: { id: true, fullName: true } },
   closedBy: { select: { id: true, fullName: true } },
   assignedUser: { select: { id: true, fullName: true } },
+  assigneeTargets: {
+    select: {
+      userId: true,
+      roleCode: true,
+      user: { select: { id: true, fullName: true } },
+    },
+  },
   linkageItems: true,
   assignments: {
     select: {
@@ -137,17 +148,36 @@ const commentsSelect = {
   orderBy: { createdAt: "desc" as const },
 };
 
-function mapFeedbackRow<T extends { linkageItems: unknown; intake?: unknown }>(
+function mapFeedbackRow<T extends { linkageItems: unknown; intake?: unknown; assigneeTargets?: Array<{
+  userId: string | null;
+  roleCode: string | null;
+  user?: { id: string; fullName: string } | null;
+}> }>(
   row: T,
-): Omit<T, "linkageItems" | "intake"> & {
+): Omit<T, "linkageItems" | "intake" | "assigneeTargets"> & {
   linkageItems: FeedbackLinkageItem[];
   intake: ReturnType<typeof parseIntakeJson>;
+  assignees: ReturnType<typeof mapAssigneeTargetsFromRow>;
 } {
+  const { assigneeTargets, ...rest } = row;
+  const assignees = mapAssigneeTargetsFromRow(assigneeTargets ?? []);
   return {
-    ...row,
+    ...(rest as Omit<T, "linkageItems" | "intake" | "assigneeTargets">),
     linkageItems: parseLinkageItemsJson(row.linkageItems as never),
     intake: parseIntakeJson(row.intake as never),
+    assignees,
   };
+}
+
+function assigneesChanged(
+  before: { userIds: string[]; roleCodes: string[] },
+  after: { userIds: string[]; roleCodes: string[] },
+): boolean {
+  const sortJoin = (ids: string[]) => [...ids].sort().join("\0");
+  return (
+    sortJoin(before.userIds) !== sortJoin(after.userIds) ||
+    sortJoin(before.roleCodes) !== sortJoin(after.roleCodes)
+  );
 }
 
 function startOfDay(d: Date): Date {
@@ -189,12 +219,8 @@ export async function listCustomerFeedbacksService(
     and.push({ assignments: { some: { unitId: filters.unitId } } });
   }
 
-  if (viewer && (filters.assignedToMe || !canViewAllFeedbacks(viewer.roleCode))) {
-    and.push(
-      filters.assignedToMe
-        ? buildAssigneeVisibilityFilter(viewer)
-        : await buildFeedbackAccessFilter(viewer),
-    );
+  if (viewer && !canViewAllFeedbacks(viewer.roleCode)) {
+    and.push(buildAssigneeVisibilityFilter(viewer));
   }
 
   if (filters.myUnits && viewer) {
@@ -237,7 +263,7 @@ async function assertFeedbackVisible(
   viewer?: { userId: string; roleCode: string | null },
 ) {
   if (!viewer?.userId || canViewAllFeedbacks(viewer.roleCode)) return;
-  const access = await buildFeedbackAccessFilter(viewer);
+  const access = buildAssigneeVisibilityFilter(viewer);
   const row = await prisma.customerFeedback.findFirst({
     where: { id: feedbackId, deletedAt: null, ...access },
     select: { id: true },
@@ -274,6 +300,7 @@ export async function getCustomerFeedbackDetailService(
             assigneeType: row.assigneeType,
             assignedUserId: row.assignedUserId,
             assignedRoleCode: row.assignedRoleCode,
+            assignees: mapped.assignees,
           },
           viewer,
         )
@@ -343,10 +370,12 @@ export async function createCustomerFeedbackService(
     linkageInputs,
   );
 
-  const assigneeInput: FeedbackAssigneeInput = { type: payload.assignee.type };
-  if (payload.assignee.userId !== undefined) assigneeInput.userId = payload.assignee.userId;
-  if (payload.assignee.roleCode !== undefined) assigneeInput.roleCode = payload.assignee.roleCode;
-  const assignee = await validateAndNormalizeAssignee(assigneeInput);
+  const assignees = await validateAndNormalizeAssignees(
+    (payload.assignees ?? payload.assignee ?? null) as
+      | FeedbackAssigneesInput
+      | FeedbackAssigneeInput
+      | null,
+  );
   const slaDueAt = computeSlaDueAt("medium", payload.feedbackAt);
   const intake = payload.intake ?? {};
 
@@ -358,9 +387,9 @@ export async function createCustomerFeedbackService(
       title: payload.title,
       content: payload.content,
       severity: "medium",
-      assigneeType: assignee.assigneeType,
-      assignedUserId: assignee.assignedUserId,
-      assignedRoleCode: assignee.assignedRoleCode,
+      assigneeType: assignees.assigneeType,
+      assignedUserId: assignees.assignedUserId,
+      assignedRoleCode: assignees.assignedRoleCode,
       status: "new",
       source: payload.source,
       intake: intakeToJson(intake),
@@ -372,6 +401,8 @@ export async function createCustomerFeedbackService(
     select: listSelect,
   });
 
+  await replaceFeedbackAssigneeTargets(row.id, assignees);
+
   await appendTimelineEvent({
     feedbackId: row.id,
     event: "created",
@@ -382,7 +413,7 @@ export async function createCustomerFeedbackService(
   const productIds = extractProductIds(linkageItems);
   await createAssignmentsForFeedback(row.id, productIds, payload.createdById);
 
-  const assigneeUserIds = await resolveUserIdsForAssignee(assignee);
+  const assigneeUserIds = await resolveUserIdsForAssignees(assignees);
   if (assigneeUserIds.length > 0) {
     const notifyInput: Parameters<typeof notifyFeedbackUsers>[1] = {
       key: "feedback_assigned",
@@ -427,6 +458,7 @@ export async function updateCustomerFeedbackService(
       assignedRoleCode: true,
       title: true,
       customer: { select: { name: true } },
+      assigneeTargets: { select: { userId: true, roleCode: true } },
     },
   });
   if (!existing) throw new HttpError(404, "Không tìm thấy phản ánh");
@@ -494,22 +526,21 @@ export async function updateCustomerFeedbackService(
   if (payload.source !== undefined) data.source = payload.source as "external" | "internal";
 
   let assigneeChanged = false;
-  let newAssignee: Awaited<ReturnType<typeof validateAndNormalizeAssignee>> | null = null;
-  if (payload.assignee !== undefined) {
-    if (payload.assignee === null) {
-      newAssignee = {
-        assigneeType: null,
-        assignedUserId: null,
-        assignedRoleCode: null,
-      };
-    } else {
-      newAssignee = await validateAndNormalizeAssignee(payload.assignee as FeedbackAssigneeInput);
-    }
-    assigneeChanged =
-      existing.assigneeType !== newAssignee.assigneeType ||
-      existing.assignedUserId !== newAssignee.assignedUserId ||
-      existing.assignedRoleCode !== newAssignee.assignedRoleCode;
-    applyAssigneeToPrismaUpdate(data, newAssignee);
+  let newAssignees: NormalizedAssignees | null = null;
+  if (payload.assignees !== undefined || payload.assignee !== undefined) {
+    const input =
+      payload.assignees !== undefined
+        ? payload.assignees
+        : payload.assignee === null
+          ? null
+          : (payload.assignee as FeedbackAssigneeInput);
+    newAssignees = await validateAndNormalizeAssignees(input as never);
+    const before = {
+      userIds: existing.assigneeTargets.map((t) => t.userId).filter(Boolean) as string[],
+      roleCodes: existing.assigneeTargets.map((t) => t.roleCode).filter(Boolean) as string[],
+    };
+    assigneeChanged = assigneesChanged(before, newAssignees);
+    applyLegacyAssigneeColumns(data, newAssignees);
   }
   if (payload.intake !== undefined) data.intake = intakeToJson(payload.intake as never);
   if (payload.feedbackAt !== undefined) {
@@ -525,8 +556,9 @@ export async function updateCustomerFeedbackService(
 
   await prisma.customerFeedback.update({ where: { id: resolvedId }, data });
 
-  if (assigneeChanged && newAssignee) {
-    const assigneeUserIds = await resolveUserIdsForAssignee(newAssignee);
+  if (assigneeChanged && newAssignees) {
+    await replaceFeedbackAssigneeTargets(resolvedId, newAssignees);
+    const assigneeUserIds = await resolveUserIdsForAssignees(newAssignees);
     if (assigneeUserIds.length > 0) {
       const notifyInput: Parameters<typeof notifyFeedbackUsers>[1] = {
         key: "feedback_assigned",
@@ -569,6 +601,16 @@ export async function closeFeedbackServiceWrapped(
   input: { customerVerified: boolean; note?: string },
 ) {
   await closeFeedbackService(feedbackId, userId, roleCode, input);
+  return getCustomerFeedbackDetailService(feedbackId, { userId, roleCode });
+}
+
+export async function completeRepairAndCloseFeedbackServiceWrapped(
+  feedbackId: string,
+  userId: string,
+  roleCode: string | null,
+  note?: string,
+) {
+  await completeRepairAndCloseFeedbackService(feedbackId, userId, roleCode, note);
   return getCustomerFeedbackDetailService(feedbackId, { userId, roleCode });
 }
 

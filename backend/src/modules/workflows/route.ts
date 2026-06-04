@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -28,37 +28,36 @@ import {
 } from "./schema";
 
 const router = Router();
+const M = "quy-trinh";
+
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "sales", "viewer"];
-const writeRoles = ["admin", "manager"];
+router.get("/", requireModulePermission(M, "read"), listWorkflowsController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createWorkflowSchema), createWorkflowController);
 
-router.get("/", requireRoles(readRoles), listWorkflowsController);
-router.post("/", requireRoles(writeRoles), validateBody(createWorkflowSchema), createWorkflowController);
-
-router.get("/instances", requireRoles(readRoles), getInstanceForEntityController);
+router.get("/instances", requireModulePermission(M, "read"), getInstanceForEntityController);
 router.post(
   "/instances/attach",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(attachWorkflowSchema),
   attachWorkflowController,
 );
-router.get("/instances/:id", requireRoles(readRoles), getInstanceController);
+router.get("/instances/:id", requireModulePermission(M, "read"), getInstanceController);
 router.post(
   "/instances/:id/advance",
-  requireRoles(readRoles),
+  requireModulePermission(M, "update"),
   validateBody(advanceInstanceSchema),
   advanceInstanceController,
 );
 
-router.get("/:id", requireRoles(readRoles), getWorkflowController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateWorkflowSchema), updateWorkflowController);
-router.delete("/:id", requireRoles(writeRoles), deleteWorkflowController);
+router.get("/:id", requireModulePermission(M, "read"), getWorkflowController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateWorkflowSchema), updateWorkflowController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteWorkflowController);
 
-router.post("/:id/steps", requireRoles(writeRoles), validateBody(upsertStepSchema), addStepController);
-router.put("/:id/steps/reorder", requireRoles(writeRoles), validateBody(reorderStepsSchema), reorderStepsController);
-router.put("/:id/steps/:stepId", requireRoles(writeRoles), validateBody(upsertStepSchema.partial()), updateStepController);
-router.delete("/:id/steps/:stepId", requireRoles(writeRoles), deleteStepController);
+router.post("/:id/steps", requireModulePermission(M, "update"), validateBody(upsertStepSchema), addStepController);
+router.put("/:id/steps/reorder", requireModulePermission(M, "update"), validateBody(reorderStepsSchema), reorderStepsController);
+router.put("/:id/steps/:stepId", requireModulePermission(M, "update"), validateBody(upsertStepSchema.partial()), updateStepController);
+router.delete("/:id/steps/:stepId", requireModulePermission(M, "delete"), deleteStepController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createHandoverSchema, updateHandoverSchema } from "./schema";
@@ -12,18 +12,16 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "ban-giao";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer"];
-const writeRoles = ["admin", "manager", "technician"];
+router.get("/", requireModulePermission(M, "read"), listHandoversController);
+router.get("/:id", requireModulePermission(M, "read"), getHandoverDetailController);
 
-router.get("/", requireRoles(readRoles), listHandoversController);
-router.get("/:id", requireRoles(readRoles), getHandoverDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createHandoverSchema), createHandoverController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateHandoverSchema), updateHandoverController);
-router.delete("/:id", requireRoles(writeRoles), deleteHandoverController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createHandoverSchema), createHandoverController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateHandoverSchema), updateHandoverController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteHandoverController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

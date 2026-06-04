@@ -7,6 +7,9 @@ import { useWarrantiesList, type WarrantyListRow } from "@/hooks/use-warranties-
 import type { WorkflowInstanceListSnapshot } from "@/hooks/use-workflows-api";
 import { Plus, Search, Eye, Pencil, Inbox } from "lucide-react";
 import { useRole } from "@/hooks/use-role";
+import { useAuth } from "@/hooks/use-auth";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
+import { canUserActOnWorkflowSnapshot } from "@/lib/workflow-step-access";
 import WarrantyDetailDialog, { type WarrantyTicketUi } from "@/components/details/WarrantyDetailDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,12 +106,14 @@ function WarrantyTicketsTabContent({
   isLoading,
   isError,
   onOpenTicket,
+  canUpdate,
 }: {
   tab: string;
   filtered: WarrantyTicketUi[];
   isLoading: boolean;
   isError: boolean;
   onOpenTicket: (t: WarrantyTicketUi, mode: "view" | "edit") => void;
+  canUpdate: boolean;
 }) {
   const items = useMemo(
     () => (tab === "all" ? filtered : filtered.filter((t) => t.tabStatus === tab)),
@@ -183,15 +188,17 @@ function WarrantyTicketsTabContent({
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => onOpenTicket(t, "edit")}
-                        aria-label={`Sửa ticket ${t.code}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      {canUpdate && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onOpenTicket(t, "edit")}
+                          aria-label={`Sửa ticket ${t.code}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -208,6 +215,8 @@ function WarrantyTicketsTabContent({
 const Warranty = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { role } = useRole();
+  const { user } = useAuth();
+  const { canCreate, canUpdate } = useModulePermissions("bao-hanh");
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<WarrantyTicketUi | null>(null);
@@ -296,17 +305,13 @@ const Warranty = () => {
 
   const needsProcessingTickets = useMemo(
     () =>
-      tickets.filter(
-        (t) =>
-          t.workflow?.status === "running" &&
-          t.workflow.currentStepRoleCode === role,
-      ),
-    [tickets, role],
+      tickets.filter((t) => canUserActOnWorkflowSnapshot(role, user?.id, t.workflow ?? null)),
+    [tickets, role, user?.id],
   );
 
-  const openTicketEdit = (t: WarrantyTicketUi) => {
+  const openTicketView = (t: WarrantyTicketUi) => {
     setShowCreate(false);
-    setDetailMode("edit");
+    setDetailMode("view");
     setSelectedTicket(t);
   };
 
@@ -350,15 +355,17 @@ const Warranty = () => {
                     <TableCell className="px-4 py-3.5 text-sm text-muted-foreground">{t.createdAt}</TableCell>
                     <TableCell className="px-4 py-3.5 text-center">{tabStatusBadge(t.tabStatus)}</TableCell>
                     <TableCell className="px-4 py-3.5 text-right">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => openTicketEdit(t)}
-                        aria-label={`Sửa phiếu ${t.code}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openTicketView(t)}
+                          aria-label={`Xem phiếu ${t.code}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -378,17 +385,19 @@ const Warranty = () => {
             className="pl-9"
           />
         </div>
-        <Button
-          size="sm"
-          className="shrink-0 gap-1.5"
-          onClick={() => {
-            setSelectedTicket(null);
-            setShowCreate(true);
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          Tạo phiếu
-        </Button>
+        {canCreate && (
+          <Button
+            size="sm"
+            className="shrink-0 gap-1.5"
+            onClick={() => {
+              setSelectedTicket(null);
+              setShowCreate(true);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Tạo phiếu
+          </Button>
+        )}
       </div>
 
       {isError ? (
@@ -420,6 +429,7 @@ const Warranty = () => {
               setDetailMode(mode);
               setSelectedTicket(t);
             }}
+            canUpdate={canUpdate}
           />
         ))}
       </Tabs>

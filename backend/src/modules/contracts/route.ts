@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -20,28 +20,30 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "hop-dong";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "viewer", "sales", "technician"];
-const writeRoles = ["admin", "manager", "sales"];
+router.get("/", requireModulePermission(M, "read"), listContractsController);
+router.get("/:id/products", requireModulePermission(M, "read"), getContractProductsController);
+router.get("/:id", requireModulePermission(M, "read"), getContractDetailController);
 
-router.get("/", requireRoles(readRoles), listContractsController);
-router.get("/:id/products", requireRoles(readRoles), getContractProductsController);
-router.get("/:id", requireRoles(readRoles), getContractDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createContractSchema), createContractController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateContractSchema), updateContractController);
-router.put("/:id/products", requireRoles(writeRoles), validateBody(setContractProductsSchema), setContractProductsController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createContractSchema), createContractController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateContractSchema), updateContractController);
+router.put(
+  "/:id/products",
+  requireModulePermission(M, "update"),
+  validateBody(setContractProductsSchema),
+  setContractProductsController,
+);
 router.put(
   "/:id/products/:productId",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(updateContractProductSchema),
   updateContractProductController,
 );
-router.delete("/:id", requireRoles(writeRoles), deleteContractController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteContractController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-

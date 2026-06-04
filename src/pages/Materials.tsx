@@ -20,9 +20,15 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MaterialDetailDialog from "@/components/details/MaterialDetailDialog";
+import {
+  MaterialUpsertFields,
+  type MaterialFormValues,
+} from "@/components/materials/MaterialUpsertFields";
+import { DETAIL_DIALOG_CLASS } from "@/lib/detail-sheet-layout";
 import { getApiErrorMessage, toastApiError } from "@/lib/api-errors";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import BarcodeScannerDialog from "@/components/scanner/BarcodeScannerDialog";
 import { useDefinitionsList } from "@/hooks/use-definitions-api";
 import {
@@ -32,7 +38,6 @@ import {
   useDeleteMaterialTransfer,
   useMaterialsList,
   useMaterialTransfersList,
-  useUpdateMaterial,
   useUpdateMaterialTransfer,
   type MaterialTransferListRow,
 } from "@/hooks/use-materials-api";
@@ -61,6 +66,21 @@ const FALLBACK_UNITS: { value: string; label: string }[] = [
   { value: "kg", label: "Kilogram" },
 ];
 
+const defaultImportForm = (
+  warehouse = "Kho chính",
+  unit = "bộ",
+): MaterialFormValues => ({
+  code: "",
+  type: "consumable",
+  name: "",
+  serial: "",
+  quantity: 0,
+  available: 0,
+  warehouse,
+  unit,
+  description: "",
+});
+
 const transferTypeBadge = (t: string) => {
   const map: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
     contract: { label: "Theo HĐ", variant: "default" },
@@ -72,16 +92,13 @@ const transferTypeBadge = (t: string) => {
 };
 
 const Materials = () => {
+  const materialPerm = useModulePermissions("vat-tu");
+  const transferPerm = useModulePermissions("vat-tu.dieu-chuyen");
   const [searchParams, setSearchParams] = useSearchParams();
   const [materials, setMaterials] = useState<MaterialRow[]>([]);
-  const [importForm, setImportForm] = useState({
-    type: "consumable" as MaterialRow["type"],
-    name: "",
-    serial: "",
-    quantity: 0,
-    warehouse: "Kho chính",
-    unit: "bộ",
-  });
+  const [importForm, setImportForm] = useState<MaterialFormValues>(() =>
+    defaultImportForm(),
+  );
 
   const { data: apiMaterials } = useMaterialsList();
   const { data: warehouseDefs } = useDefinitionsList("warehouse");
@@ -110,7 +127,6 @@ const Materials = () => {
   const { data: transferRows = [], isLoading: isTransfersLoading } = useMaterialTransfersList();
   const createMaterial = useCreateMaterial();
   const createMaterialTransfer = useCreateMaterialTransfer();
-  const updateMaterial = useUpdateMaterial();
   const deleteMaterial = useDeleteMaterial();
   const updateMaterialTransfer = useUpdateMaterialTransfer();
   const deleteMaterialTransfer = useDeleteMaterialTransfer();
@@ -138,6 +154,7 @@ const Materials = () => {
   const [transferSearch, setTransferSearch] = useState("");
   const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [detailEditable, setDetailEditable] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [transferForm, setTransferForm] = useState({
     type: "contract" as "contract" | "warranty" | "repair",
@@ -147,8 +164,6 @@ const Materials = () => {
     status: "pending" as "pending" | "processing" | "completed",
   });
 
-  const [editMaterialOpen, setEditMaterialOpen] = useState(false);
-  const [editingMaterialRow, setEditingMaterialRow] = useState<MaterialRow | null>(null);
   const [materialDeleteTarget, setMaterialDeleteTarget] = useState<MaterialRow | null>(null);
   const [transferPatchTarget, setTransferPatchTarget] = useState<MaterialTransferListRow | null>(null);
   const [transferDeleteTarget, setTransferDeleteTarget] = useState<MaterialTransferListRow | null>(null);
@@ -157,31 +172,20 @@ const Materials = () => {
     const viewId = searchParams.get("view");
     if (!viewId) return;
     setSelectedMaterialId(viewId);
+    setDetailEditable(false);
     setShowDetail(true);
   }, [searchParams]);
 
-  const [editMatForm, setEditMatForm] = useState({
-    name: "",
-    type: "consumable" as MaterialRow["type"],
-    serial: "",
-    quantity: 0,
-    available: 0,
-    unit: "",
-    warehouse: "",
-  });
-
-  useEffect(() => {
-    if (!editMaterialOpen || !editingMaterialRow) return;
-    setEditMatForm({
-      name: editingMaterialRow.name,
-      type: editingMaterialRow.type,
-      serial: editingMaterialRow.serial ?? "",
-      quantity: editingMaterialRow.quantity,
-      available: editingMaterialRow.available,
-      unit: editingMaterialRow.unit,
-      warehouse: editingMaterialRow.warehouse,
-    });
-  }, [editMaterialOpen, editingMaterialRow]);
+  const closeMaterialSheet = () => {
+    setShowDetail(false);
+    setDetailEditable(false);
+    setSelectedMaterialId(null);
+    if (searchParams.has("view")) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("view");
+      setSearchParams(next, { replace: true });
+    }
+  };
 
   const handleScanResult = (code: string, format: string) => {
     // Search by serial, barcode, qrCode, rfid, or id
@@ -196,11 +200,21 @@ const Materials = () => {
 
     if (found) {
       setSelectedMaterialId(found.id);
+      setDetailEditable(false);
       setShowDetail(true);
     } else {
       // Fall back to search
       setSearch(code);
     }
+  };
+
+  const resetImportForm = () => {
+    setImportForm(
+      defaultImportForm(
+        warehouseOptions[0]?.value ?? "Kho chính",
+        unitOptions[0]?.value ?? "bộ",
+      ),
+    );
   };
 
   const handleImportMaterial = async () => {
@@ -209,30 +223,33 @@ const Materials = () => {
       return;
     }
     if (importForm.quantity <= 0) {
-      toast.error("Số lượng phải lớn hơn 0");
+      toast.error("Tổng số lượng phải lớn hơn 0");
       return;
     }
+    if (importForm.available > importForm.quantity) {
+      toast.error("Khả dụng không được lớn hơn tổng số lượng");
+      return;
+    }
+    const code =
+      importForm.code.trim() || `VT-${Date.now().toString().slice(-6)}`;
     try {
       await createMaterial.mutateAsync({
-        code: `VT-${Date.now().toString().slice(-6)}`,
+        code,
         name: importForm.name.trim(),
         type: importForm.type,
-        serial: importForm.type === "identified" ? (importForm.serial.trim() || undefined) : null,
+        serial:
+          importForm.type === "identified"
+            ? importForm.serial.trim() || null
+            : null,
         quantity: importForm.quantity,
-        available: importForm.quantity,
+        available: importForm.available,
         unit: importForm.unit.trim() || "bộ",
-        warehouse: importForm.warehouse,
+        warehouse: importForm.warehouse.trim() || "Kho chính",
+        description: importForm.description.trim() || undefined,
       });
       toast.success("Nhập vật tư thành công");
       setShowImport(false);
-      setImportForm({
-        type: "consumable",
-        name: "",
-        serial: "",
-        quantity: 0,
-        warehouse: "Kho chính",
-        unit: "bộ",
-      });
+      resetImportForm();
     } catch (e) {
       toastApiError(e, "Không nhập được vật tư");
     }
@@ -291,33 +308,6 @@ const Materials = () => {
     }
   };
 
-  const submitMaterialEdit = async () => {
-    if (!editingMaterialRow) return;
-    if (!editMatForm.name.trim()) {
-      toast.error("Nhập tên vật tư");
-      return;
-    }
-    try {
-      await updateMaterial.mutateAsync({
-        id: editingMaterialRow.id,
-        payload: {
-          name: editMatForm.name.trim(),
-          type: editMatForm.type,
-          serial: editMatForm.type === "identified" ? (editMatForm.serial.trim() || null) : null,
-          quantity: editMatForm.quantity,
-          available: editMatForm.available,
-          unit: editMatForm.unit.trim() || editingMaterialRow.unit,
-          warehouse: editMatForm.warehouse.trim() || editingMaterialRow.warehouse,
-        },
-      });
-      toast.success("Đã cập nhật vật tư");
-      setEditMaterialOpen(false);
-      setEditingMaterialRow(null);
-    } catch (e) {
-      toastApiError(e, "Không cập nhật được");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Stats */}
@@ -369,82 +359,54 @@ const Materials = () => {
                 <QrCode className="h-4 w-4 mr-1" /> Quét mã
               </Button>
               <Button variant="outline" size="sm"><Filter className="h-4 w-4 mr-1" /> Lọc</Button>
-              <Dialog open={showImport} onOpenChange={setShowImport}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><ArrowDownToLine className="h-4 w-4 mr-1" /> Nhập vật tư</Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg">
-                  <DialogHeader><DialogTitle>Nhập vật tư mới</DialogTitle></DialogHeader>
-                  <div className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Loại vật tư</label>
-                      <Select value={importForm.type} onValueChange={(v) => setImportForm((s) => ({ ...s, type: v as MaterialRow["type"] }))}>
-                        <SelectTrigger><SelectValue placeholder="Chọn loại" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="consumable">Tiêu hao</SelectItem>
-                          <SelectItem value="identified">Định danh</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Tên vật tư</label>
-                      <Input
-                        placeholder="Tên vật tư"
-                        value={importForm.name}
-                        onChange={(e) => setImportForm((s) => ({ ...s, name: e.target.value }))}
+              {materialPerm.canCreate && (
+                <Dialog
+                  open={showImport}
+                  onOpenChange={(o) => {
+                    setShowImport(o);
+                    if (o) resetImportForm();
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button size="sm"><ArrowDownToLine className="h-4 w-4 mr-1" /> Nhập vật tư</Button>
+                  </DialogTrigger>
+                <DialogContent className={DETAIL_DIALOG_CLASS}>
+                  <DialogHeader>
+                    <DialogTitle>Nhập vật tư mới</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 pt-2">
+                    <div className="rounded-xl border border-border/50 bg-card/50 p-4">
+                      <MaterialUpsertFields
+                        values={importForm}
+                        onChange={(patch) => setImportForm((s) => ({ ...s, ...patch }))}
+                        warehouseOptions={warehouseOptions}
+                        unitOptions={unitOptions}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Serial (nếu có)</label>
-                        <Input
-                          placeholder="Serial"
-                          value={importForm.serial}
-                          onChange={(e) => setImportForm((s) => ({ ...s, serial: e.target.value }))}
-                          disabled={importForm.type !== "identified"}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground">Số lượng</label>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={importForm.quantity}
-                          onChange={(e) => setImportForm((s) => ({ ...s, quantity: Number(e.target.value) }))}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Đơn vị tính</label>
-                      <Select value={importForm.unit} onValueChange={(v) => setImportForm((s) => ({ ...s, unit: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Chọn ĐVT" /></SelectTrigger>
-                        <SelectContent>
-                          {unitOptions.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Kho</label>
-                      <Select value={importForm.warehouse} onValueChange={(v) => setImportForm((s) => ({ ...s, warehouse: v }))}>
-                        <SelectTrigger><SelectValue placeholder="Chọn kho" /></SelectTrigger>
-                        <SelectContent>
-                          {warehouseOptions.map((o) => (
-                            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Mẹo: khi nhập tổng số lượng, có thể đặt khả dụng bằng tổng SL nếu toàn bộ còn trong kho.
+                    </p>
                     <div className="flex justify-end gap-2 pt-2">
-                      <Button variant="outline" onClick={() => setShowImport(false)}>Hủy</Button>
-                      <Button onClick={() => void handleImportMaterial()} disabled={createMaterial.isPending}>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowImport(false);
+                          resetImportForm();
+                        }}
+                      >
+                        Hủy
+                      </Button>
+                      <Button
+                        onClick={() => void handleImportMaterial()}
+                        disabled={createMaterial.isPending}
+                      >
                         {createMaterial.isPending ? "Đang nhập..." : "Nhập kho"}
                       </Button>
                     </div>
                   </div>
                 </DialogContent>
               </Dialog>
+              )}
             </div>
           </div>
 
@@ -484,24 +446,37 @@ const Materials = () => {
                     <TableCell className="text-muted-foreground">{m.warehouse}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                          setSelectedMaterialId(m.id);
-                          setShowDetail(true);
-                        }}><Eye className="h-4 w-4" /></Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8"
                           onClick={() => {
-                            setEditingMaterialRow(m);
-                            setEditMaterialOpen(true);
+                            setSelectedMaterialId(m.id);
+                            setDetailEditable(false);
+                            setShowDetail(true);
                           }}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setMaterialDeleteTarget(m)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {materialPerm.canUpdate && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => {
+                              setSelectedMaterialId(m.id);
+                              setDetailEditable(true);
+                              setShowDetail(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {materialPerm.canDelete && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setMaterialDeleteTarget(m)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -525,10 +500,11 @@ const Materials = () => {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Tìm phiếu điều chuyển..." className="pl-9" value={transferSearch} onChange={(e) => setTransferSearch(e.target.value)} />
             </div>
-            <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
-              <DialogTrigger asChild>
-                <Button size="sm"><ArrowRightLeft className="h-4 w-4 mr-1" /> Tạo điều chuyển</Button>
-              </DialogTrigger>
+            {transferPerm.canCreate && (
+              <Dialog open={showTransfer} onOpenChange={setShowTransfer}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><ArrowRightLeft className="h-4 w-4 mr-1" /> Tạo điều chuyển</Button>
+                </DialogTrigger>
               <DialogContent className="max-w-lg">
                 <DialogHeader><DialogTitle>Tạo phiếu điều chuyển</DialogTitle></DialogHeader>
                 <div className="space-y-4 pt-4">
@@ -586,6 +562,7 @@ const Materials = () => {
                 </div>
               </DialogContent>
             </Dialog>
+            )}
           </div>
 
           <div className="rounded-xl bg-card border border-border/50 shadow-sm">
@@ -650,12 +627,16 @@ const Materials = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Đổi loại / đích" onClick={() => setTransferPatchTarget(t)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setTransferDeleteTarget(t)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {transferPerm.canUpdate && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Đổi loại / đích" onClick={() => setTransferPatchTarget(t)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                        {transferPerm.canDelete && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => setTransferDeleteTarget(t)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -677,16 +658,11 @@ const Materials = () => {
 
       <MaterialDetailDialog
         open={showDetail}
-        onClose={() => {
-          setShowDetail(false);
-          setSelectedMaterialId(null);
-          if (searchParams.has("view")) {
-            const next = new URLSearchParams(searchParams);
-            next.delete("view");
-            setSearchParams(next, { replace: true });
-          }
+        onOpenChange={(o) => {
+          if (!o) closeMaterialSheet();
         }}
         materialId={selectedMaterialId}
+        editable={detailEditable}
       />
 
       <BarcodeScannerDialog
@@ -694,64 +670,6 @@ const Materials = () => {
         onClose={() => setShowScanner(false)}
         onScan={handleScanResult}
       />
-
-      <Dialog open={editMaterialOpen} onOpenChange={(o) => { setEditMaterialOpen(o); if (!o) setEditingMaterialRow(null); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Sửa vật tư</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-1">
-            <div className="space-y-1.5">
-              <Label>Loại</Label>
-              <Select value={editMatForm.type} onValueChange={(v) => setEditMatForm((s) => ({ ...s, type: v as MaterialRow["type"] }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="consumable">Tiêu hao</SelectItem>
-                  <SelectItem value="identified">Định danh</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Tên</Label>
-              <Input value={editMatForm.name} onChange={(e) => setEditMatForm((s) => ({ ...s, name: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Serial</Label>
-              <Input value={editMatForm.serial} onChange={(e) => setEditMatForm((s) => ({ ...s, serial: e.target.value }))} disabled={editMatForm.type !== "identified"} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Tổng SL</Label>
-                <Input type="number" min={0} value={editMatForm.quantity} onChange={(e) => setEditMatForm((s) => ({ ...s, quantity: Number(e.target.value) }))} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Khả dụng</Label>
-                <Input type="number" min={0} value={editMatForm.available} onChange={(e) => setEditMatForm((s) => ({ ...s, available: Number(e.target.value) }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Đơn vị</Label>
-                <Select value={editMatForm.unit} onValueChange={(v) => setEditMatForm((s) => ({ ...s, unit: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{unitOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Kho</Label>
-                <Select value={editMatForm.warehouse} onValueChange={(v) => setEditMatForm((s) => ({ ...s, warehouse: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{warehouseOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditMaterialOpen(false)}>Hủy</Button>
-            <Button onClick={() => void submitMaterialEdit()} disabled={updateMaterial.isPending}>
-              {updateMaterial.isPending ? "Đang lưu…" : "Lưu"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={transferPatchTarget !== null} onOpenChange={(o) => !o && setTransferPatchTarget(null)}>
         <DialogContent className="max-w-md">

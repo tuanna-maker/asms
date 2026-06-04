@@ -59,7 +59,7 @@ export function UserMultiSelect({
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-      <div className="flex flex-wrap gap-1.5 min-h-[2rem]">
+      <div className="flex flex-wrap gap-1.5 min-h-[2rem] rounded-md border border-border/60 bg-background/80 px-2.5 py-2">
         {selectedUsers.map((u) => (
           <Badge key={u.id} variant="secondary" className="gap-1 pr-1">
             {u.fullName}

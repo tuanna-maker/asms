@@ -56,6 +56,7 @@ import { CourseWorkflowSection } from "@/components/training/CourseWorkflowSecti
 import type { TrainingStepPayloadRecord } from "@/lib/training-step-payload";
 import { buildTrainingCoursePayload } from "@/lib/training-payload";
 import { useAttachWorkflow, useInstanceForEntity, useWorkflowsList } from "@/hooks/use-workflows-api";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import { CustomerSearchSelect } from "@/components/common/CustomerSearchSelect";
 import { UserSearchSelect } from "@/components/common/UserSearchSelect";
 
@@ -75,6 +76,7 @@ const emptyTrainingForm = (): Omit<TrainingCourse, "id"> => ({
 
 
 const Training = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("dao-tao");
   const navigate = useNavigate();
   const qc = useQueryClient();
   const courses = useTrainingCourses();
@@ -251,9 +253,11 @@ const Training = () => {
               <GitBranch className="h-4 w-4" /> QT huấn luyện
             </Link>
           </Button>
-          <Button onClick={openCreate} className="gap-2">
-            <Plus className="h-4 w-4" /> Tạo khóa mới
-          </Button>
+          {canCreate && (
+            <Button onClick={openCreate} className="gap-2">
+              <Plus className="h-4 w-4" /> Tạo khóa mới
+            </Button>
+          )}
         </div>
       </div>
 
@@ -329,10 +333,12 @@ const Training = () => {
             {filtered.length === 0 ? (
               <div className="flex flex-col items-center gap-3 py-12 text-center text-muted-foreground">
                 <p>Không có khóa học nào.</p>
-                <Button type="button" variant="outline" size="sm" onClick={openCreate}>
-                  <Plus className="mr-1 h-4 w-4" />
-                  Tạo khóa mới
-                </Button>
+                {canCreate && (
+                  <Button type="button" variant="outline" size="sm" onClick={openCreate}>
+                    <Plus className="mr-1 h-4 w-4" />
+                    Tạo khóa mới
+                  </Button>
+                )}
               </div>
             ) : (
               coursesPag.pagedItems.map((c) => (
@@ -386,16 +392,20 @@ const Training = () => {
                       >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setDeletingId(c.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {canUpdate && (
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(c)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {canDelete && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setDeletingId(c.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </Card>

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -26,47 +26,38 @@ import {
 } from "./controller";
 
 const router = Router();
-
-const readRoles = ["admin", "manager", "technician"];
-const adminManagerRoles = ["admin", "manager"];
+const M = "dao-tao";
 
 router.use(requireAuth);
 
-router.get("/", requireRoles(readRoles), listTrainingCoursesController);
+router.get("/", requireModulePermission(M, "read"), listTrainingCoursesController);
+router.get("/:id", requireModulePermission(M, "read"), getTrainingCourseDetailController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createTrainingCourseSchema), createTrainingCourseController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateTrainingCourseSchema), updateTrainingCourseController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteTrainingCourseController);
 
-router.get("/:id", requireRoles(readRoles), getTrainingCourseDetailController);
-router.post(
-  "/",
-  requireRoles(adminManagerRoles),
-  validateBody(createTrainingCourseSchema),
-  createTrainingCourseController
-);
+router.post("/:id/trainees", requireModulePermission(M, "update"), validateBody(createTraineeSchema), addTraineeController);
 router.put(
-  "/:id",
-  requireRoles(readRoles),
-  validateBody(updateTrainingCourseSchema),
-  updateTrainingCourseController
+  "/:id/trainees/:traineeId",
+  requireModulePermission(M, "update"),
+  validateBody(updateTraineeSchema),
+  updateTraineeController,
 );
-router.delete("/:id", requireRoles(readRoles), deleteTrainingCourseController);
-
-router.post(
-  "/:id/trainees",
-  requireRoles(readRoles),
-  validateBody(createTraineeSchema),
-  addTraineeController
-);
-router.put("/:id/trainees/:traineeId", requireRoles(readRoles), validateBody(updateTraineeSchema), updateTraineeController);
-router.delete("/:id/trainees/:traineeId", requireRoles(readRoles), deleteTraineeController);
+router.delete("/:id/trainees/:traineeId", requireModulePermission(M, "delete"), deleteTraineeController);
 router.post(
   "/:id/sessions",
-  requireRoles(readRoles),
+  requireModulePermission(M, "create"),
   validateBody(createScheduleSessionSchema),
-  addScheduleSessionController
+  addScheduleSessionController,
 );
-router.put("/:id/sessions/:sessionId", requireRoles(readRoles), validateBody(updateScheduleSessionSchema), updateScheduleSessionController);
-router.delete("/:id/sessions/:sessionId", requireRoles(readRoles), deleteScheduleSessionController);
+router.put(
+  "/:id/sessions/:sessionId",
+  requireModulePermission(M, "update"),
+  validateBody(updateScheduleSessionSchema),
+  updateScheduleSessionController,
+);
+router.delete("/:id/sessions/:sessionId", requireModulePermission(M, "delete"), deleteScheduleSessionController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-

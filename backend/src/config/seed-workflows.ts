@@ -213,6 +213,43 @@ const WORKFLOWS: SeedWorkflow[] = [
     ],
   },
   {
+    code: "WF_COACHING_HANDOVER_H",
+    name: "Huấn luyện sau bàn giao (loại H)",
+    moduleKey: "coaching",
+    description:
+      "Luồng HL gắn bàn giao loại H: kế hoạch → tờ trình & BBBG tạm → báo cáo thực hành → quyết định công nhận.",
+    steps: [
+      { order: 10, name: "Lập kế hoạch HL", actionCode: "submit", roleCode: "technician", slaHours: 48, phaseCode: "training" },
+      {
+        order: 20,
+        name: "Tờ trình HL & BBBG tạm",
+        actionCode: "approve",
+        roleCode: "manager",
+        slaHours: 72,
+        phaseCode: "training",
+        requireDocument: true,
+      },
+      {
+        order: 30,
+        name: "Báo cáo kỹ thuật thực hành",
+        actionCode: "approve",
+        roleCode: "technician",
+        slaHours: 120,
+        phaseCode: "training",
+        requireDocument: true,
+      },
+      {
+        order: 40,
+        name: "QĐ công nhận kết quả HL",
+        actionCode: "release",
+        roleCode: "manager",
+        slaHours: 48,
+        phaseCode: "training",
+        requireDocument: true,
+      },
+    ],
+  },
+  {
     code: "WF_CONTRACT_DEFAULT",
     name: "Quy trình tổng hợp Hợp đồng",
     moduleKey: "contract",
@@ -311,6 +348,10 @@ async function syncStepFieldSchemas(workflowId: string, moduleKey: string, steps
 export async function seedWorkflows() {
   await prisma.workflowDefinition.updateMany({
     where: { code: "WF_HANDOVER_DEFAULT" },
+    data: { isActive: false },
+  });
+  await prisma.workflowDefinition.updateMany({
+    where: { code: "WF_CONTRACT_DEFAULT" },
     data: { isActive: false },
   });
 

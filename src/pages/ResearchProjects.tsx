@@ -28,6 +28,7 @@ import {
 } from "@/hooks/use-research-projects-api";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import { useListPagination } from "@/hooks/use-list-pagination";
 import ListPaginationBar from "@/components/ui/ListPaginationBar";
 
@@ -38,6 +39,7 @@ function dateToIsoStartOfDay(s: string) {
 }
 
 const ResearchProjects = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("de-tai");
   const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"card" | "table">("card");
@@ -140,10 +142,12 @@ const ResearchProjects = () => {
               {!isMobile && <span>Danh sách</span>}
             </button>
           </div>
-          <Button onClick={() => setShowCreate(true)} size="sm" className="gap-1.5" disabled={createMutation.isPending}>
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Đề tài mới</span>
-          </Button>
+          {canCreate && (
+            <Button onClick={() => setShowCreate(true)} size="sm" className="gap-1.5" disabled={createMutation.isPending}>
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Đề tài mới</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -170,27 +174,31 @@ const ResearchProjects = () => {
               <div className="flex items-start justify-between mb-3">
                 <span className="text-xs font-mono text-muted-foreground">{p.code}</span>
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setEditProject(p);
-                      setShowCreate(true);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setDeletingProject(p);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-destructive"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {canUpdate && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setEditProject(p);
+                        setShowCreate(true);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setDeletingProject(p);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-destructive"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <Badge className={`${getStatusColor(p.status)} border-0 text-xs`}>{getStatusLabel(p.status)}</Badge>
                 </div>
               </div>
@@ -250,23 +258,27 @@ const ResearchProjects = () => {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditProject(p);
-                            setShowCreate(true);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingProject(p)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-destructive"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {canUpdate && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditProject(p);
+                              setShowCreate(true);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button
+                            type="button"
+                            onClick={() => setDeletingProject(p)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 text-destructive"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

@@ -4,7 +4,7 @@ import path from "path";
 
 import multer from "multer";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 
 import {
   deleteDocumentController,
@@ -13,10 +13,9 @@ import {
 } from "./controller";
 
 const router = Router({ mergeParams: true });
-router.use(requireAuth);
+const M = "tai-lieu";
 
-const readRoles = ["admin", "manager", "technician", "sales", "viewer"];
-const writeRoles = ["admin", "manager", "technician", "sales"];
+router.use(requireAuth);
 
 const uploadRoot = path.join(process.cwd(), "uploads", "workflow");
 fs.mkdirSync(uploadRoot, { recursive: true });
@@ -59,13 +58,13 @@ const upload = multer({
   },
 });
 
-router.get("/:id/documents", requireRoles(readRoles), listDocumentsController);
+router.get("/:id/documents", requireModulePermission(M, "read"), listDocumentsController);
 router.post(
   "/:id/documents",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "create"),
   upload.single("file"),
   uploadDocumentController,
 );
-router.delete("/:id/documents/:docId", requireRoles(writeRoles), deleteDocumentController);
+router.delete("/:id/documents/:docId", requireModulePermission(M, "delete"), deleteDocumentController);
 
 export default router;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createCustomerSchema, updateCustomerSchema } from "./schema";
@@ -12,20 +12,17 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "khach-hang.khach-hang";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "viewer", "sales"];
-const writeRoles = ["admin", "manager", "sales"];
+router.get("/", requireModulePermission(M, "read"), listCustomersController);
+router.get("/:id", requireModulePermission(M, "read"), getCustomerDetailController);
 
-router.get("/", requireRoles(readRoles), listCustomersController);
-router.get("/:id", requireRoles(readRoles), getCustomerDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createCustomerSchema), createCustomerController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateCustomerSchema), updateCustomerController);
-router.delete("/:id", requireRoles(writeRoles), deleteCustomerController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createCustomerSchema), createCustomerController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateCustomerSchema), updateCustomerController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteCustomerController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-

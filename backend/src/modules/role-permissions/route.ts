@@ -1,24 +1,19 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
+import { listRolePermissionsController, updateRolePermissionsController } from "./controller";
 import { updateRolePermissionsSchema } from "./schema";
-import {
-  listRolePermissionsController,
-  updateRolePermissionsController,
-} from "./controller";
 
 const router = Router();
+const M = "cai-dat.phan-quyen";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager"];
-const writeRoles = ["admin"];
-
-router.get("/", requireRoles(readRoles), listRolePermissionsController);
+router.get("/", requireModulePermission(M, "read"), listRolePermissionsController);
 router.put(
   "/",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(updateRolePermissionsSchema),
   updateRolePermissionsController,
 );

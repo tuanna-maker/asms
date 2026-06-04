@@ -27,6 +27,7 @@ import { toastApiError } from "@/lib/api-errors";
 import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSection";
 import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
 import { qk } from "@/lib/query-keys";
+import { DETAIL_SHEET_CLASS } from "@/lib/detail-sheet-layout";
 import type { ProductListItem } from "@/hooks/use-products-api";
 
 type ProductBomLine = NonNullable<ProductListItem["bom"]>[number];
@@ -362,7 +363,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, editable = false, on
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+      <SheetContent side="right" className={DETAIL_SHEET_CLASS}>
         <SheetHeader>
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pr-8">
             <div className="space-y-1 text-left">

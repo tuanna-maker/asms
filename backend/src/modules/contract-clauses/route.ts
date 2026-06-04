@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -27,60 +27,59 @@ import {
   updateGroupSchema,
 } from "./schema";
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager"];
+const M = "hop-dong.dieu-khoan";
 
 export const contractClausesRouter = Router();
 contractClausesRouter.use(requireAuth);
 
-contractClausesRouter.get("/", requireRoles(readRoles), listClausesController);
+contractClausesRouter.get("/", requireModulePermission(M, "read"), listClausesController);
 contractClausesRouter.put(
   "/reorder",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(reorderClausesSchema),
   reorderClausesController,
 );
-contractClausesRouter.get("/:id/usage", requireRoles(readRoles), getClauseUsageController);
+contractClausesRouter.get("/:id/usage", requireModulePermission(M, "read"), getClauseUsageController);
 contractClausesRouter.post(
   "/",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "create"),
   validateBody(createClauseSchema),
   createClauseController,
 );
 contractClausesRouter.put(
   "/:id",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(updateClauseSchema),
   updateClauseController,
 );
-contractClausesRouter.delete("/:id", requireRoles(writeRoles), deleteClauseController);
+contractClausesRouter.delete("/:id", requireModulePermission(M, "delete"), deleteClauseController);
 
 export const contractClauseGroupsRouter = Router();
 contractClauseGroupsRouter.use(requireAuth);
 
-contractClauseGroupsRouter.get("/", requireRoles(readRoles), listClauseGroupsController);
+contractClauseGroupsRouter.get("/", requireModulePermission(M, "read"), listClauseGroupsController);
 contractClauseGroupsRouter.put(
   "/reorder",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(reorderGroupsSchema),
   reorderClauseGroupsController,
 );
 contractClauseGroupsRouter.post(
   "/",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "create"),
   validateBody(createGroupSchema),
   createClauseGroupController,
 );
 contractClauseGroupsRouter.put(
   "/:id/members",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(setGroupMembersSchema),
   setClauseGroupMembersController,
 );
 contractClauseGroupsRouter.put(
   "/:id",
-  requireRoles(writeRoles),
+  requireModulePermission(M, "update"),
   validateBody(updateGroupSchema),
   updateClauseGroupController,
 );
-contractClauseGroupsRouter.delete("/:id", requireRoles(writeRoles), deleteClauseGroupController);
+contractClauseGroupsRouter.delete("/:id", requireModulePermission(M, "delete"), deleteClauseGroupController);

@@ -82,7 +82,28 @@ export function formatAssigneeLabel(row: {
   assigneeType?: string | null;
   assignedUser?: { fullName: string } | null;
   assignedRoleCode?: string | null;
+  assignees?: {
+    users?: Array<{ fullName: string }>;
+    roles?: Array<{ code: string }>;
+  };
 }): string {
+  const users = row.assignees?.users ?? [];
+  const roles = row.assignees?.roles ?? [];
+  const parts: string[] = [];
+  if (users.length > 0) {
+    parts.push(users.map((u) => u.fullName).join(", "));
+  }
+  if (roles.length > 0) {
+    parts.push(
+      roles
+        .map((r) => {
+          const code = r.code as Role;
+          return ROLE_LABELS[code] ?? r.code;
+        })
+        .join(", "),
+    );
+  }
+  if (parts.length > 0) return parts.join(" · ");
   if (row.assigneeType === "user" && row.assignedUser?.fullName) {
     return row.assignedUser.fullName;
   }

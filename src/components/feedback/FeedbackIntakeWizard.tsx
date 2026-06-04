@@ -16,11 +16,18 @@ import {
 import { CustomerSearchSelect } from "@/components/common/CustomerSearchSelect";
 import { FeedbackLinkagePicker } from "@/components/feedback/FeedbackLinkagePicker";
 import {
+  FeedbackFormFooter,
+  FeedbackFormPanel,
+  FeedbackFormSection,
+  FeedbackFormSteps,
+} from "@/components/feedback/FeedbackFormPanel";
+import {
   useCreateCustomerFeedback,
-  type FeedbackAssignee,
+  type FeedbackAssignees,
 } from "@/hooks/use-customer-feedbacks-api";
 import {
   FeedbackAssigneeSelect,
+  emptyAssignees,
   isAssigneeComplete,
 } from "@/components/feedback/FeedbackAssigneeSelect";
 import { useFeedbackLinkageOptions } from "@/hooks/use-feedback-linkage-options";
@@ -74,13 +81,9 @@ export function FeedbackIntakeWizard({
   const [intake, setIntake] = useState<FeedbackIntake>(emptyIntake());
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [assignee, setAssignee] = useState<FeedbackAssignee>({
-    type: "user",
-    userId: null,
-    roleCode: null,
-  });
+  const [assignees, setAssignees] = useState<FeedbackAssignees>(emptyAssignees());
   const { data: roles = [] } = useRolesList(step >= 2);
-  const { data: users = [] } = useUsersList(step >= 2 && assignee.type === "user");
+  const { data: users = [] } = useUsersList(step >= 2 && assignees.userIds.length > 0);
   const [feedbackAt, setFeedbackAt] = useState(toDateInputValue());
   const [linkage, setLinkage] = useState<LinkageState>(() => ({
     contractId: fixedContractId ?? null,
@@ -121,16 +124,17 @@ export function FeedbackIntakeWizard({
   }, [linkage, linkageMeta?.products, linkageMeta?.materials]);
 
   const assigneePreview = useMemo(() => {
-    if (assignee.type === "user" && assignee.userId) {
-      const u = users.find((x) => x.id === assignee.userId);
-      return u?.fullName ?? "—";
-    }
-    if (assignee.type === "role" && assignee.roleCode) {
-      const r = roles.find((x) => x.code === assignee.roleCode);
-      return r ? `Vai trò: ${r.name}` : assignee.roleCode;
-    }
-    return "—";
-  }, [assignee, users, roles]);
+    const userNames = assignees.userIds
+      .map((id) => users.find((x) => x.id === id)?.fullName)
+      .filter(Boolean) as string[];
+    const roleNames = assignees.roleCodes.map(
+      (code) => roles.find((x) => x.code === code)?.name ?? code,
+    );
+    const parts: string[] = [];
+    if (userNames.length > 0) parts.push(userNames.join(", "));
+    if (roleNames.length > 0) parts.push(roleNames.map((n) => `Vai trò: ${n}`).join(", "));
+    return parts.length > 0 ? parts.join(" · ") : "—";
+  }, [assignees, users, roles]);
 
   const contractForSummary = useMemo(() => {
     if (!resolvedContractId) return null;
@@ -169,7 +173,7 @@ export function FeedbackIntakeWizard({
         toast.error("Vui lòng ghi nhận lời KH");
         return false;
       }
-      if (!isAssigneeComplete(assignee)) {
+      if (!isAssigneeComplete(assignees)) {
         toast.error("Vui lòng chọn người hoặc vai trò phân công");
         return false;
       }
@@ -202,7 +206,7 @@ export function FeedbackIntakeWizard({
         contractId: resolvedContractId,
         title: title.trim(),
         content: content.trim(),
-        assignee,
+        assignees,
         source,
         intake: {
           ...intake,
@@ -221,164 +225,207 @@ export function FeedbackIntakeWizard({
   const showCustomerPicker = requireCustomerSelect || !fixedCustomerId;
 
   return (
-    <div className="space-y-4 flex flex-col min-h-0 flex-1">
-      <div className="flex gap-2 text-xs">
+    <FeedbackFormPanel className="flex-1 min-h-0">
+      <FeedbackFormSteps>
         {STEPS.map((label, i) => (
           <span
             key={label}
-            className={`px-2 py-1 rounded-full ${i === step ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"}`}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              i === step
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : i < step
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted text-muted-foreground"
+            }`}
           >
-            {i + 1}. {label}
+            <span
+              className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${
+                i === step ? "bg-primary-foreground/20" : "bg-background/60"
+              }`}
+            >
+              {i + 1}
+            </span>
+            {label}
           </span>
         ))}
-      </div>
+      </FeedbackFormSteps>
 
       {step === 0 && (
-        <div className="space-y-4">
-          {showCustomerPicker && (
-            <div className="space-y-2">
-              <Label>Khách hàng (đơn vị đối tác)</Label>
+        <>
+          {showCustomerPicker ? (
+            <FeedbackFormSection
+              title="Khách hàng"
+              description="Đơn vị đối tác phát sinh phản ánh."
+            >
               <CustomerSearchSelect value={customerId} onChange={setCustomerId} />
+            </FeedbackFormSection>
+          ) : null}
+
+          <FeedbackFormSection
+            title="Thông tin tiếp nhận"
+            description="Nguồn, kênh liên hệ và người liên hệ."
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Nguồn</Label>
+                <Select value={source} onValueChange={(v) => setSource(v as FeedbackSource)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(SOURCE_LABELS) as FeedbackSource[]).map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {SOURCE_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Kênh liên hệ</Label>
+                <Select
+                  value={intake.channel ?? ""}
+                  onValueChange={(v) =>
+                    setIntake((p) => ({ ...p, channel: (v || null) as FeedbackChannel | null }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tùy chọn" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(CHANNEL_LABELS) as FeedbackChannel[]).map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {CHANNEL_LABELS[k]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Người liên hệ</Label>
+                <Input
+                  value={intake.contactName ?? ""}
+                  onChange={(e) => setIntake((p) => ({ ...p, contactName: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>SĐT</Label>
+                <Input
+                  value={intake.contactPhone ?? ""}
+                  onChange={(e) => setIntake((p) => ({ ...p, contactPhone: e.target.value }))}
+                />
+              </div>
             </div>
-          )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Nguồn</Label>
-              <Select value={source} onValueChange={(v) => setSource(v as FeedbackSource)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(SOURCE_LABELS) as FeedbackSource[]).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {SOURCE_LABELS[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </FeedbackFormSection>
+
+          <FeedbackFormSection
+            title="Mô tả sự cố"
+            description="Lời khách hàng và nội dung ticket nội bộ."
+          >
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Lời KH / mô tả sự cố *</Label>
+                <Textarea
+                  value={intake.customerStatement ?? ""}
+                  onChange={(e) => setIntake((p) => ({ ...p, customerStatement: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Triệu chứng / hiện tượng</Label>
+                <Input
+                  value={intake.symptom ?? ""}
+                  onChange={(e) => setIntake((p) => ({ ...p, symptom: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tiêu đề ticket *</Label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Nội dung nội bộ *</Label>
+                <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3} />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>Kênh liên hệ</Label>
-              <Select
-                value={intake.channel ?? ""}
-                onValueChange={(v) =>
-                  setIntake((p) => ({ ...p, channel: (v || null) as FeedbackChannel | null }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Tùy chọn" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(CHANNEL_LABELS) as FeedbackChannel[]).map((k) => (
-                    <SelectItem key={k} value={k}>
-                      {CHANNEL_LABELS[k]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          </FeedbackFormSection>
+
+          <FeedbackFormSection
+            title="Phân công & thời gian"
+            description="Người hoặc vai trò nhận phản ánh và ngày ghi nhận."
+            noDivider
+          >
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr_240px] gap-5 items-start">
+              <FeedbackAssigneeSelect value={assignees} onChange={setAssignees} compact />
+              <div className="space-y-2">
+                <Label>Ngày phản ánh</Label>
+                <Input type="date" value={feedbackAt} onChange={(e) => setFeedbackAt(e.target.value)} />
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Người liên hệ</Label>
-              <Input
-                value={intake.contactName ?? ""}
-                onChange={(e) => setIntake((p) => ({ ...p, contactName: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>SĐT</Label>
-              <Input
-                value={intake.contactPhone ?? ""}
-                onChange={(e) => setIntake((p) => ({ ...p, contactPhone: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Lời KH / mô tả sự cố *</Label>
-            <Textarea
-              value={intake.customerStatement ?? ""}
-              onChange={(e) => setIntake((p) => ({ ...p, customerStatement: e.target.value }))}
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Triệu chứng / hiện tượng</Label>
-            <Input
-              value={intake.symptom ?? ""}
-              onChange={(e) => setIntake((p) => ({ ...p, symptom: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Tiêu đề ticket *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Nội dung nội bộ *</Label>
-            <Textarea value={content} onChange={(e) => setContent(e.target.value)} rows={3} />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FeedbackAssigneeSelect value={assignee} onChange={setAssignee} />
-            <div className="space-y-2">
-              <Label>Ngày phản ánh</Label>
-              <Input type="date" value={feedbackAt} onChange={(e) => setFeedbackAt(e.target.value)} />
-            </div>
-          </div>
-        </div>
+          </FeedbackFormSection>
+        </>
       )}
 
       {step === 1 && (
-        <div className="flex-1 min-h-0 flex flex-col">
-          <FeedbackLinkagePicker
-            customerId={resolvedCustomerId}
-            contractId={linkage.contractId}
-            productIds={linkage.productIds}
-            materialIds={linkage.materialIds}
-            onChange={setLinkage}
-            fixedContractId={fixedContractId}
-            columnMaxHeight="min(58vh, 560px)"
-          />
-        </div>
+        <FeedbackFormSection
+          title="Liên kết hợp đồng / sản phẩm / vật tư"
+          description="Tùy chọn — gắn phản ánh với thiết bị liên quan."
+          noDivider
+          className="flex-1 min-h-0 flex flex-col"
+        >
+          <div className="flex-1 min-h-0">
+            <FeedbackLinkagePicker
+              customerId={resolvedCustomerId}
+              contractId={linkage.contractId}
+              productIds={linkage.productIds}
+              materialIds={linkage.materialIds}
+              onChange={setLinkage}
+              fixedContractId={fixedContractId}
+              columnMaxHeight="min(58vh, 560px)"
+            />
+          </div>
+        </FeedbackFormSection>
       )}
 
       {step === 2 && (
-        <div className="space-y-3 text-sm">
-          <p>
-            <span className="text-muted-foreground">KH:</span> {resolvedCustomerId ? "Đã chọn" : "—"}
-          </p>
-          <p>
-            <span className="text-muted-foreground">Tiêu đề:</span> {title}
-          </p>
-          <p>
-            <span className="text-muted-foreground">Phân công:</span> {assigneePreview}
-          </p>
-          {summaryLines.length > 0 && contractForSummary ? (
-            <div className="rounded-lg border p-3 text-xs whitespace-pre-wrap">
-              {formatLinkageSummary(summaryLines, contractForSummary)}
-            </div>
-          ) : (
-            <p className="text-muted-foreground">Chưa gắn sản phẩm/vật tư (tùy chọn).</p>
-          )}
-          <div>
-            <p className="font-medium mb-1">Đơn vị sẽ được giao:</p>
-            {previewUnits.length === 0 ? (
-              <p className="text-amber-600 text-xs">
-                Chưa có quy tắc định tuyến — cấu hình tại Cài đặt → Đơn vị phản ánh.
-              </p>
+        <FeedbackFormSection title="Xem trước trước khi tạo" noDivider className="text-sm">
+          <div className="space-y-3">
+            <p>
+              <span className="text-muted-foreground">KH:</span> {resolvedCustomerId ? "Đã chọn" : "—"}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Tiêu đề:</span> {title}
+            </p>
+            <p>
+              <span className="text-muted-foreground">Phân công:</span> {assigneePreview}
+            </p>
+            {summaryLines.length > 0 && contractForSummary ? (
+              <div className="rounded-md border border-border/40 bg-background/40 p-3 text-xs whitespace-pre-wrap">
+                {formatLinkageSummary(summaryLines, contractForSummary)}
+              </div>
             ) : (
-              <ul className="list-disc pl-4 text-xs">
-                {previewUnits.map((u) => (
-                  <li key={u.id}>
-                    {u.name} ({u.code})
-                  </li>
-                ))}
-              </ul>
+              <p className="text-muted-foreground">Chưa gắn sản phẩm/vật tư (tùy chọn).</p>
             )}
+            <div>
+              <p className="font-medium mb-1">Đơn vị sẽ được giao:</p>
+              {previewUnits.length === 0 ? (
+                <p className="text-amber-600 text-xs">
+                  Chưa có quy tắc định tuyến — cấu hình tại Cài đặt → Đơn vị phản ánh.
+                </p>
+              ) : (
+                <ul className="list-disc pl-4 text-xs">
+                  {previewUnits.map((u) => (
+                    <li key={u.id}>
+                      {u.name} ({u.code})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
-        </div>
+        </FeedbackFormSection>
       )}
 
-      <div className="flex justify-between gap-2 pt-2">
+      <FeedbackFormFooter className="justify-between">
         <Button type="button" variant="outline" onClick={onCancel}>
           Hủy
         </Button>
@@ -404,7 +451,7 @@ export function FeedbackIntakeWizard({
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </FeedbackFormFooter>
+    </FeedbackFormPanel>
   );
 }

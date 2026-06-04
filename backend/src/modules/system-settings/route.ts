@@ -1,19 +1,20 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { listSystemSettingsController, updateSystemSettingsController } from "./controller";
 import { updateSystemSettingsSchema } from "./schema";
 
 const router = Router();
+const M = "cai-dat.he-thong";
 
 router.use(requireAuth);
 
-router.get("/", requireRoles(["admin", "manager"]), listSystemSettingsController);
+router.get("/", requireModulePermission(M, "read"), listSystemSettingsController);
 router.put(
   "/",
-  requireRoles(["admin"]),
+  requireModulePermission(M, "update"),
   validateBody(updateSystemSettingsSchema),
   updateSystemSettingsController,
 );

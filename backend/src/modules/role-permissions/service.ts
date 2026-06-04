@@ -9,6 +9,55 @@ import {
   type CrudPermission,
 } from "../../config/role-permissions-defaults";
 
+export type CrudAction = keyof CrudPermission;
+
+/** Cache in-memory theo roleCode — invalidate khi admin cập nhật matrix. */
+const permissionsCache = new Map<string, Record<string, CrudPermission>>();
+
+export function invalidateRolePermissionsCache(roleCode?: string) {
+  if (roleCode) {
+    permissionsCache.delete(roleCode);
+  } else {
+    permissionsCache.clear();
+  }
+}
+
+async function loadPermissionsForRole(roleCode: string): Promise<Record<string, CrudPermission>> {
+  const cached = permissionsCache.get(roleCode);
+  if (cached) return cached;
+
+  await ensureRolePermissionsSeeded();
+  const flat = flattenPermissionModules();
+  const role = await prisma.role.findFirst({
+    where: { code: roleCode, deletedAt: null, isActive: true },
+    select: {
+      permissions: { select: SELECT_CRUD },
+    },
+  });
+
+  const map: Record<string, CrudPermission> = {};
+  for (const mod of flat) {
+    if (roleCode === "admin") {
+      map[mod.key] = fullCrud();
+      continue;
+    }
+    const row = role?.permissions.find((p) => p.moduleKey === mod.key);
+    map[mod.key] = row ? rowToCrud(row) : getDefaultCrudForModule(roleCode, mod.key);
+  }
+
+  permissionsCache.set(roleCode, map);
+  return map;
+}
+
+function resolveCrudForModule(
+  permissions: Record<string, CrudPermission>,
+  roleCode: string,
+  moduleKey: string,
+): CrudPermission {
+  if (permissions[moduleKey]) return permissions[moduleKey];
+  return getDefaultCrudForModule(roleCode, moduleKey);
+}
+
 const SELECT_CRUD = {
   moduleKey: true,
   canRead: true,
@@ -194,25 +243,31 @@ export async function updateRolePermissionsService(
     });
   }
 
+  invalidateRolePermissionsCache();
   await syncAdminFullPermissions();
   return listRolePermissionsService();
 }
 
-/** Kiểm tra roleCode có quyền đọc moduleKey không. */
-export async function roleCanAccessModule(roleCode: string, moduleKey: string): Promise<boolean> {
+/** Kiểm tra roleCode có quyền thực hiện action trên moduleKey không. */
+export async function roleCanPerformAction(
+  roleCode: string,
+  moduleKey: string,
+  action: CrudAction,
+): Promise<boolean> {
   if (roleCode === "admin") return true;
-  await ensureRolePermissionsSeeded();
+
   const role = await prisma.role.findFirst({
     where: { code: roleCode, deletedAt: null, isActive: true },
-    select: {
-      permissions: {
-        where: { moduleKey },
-        select: SELECT_CRUD,
-      },
-    },
+    select: { id: true },
   });
   if (!role) return false;
-  const perm = role.permissions[0];
-  if (perm) return perm.canRead;
-  return getDefaultCrudForModule(roleCode, moduleKey).read;
+
+  const permissions = await loadPermissionsForRole(roleCode);
+  const crud = resolveCrudForModule(permissions, roleCode, moduleKey);
+  return crud[action];
+}
+
+/** Kiểm tra roleCode có quyền đọc moduleKey không. */
+export async function roleCanAccessModule(roleCode: string, moduleKey: string): Promise<boolean> {
+  return roleCanPerformAction(roleCode, moduleKey, "read");
 }

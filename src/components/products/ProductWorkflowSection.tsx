@@ -230,8 +230,8 @@ export function ProductWorkflowSection({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col space-y-4">
-      <div className="space-y-1.5 max-w-2xl">
+    <div className="space-y-4">
+      <div className="space-y-1.5 max-w-3xl">
         <Label>Quy trình sản phẩm</Label>
         <Select
           value={selectedWorkflowId || undefined}
@@ -274,12 +274,8 @@ export function ProductWorkflowSection({
           Quy trình chưa có bước hoặc chưa cấu hình trường bước.
         </div>
       ) : (
-        <Tabs
-          value={formTab}
-          onValueChange={setFormTab}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <div className="shrink-0 border-b border-border overflow-x-auto">
+        <Tabs value={formTab} onValueChange={setFormTab} className="space-y-0">
+          <div className="border-b border-border overflow-x-auto">
             <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
               {stepsForTabs.map((step) => (
                 <TabsTrigger key={step.id} value={step.id} className={workflowStepTabTriggerClass}>
@@ -288,31 +284,29 @@ export function ProductWorkflowSection({
               ))}
             </TabsList>
           </div>
-          <div className="relative min-h-0 flex-1">
-            {stepsForTabs.map((step) => (
-              <TabsContent
-                key={step.id}
-                value={step.id}
-                className="absolute inset-0 mt-0 overflow-y-auto py-4 space-y-4 data-[state=inactive]:hidden"
-              >
-                <DynamicStepFormFields
-                  fieldSchema={step.fieldSchema}
-                  values={stepPayloads[step.id] ?? {}}
-                  onChange={(key, value) => patchStepPayload(step.id, key, value)}
-                  stepDescription={step.description}
-                  workflowEditHref={workflowEditHref}
+          {stepsForTabs.map((step) => (
+            <TabsContent
+              key={step.id}
+              value={step.id}
+              className="mt-0 py-4 space-y-4 focus-visible:outline-none data-[state=inactive]:hidden"
+            >
+              <DynamicStepFormFields
+                fieldSchema={step.fieldSchema}
+                values={stepPayloads[step.id] ?? {}}
+                onChange={(key, value) => patchStepPayload(step.id, key, value)}
+                stepDescription={step.description}
+                workflowEditHref={workflowEditHref}
+              />
+              {productDbId && !isCreateMode ? (
+                <WorkflowInstancePanel
+                  moduleKey="product"
+                  entityId={productDbId}
+                  focusStepId={step.id}
+                  compact
                 />
-                {productDbId && !isCreateMode ? (
-                  <WorkflowInstancePanel
-                    moduleKey="product"
-                    entityId={productDbId}
-                    focusStepId={step.id}
-                    compact
-                  />
-                ) : null}
-              </TabsContent>
-            ))}
-          </div>
+              ) : null}
+            </TabsContent>
+          ))}
         </Tabs>
       )}
 

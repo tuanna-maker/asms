@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import { createContactSchema, updateContactSchema } from "./schema";
@@ -12,18 +12,16 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "khach-hang.lien-he";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager", "sales"];
+router.get("/", requireModulePermission(M, "read"), listContactsController);
+router.get("/:id", requireModulePermission(M, "read"), getContactDetailController);
 
-router.get("/", requireRoles(readRoles), listContactsController);
-router.get("/:id", requireRoles(readRoles), getContactDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createContactSchema), createContactController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateContactSchema), updateContactController);
-router.delete("/:id", requireRoles(writeRoles), deleteContactController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createContactSchema), createContactController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateContactSchema), updateContactController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteContactController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 

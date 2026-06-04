@@ -1,6 +1,7 @@
-import { ChevronRight, Cpu, FileSignature, GraduationCap, Truck, Wrench } from "lucide-react";
+import { ChevronRight, Cpu, GraduationCap, Truck, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useWorkflowsList, type WorkflowModuleKey } from "@/hooks/use-workflows-api";
+import { isWorkflowModuleHidden } from "@/lib/workflow-visibility";
 
 const MODULES: Array<{
   key: WorkflowModuleKey;
@@ -9,13 +10,6 @@ const MODULES: Array<{
   icon: typeof Truck;
   iconClassName: string;
 }> = [
-  {
-    key: "contract",
-    label: "Hợp đồng (tổng hợp)",
-    description: "Quy trình thống nhất gắn theo hợp đồng cho mọi giai đoạn.",
-    icon: FileSignature,
-    iconClassName: "bg-primary/15 text-primary",
-  },
   {
     key: "handover",
     label: "Bàn giao",
@@ -63,7 +57,7 @@ const WorkflowOverviewPage = () => {
 
   return (
     <div className="rounded-xl border border-border/50 bg-card shadow-sm divide-y divide-border/50">
-      {MODULES.map((m) => {
+      {MODULES.filter((m) => !isWorkflowModuleHidden(m.key)).map((m) => {
         const Icon = m.icon;
         return (
           <Link

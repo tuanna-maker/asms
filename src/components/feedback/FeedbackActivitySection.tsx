@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Loader2, MessageSquare, Wrench } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -10,6 +10,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import {
+  useCompleteRepairCloseFeedback,
   useCreateFeedbackComment,
   type CustomerFeedbackRow,
   type FeedbackCommentKind,
@@ -82,6 +83,7 @@ function ActivityRow({ item }: { item: FeedbackActivityItem }) {
 
 export function FeedbackActivitySection({ row, onPosted }: Props) {
   const createMut = useCreateFeedbackComment();
+  const completeCloseMut = useCompleteRepairCloseFeedback();
   const [kind, setKind] = useState<"issue" | "fix">("issue");
   const [body, setBody] = useState("");
 
@@ -91,6 +93,8 @@ export function FeedbackActivitySection({ row, onPosted }: Props) {
   );
 
   const canComment = row.canComment === true;
+  const canCompleteClose = canComment && row.status !== "resolved";
+  const busy = createMut.isPending || completeCloseMut.isPending;
 
   const placeholders = {
     issue: "Mô tả hỏng hóc, linh kiện hoặc triệu chứng…",
@@ -113,6 +117,32 @@ export function FeedbackActivitySection({ row, onPosted }: Props) {
     }
   };
 
+  const onCompleteRepairClose = async () => {
+    const trimmed = body.trim();
+    if (
+      !window.confirm(
+        "Xác nhận hoàn thành sửa chữa và đóng phản ánh này? Thao tác không thể hoàn tác trừ khi mở lại.",
+      )
+    ) {
+      return;
+    }
+    try {
+      if (trimmed) {
+        await createMut.mutateAsync({
+          feedbackId: row.id,
+          kind: kind === "issue" ? "issue" : "fix",
+          body: trimmed,
+        });
+        setBody("");
+      }
+      await completeCloseMut.mutateAsync({ id: row.id, note: trimmed || undefined });
+      toast.success("Đã hoàn thành sửa chữa và đóng phản ánh");
+      onPosted?.();
+    } catch (e) {
+      toastApiError(e, "Không đóng được phản ánh");
+    }
+  };
+
   return (
     <div className="space-y-3 rounded-lg border border-border/50 bg-card/30 p-4">
       <Label className="text-sm font-semibold text-card-foreground">Hoạt động & cập nhật xử lý</Label>
@@ -127,13 +157,13 @@ export function FeedbackActivitySection({ row, onPosted }: Props) {
 
       {canComment ? (
         <div className="space-y-2 pt-2 border-t border-border/50">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               size="sm"
               variant={kind === "issue" ? "default" : "outline"}
               onClick={() => setKind("issue")}
-              disabled={createMut.isPending}
+              disabled={busy}
             >
               <MessageSquare className="h-3.5 w-3.5 mr-1" />
               Ghi sự cố
@@ -143,7 +173,7 @@ export function FeedbackActivitySection({ row, onPosted }: Props) {
               size="sm"
               variant={kind === "fix" ? "default" : "outline"}
               onClick={() => setKind("fix")}
-              disabled={createMut.isPending}
+              disabled={busy}
             >
               <Wrench className="h-3.5 w-3.5 mr-1" />
               Ghi kết quả sửa
@@ -154,10 +184,26 @@ export function FeedbackActivitySection({ row, onPosted }: Props) {
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={placeholders[kind]}
-            disabled={createMut.isPending}
+            disabled={busy}
           />
-          <div className="flex justify-end">
-            <Button type="button" size="sm" onClick={() => void onSubmit()} disabled={createMut.isPending}>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {canCompleteClose ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={() => void onCompleteRepairClose()}
+                disabled={busy}
+              >
+                {completeCloseMut.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                )}
+                Hoàn thành sửa chữa và đóng phản ánh
+              </Button>
+            ) : null}
+            <Button type="button" size="sm" onClick={() => void onSubmit()} disabled={busy}>
               {createMut.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
               Gửi cập nhật
             </Button>

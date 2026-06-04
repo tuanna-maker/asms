@@ -1,7 +1,6 @@
 import { Router } from "express";
 
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
-
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
 import {
@@ -15,6 +14,7 @@ import {
 
 import {
   closeFeedbackController,
+  completeRepairAndCloseFeedbackController,
   createCustomerFeedbackController,
   deleteCustomerFeedbackController,
   feedbackSummaryController,
@@ -35,121 +35,72 @@ import {
 
 const router = Router();
 const analyticsRouter = Router();
+const M = "phan-anh";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician", "viewer", "sales"];
-const writeRoles = ["admin", "manager", "technician", "sales"];
+router.get("/linkage-options", requireModulePermission(M, "read"), linkageOptionsController);
+router.get("/routing-preview", requireModulePermission(M, "read"), routingPreviewController);
+router.get("/summary", requireModulePermission(M, "read"), feedbackSummaryController);
 
-router.get("/linkage-options", requireRoles(readRoles), linkageOptionsController);
-router.get("/routing-preview", requireRoles(readRoles), routingPreviewController);
-router.get("/summary", requireRoles(readRoles), feedbackSummaryController);
-
-analyticsRouter.get("/by-customer", requireRoles(readRoles), feedbackAnalyticsByCustomerController);
-analyticsRouter.get("/by-product", requireRoles(readRoles), feedbackAnalyticsByProductController);
-analyticsRouter.get("/by-material", requireRoles(readRoles), feedbackAnalyticsByMaterialController);
+analyticsRouter.get("/by-customer", requireModulePermission(M, "read"), feedbackAnalyticsByCustomerController);
+analyticsRouter.get("/by-product", requireModulePermission(M, "read"), feedbackAnalyticsByProductController);
+analyticsRouter.get("/by-material", requireModulePermission(M, "read"), feedbackAnalyticsByMaterialController);
 analyticsRouter.get(
   "/customer/:customerId/detail",
-  requireRoles(readRoles),
+  requireModulePermission(M, "read"),
   feedbackAnalyticsCustomerDetailController,
 );
 router.use("/analytics", analyticsRouter);
 
-router.get("/", requireRoles(readRoles), listCustomerFeedbacksController);
-router.get("/:id", requireRoles(readRoles), getCustomerFeedbackDetailController);
+router.get("/", requireModulePermission(M, "read"), listCustomerFeedbacksController);
+router.get("/:id", requireModulePermission(M, "read"), getCustomerFeedbackDetailController);
 
-
+router.post("/", requireModulePermission(M, "create"), validateBody(createCustomerFeedbackSchema), createCustomerFeedbackController);
 router.post(
-
-  "/",
-
-  requireRoles(writeRoles),
-
-  validateBody(createCustomerFeedbackSchema),
-
-  createCustomerFeedbackController,
-
-);
-
-router.post(
-
   "/:id/comments",
-
-  requireRoles(writeRoles),
-
+  requireModulePermission(M, "update"),
   validateBody(createFeedbackCommentSchema),
-
   createFeedbackCommentController,
-
 );
-
 router.put(
-
   "/:id",
-
-  requireRoles(writeRoles),
-
+  requireModulePermission(M, "update"),
   validateBody(updateCustomerFeedbackSchema),
-
   updateCustomerFeedbackController,
-
 );
-
 router.patch(
-
   "/:id/assignments/:assignmentId",
-
-  requireRoles(writeRoles),
-
+  requireModulePermission(M, "update"),
   validateBody(updateAssignmentSchema),
-
   updateAssignmentController,
-
 );
-
 router.post(
-
   "/:id/request-close",
-
-  requireRoles(writeRoles),
-
+  requireModulePermission(M, "update"),
   validateBody(noteBodySchema),
-
   requestCloseController,
-
 );
-
 router.post(
-
   "/:id/close",
-
-  requireRoles(writeRoles),
-
+  requireModulePermission(M, "update"),
   validateBody(closeFeedbackSchema),
-
   closeFeedbackController,
-
 );
-
 router.post(
-
-  "/:id/reopen",
-
-  requireRoles(writeRoles),
-
+  "/:id/complete-repair-close",
+  requireModulePermission(M, "update"),
   validateBody(noteBodySchema),
-
-  reopenFeedbackController,
-
+  completeRepairAndCloseFeedbackController,
 );
-
-router.delete("/:id", requireRoles(writeRoles), deleteCustomerFeedbackController);
-
-
+router.post(
+  "/:id/reopen",
+  requireModulePermission(M, "update"),
+  validateBody(noteBodySchema),
+  reopenFeedbackController,
+);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteCustomerFeedbackController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
-
-
 export default router;
-

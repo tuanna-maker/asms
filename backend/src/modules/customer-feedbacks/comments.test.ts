@@ -32,6 +32,15 @@ describe("canCommentOnFeedback", () => {
     expect(canCommentOnFeedback(roleFeedback, { userId: "t2", roleCode: "technician" })).toBe(true);
   });
 
+  it("allows multi assignee via assignees field", () => {
+    const multi = {
+      ...base,
+      assignees: { userIds: ["tech2"], roleCodes: ["technician"] },
+    };
+    expect(canCommentOnFeedback(multi, { userId: "tech2", roleCode: "sales" })).toBe(true);
+    expect(canCommentOnFeedback(multi, { userId: "other", roleCode: "technician" })).toBe(true);
+  });
+
   it("denies unrelated user", () => {
     expect(canCommentOnFeedback(base, { userId: "other", roleCode: "technician" })).toBe(false);
   });

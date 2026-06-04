@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole, type Role } from "@/hooks/use-role";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import { getRolePublicTitle } from "@/lib/role-matrix";
 import { PermissionsTab } from "@/components/settings/PermissionsTab";
 import { ATTRIBUTE_SETTINGS_BASE_PATH } from "@/lib/attribute-settings-config";
@@ -171,7 +172,12 @@ const VALID_TABS = new Set([
 const SettingsPage = () => {
   const { isAuthenticated, isLoading: authLoading, user: authUser } = useAuth();
   const { role } = useRole();
-  const canWriteUsers = role === "admin";
+  const userPerm = useModulePermissions("cai-dat.nguoi-dung");
+  const rolePerm = useModulePermissions("cai-dat.vai-tro");
+  const permMatrix = useModulePermissions("cai-dat.phan-quyen");
+  const systemPerm = useModulePermissions("cai-dat.he-thong");
+  const auditPerm = useModulePermissions("cai-dat.nhat-ky");
+  const canWriteUsers = userPerm.canCreate;
   const { data: users = [], isLoading, isError, error, refetch } = useUsersList(!authLoading && isAuthenticated);
   const usersPag = usePaginatedSlice(users);
   const location = useLocation();
@@ -326,7 +332,7 @@ const SettingsPage = () => {
           <TabsTrigger value="feedback-units"><MessageSquareWarning className="h-4 w-4 mr-1" /> Đơn vị PA</TabsTrigger>
           <TabsTrigger value="system"><Sliders className="h-4 w-4 mr-1" /> Hệ thống</TabsTrigger>
           <TabsTrigger value="sessions"><Smartphone className="h-4 w-4 mr-1" /> Phiên đăng nhập</TabsTrigger>
-          {role === "admin" ? (
+          {auditPerm.canRead ? (
             <TabsTrigger value="audit"><ScrollText className="h-4 w-4 mr-1" /> Nhật ký</TabsTrigger>
           ) : null}
         </TabsList>
@@ -411,11 +417,11 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="roles">
-          <RolesTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
+          <RolesTab enabled={!authLoading && isAuthenticated} canWrite={rolePerm.canCreate} />
         </TabsContent>
 
         <TabsContent value="permissions">
-          <PermissionsTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
+          <PermissionsTab enabled={!authLoading && isAuthenticated} canWrite={permMatrix.canUpdate} />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -429,14 +435,14 @@ const SettingsPage = () => {
         </TabsContent>
 
         <TabsContent value="system">
-          <SystemSettingsTab enabled={!authLoading && isAuthenticated} canWrite={role === "admin"} />
+          <SystemSettingsTab enabled={!authLoading && isAuthenticated} canWrite={systemPerm.canUpdate} />
         </TabsContent>
 
         <TabsContent value="sessions">
           <SessionsTab enabled={!authLoading && isAuthenticated} />
         </TabsContent>
 
-        {role === "admin" ? (
+        {auditPerm.canRead ? (
           <TabsContent value="audit">
             <AuditLogsTab
               enabled={!authLoading && isAuthenticated}

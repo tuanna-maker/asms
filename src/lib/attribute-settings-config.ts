@@ -345,12 +345,31 @@ export const ATTRIBUTE_MODULES_FOR_SETTINGS = ATTRIBUTE_MODULES.map((mod) => ({
   sections: getVisibleAttributeSections(mod),
 })).filter((mod) => mod.sections.length > 0);
 
+/** Nhãn tiếng Việt cho mã danh mục (đồng bộ tiêu đề section Thuộc tính). */
+function buildDefinitionCategoryLabels(): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const mod of ATTRIBUTE_MODULES) {
+    for (const sec of mod.sections) {
+      const key = sec.definitionCategory ?? sec.id;
+      if (key) map[key] = sec.title;
+    }
+  }
+  return map;
+}
+
+export const DEFINITION_CATEGORY_LABELS = buildDefinitionCategoryLabels();
+
+/** Hiển thị mã danh mục bằng tiếng Việt (màn Quy trình, v.v.). */
+export function getDefinitionCategoryLabel(category: string): string {
+  return DEFINITION_CATEGORY_LABELS[category] ?? category.replace(/_/g, " ");
+}
+
 /** Tất cả nhóm danh mục dùng trong Cài đặt → Thuộc tính (cho FieldSchemaBuilder, v.v.). */
 export const ALL_DEFINITION_CATEGORIES = ATTRIBUTE_MODULES.flatMap((m) =>
   getVisibleAttributeSections(m)
     .map((s) => s.definitionCategory ?? s.id)
     .filter((c) => !SYSTEM_MANAGED_DEFINITION_CATEGORIES.has(c)),
-).sort();
+).sort((a, b) => getDefinitionCategoryLabel(a).localeCompare(getDefinitionCategoryLabel(b), "vi"));
 
 export const DEFAULT_ATTRIBUTE_MODULE_KEY: AttributeModuleKey = "hop-dong";
 

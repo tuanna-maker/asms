@@ -1,13 +1,8 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
-import {
-  createWarrantySchema,
-  updateWarrantySchema,
-  warrantyIdParamSchema,
-  listWarrantiesQuerySchema,
-} from "./schema";
+import { createWarrantySchema, updateWarrantySchema } from "./schema";
 import {
   createWarrantyController,
   deleteWarrantyController,
@@ -17,20 +12,17 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "bao-hanh";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician"];
-const writeRoles = ["admin", "manager", "technician"];
+router.get("/", requireModulePermission(M, "read"), listWarrantiesController);
+router.get("/:id", requireModulePermission(M, "read"), getWarrantyDetailController);
 
-router.get("/", requireRoles(readRoles), listWarrantiesController);
-router.get("/:id", requireRoles(readRoles), getWarrantyDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createWarrantySchema), createWarrantyController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateWarrantySchema), updateWarrantyController);
-router.delete("/:id", requireRoles(writeRoles), deleteWarrantyController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createWarrantySchema), createWarrantyController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateWarrantySchema), updateWarrantyController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteWarrantyController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-

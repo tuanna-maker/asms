@@ -15,7 +15,10 @@ import {
 } from "@/lib/workflow-field-schema";
 import { getModuleEntityFieldTemplate } from "@/lib/workflow-field-catalog";
 import type { WorkflowModuleKey } from "@/hooks/use-workflows-api";
-import { ALL_DEFINITION_CATEGORIES } from "@/lib/attribute-settings-config";
+import {
+  ALL_DEFINITION_CATEGORIES,
+  getDefinitionCategoryLabel,
+} from "@/lib/attribute-settings-config";
 
 type Props = {
   value: FieldDef[];
@@ -183,7 +186,7 @@ export function FieldSchemaBuilder({
                         <SelectItem value="__none__">— Không dùng danh mục —</SelectItem>
                         {ALL_DEFINITION_CATEGORIES.map((c) => (
                           <SelectItem key={c} value={c}>
-                            {c}
+                            {getDefinitionCategoryLabel(c)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -212,12 +215,12 @@ function InlineOptionsEditor({
 }) {
   return (
     <div className="space-y-2">
-      <Label className="text-xs">Tùy chọn (value / nhãn)</Label>
+      <Label className="text-xs">Tùy chọn (mã giá trị / nhãn hiển thị)</Label>
       {options.map((opt, i) => (
         <div key={i} className="flex gap-2">
           <Input
             className="flex-1"
-            placeholder="value"
+            placeholder="Mã giá trị"
             value={opt.value}
             onChange={(e) => {
               const next = [...options];

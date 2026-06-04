@@ -7,6 +7,7 @@ export type WorkflowStepSnapshot = {
   actionCode: string;
   roleCode: string;
   slaHours: number | null;
+  assigneeIds: string[];
 };
 
 export type WorkflowSnapshot = {
@@ -19,6 +20,7 @@ export type WorkflowSnapshot = {
   totalSteps: number;
   currentStepName: string | null;
   currentStepRoleCode: string | null;
+  currentStepAssigneeIds: string[];
   steps: WorkflowStepSnapshot[];
 };
 
@@ -41,7 +43,15 @@ export async function loadWorkflowSnapshotsByInstanceIds(ids: Array<string | nul
           name: true,
           steps: {
             orderBy: { order: "asc" },
-            select: { id: true, order: true, name: true, actionCode: true, roleCode: true, slaHours: true },
+            select: {
+              id: true,
+              order: true,
+              name: true,
+              actionCode: true,
+              roleCode: true,
+              slaHours: true,
+              assigneeIds: true,
+            },
           },
         },
       },
@@ -62,6 +72,7 @@ export async function loadWorkflowSnapshotsByInstanceIds(ids: Array<string | nul
       totalSteps: steps.length,
       currentStepName: currentStep?.name ?? null,
       currentStepRoleCode: currentStep?.roleCode ?? null,
+      currentStepAssigneeIds: currentStep?.assigneeIds ?? [],
       steps,
     });
   }

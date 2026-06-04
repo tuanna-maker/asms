@@ -69,6 +69,7 @@ export type WorkflowInstanceListSnapshot = {
   totalSteps: number;
   currentStepName: string | null;
   currentStepRoleCode: string | null;
+  currentStepAssigneeIds?: string[];
   steps: Array<{
     id: string;
     order: number;
@@ -76,6 +77,7 @@ export type WorkflowInstanceListSnapshot = {
     actionCode: string;
     roleCode: string;
     slaHours: number | null;
+    assigneeIds?: string[];
   }>;
 };
 

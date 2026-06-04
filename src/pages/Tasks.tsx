@@ -20,11 +20,13 @@ import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
 import { DEFAULT_LIST_PAGE_SIZE } from "@/lib/list-pagination";
 import { PaginatedTableFooter, usePaginatedSlice } from "@/components/common/PaginatedTableFooter";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 
 type ViewMode = "kanban" | "list" | "calendar";
 const statuses: TaskItem["status"][] = ["todo", "in_progress", "review", "completed"];
 
 const Tasks = () => {
+  const { canCreate, canUpdate, canDelete } = useModulePermissions("cong-viec");
   const isMobile = useIsMobile();
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [view, setView] = useState<ViewMode>("kanban");
@@ -198,10 +200,12 @@ const Tasks = () => {
               </button>
             ))}
           </div>
-          <Button onClick={() => setShowDialog(true)} size="sm" className="gap-1.5">
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Tạo mới</span>
-          </Button>
+          {canCreate && (
+            <Button onClick={() => setShowDialog(true)} size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Tạo mới</span>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -456,7 +460,7 @@ const Tasks = () => {
         onOpenChange={open => { setShowDialog(open); if (!open) setEditingTask(null); }}
         onSave={handleSave}
         editTask={editingTask}
-        onDelete={editingTask ? () => void handleDeleteTask(editingTask.id) : undefined}
+        onDelete={editingTask && canDelete ? () => void handleDeleteTask(editingTask.id) : undefined}
       />
     </div>
   );

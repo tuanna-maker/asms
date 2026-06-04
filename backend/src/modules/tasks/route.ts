@@ -1,13 +1,8 @@
 import { Router } from "express";
-import { requireAuth, requireRoles } from "../../middleware/authJwt";
+import { requireAuth, requireModulePermission } from "../../middleware/authJwt";
 import { validateBody } from "../../middleware/validate";
 
-import {
-  createTaskSchema,
-  listTasksQuerySchema,
-  taskIdParamSchema,
-  updateTaskSchema,
-} from "./schema";
+import { createTaskSchema, updateTaskSchema } from "./schema";
 import {
   createTaskController,
   deleteTaskController,
@@ -17,20 +12,17 @@ import {
 } from "./controller";
 
 const router = Router();
+const M = "cong-viec";
 
 router.use(requireAuth);
 
-const readRoles = ["admin", "manager", "technician"];
-const writeRoles = ["admin", "manager", "technician"];
+router.get("/", requireModulePermission(M, "read"), listTasksController);
+router.get("/:id", requireModulePermission(M, "read"), getTaskDetailController);
 
-router.get("/", requireRoles(readRoles), listTasksController);
-router.get("/:id", requireRoles(readRoles), getTaskDetailController);
-
-router.post("/", requireRoles(writeRoles), validateBody(createTaskSchema), createTaskController);
-router.put("/:id", requireRoles(writeRoles), validateBody(updateTaskSchema), updateTaskController);
-router.delete("/:id", requireRoles(writeRoles), deleteTaskController);
+router.post("/", requireModulePermission(M, "create"), validateBody(createTaskSchema), createTaskController);
+router.put("/:id", requireModulePermission(M, "update"), validateBody(updateTaskSchema), updateTaskController);
+router.delete("/:id", requireModulePermission(M, "delete"), deleteTaskController);
 
 router.all(/.*/, (_req, res) => res.status(404).json({ success: false, data: null, message: "Not found" }));
 
 export default router;
-
