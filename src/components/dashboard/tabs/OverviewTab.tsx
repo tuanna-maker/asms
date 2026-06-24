@@ -16,6 +16,7 @@ import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
 import { buildOverviewLayouts } from "@/components/dashboard/dashboardLayouts";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
+import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
 import type { ContractRow } from "@/data/tableData";
@@ -26,18 +27,17 @@ interface OverviewTabProps {
   contractsTableData?: ContractRow[];
 }
 
-const contractColumns: Column<ContractRow>[] = [
+const statusFilterOptions = [
+  { value: "active", label: "Đang TH" }, { value: "completed", label: "Hoàn thành" }, { value: "late", label: "Chậm" },
+];
+
+function buildContractColumns(customerNames: string[]): Column<ContractRow>[] {
+  return [
   { key: "id", label: "Mã HĐ", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
   { key: "name", label: "Tên hợp đồng", sortable: true, hideOnMobile: true },
-  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: [
-    { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
-    { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
-    { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
-  ]},
+  { key: "customer", label: "Khách hàng", sortable: true, filterable: customerNames.length > 0, filterOptions: buildCustomerFilterOptions(customerNames) },
   { key: "value", label: "Giá trị (tỷ)", sortable: true, sortValue: (r) => r.value, render: (r) => r.value.toLocaleString(), hideOnMobile: true },
-  { key: "status", label: "Trạng thái", filterable: true, filterOptions: [
-    { value: "active", label: "Đang TH" }, { value: "completed", label: "Hoàn thành" }, { value: "late", label: "Chậm" },
-  ], render: (r) => (
+  { key: "status", label: "Trạng thái", filterable: true, filterOptions: statusFilterOptions, render: (r) => (
     <StatusBadge status={r.status === "completed" ? "success" : r.status === "late" ? "destructive" : "info"} label={r.status === "completed" ? "Hoàn thành" : r.status === "late" ? "Chậm" : "Đang TH"} />
   )},
   { key: "progress", label: "Tiến độ", sortable: true, sortValue: (r) => r.progress, render: (r) => (
@@ -49,6 +49,7 @@ const contractColumns: Column<ContractRow>[] = [
     </div>
   ), hideOnMobile: true },
 ];
+}
 
 const allWidgetTemplates = [
   { id: "stats", title: "Thống kê tổng quan", description: "4 thẻ thống kê chính", icon: Package, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
@@ -70,6 +71,10 @@ const allWidgetTemplates = [
 
 const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
   const alertMetrics = useMemo(() => computeDashboardAlertMetrics(data), [data]);
+  const contractColumns = useMemo(
+    () => buildContractColumns((contractsTableData ?? []).map((r) => r.customer)),
+    [contractsTableData],
+  );
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
     "stats",
@@ -184,7 +189,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
         compact
       />
     ),
-  }), [alertMetrics.totalLate, contractsTableData, data]);
+  }), [alertMetrics.totalLate, contractColumns, contractsTableData, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds

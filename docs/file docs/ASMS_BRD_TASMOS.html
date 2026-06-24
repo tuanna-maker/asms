@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>BRD — ASMS — BRD TASMOS Style</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif;font-size:11px;color:#0d1e34;}
+.doc-page{width:210mm;min-height:297mm;margin:10mm auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.25);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+@media print{
+  body{background:#fff;}
+  @page{size:A4;margin:0;}
+  .doc-page{margin:0;box-shadow:none;width:100%;max-width:100%;}
+  .doc-page.cover,.doc-page.toc-page{page-break-after:always;}
+  body.brd-pdf-v3 .doc-page.cover{min-height:297mm;height:297mm;}
+  body.brd-pdf-v3 .doc-page.content-flow{page-break-after:auto;min-height:auto;height:auto;overflow:visible;}
+  .keep-together,.table-keep,.diagram-keep,.arch-figure{
+    break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
+  }
+  .md-render .mermaid{break-inside:avoid;page-break-inside:avoid;}
+  .md-render table{break-inside:avoid;page-break-inside:avoid;}
+  .md-render thead{display:table-header-group;}
+  .md-render tr{break-inside:avoid;page-break-inside:avoid;}
+  .md-render h2,.md-render h3,.md-render h4{break-after:avoid;page-break-after:avoid;}
+  body.brd-pdf-v3 .arch-diagram{font-size:9px;}
+  body.brd-pdf-v3 .arch-layer-hd{padding:5px 10px;font-size:9.5px;}
+  body.brd-pdf-v3 .arch-box{padding:6px 8px;}
+}
+.doc-page.cover{padding:0;}
+.doc-page.cover .accent-bar{height:8px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);flex-shrink:0;}
+.doc-page.cover .header{padding:22px 52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.doc-page.cover .header-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.doc-page.cover .header-code span{color:#0d1e34;}
+.doc-page.cover .header-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.doc-page.cover .divider{margin:0 52px;height:1px;background:#eaeff8;flex-shrink:0;}
+.doc-page.cover .main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;text-align:center;}
+.doc-page.cover .logo-wrap{margin-bottom:36px;}
+.doc-page.cover .logo-wrap img{width:280px;display:block;}
+.doc-page.cover .sep{width:52px;height:3px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);border-radius:2px;margin:0 auto 32px;}
+.doc-page.cover .doc-label{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;margin-bottom:20px;color:#52637d;}
+.doc-page.cover .project-title{font-size:36px;font-weight:900;line-height:1.15;}
+.doc-page.cover .project-title .brand{background:linear-gradient(135deg,#3d7de8,#0ab4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.doc-page.cover .subtitle{margin-top:16px;font-size:12px;color:#3a4a64;}
+.doc-page.cover .meta-info{margin-top:36px;font-size:10.5px;line-height:1.85;color:#3a4a64;}
+.doc-page.cover .meta-info strong{color:#0d1e34;font-weight:600;}
+.doc-page.cover .footer{padding:18px 52px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.doc-page.cover .footer-l,.doc-page.cover .footer-r{font-size:9.5px;}
+.doc-page.cover .footer-r{text-align:right;}
+.inner-brd-header{padding:22px 48px 22px 68px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.inner-brd-header .inner-brd-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.inner-brd-header .inner-brd-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.inner-brd-divider{margin:0 48px 0 68px;height:1px;background:#eaeff8;flex-shrink:0;}
+.inner-brd-footer{padding:18px 48px 18px 68px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.inner-brd-footer-l{font-size:9.5px;}
+.inner-brd-footer-r{font-size:9.5px;text-align:right;line-height:1.65;}
+.inner-brd-footer-r .ft-page{display:block;font-weight:600;}
+.content-area{flex:1;overflow:visible;padding:14px 48px 14px 68px;font-size:12.5px;line-height:1.55;color:#1a2740;}
+.md-render h1{font-size:20px;font-weight:900;color:#0d1e34;margin:8px 0 14px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.md-render h2{font-size:16px;font-weight:800;color:#0d1e34;margin:22px 0 10px;padding:6px 10px;background:linear-gradient(90deg,#eef4ff,transparent);border-left:4px solid #3d7de8;page-break-after:avoid;}
+.md-render h3{font-size:13.5px;font-weight:700;color:#1e3a5f;margin:16px 0 6px;page-break-after:avoid;}
+.md-render h4{font-size:12.5px;font-weight:600;color:#1e3a5f;margin:10px 0 4px;}
+.md-render p{margin:6px 0;}
+.md-render ul{margin:6px 0 6px 20px;}
+.md-render table{width:100%;border-collapse:collapse;font-size:10.5px;margin:10px 0;}
+.md-render th,.md-render td{border:1px solid #cbd5e0;padding:5px 8px;vertical-align:top;text-align:left;}
+.md-render th{background:#1e3a5f;color:#fff;font-weight:600;}
+.md-render tr:nth-child(even) td{background:#f7fafc;}
+.md-render hr{border:none;border-top:1px dashed #c8d8ec;margin:14px 0;}
+.md-render .mermaid{text-align:center;margin:14px 0;background:#fafbfd;padding:12px;border-radius:6px;border:1px solid #eaeff8;break-inside:avoid;page-break-inside:avoid;}
+.md-render .mermaid svg{max-width:100%;height:auto;display:block;margin:0 auto;}
+.table-keep,.diagram-keep{break-inside:avoid;page-break-inside:avoid;}
+.keep-together{break-inside:avoid;page-break-inside:avoid;margin-bottom:4px;}
+.arch-figure{margin:16px 0 20px;}
+.arch-figure figcaption{font-size:11px;color:#52637d;text-align:center;margin-top:10px;line-height:1.5;}
+.arch-diagram{border:1px solid #cbd5e0;border-radius:10px;overflow:hidden;font-size:10px;line-height:1.45;}
+.arch-title{text-align:center;font-weight:800;font-size:12px;padding:10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.arch-layer{padding:0;}
+.arch-layer-hd{padding:7px 12px;font-weight:700;font-size:10.5px;color:#fff;text-align:center;}
+.arch-layer.l1 .arch-layer-hd{background:#2563eb;}
+.arch-layer.l2 .arch-layer-hd{background:#7c3aed;}
+.arch-layer.l3 .arch-layer-hd{background:#1e293b;}
+.arch-layer.l4 .arch-layer-hd{background:#059669;}
+.arch-layer.l5 .arch-layer-hd{background:#64748b;}
+.arch-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-row.two{grid-template-columns:repeat(2,1fr);}
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-box{border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;background:#fafbfd;text-align:center;}
+.arch-box strong{color:#0d1e34;font-size:10.5px;}
+.arch-box em{color:#64748b;font-size:9.5px;}
+.arch-arrow{text-align:center;color:#94a3b8;font-size:14px;padding:2px 0;background:#f8fafc;}
+.arch-tech{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:12px;background:#fff;}
+.arch-tech span{border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;background:#f1f5f9;font-weight:600;font-size:10px;}
+@media screen{.doc-page{height:auto;min-height:297mm;}}
+.toc-page .content-area{padding:22px 48px 18px 68px;}
+.toc-title{font-size:20px;font-weight:900;color:#0d1e34;margin:4px 0 10px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.toc-subtitle{font-size:11.5px;color:#52637d;margin-bottom:18px;}
+.toc-list{display:flex;flex-direction:column;gap:5px;}
+.toc-item{display:flex;align-items:flex-start;gap:10px;padding:6px 10px;border-radius:8px;text-decoration:none;color:#1a2740;border:1px solid #e6edf7;background:#fbfdff;}
+.toc-item:hover{border-color:#3d7de8;background:#f5f9ff;}
+.toc-item.level-3{margin-left:14px;}
+.toc-item.level-4{margin-left:28px;font-size:11px;}
+.toc-index{min-width:22px;font-size:11px;font-weight:800;color:#3d7de8;}
+.toc-text{font-size:11.5px;line-height:1.4;}
+</style>
+</head>
+<body>
+<div class="doc-page cover">
+  <div class="accent-bar"></div>
+  <div class="header">
+    <div class="header-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-003</span></div>
+    <div class="header-right">Phiên bản 1.0 &nbsp;·&nbsp; 06/2026</div>
+  </div>
+  <div class="divider"></div>
+  <div class="main">
+    <div class="logo-wrap"><img src="assets/unicom-logo.png" alt="UNICOM AI Software Factory" /></div>
+    <div class="sep"></div>
+    <div class="doc-label">Business Requirements Document (BRD)</div>
+    <div class="project-title"><span class="brand">Hệ thống ASMS</span></div>
+    <div class="subtitle">After-Sales Management System — Quản lý hậu mãi quốc phòng</div>
+    <div class="meta-info"><strong>Khách hàng:</strong> Đơn vị quốc phòng<br>
+      <strong>Đơn vị phát triển:</strong> Unicom Technology Solutions Co., Ltd<br>
+      <strong>Phạm vi:</strong> 14 phân hệ · 152 chức năng · 12 luồng nghiệp vụ</div>
+  </div>
+  <div class="footer">
+    <div class="footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="footer-r">Tài liệu trình: Ban quản lý dự án ASMS</div>
+  </div>
+</div>
+<div class="doc-page toc-page">
+  <div class="inner-brd-header">
+    <div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-003</span></div>
+    <div class="inner-brd-right">ASMS &nbsp;·&nbsp; Phiên bản 1.0</div>
+  </div>
+  <div class="inner-brd-divider"></div>
+  <div class="content-area">
+    <h1 class="toc-title">Mục lục</h1>
+    <p class="toc-subtitle">Nhấn vào từng mục để di chuyển nhanh — 152 chức năng · 12 luồng nghiệp vụ.</p>
+    <div id="toc-list" class="toc-list"></div>
+  </div>
+  <div class="inner-brd-footer">
+    <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD v1.0</span></div>
+  </div>
+</div>
+<div id="content-host"></div>
+<script id="md-source" type="text/markdown">
+## 1. GIỚI THIỆU CHUNG
+
+Hệ thống **ASMS** (After-Sales Management System) là nền tảng quản lý **hậu mãi quốc phòng**, số hóa 4 luồng chính: **tiếp nhận hợp đồng → bàn giao & huấn luyện → bảo hành/sửa chữa → chăm sóc khách hàng**, kèm master data, báo cáo và quản trị workflow.
+
+Tài liệu BRD này mô tả **12 luồng nghiệp vụ cốt lõi** và **152 chức năng (use case)** trên **14 phân hệ** đang vận hành — theo bố cục tài liệu BRD TASMOS (Taseco Air).
+
+### Các nhóm người dùng chính
+
+| Vai trò | Mô tả công việc |
+|---|---|
+| **Admin** | Quản trị hệ thống, người dùng, phân quyền, cấu hình workflow và routing |
+| **Quản lý (manager)** | Phê duyệt quy trình, phân công PA, giám sát KPI và báo cáo |
+| **Kỹ thuật (technician)** | Bàn giao, bảo hành, vật tư, huấn luyện, thực thi kỹ thuật |
+| **Sales** | Khách hàng, hợp đồng, CRM, tài liệu hợp đồng |
+| **Viewer** | Theo dõi dữ liệu và báo cáo (chỉ đọc) |
+| **Hệ thống** | Job thông báo, SLA, routing phản ánh tự động |
+
+### Bốn luồng vận hành chính
+
+| # | Luồng | Mô tả |
+|---|---|---|
+| 1 | Tiếp nhận hợp đồng | Tạo HĐ, gán KH/SP, điều khoản, phê duyệt |
+| 2 | Bàn giao & huấn luyện | Workflow 5 bước bàn giao và khóa HL |
+| 3 | Bảo hành & sửa chữa | Ticket BH/SC, SLA, vật tư, nghiệm thu |
+| 4 | Chăm sóc khách hàng | CRM, phản ánh, routing đa đơn vị |
+
+---
+
+
+## 2. KIẾN TRÚC TỔNG THỂ HỆ THỐNG
+
+Sơ đồ dưới mô tả cách các thành phần ASMS kết nối từ giao diện người dùng đến API nghiệp vụ, lưu trữ và báo cáo.
+
+[[ARCHITECTURE_DIAGRAM]]
+
+**Giải thích nhanh các tầng:**
+
+| Tầng | Vai trò |
+|---|---|
+| **1. Người dùng & Kênh** | Web quản trị/vận hành; đăng nhập JWT |
+| **2. Cổng & Bảo mật** | API `/api/v1`, RBAC 5 vai trò, envelope chuẩn |
+| **3. Hệ thống lõi** | HĐ, BG, BH, SP, VT, CRM, PA, Workflow |
+| **4. Lưu trữ** | PostgreSQL, file upload, job thông báo |
+| **5. Nền tảng** | React + Vite, Express + TS, Prisma, Docker |
+
+---
+
+## 3. TÍNH NĂNG ĐẶC BIỆT: WORKFLOW ĐỘNG & PHÂN LUỒNG PHẢN ÁNH
+
+**Vấn đề thực tế:** Nghiệp vụ hậu mãi quốc phòng có nhiều bước phê duyệt và form khác nhau theo từng loại hồ sơ (bàn giao, bảo hành, sản phẩm). Phản ánh khách hàng cần phân cho nhiều đơn vị xử lý song song.
+
+**Giải pháp:** ASMS tích hợp **Workflow Engine** — mỗi module (handover, coaching, warranty, product, training) có định nghĩa bước, schema form động và luồng trình ký/ký duyệt. Kết hợp **Routing Phản ánh** — tự động gợi ý đơn vị xử lý theo sản phẩm và quy tắc cấu hình.
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Admin | Cấu hình quy trình và field schema từng bước tại Quy trình |
+| 2 | Người xử lý | Mở phiếu HĐ/BG/BH, điền form bước hiện tại |
+| 3 | Hệ thống | Validate Zod, lưu payload, chuyển bước, gửi thông báo |
+| 4 | Quản lý | Tạo phản ánh; hệ thống preview routing theo SP |
+| 5 | Hệ thống | Phân công multi-assignee; Admin xem tất cả PA |
+
+**Lợi ích:**
+- Chuẩn hóa quy trình phê duyệt trên mọi phân hệ
+- Form linh hoạt không cần deploy lại khi đổi schema bước
+- Phản ánh được phân luồng minh bạch, truy vết timeline
+
+---
+
+## 4. LUỒNG TỔNG THỂ END-TO-END
+
+```mermaid
+flowchart LR
+    A[Tiếp nhận HĐ] --> B[Bàn giao & HL]
+    B --> C[Bảo hành / SC]
+    C --> D[Phản ánh KH]
+    D --> E[Báo cáo & KPI]
+    C --> F[Vật tư]
+    B --> G[Tài liệu]
+```
+
+**Tóm tắt:** Hồ sơ đi từ hợp đồng → bàn giao/huấn luyện → vận hành bảo hành và phản ánh → tổng hợp báo cáo điều hành. Dữ liệu master (SP, VT, KH) liên thông xuyên suốt.
+
+### 4.1. Sequence Diagram — Luồng end-to-end với các Actor
+
+```mermaid
+sequenceDiagram
+    actor KH as Khách hàng
+    actor Sales as Sales / NV
+    actor KT as Kỹ thuật
+    actor QL as Quản lý
+    participant ASMS as Hệ thống ASMS
+
+    rect rgb(238, 242, 255)
+    Note over Sales,ASMS: Giai đoạn 1 — Hợp đồng
+    Sales->>ASMS: Tạo HĐ, gán KH và SP
+    QL->>ASMS: Duyệt quy trình HĐ
+    end
+
+    rect rgb(220, 252, 231)
+    Note over KT,ASMS: Giai đoạn 2 — Bàn giao & Huấn luyện
+    KT->>ASMS: Phiếu bàn giao + workflow
+    QL->>ASMS: Ký duyệt bàn giao & HL
+    end
+
+    rect rgb(254, 243, 199)
+    Note over KH,ASMS: Giai đoạn 3 — Bảo hành & Phản ánh
+    KH->>KT: Yêu cầu BH hoặc phản ánh
+    KT->>ASMS: Phiếu BH / PA + routing
+    KT->>ASMS: Xử lý và đóng PA
+    end
+
+    rect rgb(207, 250, 254)
+    Note over QL,ASMS: Giai đoạn 4 — Báo cáo
+    QL->>ASMS: Dashboard và báo cáo
+    ASMS-->>QL: KPI, SLA, cảnh báo
+    end
+```
+
+| Actor | Vai trò | Quyền truy cập chính |
+|---|---|---|
+| **Sales** | HĐ, CRM, tài liệu | `/hop-dong`, `/khach-hang` |
+| **Kỹ thuật** | BG, BH, VT, SP | `/ban-giao`, `/bao-hanh`, `/vat-tu` |
+| **Quản lý** | Phê duyệt, PA, báo cáo | Workflow steps, `/phan-anh`, `/bao-cao` |
+| **Admin** | Toàn hệ thống | Mọi module + Cài đặt |
+| **Hệ thống ASMS** | SLA, routing, notify | Job nền, audit log |
+
+---
+
+## 5. CÁC LUỒNG NGHIỆP VỤ CHI TIẾT
+
+### LUỒNG 1: Xác thực và quản lý phiên làm việc
+
+**Mục đích:** Cho phép người dùng đăng nhập an toàn bằng JWT, quản lý phiên đa thiết bị và thu hồi quyền truy cập khi cần. Mọi API nghiệp vụ (trừ login/register) yêu cầu token hợp lệ.
+
+**Chức năng chính:**
+
+- Đăng nhập email/mật khẩu → access + refresh token
+- Làm mới phiên, đăng xuất một hoặc tất cả thiết bị
+- Xem danh sách phiên đang hoạt động
+- Admin tạo tài khoản người dùng mới
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: Truy cập /login, nhập thông tin
+    S->>S: POST /api/v1/auth/login
+    S-->>U: JWT access + refresh token
+    U->>S: Gọi API nghiệp vụ kèm Bearer token
+    S->>S: Kiểm tra JWT và RBAC module
+    S-->>U: Dữ liệu theo quyền vai trò
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập `/login`, nhập email và mật khẩu |
+| 2 | Hệ thống | Xác thực, phát hành access token và refresh token |
+| 3 | Người dùng | Làm việc trên các module theo ma trận phân quyền |
+| 4 | Người dùng | Đăng xuất hoặc thu hồi phiên từ Cài đặt → Phiên đăng nhập |
+
+**Danh sách chức năng (Use Case) — Xác thực & Phiên (7 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-AUTH-01` | Đăng nhập | Mọi user | Email/mật khẩu → JWT (`POST /api/v1/auth/login`) |
+| `UC-AUTH-02` | Đăng xuất | Mọi user | Thu hồi refresh token |
+| `UC-AUTH-03` | Làm mới phiên | Mọi user | Refresh access token |
+| `UC-AUTH-04` | Xem danh sách phiên | Mọi user | Thiết bị/phiên đang đăng nhập |
+| `UC-AUTH-05` | Thu hồi phiên | Mọi user | Đăng xuất một phiên cụ thể |
+| `UC-AUTH-06` | Đăng xuất tất cả | Mọi user | Hủy mọi phiên |
+| `UC-AUTH-07` | Tạo tài khoản | Admin | Bootstrap hoặc `POST /api/v1/users` |
+
+---
+
+### LUỒNG 2: Quản lý hợp đồng
+
+**Mục đích:** Quản lý toàn bộ vòng đời hợp đồng: tạo mới, gán khách hàng và sản phẩm, điều khoản, tài liệu, theo dõi tiến độ và xử lý quy trình phê duyệt. Chi tiết hợp đồng cung cấp góc nhìn 360° qua các tab thông tin, điều khoản, sản phẩm, tài liệu và phản ánh.
+
+**Chức năng chính:**
+
+- Tạo/sửa/xóa hợp đồng, gán danh mục sản phẩm và điều khoản mẫu
+- Tab chi tiết: thông tin chung, điều khoản, SP, tài liệu, phản ánh liên quan
+- Xử lý quy trình HĐ: trình ký, ký duyệt, từ chối, đính kèm tài liệu từng bước
+- Quản lý thư viện điều khoản mẫu và nhóm điều khoản
+
+```mermaid
+sequenceDiagram
+    actor NV as Nhân viên Sales
+    actor QL as Quản lý
+    participant S as Hệ thống ASMS
+    NV->>S: Tạo HĐ mới, chọn KH và sản phẩm
+    S->>S: Lưu HĐ, khởi tạo workflow
+    NV->>S: Điền điều khoản, upload tài liệu
+    NV->>S: Trình ký bước quy trình
+    QL->>S: Ký duyệt hoặc từ chối
+    S-->>NV: Cập nhật trạng thái HĐ và thông báo
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Nhân viên | Tạo hợp đồng, chọn khách hàng, giá trị, thời hạn bảo hành |
+| 2 | Nhân viên | Gán sản phẩm và chọn điều khoản mẫu |
+| 3 | Hệ thống | Khởi tạo quy trình phê duyệt hợp đồng |
+| 4 | Quản lý | Duyệt từng bước, đính kèm biên bản nếu cần |
+| 5 | Hệ thống | Cập nhật tiến độ, liên thông bàn giao và bảo hành |
+
+**Danh sách chức năng (Use Case) — Hợp đồng (21 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-HD-01` | Xem danh sách HĐ | Theo quyền | Lọc, tìm kiếm, phân trang |
+| `UC-HD-02` | Xem chi tiết HĐ | Theo quyền | Thông tin, tiến độ, quy trình |
+| `UC-HD-03` | Tạo HĐ | Theo quyền | create |
+| `UC-HD-04` | Sửa HĐ | Theo quyền | update |
+| `UC-HD-05` | Xóa HĐ | Theo quyền | delete |
+| `UC-HD-06` | Gán danh mục SP | Theo quyền | update |
+| `UC-HD-07` | Sửa SP trong HĐ | Theo quyền | update |
+| `UC-HD-08` | Xem SP thuộc HĐ | Theo quyền | read |
+| `UC-HD-09` | Chọn điều khoản mẫu | read/update | Tab điều khoản |
+| `UC-HD-10` | Điền nội dung điều khoản | Theo quyền | update |
+| `UC-HD-11` | Xem phản ánh liên quan | Theo quyền | read |
+| `UC-HD-12` | Xem tài liệu HĐ | Theo quyền | read |
+| `UC-HD-13` | Xử lý quy trình HĐ | Theo quyền | update |
+| `UC-HD-14` | Đính kèm tài liệu bước QT | Theo quyền | update |
+| `UC-HD-DK-01` | Xem danh sách điều khoản mẫu | Theo quyền | read |
+| `UC-HD-DK-02` | Tạo / sửa / xóa điều khoản | create / update / delete | — |
+| `UC-HD-DK-03` | Sắp xếp điều khoản | Theo quyền | update |
+| `UC-HD-DK-04` | Xem nhóm điều khoản | Theo quyền | read |
+| `UC-HD-DK-05` | Tạo / sửa / xóa nhóm | create / update / delete | — |
+| `UC-HD-DK-06` | Gán điều khoản vào nhóm | Theo quyền | update |
+| `UC-HD-DK-07` | Kiểm tra điều khoản đang dùng | Theo quyền | read |
+
+---
+
+### LUỒNG 3: Bàn giao và huấn luyện
+
+**Mục đích:** Quản lý xuyên suốt quy trình bàn giao thiết bị và huấn luyện vận hành theo hợp đồng. Workflow chuẩn gồm: lập kế hoạch → tờ trình kinh phí → chuẩn bị hàng → tổ chức bàn giao → tổ chức huấn luyện.
+
+**Chức năng chính:**
+
+- Tạo phiếu bàn giao gắn HĐ và khách hàng
+- Xử lý quy trình bàn giao: trình ký, ký duyệt, ban hành
+- Tab huấn luyện: tạo khóa HL, điền payload từng bước, quy trình coaching
+- Đính kèm tài liệu và biên bản theo bước workflow
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật viên
+    actor QL as Quản lý
+    participant S as Hệ thống ASMS
+    KT->>S: Tạo phiếu bàn giao theo HĐ
+    S->>S: Chạy WF handover — bước 1 Kế hoạch
+    KT->>S: Điền form và trình ký
+    QL->>S: Ký duyệt từng bước
+    KT->>S: Tạo khóa huấn luyện tab HL
+    QL->>S: Ban hành huấn luyện
+    S-->>KT: Hoàn tất bàn giao và HL
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Kỹ thuật | Tạo phiếu bàn giao, chọn hợp đồng và sản phẩm |
+| 2 | Kỹ thuật | Lập kế hoạch, tờ trình kinh phí qua workflow |
+| 3 | Quản lý | Phê duyệt từng bước bàn giao |
+| 4 | Kỹ thuật | Tổ chức bàn giao, cập nhật biên bản nghiệm thu |
+| 5 | Kỹ thuật | Tạo và hoàn tất khóa huấn luyện trên tab HL |
+
+**Danh sách chức năng (Use Case) — Bàn giao & Huấn luyện (12 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-BG-01` | Xem danh sách bàn giao | Theo quyền | read |
+| `UC-BG-02` | Xem chi tiết phiếu BG | Theo quyền | read |
+| `UC-BG-03` | Tạo phiếu bàn giao | Theo quyền | create |
+| `UC-BG-04` | Sửa phiếu bàn giao | Theo quyền | update |
+| `UC-BG-05` | Xóa phiếu bàn giao | Theo quyền | delete |
+| `UC-BG-06` | Xử lý quy trình bàn giao | Theo quyền | update |
+| `UC-BG-07` | Đính kèm tài liệu bước BG | Theo quyền | update |
+| `UC-BG-08` | Xem danh sách khóa HL | Theo quyền | read |
+| `UC-BG-09` | Tạo khóa huấn luyện | Theo quyền | create |
+| `UC-BG-10` | Sửa / xóa khóa HL | update / delete | — |
+| `UC-BG-11` | Xử lý quy trình HL | Theo quyền | update |
+| `UC-BG-12` | Điền payload từng bước HL | Theo quyền | update |
+
+---
+
+### LUỒNG 4: Bảo hành và sửa chữa
+
+**Mục đích:** Quản lý đầy đủ vòng đời phiếu bảo hành/sửa chữa: tiếp nhận → phân loại → lập kế hoạch → chuẩn đoán → sửa chữa → nghiệm thu. Form động theo schema từng bước workflow, tích hợp vật tư và SLA.
+
+**Chức năng chính:**
+
+- Tạo/sửa/xóa phiếu BH/SC, gắn khách hàng và thiết bị
+- Workflow: tiếp nhận, xử lý, nghiệm thu với form động
+- Đính kèm tài liệu và biên bản từng bước
+- Theo dõi SLA và trạng thái xử lý
+
+```mermaid
+sequenceDiagram
+    actor KH as Khách hàng
+    actor KT as Kỹ thuật
+    participant S as Hệ thống ASMS
+    KH->>KT: Yêu cầu bảo hành hoặc sửa chữa
+    KT->>S: Tạo phiếu BH/SC
+    S->>S: Phân loại bảo hành, gán SLA
+    KT->>S: Lập kế hoạch, chuẩn đoán, sửa chữa
+    KT->>S: Nghiệm thu sau sửa chữa
+    S-->>KH: Đóng phiếu, cập nhật lịch sử thiết bị
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Kỹ thuật | Tiếp nhận yêu cầu, tạo phiếu BH/SC |
+| 2 | Hệ thống | Phân loại trong/ngoài bảo hành, gán mức ưu tiên và SLA |
+| 3 | Kỹ thuật | Lập kế hoạch: kỹ thuật viên, vật tư, lịch xử lý |
+| 4 | Kỹ thuật | Chuẩn đoán và thực hiện sửa chữa qua các bước WF |
+| 5 | Kỹ thuật | Nghiệm thu; không đạt thì quay lại chuẩn đoán |
+
+**Danh sách chức năng (Use Case) — Bảo hành / Sửa chữa (8 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-BH-01` | Xem danh sách phiếu BH/SC | Theo quyền | read |
+| `UC-BH-02` | Xem chi tiết phiếu | Theo quyền | read |
+| `UC-BH-03` | Tạo phiếu BH/SC | Theo quyền | create |
+| `UC-BH-04` | Sửa phiếu | Theo quyền | update |
+| `UC-BH-05` | Xóa phiếu | Theo quyền | delete |
+| `UC-BH-06` | Xử lý quy trình BH | Theo quyền | update |
+| `UC-BH-07` | Điền form động theo bước | Theo quyền | update |
+| `UC-BH-08` | Đính kèm tài liệu bước BH | Theo quyền | update |
+
+---
+
+### LUỒNG 5: Phản ánh khách hàng
+
+**Mục đích:** Tiếp nhận, phân luồng và xử lý phản ánh/khiếu nại đa đơn vị. Hệ thống hỗ trợ phân công multi-assignee, routing theo sản phẩm/đơn vị, timeline bình luận và quy trình đóng/mở lại.
+
+**Chức năng chính:**
+
+- Tạo phản ánh, phân công người/vai trò xử lý
+- Phân luồng tự động theo SP và đơn vị (routing rules)
+- Cập nhật xử lý từng đơn vị, bình luận issue/fix/note
+- Yêu cầu đóng, đóng PA, hoàn tất sửa chữa và mở lại
+- Thống kê theo KH/SP/VT; Admin xem tất cả, vai trò khác chỉ PA được giao
+
+```mermaid
+sequenceDiagram
+    actor NV as Nhân viên
+    actor QL as Quản lý
+    participant S as Hệ thống ASMS
+    NV->>S: Tạo phản ánh mới /phan-anh/moi
+    S->>S: Routing preview theo SP và đơn vị
+    QL->>S: Phân công multi-assignee
+    NV->>S: Cập nhật xử lý và bình luận
+    NV->>S: Yêu cầu đóng
+    QL->>S: Đóng phản ánh hoặc mở lại
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Nhân viên | Tạo phản ánh, mô tả sự cố và liên kết KH/SP |
+| 2 | Hệ thống | Áp dụng quy tắc routing, gợi ý đơn vị xử lý |
+| 3 | Quản lý | Phân công người hoặc vai trò xử lý |
+| 4 | Kỹ thuật | Cập nhật tiến độ, bình luận theo từng đơn vị |
+| 5 | Quản lý | Đóng PA sau khi xử lý xong hoặc mở lại nếu cần |
+
+**Danh sách chức năng (Use Case) — Phản ánh khách hàng (18 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-PA-01` | Xem danh sách phản ánh | Theo quyền | Admin: tất cả; khác: chỉ được phân công |
+| `UC-PA-02` | Xem chi tiết phản ánh | Theo quyền | Timeline, bình luận |
+| `UC-PA-03` | Tạo phản ánh | Theo quyền | create |
+| `UC-PA-04` | Sửa phản ánh | Theo quyền | update |
+| `UC-PA-05` | Xóa phản ánh | Theo quyền | delete |
+| `UC-PA-06` | Phân công người / vai trò | Theo quyền | update |
+| `UC-PA-07` | Phân luồng theo SP / đơn vị | Hệ thống + user | Routing preview, assignments |
+| `UC-PA-08` | Cập nhật xử lý đơn vị | Theo quyền | update |
+| `UC-PA-09` | Bình luận phản ánh | Theo quyền | update |
+| `UC-PA-10` | Yêu cầu đóng | Theo quyền | update |
+| `UC-PA-11` | Đóng phản ánh | Theo quyền | update |
+| `UC-PA-12` | Hoàn tất sửa chữa & đóng | Theo quyền | update |
+| `UC-PA-13` | Mở lại phản ánh | Theo quyền | update |
+| `UC-PA-14` | Xem tóm tắt công việc PA | Theo quyền | read |
+| `UC-PA-15` | Thống kê theo KH / SP / VT | Theo quyền | read |
+| `UC-PA-16` | Lọc theo đơn vị của tôi | Theo quyền | read |
+| `UC-PA-17` | Cấu hình đơn vị thực hiện | Admin / quản lý | Cài đặt → Đơn vị PA |
+| `UC-PA-18` | Cấu hình quy tắc routing | Admin / quản lý | Routing rules |
+
+---
+
+### LUỒNG 6: CRM và chăm sóc khách hàng
+
+**Mục đích:** Quản lý hồ sơ khách hàng tập trung: thông tin tổ chức, đầu mối liên lạc, hoạt động chăm sóc và lịch kỷ niệm (ngày truyền thống, sinh nhật lãnh đạo, huân huy chương).
+
+**Chức năng chính:**
+
+- CRUD khách hàng và liên hệ
+- Ghi nhận hoạt động CRM (gọi điện, gặp mặt, email…)
+- Quản lý kỷ niệm và đăng ký nhận thông báo nhắc lịch
+- Liên kết HĐ, phản ánh và lịch sử tương tác
+
+```mermaid
+sequenceDiagram
+    actor Sales as Nhân viên Sales
+    participant S as Hệ thống ASMS
+    Sales->>S: Tạo hoặc cập nhật hồ sơ KH
+    Sales->>S: Thêm đầu mối liên lạc
+    Sales->>S: Ghi hoạt động chăm sóc CRM
+    Sales->>S: Thiết lập kỷ niệm và nhắc lịch
+    S-->>Sales: Dashboard CRM và báo cáo theo KH
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Sales | Tạo hồ sơ khách hàng với thông tin tổ chức |
+| 2 | Sales | Quản lý danh sách liên hệ và vai trò |
+| 3 | Sales | Ghi nhận hoạt động chăm sóc theo thời gian |
+| 4 | Hệ thống | Nhắc lịch kỷ niệm qua thông báo |
+| 5 | Sales | Tra cứu HĐ và phản ánh liên quan từ hồ sơ KH |
+
+**Danh sách chức năng (Use Case) — Khách hàng / CRM (9 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-KH-01` | Xem danh sách KH | `khach-hang.khach-hang` | read |
+| `UC-KH-02` | Xem chi tiết KH | `khach-hang.khach-hang` | read |
+| `UC-KH-03` | Tạo KH | `khach-hang.khach-hang` | create |
+| `UC-KH-04` | Sửa KH | `khach-hang.khach-hang` | update |
+| `UC-KH-05` | Xóa KH | `khach-hang.khach-hang` | delete |
+| `UC-KH-06` | Quản lý liên hệ | `khach-hang.lien-he` | CRUD |
+| `UC-KH-07` | Quản lý hoạt động CRM | `khach-hang.hoat-dong` | CRUD |
+| `UC-KH-08` | Quản lý kỷ niệm KH | `khach-hang.loyalty` | CRUD |
+| `UC-KH-09` | Đăng ký nhận TB kỷ niệm | `khach-hang.loyalty` | create |
+
+---
+
+### LUỒNG 7: Quản lý sản phẩm vòng đời
+
+**Mục đích:** Quản lý danh mục sản phẩm quốc phòng theo vòng đời: sản xuất → nghiệm thu cấp Bộ → đưa vào trang bị. Hỗ trợ BOM, thông số kỹ thuật, serial linh kiện, tài liệu và quy trình sản phẩm.
+
+**Chức năng chính:**
+
+- CRUD sản phẩm, theo dõi giai đoạn vòng đời
+- Quản lý BOM, linh kiện, serial và thông số kỹ thuật
+- Gắn tài liệu kỹ thuật, xem lịch sử thay đổi
+- Xử lý quy trình sản phẩm (workflow product)
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật
+    actor QL as Quản lý
+    participant S as Hệ thống ASMS
+    KT->>S: Tạo sản phẩm mới, phân loại
+    KT->>S: Cập nhật BOM và thông số kỹ thuật
+    KT->>S: Cập nhật giai đoạn vòng đời
+    QL->>S: Duyệt quy trình sản phẩm
+    S-->>KT: Liên kết HĐ, BH và báo cáo SP
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Kỹ thuật | Tạo danh mục sản phẩm với mã, phân loại, NSX |
+| 2 | Kỹ thuật | Quản lý BOM, linh kiện và serial |
+| 3 | Kỹ thuật | Cập nhật trạng thái giai đoạn sản xuất/nghiệm thu |
+| 4 | Quản lý | Phê duyệt quy trình sản phẩm nếu có |
+| 5 | Hệ thống | Liên kết với hợp đồng, bảo hành và báo cáo |
+
+**Danh sách chức năng (Use Case) — Sản phẩm (12 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-SP-01` | Xem danh sách SP | — | read |
+| `UC-SP-02` | Xem chi tiết SP | `san-pham.tong-quan` | read |
+| `UC-SP-03` | Tạo SP | — | create |
+| `UC-SP-04` | Sửa SP | — | update |
+| `UC-SP-05` | Xóa SP | — | delete |
+| `UC-SP-06` | Quản lý BOM / linh kiện | `san-pham.linh-kien` | update |
+| `UC-SP-07` | Quản lý thông số kỹ thuật | `san-pham.thong-so` | update |
+| `UC-SP-08` | Quản lý serial linh kiện | `san-pham.linh-kien` | update |
+| `UC-SP-09` | Xem / gắn tài liệu SP | `san-pham.tai-lieu` | read / update |
+| `UC-SP-10` | Xem lịch sử thay đổi | `san-pham.lich-su` | read |
+| `UC-SP-11` | Xử lý quy trình SP | — | update |
+| `UC-SP-12` | Tab đào tạo trên SP | `san-pham.dao-tao` | read |
+
+---
+
+### LUỒNG 8: Vật tư và điều chuyển
+
+**Mục đích:** Quản lý nhập kho, tồn và điều chuyển vật tư phục vụ bàn giao và sửa chữa. Phân biệt vật tư tiêu hao và vật tư định danh (serial), truy vết nguồn-đích.
+
+**Chức năng chính:**
+
+- Nhập/sửa/xóa vật tư trong kho
+- Quản lý vật tư tiêu hao và vật tư định danh (serial)
+- Tạo phiếu điều chuyển: nguồn, đích, số lượng, trạng thái
+- Báo cáo lỗi vật tư liên kết module Báo cáo
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật
+    participant S as Hệ thống ASMS
+    KT->>S: Nhập vật tư mới vào kho
+    KT->>S: Tạo phiếu điều chuyển
+    S->>S: Cập nhật tồn nguồn và đích
+    KT->>S: Xuất vật tư cho phiếu BH/SC
+    S-->>KT: Cân đối tồn và lịch sử điều chuyển
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Kỹ thuật | Nhập vật tư: tên, loại, serial nếu định danh |
+| 2 | Kỹ thuật | Theo dõi tồn kho theo kho/vị trí |
+| 3 | Kỹ thuật | Tạo phiếu điều chuyển giữa các đơn vị |
+| 4 | Hệ thống | Trừ/cộng tồn khi duyệt điều chuyển |
+| 5 | Kỹ thuật | Liên kết vật tư với phiếu bảo hành khi sửa chữa |
+
+**Danh sách chức năng (Use Case) — Vật tư (8 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-VT-01` | Xem danh sách vật tư | `vat-tu.kho` | read |
+| `UC-VT-02` | Xem chi tiết vật tư | `vat-tu.kho` | read |
+| `UC-VT-03` | Nhập vật tư mới | `vat-tu.kho` | create |
+| `UC-VT-04` | Sửa vật tư | `vat-tu.kho` | update |
+| `UC-VT-05` | Xóa vật tư | `vat-tu.kho` | delete |
+| `UC-VT-06` | Xem phiếu điều chuyển | `vat-tu.dieu-chuyen` | read |
+| `UC-VT-07` | Tạo phiếu điều chuyển | `vat-tu.dieu-chuyen` | create |
+| `UC-VT-08` | Sửa / xóa phiếu điều chuyển | `vat-tu.dieu-chuyen` | update / delete |
+
+---
+
+### LUỒNG 9: Quản lý tài liệu
+
+**Mục đích:** Lưu trữ và truy xuất tài liệu vận hành hậu mãi theo nhóm (hợp đồng, kỹ thuật, đào tạo, báo cáo) và gắn với thực thể nghiệp vụ.
+
+**Chức năng chính:**
+
+- Upload file và quản lý metadata tài liệu
+- Lọc theo loại: HĐ, kỹ thuật, chính sách, đào tạo, báo cáo
+- Liên kết HĐ, SP, khóa HL, ticket
+- Xem chi tiết, tải xuống, soft delete
+
+```mermaid
+sequenceDiagram
+    actor NV as Nhân viên
+    participant S as Hệ thống ASMS
+    NV->>S: Upload file qua POST /documents/upload
+    NV->>S: Gắn loại và liên kết HĐ/SP
+    S->>S: Lưu metadata và đường dẫn file
+    NV->>S: Tìm kiếm và lọc thư viện tài liệu
+    S-->>NV: Preview và tải file
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Nhân viên | Chọn tệp và loại tài liệu |
+| 2 | Hệ thống | Upload multipart, lưu metadata |
+| 3 | Nhân viên | Liên kết với hợp đồng, sản phẩm hoặc khóa HL |
+| 4 | Nhân viên | Lọc và tìm kiếm trong thư viện |
+| 5 | Nhân viên | Tải xuống hoặc xóa mềm tài liệu |
+
+**Danh sách chức năng (Use Case) — Tài liệu (8 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-TL-01` | Xem danh sách tài liệu | Theo quyền | read |
+| `UC-TL-02` | Xem chi tiết / tải file | Theo quyền | read |
+| `UC-TL-03` | Tạo metadata tài liệu | Theo quyền | create |
+| `UC-TL-04` | Upload file | Theo quyền | create |
+| `UC-TL-05` | Sửa tài liệu | Theo quyền | update |
+| `UC-TL-06` | Xóa tài liệu | Theo quyền | delete |
+| `UC-TL-07` | Lọc theo loại | Theo quyền | read |
+| `UC-TL-08` | Liên kết HĐ / SP / đề tài / khóa HL | create / update | — |
+
+---
+
+### LUỒNG 10: Quy trình và phê duyệt
+
+**Mục đích:** Cấu hình và vận hành engine quy trình động cho bàn giao, huấn luyện, bảo hành, sản phẩm. Mỗi bước có schema form, vai trò xử lý và tài liệu đính kèm.
+
+**Chức năng chính:**
+
+- Xem tổng quan nhóm QT theo module (handover, coaching, warranty, product, training)
+- Tạo/sửa/xóa định nghĩa quy trình và các bước
+- Cấu hình field schema động cho từng bước
+- Theo dõi instance đang chạy trên từng bản ghi nghiệp vụ
+
+```mermaid
+sequenceDiagram
+    actor Admin as Quản trị viên
+    actor NV as Người xử lý
+    participant S as Hệ thống ASMS
+    Admin->>S: Cấu hình WF mới và các bước
+    Admin->>S: Định nghĩa field schema từng bước
+    NV->>S: Mở bản ghi có WF đang chạy
+    NV->>S: Điền form, đính kèm, trình ký
+    S-->>NV: Chuyển bước và gửi thông báo
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Admin | Tạo quy trình thuộc module (handover, warranty…) |
+| 2 | Admin | Cấu hình bước, vai trò và schema form |
+| 3 | Người xử lý | Mở phiếu HĐ/BG/BH có workflow |
+| 4 | Người xử lý | Điền payload, upload tài liệu bước |
+| 5 | Hệ thống | Ghi audit, chuyển bước, thông báo người tiếp theo |
+
+**Danh sách chức năng (Use Case) — Quy trình (13 UC):**
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-QT-01` | Xem tổng quan nhóm QT | — | — |
+| `UC-QT-02` | Xem danh sách QT theo module | handover, warranty, training, coaching, product | — |
+| `UC-QT-03` | Tạo quy trình | Theo quyền | create |
+| `UC-QT-04` | Sửa thông tin QT | Theo quyền | update |
+| `UC-QT-05` | Xóa quy trình | Theo quyền | delete |
+| `UC-QT-06` | Thêm / sửa / xóa bước | Theo quyền | update |
+| `UC-QT-07` | Sắp xếp lại bước | Theo quyền | update |
+| `UC-QT-08` | Cấu hình trường nhập bước | Theo quyền | update |
+| `UC-QT-09` | Tạo bộ bước chuẩn | Theo quyền | update |
+| `UC-QT-10` | Gắn QT cho entity | Theo quyền | update |
+| `UC-QT-11` | Chuyển bước QT | Theo quyền | update |
+| `UC-QT-12` | Xem lịch sử bước | Theo quyền | read |
+| `UC-QT-13` | Đính kèm tài liệu instance | create / delete | — |
+
+---
+
+### LUỒNG 11: Bảng điều khiển và báo cáo
+
+**Mục đích:** Cung cấp bức tranh điều hành KPI thời gian thực trên Dashboard và báo cáo chuyên sâu theo khách hàng, hợp đồng, sản phẩm, phản ánh, đơn vị và PAKD.
+
+**Chức năng chính:**
+
+- Dashboard: tab Overview, KH, doanh thu, dự án, SP, BH, vật tư, cảnh báo
+- Lọc theo năm/quý/khách hàng; luân chuyển tab và fullscreen
+- Báo cáo: theo KH, HĐ, dòng SP, PA, đơn vị, lỗi vật tư
+- Xuất Excel và in báo cáo
+
+```mermaid
+sequenceDiagram
+    actor QL as Quản lý
+    participant S as Hệ thống ASMS
+    QL->>S: Truy cập Dashboard /
+    S-->>QL: KPI HĐ, BG, BH, PA, PAKD
+    QL->>S: Lọc năm/quý/khách hàng
+    QL->>S: Mở /bao-cao, chọn loại báo cáo
+    S-->>QL: Biểu bảng, xuất Excel hoặc in
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản lý | Mở Dashboard, xem KPI tổng hợp |
+| 2 | Quản lý | Chuyển tab theo góc nhìn (KH, SP, BH…) |
+| 3 | Quản lý | Xem tab Alerts — cảnh báo quá hạn SLA |
+| 4 | Quản lý | Vào Báo cáo, chọn loại và khoảng thời gian |
+| 5 | Hệ thống | Tổng hợp API reports, xuất Excel/in |
+
+**Danh sách chức năng (Use Case):**
+
+*Bảng điều khiển* (11 UC):
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-DASH-01` | Xem tổng quan | Theo quyền | Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+| `UC-DASH-02` | Xem theo khách hàng | Theo quyền | Tab Khách hàng |
+| `UC-DASH-03` | Xem doanh thu | Theo quyền | Tab Doanh thu |
+| `UC-DASH-04` | Xem dự án / tiến độ | Theo quyền | Tab Dự án (HĐ, BG, HL) |
+| `UC-DASH-05` | Xem sản phẩm | Theo quyền | Tab Sản phẩm |
+| `UC-DASH-06` | Xem bảo hành | Theo quyền | Tab Bảo hành / phản ánh |
+| `UC-DASH-07` | Xem vật tư | Theo quyền | Tab Vật tư / PAKD |
+| `UC-DASH-08` | Xem cảnh báo | Theo quyền | Tab Alerts, KPI quá hạn |
+| `UC-DASH-09` | Lọc theo năm / quý / KH | Theo quyền | Bộ lọc dashboard |
+| `UC-DASH-10` | Luân chuyển tab tự động | Theo quyền | Auto-rotate, fullscreen |
+| `UC-DASH-11` | Xem badge menu | Theo quyền | HĐ trễ, BH mở, CV trễ… (`GET /reports/badges`) |
+
+*Báo cáo* (9 UC):
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-BC-01` | Báo cáo theo khách hàng | `bao-cao.khach-hang` | — |
+| `UC-BC-02` | Báo cáo theo hợp đồng | `bao-cao.hop-dong` | — |
+| `UC-BC-03` | Báo cáo theo dòng SP | `bao-cao.dong-sp` | — |
+| `UC-BC-04` | Báo cáo phản ánh | `bao-cao.phan-anh` | — |
+| `UC-BC-05` | Báo cáo đơn vị thực hiện | `bao-cao.don-vi` | — |
+| `UC-BC-06` | Báo cáo lỗi vật tư | `material-defects` | — |
+| `UC-BC-07` | Lọc báo cáo | Năm, từ–đến | — |
+| `UC-BC-08` | Xuất Excel | UI export | — |
+| `UC-BC-09` | In báo cáo | Print | — |
+
+
+---
+
+### LUỒNG 12: Cài đặt, phân quyền và thông báo
+
+**Mục đích:** Quản trị dữ liệu nền, người dùng, ma trận phân quyền RBAC 5 vai trò, cấu hình thông báo và nhận cảnh báo SLA/hết hạn trong hệ thống.
+
+**Chức năng chính:**
+
+- Quản lý người dùng, vai trò admin/manager/technician/viewer/sales
+- Ma trận phân quyền theo module (read/create/update/delete)
+- Cấu hình đơn vị PA, routing rules, phiên đăng nhập
+- Thông báo in-app: SLA, PA, HĐ hết hạn; badge menu
+
+```mermaid
+sequenceDiagram
+    actor Admin as Quản trị viên
+    actor NV as Nhân viên
+    participant S as Hệ thống ASMS
+    Admin->>S: Cấu hình user và phân quyền module
+    Admin->>S: Thiết lập routing PA và đơn vị
+    S->>S: Job quét SLA và hết hạn HĐ
+    S-->>NV: Tạo thông báo và badge menu
+    NV->>S: Xem /thong-bao, điều hướng bản ghi
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Admin | Tạo user, gán vai trò RBAC |
+| 2 | Admin | Cấu hình ma trận quyền từng module |
+| 3 | Admin | Thiết lập quy tắc routing phản ánh |
+| 4 | Hệ thống | Job tạo thông báo SLA và hết hạn |
+| 5 | Nhân viên | Nhận badge, xem và xử lý từ /thong-bao |
+
+**Danh sách chức năng (Use Case):**
+
+*Cài đặt* (11 UC):
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-CD-01` | Quản lý người dùng | `cai-dat.nguoi-dung` | — |
+| `UC-CD-02` | Quản lý vai trò | `cai-dat.vai-tro` | — |
+| `UC-CD-03` | Cấu hình ma trận phân quyền | `cai-dat.phan-quyen` | — |
+| `UC-CD-04` | Cấu hình thông báo cá nhân | `cai-dat.thong-bao` | — |
+| `UC-CD-05` | Cấu hình đơn vị PA & routing | Đơn vị PA | — |
+| `UC-CD-06` | Cấu hình hệ thống | `cai-dat.he-thong` | — |
+| `UC-CD-07` | Quản lý phiên đăng nhập | `cai-dat.phien` | — |
+| `UC-CD-08` | Xem nhật ký audit | `cai-dat.nhat-ky` | — |
+| `UC-CD-09` | Quản lý danh mục thuộc tính | `cai-dat.thuoc-tinh` | — |
+| `UC-CD-10` | Sắp xếp danh mục | Reorder definitions | — |
+| `UC-CD-11` | Kiểm tra danh mục đang dùng | Usage check | — |
+
+*Thông báo* (5 UC):
+
+| Mã UC | Chức năng | Tác nhân | Mô tả |
+|---|---|---|---|
+| `UC-TB-01` | Xem danh sách thông báo | Mọi user | — |
+| `UC-TB-02` | Đánh dấu đã đọc | Mọi user | — |
+| `UC-TB-03` | Đánh dấu tất cả đã đọc | Mọi user | — |
+| `UC-TB-04` | Điều hướng từ thông báo | Mọi user | — |
+| `UC-TB-05` | Nhận thông báo tự động | Hệ thống | — |
+
+
+---
+
+
+## 6. CÁC TRẠNG THÁI CHÍNH
+
+### 6.1. Hợp đồng
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Nháp / Mới | HĐ vừa tạo, chưa duyệt |
+| Đang thực hiện | HĐ có hiệu lực, đang triển khai |
+| Hoàn thành | Đã bàn giao/nghiệm thu xong |
+| Thanh lý | Kết thúc HĐ theo điều khoản |
+
+### 6.2. Bàn giao & Huấn luyện
+
+| Trạng thái workflow | Ý nghĩa |
+|---|---|
+| Kế hoạch | Lập và trình kế hoạch bàn giao |
+| Tờ trình KP | Phê duyệt kinh phí |
+| Chuẩn bị HH | Chuẩn bị hàng hóa |
+| Tổ chức BG | Thực hiện bàn giao |
+| Huấn luyện | Tổ chức và hoàn tất HL |
+
+### 6.3. Bảo hành / Sửa chữa
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Tiếp nhận | Phiếu mới, chờ phân loại |
+| Đang xử lý | Kỹ thuật đang sửa chữa |
+| Nghiệm thu | Kiểm tra sau sửa |
+| Đóng | Hoàn tất, lưu lịch sử |
+
+### 6.4. Phản ánh khách hàng
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Mới | PA vừa tạo |
+| Đang xử lý | Đã phân công, đơn vị xử lý |
+| Chờ đóng | Yêu cầu đóng, chờ duyệt |
+| Đã đóng | Hoàn tất |
+| Mở lại | PA được mở lại sau đóng |
+
+---
+
+## 7. PHỤ LỤC — DANH SÁCH CHỨC NĂNG THEO PHÂN HỆ (152 UC)
+
+### Phụ lục — Xác thực & Phiên
+
+**Route:** `/login` · **Module:** `AUTH`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-AUTH-01` | Đăng nhập | Mọi user | Email/mật khẩu → JWT (`POST /api/v1/auth/login`) |
+| `UC-AUTH-02` | Đăng xuất | Mọi user | Thu hồi refresh token |
+| `UC-AUTH-03` | Làm mới phiên | Mọi user | Refresh access token |
+| `UC-AUTH-04` | Xem danh sách phiên | Mọi user | Thiết bị/phiên đang đăng nhập |
+| `UC-AUTH-05` | Thu hồi phiên | Mọi user | Đăng xuất một phiên cụ thể |
+| `UC-AUTH-06` | Đăng xuất tất cả | Mọi user | Hủy mọi phiên |
+| `UC-AUTH-07` | Tạo tài khoản | Admin | Bootstrap hoặc `POST /api/v1/users` |
+
+### Phụ lục — Bảng điều khiển
+
+**Route:** `/` · **Module:** `dashboard`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-DASH-01` | Xem tổng quan | Theo quyền | Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+| `UC-DASH-02` | Xem theo khách hàng | Theo quyền | Tab Khách hàng |
+| `UC-DASH-03` | Xem doanh thu | Theo quyền | Tab Doanh thu |
+| `UC-DASH-04` | Xem dự án / tiến độ | Theo quyền | Tab Dự án (HĐ, BG, HL) |
+| `UC-DASH-05` | Xem sản phẩm | Theo quyền | Tab Sản phẩm |
+| `UC-DASH-06` | Xem bảo hành | Theo quyền | Tab Bảo hành / phản ánh |
+| `UC-DASH-07` | Xem vật tư | Theo quyền | Tab Vật tư / PAKD |
+| `UC-DASH-08` | Xem cảnh báo | Theo quyền | Tab Alerts, KPI quá hạn |
+| `UC-DASH-09` | Lọc theo năm / quý / KH | Theo quyền | Bộ lọc dashboard |
+| `UC-DASH-10` | Luân chuyển tab tự động | Theo quyền | Auto-rotate, fullscreen |
+| `UC-DASH-11` | Xem badge menu | Theo quyền | HĐ trễ, BH mở, CV trễ… (`GET /reports/badges`) |
+
+### Phụ lục — Hợp đồng
+
+**Route:** `/hop-dong` · **Module:** `hop-dong`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-HD-01` | Xem danh sách HĐ | Theo quyền | Lọc, tìm kiếm, phân trang |
+| `UC-HD-02` | Xem chi tiết HĐ | Theo quyền | Thông tin, tiến độ, quy trình |
+| `UC-HD-03` | Tạo HĐ | Theo quyền | create |
+| `UC-HD-04` | Sửa HĐ | Theo quyền | update |
+| `UC-HD-05` | Xóa HĐ | Theo quyền | delete |
+| `UC-HD-06` | Gán danh mục SP | Theo quyền | update |
+| `UC-HD-07` | Sửa SP trong HĐ | Theo quyền | update |
+| `UC-HD-08` | Xem SP thuộc HĐ | Theo quyền | read |
+| `UC-HD-09` | Chọn điều khoản mẫu | read/update | Tab điều khoản |
+| `UC-HD-10` | Điền nội dung điều khoản | Theo quyền | update |
+| `UC-HD-11` | Xem phản ánh liên quan | Theo quyền | read |
+| `UC-HD-12` | Xem tài liệu HĐ | Theo quyền | read |
+| `UC-HD-13` | Xử lý quy trình HĐ | Theo quyền | update |
+| `UC-HD-14` | Đính kèm tài liệu bước QT | Theo quyền | update |
+| `UC-HD-DK-01` | Xem danh sách điều khoản mẫu | Theo quyền | read |
+| `UC-HD-DK-02` | Tạo / sửa / xóa điều khoản | create / update / delete | — |
+| `UC-HD-DK-03` | Sắp xếp điều khoản | Theo quyền | update |
+| `UC-HD-DK-04` | Xem nhóm điều khoản | Theo quyền | read |
+| `UC-HD-DK-05` | Tạo / sửa / xóa nhóm | create / update / delete | — |
+| `UC-HD-DK-06` | Gán điều khoản vào nhóm | Theo quyền | update |
+| `UC-HD-DK-07` | Kiểm tra điều khoản đang dùng | Theo quyền | read |
+
+### Phụ lục — Bàn giao & Huấn luyện
+
+**Route:** `/ban-giao` · **Module:** `ban-giao`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-BG-01` | Xem danh sách bàn giao | Theo quyền | read |
+| `UC-BG-02` | Xem chi tiết phiếu BG | Theo quyền | read |
+| `UC-BG-03` | Tạo phiếu bàn giao | Theo quyền | create |
+| `UC-BG-04` | Sửa phiếu bàn giao | Theo quyền | update |
+| `UC-BG-05` | Xóa phiếu bàn giao | Theo quyền | delete |
+| `UC-BG-06` | Xử lý quy trình bàn giao | Theo quyền | update |
+| `UC-BG-07` | Đính kèm tài liệu bước BG | Theo quyền | update |
+| `UC-BG-08` | Xem danh sách khóa HL | Theo quyền | read |
+| `UC-BG-09` | Tạo khóa huấn luyện | Theo quyền | create |
+| `UC-BG-10` | Sửa / xóa khóa HL | update / delete | — |
+| `UC-BG-11` | Xử lý quy trình HL | Theo quyền | update |
+| `UC-BG-12` | Điền payload từng bước HL | Theo quyền | update |
+
+### Phụ lục — Bảo hành / Sửa chữa
+
+**Route:** `/bao-hanh` · **Module:** `bao-hanh`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-BH-01` | Xem danh sách phiếu BH/SC | Theo quyền | read |
+| `UC-BH-02` | Xem chi tiết phiếu | Theo quyền | read |
+| `UC-BH-03` | Tạo phiếu BH/SC | Theo quyền | create |
+| `UC-BH-04` | Sửa phiếu | Theo quyền | update |
+| `UC-BH-05` | Xóa phiếu | Theo quyền | delete |
+| `UC-BH-06` | Xử lý quy trình BH | Theo quyền | update |
+| `UC-BH-07` | Điền form động theo bước | Theo quyền | update |
+| `UC-BH-08` | Đính kèm tài liệu bước BH | Theo quyền | update |
+
+### Phụ lục — Sản phẩm
+
+**Route:** `/san-pham` · **Module:** `san-pham`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-SP-01` | Xem danh sách SP | — | read |
+| `UC-SP-02` | Xem chi tiết SP | `san-pham.tong-quan` | read |
+| `UC-SP-03` | Tạo SP | — | create |
+| `UC-SP-04` | Sửa SP | — | update |
+| `UC-SP-05` | Xóa SP | — | delete |
+| `UC-SP-06` | Quản lý BOM / linh kiện | `san-pham.linh-kien` | update |
+| `UC-SP-07` | Quản lý thông số kỹ thuật | `san-pham.thong-so` | update |
+| `UC-SP-08` | Quản lý serial linh kiện | `san-pham.linh-kien` | update |
+| `UC-SP-09` | Xem / gắn tài liệu SP | `san-pham.tai-lieu` | read / update |
+| `UC-SP-10` | Xem lịch sử thay đổi | `san-pham.lich-su` | read |
+| `UC-SP-11` | Xử lý quy trình SP | — | update |
+| `UC-SP-12` | Tab đào tạo trên SP | `san-pham.dao-tao` | read |
+
+### Phụ lục — Vật tư
+
+**Route:** `/vat-tu` · **Module:** `vat-tu`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-VT-01` | Xem danh sách vật tư | `vat-tu.kho` | read |
+| `UC-VT-02` | Xem chi tiết vật tư | `vat-tu.kho` | read |
+| `UC-VT-03` | Nhập vật tư mới | `vat-tu.kho` | create |
+| `UC-VT-04` | Sửa vật tư | `vat-tu.kho` | update |
+| `UC-VT-05` | Xóa vật tư | `vat-tu.kho` | delete |
+| `UC-VT-06` | Xem phiếu điều chuyển | `vat-tu.dieu-chuyen` | read |
+| `UC-VT-07` | Tạo phiếu điều chuyển | `vat-tu.dieu-chuyen` | create |
+| `UC-VT-08` | Sửa / xóa phiếu điều chuyển | `vat-tu.dieu-chuyen` | update / delete |
+
+### Phụ lục — Khách hàng / CRM
+
+**Route:** `/khach-hang` · **Module:** `khach-hang`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-KH-01` | Xem danh sách KH | `khach-hang.khach-hang` | read |
+| `UC-KH-02` | Xem chi tiết KH | `khach-hang.khach-hang` | read |
+| `UC-KH-03` | Tạo KH | `khach-hang.khach-hang` | create |
+| `UC-KH-04` | Sửa KH | `khach-hang.khach-hang` | update |
+| `UC-KH-05` | Xóa KH | `khach-hang.khach-hang` | delete |
+| `UC-KH-06` | Quản lý liên hệ | `khach-hang.lien-he` | CRUD |
+| `UC-KH-07` | Quản lý hoạt động CRM | `khach-hang.hoat-dong` | CRUD |
+| `UC-KH-08` | Quản lý kỷ niệm KH | `khach-hang.loyalty` | CRUD |
+| `UC-KH-09` | Đăng ký nhận TB kỷ niệm | `khach-hang.loyalty` | create |
+
+### Phụ lục — Phản ánh khách hàng
+
+**Route:** `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` · **Module:** `phan-anh`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-PA-01` | Xem danh sách phản ánh | Theo quyền | Admin: tất cả; khác: chỉ được phân công |
+| `UC-PA-02` | Xem chi tiết phản ánh | Theo quyền | Timeline, bình luận |
+| `UC-PA-03` | Tạo phản ánh | Theo quyền | create |
+| `UC-PA-04` | Sửa phản ánh | Theo quyền | update |
+| `UC-PA-05` | Xóa phản ánh | Theo quyền | delete |
+| `UC-PA-06` | Phân công người / vai trò | Theo quyền | update |
+| `UC-PA-07` | Phân luồng theo SP / đơn vị | Hệ thống + user | Routing preview, assignments |
+| `UC-PA-08` | Cập nhật xử lý đơn vị | Theo quyền | update |
+| `UC-PA-09` | Bình luận phản ánh | Theo quyền | update |
+| `UC-PA-10` | Yêu cầu đóng | Theo quyền | update |
+| `UC-PA-11` | Đóng phản ánh | Theo quyền | update |
+| `UC-PA-12` | Hoàn tất sửa chữa & đóng | Theo quyền | update |
+| `UC-PA-13` | Mở lại phản ánh | Theo quyền | update |
+| `UC-PA-14` | Xem tóm tắt công việc PA | Theo quyền | read |
+| `UC-PA-15` | Thống kê theo KH / SP / VT | Theo quyền | read |
+| `UC-PA-16` | Lọc theo đơn vị của tôi | Theo quyền | read |
+| `UC-PA-17` | Cấu hình đơn vị thực hiện | Admin / quản lý | Cài đặt → Đơn vị PA |
+| `UC-PA-18` | Cấu hình quy tắc routing | Admin / quản lý | Routing rules |
+
+### Phụ lục — Báo cáo
+
+**Route:** `/bao-cao` · **Module:** `bao-cao`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-BC-01` | Báo cáo theo khách hàng | `bao-cao.khach-hang` | — |
+| `UC-BC-02` | Báo cáo theo hợp đồng | `bao-cao.hop-dong` | — |
+| `UC-BC-03` | Báo cáo theo dòng SP | `bao-cao.dong-sp` | — |
+| `UC-BC-04` | Báo cáo phản ánh | `bao-cao.phan-anh` | — |
+| `UC-BC-05` | Báo cáo đơn vị thực hiện | `bao-cao.don-vi` | — |
+| `UC-BC-06` | Báo cáo lỗi vật tư | `material-defects` | — |
+| `UC-BC-07` | Lọc báo cáo | Năm, từ–đến | — |
+| `UC-BC-08` | Xuất Excel | UI export | — |
+| `UC-BC-09` | In báo cáo | Print | — |
+
+### Phụ lục — Tài liệu
+
+**Route:** `/tai-lieu` · **Module:** `tai-lieu`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-TL-01` | Xem danh sách tài liệu | Theo quyền | read |
+| `UC-TL-02` | Xem chi tiết / tải file | Theo quyền | read |
+| `UC-TL-03` | Tạo metadata tài liệu | Theo quyền | create |
+| `UC-TL-04` | Upload file | Theo quyền | create |
+| `UC-TL-05` | Sửa tài liệu | Theo quyền | update |
+| `UC-TL-06` | Xóa tài liệu | Theo quyền | delete |
+| `UC-TL-07` | Lọc theo loại | Theo quyền | read |
+| `UC-TL-08` | Liên kết HĐ / SP / đề tài / khóa HL | create / update | — |
+
+### Phụ lục — Quy trình
+
+**Route:** `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` · **Module:** `quy-trinh`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-QT-01` | Xem tổng quan nhóm QT | — | — |
+| `UC-QT-02` | Xem danh sách QT theo module | handover, warranty, training, coaching, product | — |
+| `UC-QT-03` | Tạo quy trình | Theo quyền | create |
+| `UC-QT-04` | Sửa thông tin QT | Theo quyền | update |
+| `UC-QT-05` | Xóa quy trình | Theo quyền | delete |
+| `UC-QT-06` | Thêm / sửa / xóa bước | Theo quyền | update |
+| `UC-QT-07` | Sắp xếp lại bước | Theo quyền | update |
+| `UC-QT-08` | Cấu hình trường nhập bước | Theo quyền | update |
+| `UC-QT-09` | Tạo bộ bước chuẩn | Theo quyền | update |
+| `UC-QT-10` | Gắn QT cho entity | Theo quyền | update |
+| `UC-QT-11` | Chuyển bước QT | Theo quyền | update |
+| `UC-QT-12` | Xem lịch sử bước | Theo quyền | read |
+| `UC-QT-13` | Đính kèm tài liệu instance | create / delete | — |
+
+### Phụ lục — Cài đặt
+
+**Route:** `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` · **Module:** `cai-dat`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-CD-01` | Quản lý người dùng | `cai-dat.nguoi-dung` | — |
+| `UC-CD-02` | Quản lý vai trò | `cai-dat.vai-tro` | — |
+| `UC-CD-03` | Cấu hình ma trận phân quyền | `cai-dat.phan-quyen` | — |
+| `UC-CD-04` | Cấu hình thông báo cá nhân | `cai-dat.thong-bao` | — |
+| `UC-CD-05` | Cấu hình đơn vị PA & routing | Đơn vị PA | — |
+| `UC-CD-06` | Cấu hình hệ thống | `cai-dat.he-thong` | — |
+| `UC-CD-07` | Quản lý phiên đăng nhập | `cai-dat.phien` | — |
+| `UC-CD-08` | Xem nhật ký audit | `cai-dat.nhat-ky` | — |
+| `UC-CD-09` | Quản lý danh mục thuộc tính | `cai-dat.thuoc-tinh` | — |
+| `UC-CD-10` | Sắp xếp danh mục | Reorder definitions | — |
+| `UC-CD-11` | Kiểm tra danh mục đang dùng | Usage check | — |
+
+### Phụ lục — Thông báo
+
+**Route:** `/thong-bao` · **Module:** `thong-bao`
+
+| Mã UC | Chức năng | Tác nhân | Quyền / Mô tả |
+|---|---|---|---|
+| `UC-TB-01` | Xem danh sách thông báo | Mọi user | — |
+| `UC-TB-02` | Đánh dấu đã đọc | Mọi user | — |
+| `UC-TB-03` | Đánh dấu tất cả đã đọc | Mọi user | — |
+| `UC-TB-04` | Điều hướng từ thông báo | Mọi user | — |
+| `UC-TB-05` | Nhận thông báo tự động | Hệ thống | — |
+
+
+---
+
+## 8. KẾT LUẬN
+
+Tài liệu BRD ASMS mô tả **12 luồng nghiệp vụ** và **152 chức năng** trên **14 phân hệ**, giúp đội dự án nắm tổng thể cách hệ thống vận hành. Các luồng được thiết kế theo nguyên tắc:
+
+- **Workflow chuẩn hóa:** Phê duyệt rõ ràng trên HĐ, BG, BH, SP
+- **Liên thông dữ liệu:** KH ↔ HĐ ↔ SP ↔ VT ↔ PA ↔ Báo cáo
+- **Phân quyền chặt:** RBAC 5 vai trò theo module
+- **Truy vết:** Audit log và timeline phản ánh
+- **Điều hành:** Dashboard KPI và báo cáo đa chiều
+
+Mọi góp ý xin gửi về đội dự án để hoàn thiện trước khi triển khai chính thức.
+
+— Hết —
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+function decodeHtmlEntities(text) {
+  const el = document.createElement('textarea');
+  el.innerHTML = text;
+  return el.value;
+}
+function mermaidBlocksToDivs(html) {
+  return html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/gi, function(_, raw) {
+    const code = decodeHtmlEntities(raw);
+    return '<div class="mermaid">' + code.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
+  });
+}
+const renderer = new marked.Renderer();
+const baseCode = renderer.code.bind(renderer);
+renderer.code = function(code, lang) {
+  if (lang === 'mermaid') {
+    const safe = code.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return '<div class="mermaid">' + safe + '</div>';
+  }
+  return baseCode(code, lang);
+};
+marked.setOptions({ renderer, gfm: true, breaks: false });
+const mdRaw = document.getElementById('md-source').textContent;
+let htmlContent = mermaidBlocksToDivs(marked.parse(mdRaw));
+const host = document.getElementById('content-host');
+const wrapper = document.createElement('div');
+wrapper.className = 'doc-page content-flow';
+wrapper.innerHTML = '<div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-003</span></div><div class="inner-brd-right">ASMS &nbsp;·&nbsp; Phiên bản 1.0</div></div><div class="inner-brd-divider"></div><div class="content-area"><div class="md-render">' + htmlContent + '</div></div><div class="inner-brd-footer"><div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div><div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD v1.0</span></div></div>';
+host.appendChild(wrapper);
+const archHtml = "\n<figure class=\"arch-figure\">\n<div class=\"arch-diagram\">\n  <div class=\"arch-title\">ASMS — After-Sales Management System (5 tầng)</div>\n  <div class=\"arch-layer l1\">\n    <div class=\"arch-layer-hd\">TẦNG 1 — NGƯỜI DÙNG &amp; KÊNH TRUY CẬP</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>Web Quản trị</strong><br>Admin · Manager · Sales<br><em>React + Vite — Dashboard, Cài đặt</em></div>\n      <div class=\"arch-box\"><strong>Web Vận hành</strong><br>Technician · Viewer<br><em>HĐ · BG · BH · VT · SP · PA</em></div>\n      <div class=\"arch-box\"><strong>Đăng nhập &amp; API</strong><br>/login · Bearer JWT<br><em>/api/v1/auth · refresh token</em></div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l2\">\n    <div class=\"arch-layer-hd\">TẦNG 2 — CỔNG GIAO TIẾP &amp; BẢO MẬT</div>\n    <div class=\"arch-row two\">\n      <div class=\"arch-box\"><strong>Express API Gateway</strong><br>/api/v1 · CORS · rate limit<br>Envelope { success, data }</div>\n      <div class=\"arch-box\"><strong>JWT Guard &amp; RBAC</strong><br>5 roles · module permissions<br>read / create / update / delete</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l3\">\n    <div class=\"arch-layer-hd\">TẦNG 3 — HỆ THỐNG LÕI (Express + TypeScript)</div>\n    <div class=\"arch-grid\">\n      <div class=\"arch-box\"><strong>Hợp đồng &amp; Điều khoản</strong><br>contracts · contract-clauses<br>Workflow HĐ · gán SP</div>\n      <div class=\"arch-box\"><strong>Bàn giao &amp; Huấn luyện</strong><br>handovers · training coaching<br>WF handover / coaching</div>\n      <div class=\"arch-box\"><strong>Bảo hành / Sửa chữa</strong><br>warranties · SLA<br>WF warranty · BOM vật tư</div>\n      <div class=\"arch-box\"><strong>Sản phẩm &amp; Vật tư</strong><br>products · materials<br>BOM · điều chuyển kho</div>\n      <div class=\"arch-box\"><strong>CRM &amp; Phản ánh</strong><br>customers · feedbacks<br>routing · multi-assignee</div>\n      <div class=\"arch-box\"><strong>Workflow &amp; Cài đặt</strong><br>workflows · definitions<br>users · roles · audit</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l4\">\n    <div class=\"arch-layer-hd\">TẦNG 4 — LƯU TRỮ DỮ LIỆU &amp; FILE</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>PostgreSQL</strong><br>Prisma ORM · soft delete<br>audit logs · notifications</div>\n      <div class=\"arch-box\"><strong>File Uploads</strong><br>uploads/ · multipart<br>documents · workflow files</div>\n      <div class=\"arch-box\"><strong>Job &amp; Thông báo</strong><br>notify jobs · SLA scan<br>in-app notifications</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l5\">\n    <div class=\"arch-layer-hd\">TẦNG 5 — NỀN TẢNG CÔNG NGHỆ</div>\n    <div class=\"arch-tech\">\n      <span>React + Vite</span><span>Express + TS</span><span>Prisma</span><span>PostgreSQL</span><span>Zod</span><span>Docker</span>\n    </div>\n  </div>\n</div>\n<figcaption>Hình 1. Kiến trúc tổng thể hệ thống ASMS — 5 tầng logic</figcaption>\n</figure>";
+const renderRoot = wrapper.querySelector('.md-render');
+renderRoot.innerHTML = renderRoot.innerHTML.replace('<p>[[ARCHITECTURE_DIAGRAM]]</p>', archHtml);
+function slugify(text) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+const seenIds = new Map();
+const headings = Array.from(renderRoot.querySelectorAll('h2, h3, h4'));
+headings.forEach((heading, index) => {
+  const base = slugify(heading.textContent) || 'section-' + (index + 1);
+  const count = seenIds.get(base) || 0;
+  seenIds.set(base, count + 1);
+  heading.id = count ? base + '-' + (count + 1) : base;
+});
+const tocList = document.getElementById('toc-list');
+headings.forEach((heading, index) => {
+  const link = document.createElement('a');
+  const level = heading.tagName === 'H2' ? '2' : heading.tagName === 'H3' ? '3' : '4';
+  link.className = 'toc-item level-' + level;
+  link.href = '#' + heading.id;
+  link.innerHTML = '<span class="toc-index">' + (index + 1) + '.</span><span class="toc-text">' + heading.textContent + '</span>';
+  tocList.appendChild(link);
+});
+function wrapKeepTogether(root) {
+  root.querySelectorAll('table').forEach(function(table) {
+    if (table.closest('.table-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'table-keep';
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  });
+  root.querySelectorAll('.mermaid').forEach(function(el) {
+    if (el.closest('.diagram-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'diagram-keep';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  });
+  root.querySelectorAll('h3').forEach(function(h3) {
+    var t = h3.textContent || '';
+    if (!/^Phụ lục —/.test(t)) return;
+    if (h3.closest('.keep-together')) return;
+    var box = document.createElement('div');
+    box.className = 'keep-together';
+    h3.parentNode.insertBefore(box, h3);
+    box.appendChild(h3);
+    var next = h3.nextElementSibling;
+    while (next && next.tagName !== 'H3' && next.tagName !== 'H2') {
+      var grab = next;
+      next = next.nextElementSibling;
+      box.appendChild(grab);
+    }
+  });
+  root.querySelectorAll('h4').forEach(function(h4) {
+    var next = h4.nextElementSibling;
+    if (!next || next.tagName !== 'TABLE') return;
+    if (h4.closest('.keep-together')) return;
+    var box = document.createElement('div');
+    box.className = 'keep-together';
+    h4.parentNode.insertBefore(box, h4);
+    box.appendChild(h4);
+    box.appendChild(next);
+  });
+  root.querySelectorAll('.arch-figure').forEach(function(el) {
+    if (el.closest('.diagram-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'diagram-keep';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  });
+}
+function paginateForPrint() {
+  var hostEl = document.getElementById('content-host');
+  var pageShell = hostEl.querySelector('.doc-page.content-flow');
+  if (!pageShell || pageShell.classList.contains('print-page')) return;
+  var mdRoot = pageShell.querySelector('.md-render');
+  if (!mdRoot) return;
+  var blocks = Array.from(mdRoot.children);
+  var MAX_H = 640;
+  hostEl.removeChild(pageShell);
+  function newPrintPage() {
+    var page = pageShell.cloneNode(true);
+    page.classList.add('print-page');
+    page.classList.remove('content-flow');
+    var md = page.querySelector('.md-render');
+    md.innerHTML = '';
+    hostEl.appendChild(page);
+    return md;
+  }
+  var curMd = newPrintPage();
+  blocks.forEach(function(block) {
+    curMd.appendChild(block);
+    if (curMd.scrollHeight > MAX_H && curMd.children.length > 1) {
+      curMd.removeChild(block);
+      curMd = newPrintPage();
+      curMd.appendChild(block);
+    }
+  });
+}
+window.paginateForPrint = paginateForPrint;
+(async function() {
+  try {
+    await mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
+    wrapKeepTogether(renderRoot);
+    window.__brdLayoutReady = true;
+  } catch (err) {
+    console.error('Mermaid render error:', err);
+    window.__brdLayoutReady = true;
+  }
+})();
+</script>
+</body>
+</html>

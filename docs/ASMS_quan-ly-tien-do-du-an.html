@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý tiến độ dự án — ASMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', 'Segoe UI', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.55; }
+        .doc-page { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.25); display: flex; flex-direction: column; overflow: hidden; }
+        @media print {
+            @page { margin: 0; size: A4 portrait; }
+            body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .doc-page { margin: 0 !important; box-shadow: none !important; page-break-after: always; }
+        }
+        .doc-page.cover { padding: 0; }
+        .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); flex-shrink: 0; }
+        .cover .header { padding: 22px 52px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .cover .divider { margin: 0 52px; height: 1px; background: #eaeff8; }
+        .cover .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding-bottom: 50px; }
+        .cover .logo-wrap img { width: 220px; }
+        .cover .sep { width: 52px; height: 3px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); border-radius: 2px; margin: 24px auto; }
+        .cover .doc-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; margin-bottom: 14px; }
+        .cover .project-title { font-size: 34px; font-weight: 900; }
+        .cover .project-title span { background: linear-gradient(135deg, #3d7de8, #0ab4d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .cover .subtitle { margin-top: 12px; font-size: 12px; color: #3a4a64; max-width: 440px; line-height: 1.7; }
+        .cover .meta-info { margin-top: 28px; font-size: 10.5px; color: #3a4a64; line-height: 1.9; }
+        .cover .footer { padding: 18px 52px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+        .inner-brd-header { padding: 20px 48px 20px 68px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .inner-brd-divider { margin: 0 48px 0 68px; height: 1px; background: #eaeff8; }
+        .inner-brd-footer { padding: 16px 48px 16px 68px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+        .inner-brd-footer-r .ft-page { display: block; font-weight: 600; }
+        .content-area { flex: 1; padding: 18px 48px 50px 68px; color: #1a2740; }
+        h1.toc-title { font-size: 20px; font-weight: 900; border-bottom: 2px solid #3d7de8; padding-bottom: 8px; margin-bottom: 10px; }
+        h2 { font-size: 18px; font-weight: 800; margin: 16px 0 8px; padding: 5px 10px; background: linear-gradient(90deg, #eef4ff, transparent); border-left: 4px solid #3d7de8; }
+        h3 { font-size: 15px; font-weight: 700; color: #1e3a5f; margin: 12px 0 6px; }
+        p { margin: 5px 0; }
+        .toc-category-title { font-size: 10px; font-weight: 700; letter-spacing: 1px; color: #3d7de8; margin: 8px 0 4px; }
+        .toc-row { display: flex; gap: 10px; padding: 7px 10px; border: 1px solid #eaeff8; border-radius: 8px; text-decoration: none; color: #1a2740; background: #fbfdff; margin-bottom: 6px; font-size: 13px; }
+        .toc-num { font-weight: 800; color: #3d7de8; min-width: 22px; }
+        .spec-table { width: 100%; border-collapse: collapse; font-size: 10.5px; margin: 8px 0; }
+        .spec-table th { background: #1e3a5f; color: #fff; padding: 7px 8px; text-align: left; border: 1px solid #cbd5e0; }
+        .spec-table td { border: 1px solid #cbd5e0; padding: 6px 8px; vertical-align: middle; }
+        .spec-table tr:nth-child(even) td { background: #f7fafc; }
+        .highlight-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 10px 12px; margin: 10px 0; border-radius: 0 8px 8px 0; font-size: 12.5px; }
+        .highlight-box.green { background: #f0fdf4; border-left-color: #22c55e; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+        .kpi-card { border: 1px solid #eaeff8; border-radius: 10px; padding: 14px 12px; text-align: center; background: linear-gradient(180deg, #fbfdff, #fff); }
+        .kpi-card .val { font-size: 28px; font-weight: 900; color: #16a34a; line-height: 1.1; }
+        .kpi-card .lbl { font-size: 10px; color: #64748b; margin-top: 4px; font-weight: 600; letter-spacing: .3px; }
+        .kpi-card .sub { font-size: 9.5px; color: #94a3b8; margin-top: 2px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 9.5px; font-weight: 700; white-space: nowrap; }
+        .badge.done { background: #dcfce7; color: #166534; }
+        .milestone-row { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+        .milestone { flex: 1; min-width: 100px; border: 1px solid #86efac; border-radius: 8px; padding: 10px; text-align: center; font-size: 10px; background: #f0fdf4; }
+        .milestone strong { display: block; font-size: 11px; margin-bottom: 4px; color: #0d1e34; }
+    </style>
+</head>
+<body>
+
+<!-- TRANG BÌA -->
+<div class="doc-page cover">
+    <div class="accent-bar"></div>
+    <div class="header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>Phiên bản 2.2 · 24/06/2026</div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+        <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Logo Unicom"></div>
+        <div class="sep"></div>
+        <div class="doc-label">Báo cáo tiến độ dự án</div>
+        <div class="project-title"><span>ASMS</span></div>
+        <div class="subtitle">Báo cáo hạng mục hoàn thành 100%<br>Hệ thống quản lý hậu mãi</div>
+        <div class="meta-info">
+            <strong>Khách hàng:</strong> Viện Công nghệ (VTX)<br>
+            <strong>Đơn vị phát triển:</strong> Công ty TNHH Giải pháp Công nghệ Unicom<br>
+            <strong>Phạm vi tài liệu:</strong> Chỉ liệt kê hạng mục đạt 100%<br>
+            <strong>Nguyên tắc:</strong> Không liệt kê màn ẩn, kịch bản bỏ qua hoặc hạng mục chưa xong
+        </div>
+    </div>
+    <div class="footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div>© 2026 — Bảo mật nội bộ</div>
+    </div>
+</div>
+
+<!-- MỤC LỤC -->
+<div class="doc-page">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h1 class="toc-title">Mục lục</h1>
+        <div class="toc-category-title">I. Tổng quan</div>
+        <a href="#dashboard" class="toc-row"><span class="toc-num">01</span> Chỉ số hoàn thành</a>
+        <a href="#milestone" class="toc-row"><span class="toc-num">02</span> Mốc dự án đã đạt</a>
+        <div class="toc-category-title">II. Chi tiết hoàn thành</div>
+        <a href="#modules" class="toc-row"><span class="toc-num">03</span> Màn giao diện hoàn thành 100%</a>
+        <a href="#features" class="toc-row"><span class="toc-num">04</span> Hạng mục giao diện đã xong (tiêu biểu)</a>
+        <a href="#quality" class="toc-row"><span class="toc-num">05</span> Kiểm thử sơ bộ kịch bản sử dụng — phân hệ đạt 100%</a>
+        <div class="toc-category-title">III. Tham chiếu</div>
+        <a href="#weekly" class="toc-row"><span class="toc-num">06</span> Lịch sử phiên bản tài liệu</a>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 01 CHỈ SỐ -->
+<div class="doc-page" id="dashboard">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>1. Chỉ số hoàn thành</h2>
+        <div class="highlight-box green">
+            <strong>Cập nhật 24/06/2026</strong> — Tài liệu này <strong>chỉ</strong> liệt kê hạng mục đạt <strong>100%</strong>.
+            Bản đồng bộ: <em>Kế hoạch quản lý tiến độ dự án ASMS</em> (tệp văn bản).
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="val">1</div>
+                <div class="lbl">Màn giao diện 100%</div>
+                <div class="sub">Đăng nhập</div>
+            </div>
+            <div class="kpi-card">
+                <div class="val">9</div>
+                <div class="lbl">Phân hệ kiểm thử 100%</div>
+                <div class="sub">101 kịch bản đạt · 0 bỏ qua · 0 thiếu dữ liệu</div>
+            </div>
+            <div class="kpi-card">
+                <div class="val">7</div>
+                <div class="lbl">Hạng mục tiêu biểu</div>
+                <div class="sub">Công việc giao diện đã đóng</div>
+            </div>
+        </div>
+
+        <h3>1.1 Phạm vi loại trừ (không liệt kê)</h3>
+        <table class="spec-table">
+            <thead><tr><th>Loại</th><th>Chi tiết</th><th>Lý do</th></tr></thead>
+            <tbody>
+                <tr><td>Màn ẩn menu</td><td>Đề tài, Công việc, Đào tạo</td><td>Ẩn trên thanh bên — không theo dõi</td></tr>
+                <tr><td>Kịch bản bỏ qua</td><td>6 kịch bản (bảng điều khiển, báo cáo, tài liệu, thông báo)</td><td>Chưa triển khai / ngoài phạm vi phiên bản 1</td></tr>
+                <tr><td>Màn dưới 100%</td><td>14 màn còn lại trong phạm vi giao diện</td><td>Đang làm hoặc hoàn thành một phần</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 02 MỐC -->
+<div class="doc-page" id="milestone">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>2. Mốc dự án đã đạt</h2>
+        <div class="milestone-row">
+            <div class="milestone"><strong>M0 — Nền tảng</strong>Xác thực · Phân quyền · Triển khai container<br><span class="badge done">Hoàn thành 100%</span></div>
+        </div>
+
+        <table class="spec-table">
+            <thead><tr><th>Mốc</th><th>Tiêu chí nghiệm thu</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+                <tr><td>M0</td><td>Đăng nhập bảo mật, triển khai container, thao tác dữ liệu cơ bản (thêm/sửa/xóa/xem), khung phân quyền</td><td><span class="badge done">Hoàn thành 100%</span></td></tr>
+            </tbody>
+        </table>
+
+        <p style="margin-top:12px"><em>Các mốc M1–M4 chưa đạt 100% — không liệt kê trong tài liệu này.</em></p>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 03 MÀN -->
+<div class="doc-page" id="modules">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>3. Màn giao diện hoàn thành 100%</h2>
+        <p><em>Chỉ các màn đạt 100% tiến độ giao diện — cập nhật hàng tuần.</em></p>
+        <table class="spec-table">
+            <thead>
+                <tr><th>STT</th><th>Màn</th><th>Số kịch bản</th><th>%</th><th>Trạng thái</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Đăng nhập</td><td>7</td><td>100%</td><td><span class="badge done">Xong</span></td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            Các màn còn lại (Bảng điều khiển, Hợp đồng, Bàn giao, Bảo hành, Sản phẩm, Vật tư, Khách hàng, Phản ánh, Báo cáo, Tài liệu, Quy trình, Cài đặt, Thuộc tính, Thông báo) chưa đạt 100%.
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 04 HẠNG MỤC -->
+<div class="doc-page" id="features">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>4. Hạng mục giao diện đã xong (tiêu biểu)</h2>
+        <p><em>Các hạng mục công việc đã đóng — tính năng hoàn thành, có thể nằm trên màn chưa đạt 100% tổng thể.</em></p>
+        <table class="spec-table">
+            <thead><tr><th>Mã</th><th>Kết quả</th></tr></thead>
+            <tbody>
+                <tr><td>BH-10</td><td>Phân hệ Phản ánh — luồng tạo mới, chi tiết, thống kê</td></tr>
+                <tr><td>BH-06</td><td>Bảo hành — biểu mẫu động theo quy trình</td></tr>
+                <tr><td>HD-08, SET-04</td><td>Tab điều khoản hợp đồng + bộ chọn</td></tr>
+                <tr><td>HD-09</td><td>1 bàn giao + 1 huấn luyện / hợp đồng</td></tr>
+                <tr><td>WF-01, HL-04</td><td>Huấn luyện trên màn Bàn giao</td></tr>
+                <tr><td>DSH-01, DSH-02</td><td>Tab bảng điều khiển chính — kết nối máy chủ trực tiếp</td></tr>
+                <tr><td>RPT-01</td><td>Báo cáo — 5 tab + xuất file</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 05 KIỂM THỬ -->
+<div class="doc-page" id="quality">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>5. Kiểm thử sơ bộ kịch bản sử dụng — phân hệ đạt 100%</h2>
+        <p><em>Nguồn: báo cáo kiểm thử sơ bộ — 22/06/2026. Chỉ phân hệ có kịch bản đạt đầy đủ, không bỏ qua, không thiếu dữ liệu.</em></p>
+        <table class="spec-table">
+            <thead><tr><th>Phân hệ giao diện</th><th>Kịch bản đạt</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+                <tr><td>Xác thực (Đăng nhập)</td><td>7</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Hợp đồng (+ điều khoản)</td><td>21</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Bàn giao</td><td>12</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Bảo hành</td><td>8</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Sản phẩm</td><td>12</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Vật tư</td><td>8</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Khách hàng</td><td>9</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Quy trình</td><td>13</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td>Cài đặt</td><td>11</td><td><span class="badge done">100%</span></td></tr>
+                <tr><td><strong>Tổng (phân hệ 100%)</strong></td><td><strong>101</strong></td><td><span class="badge done">9 phân hệ</span></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+<!-- 06 LỊCH SỬ -->
+<div class="doc-page" id="weekly">
+    <div class="inner-brd-header">
+        <div>Mã tài liệu: <span>UNICOM/PM-ASMS-001</span></div>
+        <div>ASMS · Quản lý tiến độ phiên bản 2.2</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>6. Lịch sử phiên bản tài liệu</h2>
+        <table class="spec-table">
+            <thead><tr><th>Phiên bản</th><th>Ngày</th><th>Nội dung</th></tr></thead>
+            <tbody>
+                <tr><td>1.0</td><td>24/06/2026</td><td>Khởi tạo tài liệu tiến độ</td></tr>
+                <tr><td>1.1</td><td>24/06/2026</td><td>Lược bỏ màn ẩn; chỉ theo dõi menu + luồng liên quan</td></tr>
+                <tr><td>2.0</td><td>24/06/2026</td><td>Bản trang web in khổ A4</td></tr>
+                <tr><td>2.1</td><td>24/06/2026</td><td>Chỉ liệt kê hạng mục 100%; loại bỏ phần bỏ qua và đang làm</td></tr>
+                <tr><td>2.2</td><td>24/06/2026</td><td>Việt hóa toàn bộ nội dung hiển thị</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box green" style="margin-top:16px">
+            <strong>Tài liệu liên quan:</strong><br>
+            Kế hoạch quản lý tiến độ dự án ASMS — bản đồng bộ (cùng nội dung)<br>
+            Phương án triển khai ASMS · Hướng dẫn sử dụng ASMS<br>
+            Hợp bảng công việc chi tiết · Danh mục nghiệm thu người dùng
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS · Quản lý tiến độ phiên bản 2.2</span></div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,6035 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>BRD — ASMS — BRD Cập nhật — Phạm vi vận hành</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif;font-size:11px;color:#0d1e34;}
+.doc-page{width:210mm;min-height:297mm;margin:10mm auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.25);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+@media print{body{background:#fff;}.doc-page{margin:0;box-shadow:none;page-break-after:always;}}
+.doc-page.cover{padding:0;}
+.doc-page.cover .accent-bar{height:8px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);flex-shrink:0;}
+.doc-page.cover .header{padding:22px 52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.doc-page.cover .header-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.doc-page.cover .header-code span{color:#0d1e34;}
+.doc-page.cover .header-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.doc-page.cover .divider{margin:0 52px;height:1px;background:#eaeff8;flex-shrink:0;}
+.doc-page.cover .main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;text-align:center;}
+.doc-page.cover .logo-wrap{margin-bottom:36px;}
+.doc-page.cover .logo-wrap img{width:280px;display:block;}
+.doc-page.cover .sep{width:52px;height:3px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);border-radius:2px;margin:0 auto 32px;}
+.doc-page.cover .doc-label{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;margin-bottom:20px;color:#52637d;}
+.doc-page.cover .project-title{font-size:36px;font-weight:900;line-height:1.15;}
+.doc-page.cover .project-title .brand{background:linear-gradient(135deg,#3d7de8,#0ab4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.doc-page.cover .subtitle{margin-top:16px;font-size:12px;color:#3a4a64;}
+.doc-page.cover .meta-info{margin-top:36px;font-size:10.5px;line-height:1.85;color:#3a4a64;}
+.doc-page.cover .meta-info strong{color:#0d1e34;font-weight:600;}
+.doc-page.cover .footer{padding:18px 52px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.doc-page.cover .footer-l,.doc-page.cover .footer-r{font-size:9.5px;}
+.doc-page.cover .footer-r{text-align:right;}
+.inner-brd-header{padding:22px 48px 22px 68px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.inner-brd-header .inner-brd-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.inner-brd-header .inner-brd-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.inner-brd-divider{margin:0 48px 0 68px;height:1px;background:#eaeff8;flex-shrink:0;}
+.inner-brd-footer{padding:18px 48px 18px 68px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.inner-brd-footer-l{font-size:9.5px;}
+.inner-brd-footer-r{font-size:9.5px;text-align:right;line-height:1.65;}
+.inner-brd-footer-r .ft-page{display:block;font-weight:600;}
+.content-area{flex:1;overflow:visible;padding:14px 48px 14px 68px;font-size:12.5px;line-height:1.55;color:#1a2740;}
+.md-render h1{font-size:20px;font-weight:900;color:#0d1e34;margin:8px 0 14px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.md-render h2{font-size:16px;font-weight:800;color:#0d1e34;margin:22px 0 10px;padding:6px 10px;background:linear-gradient(90deg,#eef4ff,transparent);border-left:4px solid #3d7de8;page-break-after:avoid;}
+.md-render h3{font-size:13.5px;font-weight:700;color:#1e3a5f;margin:16px 0 6px;page-break-after:avoid;}
+.md-render h4{font-size:12.5px;font-weight:600;color:#1e3a5f;margin:10px 0 4px;}
+.md-render p{margin:6px 0;}
+.md-render table{width:100%;border-collapse:collapse;font-size:10.5px;margin:10px 0;}
+.md-render th,.md-render td{border:1px solid #cbd5e0;padding:5px 8px;vertical-align:top;text-align:left;}
+.md-render th{background:#1e3a5f;color:#fff;font-weight:600;}
+.md-render tr:nth-child(even) td{background:#f7fafc;}
+.md-render hr{border:none;border-top:1px dashed #c8d8ec;margin:14px 0;}
+.md-render blockquote{margin:10px 0;padding:8px 14px;background:#fff8e1;border-left:4px solid #f59e0b;font-size:11.5px;}
+.md-render code{font-family:Consolas,monospace;font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;}
+.md-render .mermaid{text-align:center;margin:14px 0;background:#fafbfd;padding:12px;border-radius:6px;border:1px solid #eaeff8;}
+.md-render .mermaid svg{max-width:100%;height:auto;}
+.arch-figure{margin:16px 0 20px;}
+.arch-figure figcaption{font-size:11px;color:#52637d;text-align:center;margin-top:10px;line-height:1.5;}
+.arch-diagram{border:1px solid #cbd5e0;border-radius:10px;overflow:hidden;font-size:10px;line-height:1.45;}
+.arch-title{text-align:center;font-weight:800;font-size:12px;padding:10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.arch-layer{padding:0;}
+.arch-layer-hd{padding:7px 12px;font-weight:700;font-size:10.5px;color:#fff;text-align:center;}
+.arch-layer.l1 .arch-layer-hd{background:#2563eb;}
+.arch-layer.l2 .arch-layer-hd{background:#7c3aed;}
+.arch-layer.l3 .arch-layer-hd{background:#1e293b;}
+.arch-layer.l4 .arch-layer-hd{background:#059669;}
+.arch-layer.l5 .arch-layer-hd{background:#64748b;}
+.arch-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-row.two{grid-template-columns:repeat(2,1fr);}
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-box{border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;background:#fafbfd;text-align:center;}
+.arch-box strong{color:#0d1e34;font-size:10.5px;}
+.arch-box em{color:#64748b;font-size:9.5px;}
+.arch-arrow{text-align:center;color:#94a3b8;font-size:14px;padding:2px 0;background:#f8fafc;}
+.arch-tech{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:12px;background:#fff;}
+.arch-tech span{border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;background:#f1f5f9;font-weight:600;font-size:10px;}
+@media screen{.doc-page{height:auto;min-height:297mm;}}
+.toc-page .content-area{padding:22px 48px 18px 68px;}
+.toc-title{font-size:20px;font-weight:900;color:#0d1e34;margin:4px 0 10px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.toc-subtitle{font-size:11.5px;color:#52637d;margin-bottom:18px;}
+.toc-list{display:flex;flex-direction:column;gap:5px;}
+.toc-item{display:flex;align-items:flex-start;gap:10px;padding:6px 10px;border-radius:8px;text-decoration:none;color:#1a2740;border:1px solid #e6edf7;background:#fbfdff;}
+.toc-item:hover{border-color:#3d7de8;background:#f5f9ff;}
+.toc-item.level-3{margin-left:14px;}
+.toc-item.level-4{margin-left:28px;font-size:11px;}
+.toc-index{min-width:22px;font-size:11px;font-weight:800;color:#3d7de8;}
+.toc-text{font-size:11.5px;line-height:1.4;}
+</style>
+</head>
+<body>
+<div class="doc-page cover">
+  <div class="accent-bar"></div>
+  <div class="header">
+    <div class="header-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-002</span></div>
+    <div class="header-right">06/2026 &nbsp;·&nbsp; 152 Use Case</div>
+  </div>
+  <div class="divider"></div>
+  <div class="main">
+    <div class="logo-wrap"><img src="assets/unicom-logo.png" alt="UNICOM AI Software Factory" /></div>
+    <div class="sep"></div>
+    <div class="doc-label">Business Requirements Document (BRD)</div>
+    <div class="project-title"><span class="brand">Hệ thống ASMS</span></div>
+    <div class="subtitle">BRD Cập nhật — Chỉ màn đang vận hành</div>
+    <div class="meta-info">
+      <strong>Phạm vi vận hành:</strong> 14 phân hệ · 152 use case đang dùng
+    </div>
+  </div>
+  <div class="footer">
+    <div class="footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="footer-r">ASMS — BRD Cập nhật v1.1</div>
+  </div>
+</div>
+<div class="doc-page toc-page">
+  <div class="inner-brd-header">
+    <div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-002</span></div>
+    <div class="inner-brd-right">ASMS</div>
+  </div>
+  <div class="inner-brd-divider"></div>
+  <div class="content-area">
+    <h1 class="toc-title">Mục lục</h1>
+    <p class="toc-subtitle">Danh mục 152 use case — nhấn để di chuyển nhanh.</p>
+    <div id="toc-list" class="toc-list"></div>
+  </div>
+  <div class="inner-brd-footer">
+    <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD Cập nhật v1.1</span></div>
+  </div>
+</div>
+<div id="content-host"></div>
+<script id="md-source" type="text/markdown">
+## 1. GIỚI THIỆU CHUNG
+
+Hệ thống **ASMS** (After-Sales Management System) quản lý **hậu mãi** quốc phòng. **BRD cập nhật v1.1** mô tả **152 use case đang vận hành** trên **14 phân hệ** có menu hiển thị.
+
+> **Khác với BRD đầy đủ (v1.0):** Tài liệu này tập trung vào phạm vi use case đang vận hành thực tế.
+
+### Các nhóm người dùng chính
+
+| Vai trò | Mô tả công việc |
+|---|---|
+| **Admin** | Quản trị toàn hệ thống, người dùng, phân quyền, cấu hình, audit |
+| **Quản lý (manager)** | Điều hành nghiệp vụ, phê duyệt quy trình, báo cáo |
+| **Kỹ thuật (technician)** | Bàn giao, bảo hành, vật tư, huấn luyện (tab Bàn giao), thực thi |
+| **Sales** | Khách hàng, hợp đồng, CRM, tài liệu |
+| **Viewer** | Theo dõi dữ liệu và báo cáo (chỉ đọc) |
+| **Hệ thống** | Job thông báo, SLA, routing phản ánh tự động |
+
+### Menu đang hiển thị (14 phân hệ)
+
+Bảng điều khiển · Hợp đồng · Bàn giao & HL · Bảo hành · Sản phẩm · Vật tư · Khách hàng · Phản ánh · Báo cáo · Tài liệu · Quy trình · Cài đặt · Thông báo · Đăng nhập
+
+---
+
+## 2. KIẾN TRÚC TỔNG THỂ HỆ THỐNG
+
+### 2.1 Sơ đồ kiến trúc logic — 5 tầng
+
+> Kiến trúc chỉ mô tả **luồng vận hành đang dùng**.
+
+[[ARCHITECTURE_DIAGRAM]]
+
+**Giải thích các tầng:**
+
+| Tầng | Vai trò |
+|---|---|
+| **1. Người dùng & Kênh truy cập** | Web quản trị và vận hành; đăng nhập JWT |
+| **2. Cổng giao tiếp & Bảo mật** | API Gateway `/api/v1`, RBAC 5 vai trò |
+| **3. Hệ thống lõi** | Module nghiệp vụ: HĐ, BG, BH, SP, VT, CRM, PA, Quy trình |
+| **4. Lưu trữ dữ liệu** | PostgreSQL, file upload, job thông báo |
+| **5. Nền tảng công nghệ** | React + Vite, Express + TS, Prisma, Docker |
+
+---
+
+## 3. LUỒNG TỔNG THỂ END-TO-END
+
+```mermaid
+sequenceDiagram
+    actor KH as Khách hàng
+    actor NV as Nhân viên
+    participant ASMS as Hệ thống ASMS
+    actor QL as Quản lý
+
+    rect rgb(238, 242, 255)
+    Note over NV,ASMS: Giai đoạn 1 — Hợp đồng
+    NV->>ASMS: "Tạo HĐ, gán KH và sản phẩm"
+    ASMS->>ASMS: "Khởi tạo quy trình HĐ"
+    QL->>ASMS: "Duyệt bước quy trình HĐ"
+    end
+
+    rect rgb(220, 252, 231)
+    Note over NV,ASMS: Giai đoạn 2 — Bàn giao và Huấn luyện
+    NV->>ASMS: "Tạo phiếu bàn giao"
+    ASMS->>ASMS: "Chạy quy trình bàn giao"
+    NV->>ASMS: "Tạo khóa huấn luyện"
+    QL->>ASMS: "Ký duyệt và ban hành huấn luyện"
+    end
+
+    rect rgb(254, 243, 199)
+    Note over KH,ASMS: Giai đoạn 3 — Bảo hành và Phản ánh
+    KH->>NV: "Yêu cầu bảo hành hoặc phản ánh"
+    NV->>ASMS: "Tạo phiếu BH hoặc phản ánh"
+    ASMS->>ASMS: "Quy trình bảo hành và phân luồng PA"
+    NV->>ASMS: "Xử lý và đóng phản ánh"
+    end
+
+    rect rgb(207, 250, 254)
+    Note over QL,ASMS: Giai đoạn 4 — Báo cáo
+    QL->>ASMS: "Xem bảng điều khiển và báo cáo"
+    ASMS-->>QL: "KPI và cảnh báo SLA"
+    end
+```
+
+**Tóm tắt:** Luồng vận hành: Hợp đồng → Bàn giao & Huấn luyện → Bảo hành / Phản ánh → Báo cáo.
+
+### Quy tắc hiển thị Phản ánh
+
+| Vai trò | Danh sách PA |
+|---|---|
+| **Quản trị viên** | Xem tất cả phản ánh |
+| **Người khác** | Chỉ PA được phân công |
+
+---
+
+## 4. TỔNG HỢP USE CASE THEO MODULE
+
+| # | Phân hệ | Module key | Số UC | Trạng thái |
+|---:|---|---|--:|---|
+| 1 | Xác thực & Phiên | AUTH | 7 | ✅ Đang vận hành |
+| 2 | Bảng điều khiển | dashboard | 11 | ✅ Đang vận hành |
+| 3 | Hợp đồng | hop-dong | 21 | ✅ Đang vận hành |
+| 4 | Bàn giao & Huấn luyện | ban-giao | 12 | ✅ Đang vận hành |
+| 5 | Bảo hành / Sửa chữa | bao-hanh | 8 | ✅ Đang vận hành |
+| 6 | Sản phẩm | san-pham | 12 | ✅ Đang vận hành |
+| 7 | Vật tư | vat-tu | 8 | ✅ Đang vận hành |
+| 8 | Khách hàng / CRM | khach-hang | 9 | ✅ Đang vận hành |
+| 9 | Phản ánh khách hàng | phan-anh | 18 | ✅ Đang vận hành |
+| 10 | Báo cáo | bao-cao | 9 | ✅ Đang vận hành |
+| 14 | Tài liệu | tai-lieu | 8 | ✅ Đang vận hành |
+| 15 | Quy trình | quy-trinh | 13 | ✅ Đang vận hành |
+| 16 | Cài đặt | cai-dat | 11 | ✅ Đang vận hành |
+| 17 | Thông báo | thong-bao | 5 | ✅ Đang vận hành |
+| | **Tổng codebase** | | **171** | |
+| | **Phạm vi vận hành** | | **152** | ✅ |
+
+---
+
+## 5. CÁC USE CASE CHI TIẾT (ĐANG VẬN HÀNH)
+
+### 5.1. Xác thực & Phiên *(✅ đang vận hành)*
+
+**Route UI:** `/login`
+
+Phân hệ gồm **7** use case:
+
+### UC-AUTH-01: Đăng nhập
+
+**Mục đích:**
+Cho phép người dùng **đăng nhập** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Email/mật khẩu → JWT (`POST /api/v1/auth/login`).
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-01` |
+| **Tên** | Đăng nhập |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Email/mật khẩu → JWT (`POST /api/v1/auth/login`) |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập /login , nhập email và mật khẩu"
+    S-->>U: "Gọi POST /api/v1/auth/login , xác thực"
+    S-->>U: "Trả access token + refresh token"
+    U->>S: "Chuyển vào Bảng điều khiển"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập `/login`, nhập email và mật khẩu |
+| 2 | Hệ thống | Gọi `POST /api/v1/auth/login`, xác thực |
+| 3 | Hệ thống | Trả access token + refresh token |
+| 4 | Người dùng | Chuyển vào Bảng điều khiển |
+
+---
+
+### UC-AUTH-02: Đăng xuất
+
+**Mục đích:**
+Cho phép người dùng **đăng xuất** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Thu hồi refresh token.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-02` |
+| **Tên** | Đăng xuất |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Thu hồi refresh token |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Đăng xuất"
+    S-->>U: "Thu hồi refresh token"
+    S-->>U: "Chuyển về /login"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Đăng xuất |
+| 2 | Hệ thống | Thu hồi refresh token |
+| 3 | Hệ thống | Chuyển về `/login` |
+
+---
+
+### UC-AUTH-03: Làm mới phiên
+
+**Mục đích:**
+Cho phép người dùng **làm mới phiên** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Refresh access token.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-03` |
+| **Tên** | Làm mới phiên |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Refresh access token |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Làm mới phiên»"
+    S-->>U: "Refresh access token"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Làm mới phiên» |
+| 2 | Hệ thống | Refresh access token |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-AUTH-04: Xem danh sách phiên
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách phiên** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Thiết bị/phiên đang đăng nhập.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-04` |
+| **Tên** | Xem danh sách phiên |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Thiết bị/phiên đang đăng nhập |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-AUTH-05: Thu hồi phiên
+
+**Mục đích:**
+Cho phép người dùng **thu hồi phiên** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Đăng xuất một phiên cụ thể.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-05` |
+| **Tên** | Thu hồi phiên |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Đăng xuất một phiên cụ thể |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Thu hồi phiên»"
+    S-->>U: "Đăng xuất một phiên cụ thể"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Thu hồi phiên» |
+| 2 | Hệ thống | Đăng xuất một phiên cụ thể |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-AUTH-06: Đăng xuất tất cả
+
+**Mục đích:**
+Cho phép người dùng **đăng xuất tất cả** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Hủy mọi phiên.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-06` |
+| **Tên** | Đăng xuất tất cả |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Hủy mọi phiên |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Đăng xuất tất cả»"
+    S-->>U: "Hủy mọi phiên"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Đăng xuất tất cả» |
+| 2 | Hệ thống | Hủy mọi phiên |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-AUTH-07: Tạo tài khoản
+
+**Mục đích:**
+Cho phép người dùng **tạo tài khoản** trên phân hệ **Xác thực & Phiên**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Bootstrap hoặc `POST /api/v1/users`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-AUTH-07` |
+| **Tên** | Tạo tài khoản |
+| **Tác nhân** | Admin |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `AUTH` |
+| **Route UI** | `/login` |
+| **Mô tả** | Bootstrap hoặc `POST /api/v1/users` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### 5.2. Bảng điều khiển *(✅ đang vận hành)*
+
+**Route UI:** `/`
+
+Phân hệ gồm **11** use case:
+
+### UC-DASH-01: Xem tổng quan
+
+**Mục đích:**
+Cho phép người dùng **xem tổng quan** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-01` |
+| **Tên** | Xem tổng quan |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Overview – HĐ, bàn giao, BH, SP, vật tư, PAKD"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+
+---
+
+### UC-DASH-02: Xem theo khách hàng
+
+**Mục đích:**
+Cho phép người dùng **xem theo khách hàng** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Khách hàng.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-02` |
+| **Tên** | Xem theo khách hàng |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Khách hàng |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Khách hàng"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Khách hàng |
+
+---
+
+### UC-DASH-03: Xem doanh thu
+
+**Mục đích:**
+Cho phép người dùng **xem doanh thu** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Doanh thu.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-03` |
+| **Tên** | Xem doanh thu |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Doanh thu |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Doanh thu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Doanh thu |
+
+---
+
+### UC-DASH-04: Xem dự án / tiến độ
+
+**Mục đích:**
+Cho phép người dùng **xem dự án / tiến độ** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Dự án (HĐ, BG, HL).
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-04` |
+| **Tên** | Xem dự án / tiến độ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Dự án (HĐ, BG, HL) |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Dự án (HĐ, BG, HL)"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Dự án (HĐ, BG, HL) |
+
+---
+
+### UC-DASH-05: Xem sản phẩm
+
+**Mục đích:**
+Cho phép người dùng **xem sản phẩm** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Sản phẩm.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-05` |
+| **Tên** | Xem sản phẩm |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Sản phẩm |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Sản phẩm"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Sản phẩm |
+
+---
+
+### UC-DASH-06: Xem bảo hành
+
+**Mục đích:**
+Cho phép người dùng **xem bảo hành** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Bảo hành / phản ánh.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-06` |
+| **Tên** | Xem bảo hành |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Bảo hành / phản ánh |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Bảo hành / phản ánh"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Bảo hành / phản ánh |
+
+---
+
+### UC-DASH-07: Xem vật tư
+
+**Mục đích:**
+Cho phép người dùng **xem vật tư** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Vật tư / PAKD.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-07` |
+| **Tên** | Xem vật tư |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Vật tư / PAKD |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Vật tư / PAKD"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Vật tư / PAKD |
+
+---
+
+### UC-DASH-08: Xem cảnh báo
+
+**Mục đích:**
+Cho phép người dùng **xem cảnh báo** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Alerts, KPI quá hạn.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-08` |
+| **Tên** | Xem cảnh báo |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Tab Alerts, KPI quá hạn |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab Alerts, KPI quá hạn"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab Alerts, KPI quá hạn |
+
+---
+
+### UC-DASH-09: Lọc theo năm / quý / KH
+
+**Mục đích:**
+Cho phép người dùng **lọc theo năm / quý / kh** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Bộ lọc dashboard.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-09` |
+| **Tên** | Lọc theo năm / quý / KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Bộ lọc dashboard |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Lọc theo năm / quý / KH»"
+    S-->>U: "Bộ lọc dashboard"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Lọc theo năm / quý / KH» |
+| 2 | Hệ thống | Bộ lọc dashboard |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-DASH-10: Luân chuyển tab tự động
+
+**Mục đích:**
+Cho phép người dùng **luân chuyển tab tự động** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Auto-rotate, fullscreen.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-10` |
+| **Tên** | Luân chuyển tab tự động |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | Auto-rotate, fullscreen |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Luân chuyển tab tự động»"
+    S-->>U: "Auto-rotate, fullscreen"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Luân chuyển tab tự động» |
+| 2 | Hệ thống | Auto-rotate, fullscreen |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-DASH-11: Xem badge menu
+
+**Mục đích:**
+Cho phép người dùng **xem badge menu** trên phân hệ **Bảng điều khiển**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. HĐ trễ, BH mở, CV trễ… (`GET /reports/badges`).
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-DASH-11` |
+| **Tên** | Xem badge menu |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `dashboard` |
+| **Route UI** | `/` |
+| **Mô tả** | HĐ trễ, BH mở, CV trễ… (`GET /reports/badges`) |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( / )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị HĐ trễ, BH mở, CV trễ… ( GET /reports/badges )"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị HĐ trễ, BH mở, CV trễ… (`GET /reports/badges`) |
+
+---
+
+### 5.3. Hợp đồng *(✅ đang vận hành)*
+
+**Route UI:** `/hop-dong`
+
+**API:** `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups`
+
+Phân hệ gồm **21** use case:
+
+### UC-HD-01: Xem danh sách HĐ
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Lọc, tìm kiếm, phân trang.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-01` |
+| **Tên** | Xem danh sách HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Lọc, tìm kiếm, phân trang |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách ( /api/v1/contract-clauses , /api/v1/contract-clause-groups )"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách (`/api/v1/contract-clauses`, `/api/v1/contract-clause-groups`) |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-HD-02: Xem chi tiết HĐ
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Thông tin, tiến độ, quy trình.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-02` |
+| **Tên** | Xem chi tiết HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Thông tin, tiến độ, quy trình |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /hop-dong )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Thông tin, tiến độ, quy trình"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/hop-dong`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Thông tin, tiến độ, quy trình |
+
+---
+
+### UC-HD-03: Tạo HĐ
+
+**Mục đích:**
+Cho phép người dùng **tạo hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Nhập hợp đồng mới.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-03` |
+| **Tên** | Tạo HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Nhập hợp đồng mới |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-HD-04: Sửa HĐ
+
+**Mục đích:**
+Cho phép người dùng **sửa hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Cập nhật thông tin chung.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-04` |
+| **Tên** | Sửa HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Cập nhật thông tin chung |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-HD-05: Xóa HĐ
+
+**Mục đích:**
+Cho phép người dùng **xóa hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Soft delete.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-05` |
+| **Tên** | Xóa HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `delete` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Soft delete |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-HD-06: Gán danh mục SP
+
+**Mục đích:**
+Cho phép người dùng **gán danh mục sp** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `PUT /contracts/:id/products`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-06` |
+| **Tên** | Gán danh mục SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | `PUT /contracts/:id/products` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Gán danh mục SP»"
+    S-->>U: "PUT /contracts/ – id/products"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Gán danh mục SP» |
+| 2 | Hệ thống | `PUT /contracts/:id/products` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-HD-07: Sửa SP trong HĐ
+
+**Mục đích:**
+Cho phép người dùng **sửa sp trong hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Số lượng, cấu hình từng SP.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-07` |
+| **Tên** | Sửa SP trong HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Số lượng, cấu hình từng SP |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-HD-08: Xem SP thuộc HĐ
+
+**Mục đích:**
+Cho phép người dùng **xem sp thuộc hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Danh sách sản phẩm trên HĐ.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-08` |
+| **Tên** | Xem SP thuộc HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Danh sách sản phẩm trên HĐ |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /hop-dong )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Danh sách sản phẩm trên HĐ"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/hop-dong`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Danh sách sản phẩm trên HĐ |
+
+---
+
+### UC-HD-09: Chọn điều khoản mẫu
+
+**Mục đích:**
+Cho phép người dùng **chọn điều khoản mẫu** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab điều khoản.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-09` |
+| **Tên** | Chọn điều khoản mẫu |
+| **Tác nhân** | read/update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Tab điều khoản |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Chọn điều khoản mẫu»"
+    S-->>U: "Tab điều khoản"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Chọn điều khoản mẫu» |
+| 2 | Hệ thống | Tab điều khoản |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-HD-10: Điền nội dung điều khoản
+
+**Mục đích:**
+Cho phép người dùng **điền nội dung điều khoản** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Nội dung riêng từng HĐ.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-10` |
+| **Tên** | Điền nội dung điều khoản |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Nội dung riêng từng HĐ |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-HD-11: Xem phản ánh liên quan
+
+**Mục đích:**
+Cho phép người dùng **xem phản ánh liên quan** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab phản ánh trên HĐ.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-11` |
+| **Tên** | Xem phản ánh liên quan |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Tab phản ánh trên HĐ |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /hop-dong )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab phản ánh trên HĐ"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/hop-dong`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab phản ánh trên HĐ |
+
+---
+
+### UC-HD-12: Xem tài liệu HĐ
+
+**Mục đích:**
+Cho phép người dùng **xem tài liệu hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab tài liệu.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-12` |
+| **Tên** | Xem tài liệu HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Tab tài liệu |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /hop-dong )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Tab tài liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/hop-dong`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Tab tài liệu |
+
+---
+
+### UC-HD-13: Xử lý quy trình HĐ
+
+**Mục đích:**
+Cho phép người dùng **xử lý quy trình hđ** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Duyệt / từ chối bước workflow.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-13` |
+| **Tên** | Xử lý quy trình HĐ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Duyệt / từ chối bước workflow |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi có quy trình đang chạy"
+    S-->>U: "Hiển thị bước hiện tại và vai trò xử lý"
+    U->>S: "Điền form, đính kèm tài liệu bước"
+    U->>S: "Trình ký / Ký duyệt / Ban hành / Từ chối"
+    S-->>U: "Ghi log, chuyển bước, gửi thông báo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi có quy trình đang chạy |
+| 2 | Hệ thống | Hiển thị bước hiện tại và vai trò xử lý |
+| 3 | Người dùng | Điền form, đính kèm tài liệu bước |
+| 4 | Người dùng | Trình ký / Ký duyệt / Ban hành / Từ chối |
+| 5 | Hệ thống | Ghi log, chuyển bước, gửi thông báo |
+
+---
+
+### UC-HD-14: Đính kèm tài liệu bước QT
+
+**Mục đích:**
+Cho phép người dùng **đính kèm tài liệu bước qt** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Upload file theo bước workflow.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-14` |
+| **Tên** | Đính kèm tài liệu bước QT |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+| **Mô tả** | Upload file theo bước workflow |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn tệp tải lên"
+    S-->>U: "Kiểm tra định dạng, tải lên multipart"
+    S-->>U: "Lưu metadata, liên kết bản ghi"
+    S-->>U: "Hiển thị trong tab tài liệu / bước QT"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn tệp tải lên |
+| 2 | Hệ thống | Kiểm tra định dạng, tải lên multipart |
+| 3 | Hệ thống | Lưu metadata, liên kết bản ghi |
+| 4 | Hệ thống | Hiển thị trong tab tài liệu / bước QT |
+
+---
+
+### UC-HD-DK-01: Xem danh sách điều khoản mẫu
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách điều khoản mẫu** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-01` |
+| **Tên** | Xem danh sách điều khoản mẫu |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách ( /api/v1/contract-clauses , /api/v1/contract-clause-groups )"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách (`/api/v1/contract-clauses`, `/api/v1/contract-clause-groups`) |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-HD-DK-02: Tạo / sửa / xóa điều khoản
+
+**Mục đích:**
+Cho phép người dùng **tạo / sửa / xóa điều khoản** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-02` |
+| **Tên** | Tạo / sửa / xóa điều khoản |
+| **Tác nhân** | create / update / delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-HD-DK-03: Sắp xếp điều khoản
+
+**Mục đích:**
+Cho phép người dùng **sắp xếp điều khoản** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-03` |
+| **Tên** | Sắp xếp điều khoản |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Sắp xếp điều khoản»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Sắp xếp điều khoản» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-HD-DK-04: Xem nhóm điều khoản
+
+**Mục đích:**
+Cho phép người dùng **xem nhóm điều khoản** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-04` |
+| **Tên** | Xem nhóm điều khoản |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /hop-dong )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị thông tin đầy đủ và tab liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/hop-dong`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị thông tin đầy đủ và tab liên quan |
+
+---
+
+### UC-HD-DK-05: Tạo / sửa / xóa nhóm
+
+**Mục đích:**
+Cho phép người dùng **tạo / sửa / xóa nhóm** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-05` |
+| **Tên** | Tạo / sửa / xóa nhóm |
+| **Tác nhân** | create / update / delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-HD-DK-06: Gán điều khoản vào nhóm
+
+**Mục đích:**
+Cho phép người dùng **gán điều khoản vào nhóm** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-06` |
+| **Tên** | Gán điều khoản vào nhóm |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Gán điều khoản vào nhóm»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Gán điều khoản vào nhóm» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-HD-DK-07: Kiểm tra điều khoản đang dùng
+
+**Mục đích:**
+Cho phép người dùng **kiểm tra điều khoản đang dùng** trên phân hệ **Hợp đồng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-HD-DK-07` |
+| **Tên** | Kiểm tra điều khoản đang dùng |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `hop-dong` |
+| **Route UI** | `/hop-dong` |
+| **API** | `/api/v1/contract-clauses`, `/api/v1/contract-clause-groups` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Kiểm tra điều khoản đang dùng»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Kiểm tra điều khoản đang dùng» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### 5.4. Bàn giao & Huấn luyện *(✅ đang vận hành)*
+
+**Route UI:** `/ban-giao`
+
+Phân hệ gồm **12** use case:
+
+### UC-BG-01: Xem danh sách bàn giao
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách bàn giao** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Bàn giao.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-01` |
+| **Tên** | Xem danh sách bàn giao |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Tab Bàn giao |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-BG-02: Xem chi tiết phiếu BG
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết phiếu bg** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Sheet / dialog chi tiết.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-02` |
+| **Tên** | Xem chi tiết phiếu BG |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Sheet / dialog chi tiết |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /ban-giao )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Sheet / dialog chi tiết"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/ban-giao`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Sheet / dialog chi tiết |
+
+---
+
+### UC-BG-03: Tạo phiếu bàn giao
+
+**Mục đích:**
+Cho phép người dùng **tạo phiếu bàn giao** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Gắn HĐ, khách hàng.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-03` |
+| **Tên** | Tạo phiếu bàn giao |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Gắn HĐ, khách hàng |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-BG-04: Sửa phiếu bàn giao
+
+**Mục đích:**
+Cho phép người dùng **sửa phiếu bàn giao** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Header, payload từng bước.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-04` |
+| **Tên** | Sửa phiếu bàn giao |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Header, payload từng bước |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-BG-05: Xóa phiếu bàn giao
+
+**Mục đích:**
+Cho phép người dùng **xóa phiếu bàn giao** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-05` |
+| **Tên** | Xóa phiếu bàn giao |
+| **Tác nhân** | delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-BG-06: Xử lý quy trình bàn giao
+
+**Mục đích:**
+Cho phép người dùng **xử lý quy trình bàn giao** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Trình ký / ký duyệt / ban hành.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-06` |
+| **Tên** | Xử lý quy trình bàn giao |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Trình ký / ký duyệt / ban hành |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi có quy trình đang chạy"
+    S-->>U: "Hiển thị bước hiện tại và vai trò xử lý"
+    U->>S: "Điền form, đính kèm tài liệu bước"
+    U->>S: "Trình ký / Ký duyệt / Ban hành / Từ chối"
+    S-->>U: "Ghi log, chuyển bước, gửi thông báo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi có quy trình đang chạy |
+| 2 | Hệ thống | Hiển thị bước hiện tại và vai trò xử lý |
+| 3 | Người dùng | Điền form, đính kèm tài liệu bước |
+| 4 | Người dùng | Trình ký / Ký duyệt / Ban hành / Từ chối |
+| 5 | Hệ thống | Ghi log, chuyển bước, gửi thông báo |
+
+---
+
+### UC-BG-07: Đính kèm tài liệu bước BG
+
+**Mục đích:**
+Cho phép người dùng **đính kèm tài liệu bước bg** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Workflow documents.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-07` |
+| **Tên** | Đính kèm tài liệu bước BG |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Workflow documents |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn tệp tải lên"
+    S-->>U: "Kiểm tra định dạng, tải lên multipart"
+    S-->>U: "Lưu metadata, liên kết bản ghi"
+    S-->>U: "Hiển thị trong tab tài liệu / bước QT"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn tệp tải lên |
+| 2 | Hệ thống | Kiểm tra định dạng, tải lên multipart |
+| 3 | Hệ thống | Lưu metadata, liên kết bản ghi |
+| 4 | Hệ thống | Hiển thị trong tab tài liệu / bước QT |
+
+---
+
+### UC-BG-08: Xem danh sách khóa HL
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách khóa hl** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tab Huấn luyện.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-08` |
+| **Tên** | Xem danh sách khóa HL |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Tab Huấn luyện |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-BG-09: Tạo khóa huấn luyện
+
+**Mục đích:**
+Cho phép người dùng **tạo khóa huấn luyện** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Gắn HĐ, `courseKind=coaching`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-09` |
+| **Tên** | Tạo khóa huấn luyện |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Gắn HĐ, `courseKind=coaching` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-BG-10: Sửa / xóa khóa HL
+
+**Mục đích:**
+Cho phép người dùng **sửa / xóa khóa hl** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-10` |
+| **Tên** | Sửa / xóa khóa HL |
+| **Tác nhân** | update / delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-BG-11: Xử lý quy trình HL
+
+**Mục đích:**
+Cho phép người dùng **xử lý quy trình hl** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Module workflow `coaching`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-11` |
+| **Tên** | Xử lý quy trình HL |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Module workflow `coaching` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi có quy trình đang chạy"
+    S-->>U: "Hiển thị bước hiện tại và vai trò xử lý"
+    U->>S: "Điền form, đính kèm tài liệu bước"
+    U->>S: "Trình ký / Ký duyệt / Ban hành / Từ chối"
+    S-->>U: "Ghi log, chuyển bước, gửi thông báo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi có quy trình đang chạy |
+| 2 | Hệ thống | Hiển thị bước hiện tại và vai trò xử lý |
+| 3 | Người dùng | Điền form, đính kèm tài liệu bước |
+| 4 | Người dùng | Trình ký / Ký duyệt / Ban hành / Từ chối |
+| 5 | Hệ thống | Ghi log, chuyển bước, gửi thông báo |
+
+---
+
+### UC-BG-12: Điền payload từng bước HL
+
+**Mục đích:**
+Cho phép người dùng **điền payload từng bước hl** trên phân hệ **Bàn giao & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Kế hoạch, tờ trình, báo cáo….
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BG-12` |
+| **Tên** | Điền payload từng bước HL |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `ban-giao` |
+| **Route UI** | `/ban-giao` |
+| **Mô tả** | Kế hoạch, tờ trình, báo cáo… |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### 5.5. Bảo hành / Sửa chữa *(✅ đang vận hành)*
+
+**Route UI:** `/bao-hanh`
+
+Phân hệ gồm **8** use case:
+
+### UC-BH-01: Xem danh sách phiếu BH/SC
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách phiếu bh/sc** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-01` |
+| **Tên** | Xem danh sách phiếu BH/SC |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-BH-02: Xem chi tiết phiếu
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết phiếu** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-02` |
+| **Tên** | Xem chi tiết phiếu |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /bao-hanh )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị thông tin đầy đủ và tab liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/bao-hanh`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị thông tin đầy đủ và tab liên quan |
+
+---
+
+### UC-BH-03: Tạo phiếu BH/SC
+
+**Mục đích:**
+Cho phép người dùng **tạo phiếu bh/sc** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-03` |
+| **Tên** | Tạo phiếu BH/SC |
+| **Tác nhân** | create |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-BH-04: Sửa phiếu
+
+**Mục đích:**
+Cho phép người dùng **sửa phiếu** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-04` |
+| **Tên** | Sửa phiếu |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-BH-05: Xóa phiếu
+
+**Mục đích:**
+Cho phép người dùng **xóa phiếu** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-05` |
+| **Tên** | Xóa phiếu |
+| **Tác nhân** | delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-BH-06: Xử lý quy trình BH
+
+**Mục đích:**
+Cho phép người dùng **xử lý quy trình bh** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Tiếp nhận → xử lý → nghiệm thu.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-06` |
+| **Tên** | Xử lý quy trình BH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+| **Mô tả** | Tiếp nhận → xử lý → nghiệm thu |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi có quy trình đang chạy"
+    S-->>U: "Hiển thị bước hiện tại và vai trò xử lý"
+    U->>S: "Điền form, đính kèm tài liệu bước"
+    U->>S: "Trình ký / Ký duyệt / Ban hành / Từ chối"
+    S-->>U: "Ghi log, chuyển bước, gửi thông báo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi có quy trình đang chạy |
+| 2 | Hệ thống | Hiển thị bước hiện tại và vai trò xử lý |
+| 3 | Người dùng | Điền form, đính kèm tài liệu bước |
+| 4 | Người dùng | Trình ký / Ký duyệt / Ban hành / Từ chối |
+| 5 | Hệ thống | Ghi log, chuyển bước, gửi thông báo |
+
+---
+
+### UC-BH-07: Điền form động theo bước
+
+**Mục đích:**
+Cho phép người dùng **điền form động theo bước** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Field schema từng bước.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-07` |
+| **Tên** | Điền form động theo bước |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+| **Mô tả** | Field schema từng bước |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-BH-08: Đính kèm tài liệu bước BH
+
+**Mục đích:**
+Cho phép người dùng **đính kèm tài liệu bước bh** trên phân hệ **Bảo hành / Sửa chữa**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Workflow documents.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BH-08` |
+| **Tên** | Đính kèm tài liệu bước BH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `bao-hanh` |
+| **Route UI** | `/bao-hanh` |
+| **Mô tả** | Workflow documents |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn tệp tải lên"
+    S-->>U: "Kiểm tra định dạng, tải lên multipart"
+    S-->>U: "Lưu metadata, liên kết bản ghi"
+    S-->>U: "Hiển thị trong tab tài liệu / bước QT"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn tệp tải lên |
+| 2 | Hệ thống | Kiểm tra định dạng, tải lên multipart |
+| 3 | Hệ thống | Lưu metadata, liên kết bản ghi |
+| 4 | Hệ thống | Hiển thị trong tab tài liệu / bước QT |
+
+---
+
+### 5.6. Sản phẩm *(✅ đang vận hành)*
+
+**Route UI:** `/san-pham`
+
+Phân hệ gồm **12** use case:
+
+### UC-SP-01: Xem danh sách SP
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. —.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-01` |
+| **Tên** | Xem danh sách SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | — |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-SP-02: Xem chi tiết SP
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.tong-quan`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-02` |
+| **Tên** | Xem chi tiết SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.tong-quan` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /san-pham )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Submodule – san-pham.tong-quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/san-pham`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Submodule: `san-pham.tong-quan` |
+
+---
+
+### UC-SP-03: Tạo SP
+
+**Mục đích:**
+Cho phép người dùng **tạo sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. —.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-03` |
+| **Tên** | Tạo SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | — |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-SP-04: Sửa SP
+
+**Mục đích:**
+Cho phép người dùng **sửa sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. —.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-04` |
+| **Tên** | Sửa SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | — |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-SP-05: Xóa SP
+
+**Mục đích:**
+Cho phép người dùng **xóa sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. —.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-05` |
+| **Tên** | Xóa SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `delete` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | — |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-SP-06: Quản lý BOM / linh kiện
+
+**Mục đích:**
+Cho phép người dùng **quản lý bom / linh kiện** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.linh-kien`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-06` |
+| **Tên** | Quản lý BOM / linh kiện |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.linh-kien` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-SP-07: Quản lý thông số kỹ thuật
+
+**Mục đích:**
+Cho phép người dùng **quản lý thông số kỹ thuật** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.thong-so`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-07` |
+| **Tên** | Quản lý thông số kỹ thuật |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.thong-so` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-SP-08: Quản lý serial linh kiện
+
+**Mục đích:**
+Cho phép người dùng **quản lý serial linh kiện** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.linh-kien`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-08` |
+| **Tên** | Quản lý serial linh kiện |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.linh-kien` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-SP-09: Xem / gắn tài liệu SP
+
+**Mục đích:**
+Cho phép người dùng **xem / gắn tài liệu sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. read / update.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-09` |
+| **Tên** | Xem / gắn tài liệu SP |
+| **Tác nhân** | `san-pham.tai-lieu` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | read / update |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /san-pham )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị read / update"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/san-pham`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị read / update |
+
+---
+
+### UC-SP-10: Xem lịch sử thay đổi
+
+**Mục đích:**
+Cho phép người dùng **xem lịch sử thay đổi** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.lich-su`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-10` |
+| **Tên** | Xem lịch sử thay đổi |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.lich-su` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-SP-11: Xử lý quy trình SP
+
+**Mục đích:**
+Cho phép người dùng **xử lý quy trình sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. —.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-11` |
+| **Tên** | Xử lý quy trình SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | — |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi có quy trình đang chạy"
+    S-->>U: "Hiển thị bước hiện tại và vai trò xử lý"
+    U->>S: "Điền form, đính kèm tài liệu bước"
+    U->>S: "Trình ký / Ký duyệt / Ban hành / Từ chối"
+    S-->>U: "Ghi log, chuyển bước, gửi thông báo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi có quy trình đang chạy |
+| 2 | Hệ thống | Hiển thị bước hiện tại và vai trò xử lý |
+| 3 | Người dùng | Điền form, đính kèm tài liệu bước |
+| 4 | Người dùng | Trình ký / Ký duyệt / Ban hành / Từ chối |
+| 5 | Hệ thống | Ghi log, chuyển bước, gửi thông báo |
+
+---
+
+### UC-SP-12: Tab đào tạo trên SP
+
+**Mục đích:**
+Cho phép người dùng **tab đào tạo trên sp** trên phân hệ **Sản phẩm**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `san-pham.dao-tao`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-SP-12` |
+| **Tên** | Tab đào tạo trên SP |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `san-pham` |
+| **Route UI** | `/san-pham` |
+| **Mô tả** | Submodule: `san-pham.dao-tao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền read )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `read`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### 5.7. Vật tư *(✅ đang vận hành)*
+
+**Route UI:** `/vat-tu`
+
+Phân hệ gồm **8** use case:
+
+### UC-VT-01: Xem danh sách vật tư
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách vật tư** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.kho`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-01` |
+| **Tên** | Xem danh sách vật tư |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.kho` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-VT-02: Xem chi tiết vật tư
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết vật tư** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.kho`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-02` |
+| **Tên** | Xem chi tiết vật tư |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.kho` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /vat-tu )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Submodule – vat-tu.kho"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/vat-tu`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Submodule: `vat-tu.kho` |
+
+---
+
+### UC-VT-03: Nhập vật tư mới
+
+**Mục đích:**
+Cho phép người dùng **nhập vật tư mới** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.kho`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-03` |
+| **Tên** | Nhập vật tư mới |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.kho` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-VT-04: Sửa vật tư
+
+**Mục đích:**
+Cho phép người dùng **sửa vật tư** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.kho`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-04` |
+| **Tên** | Sửa vật tư |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.kho` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-VT-05: Xóa vật tư
+
+**Mục đích:**
+Cho phép người dùng **xóa vật tư** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.kho`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-05` |
+| **Tên** | Xóa vật tư |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `delete` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.kho` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-VT-06: Xem phiếu điều chuyển
+
+**Mục đích:**
+Cho phép người dùng **xem phiếu điều chuyển** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.dieu-chuyen`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-06` |
+| **Tên** | Xem phiếu điều chuyển |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.dieu-chuyen` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /vat-tu )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Submodule – vat-tu.dieu-chuyen"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/vat-tu`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Submodule: `vat-tu.dieu-chuyen` |
+
+---
+
+### UC-VT-07: Tạo phiếu điều chuyển
+
+**Mục đích:**
+Cho phép người dùng **tạo phiếu điều chuyển** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `vat-tu.dieu-chuyen`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-07` |
+| **Tên** | Tạo phiếu điều chuyển |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | Submodule: `vat-tu.dieu-chuyen` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-VT-08: Sửa / xóa phiếu điều chuyển
+
+**Mục đích:**
+Cho phép người dùng **sửa / xóa phiếu điều chuyển** trên phân hệ **Vật tư**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. update / delete.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-VT-08` |
+| **Tên** | Sửa / xóa phiếu điều chuyển |
+| **Tác nhân** | `vat-tu.dieu-chuyen` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `vat-tu` |
+| **Route UI** | `/vat-tu` |
+| **Mô tả** | update / delete |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### 5.8. Khách hàng / CRM *(✅ đang vận hành)*
+
+**Route UI:** `/khach-hang`
+
+**API:** `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions`
+
+Phân hệ gồm **9** use case:
+
+### UC-KH-01: Xem danh sách KH
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.khach-hang`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-01` |
+| **Tên** | Xem danh sách KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.khach-hang` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách ( customers , contacts , crm-activities , customer-anniversaries , anniversary"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách (`customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions`) |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-KH-02: Xem chi tiết KH
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.khach-hang`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-02` |
+| **Tên** | Xem chi tiết KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.khach-hang` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /khach-hang )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Submodule – khach-hang.khach-hang"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/khach-hang`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Submodule: `khach-hang.khach-hang` |
+
+---
+
+### UC-KH-03: Tạo KH
+
+**Mục đích:**
+Cho phép người dùng **tạo kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.khach-hang`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-03` |
+| **Tên** | Tạo KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.khach-hang` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-KH-04: Sửa KH
+
+**Mục đích:**
+Cho phép người dùng **sửa kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.khach-hang`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-04` |
+| **Tên** | Sửa KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.khach-hang` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-KH-05: Xóa KH
+
+**Mục đích:**
+Cho phép người dùng **xóa kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.khach-hang`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-05` |
+| **Tên** | Xóa KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `delete` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.khach-hang` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-KH-06: Quản lý liên hệ
+
+**Mục đích:**
+Cho phép người dùng **quản lý liên hệ** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.lien-he`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-06` |
+| **Tên** | Quản lý liên hệ |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `CRUD` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.lien-he` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-KH-07: Quản lý hoạt động CRM
+
+**Mục đích:**
+Cho phép người dùng **quản lý hoạt động crm** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.hoat-dong`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-07` |
+| **Tên** | Quản lý hoạt động CRM |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `CRUD` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.hoat-dong` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-KH-08: Quản lý kỷ niệm KH
+
+**Mục đích:**
+Cho phép người dùng **quản lý kỷ niệm kh** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.loyalty`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-08` |
+| **Tên** | Quản lý kỷ niệm KH |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `CRUD` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.loyalty` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-KH-09: Đăng ký nhận TB kỷ niệm
+
+**Mục đích:**
+Cho phép người dùng **đăng ký nhận tb kỷ niệm** trên phân hệ **Khách hàng / CRM**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Submodule: `khach-hang.loyalty`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-KH-09` |
+| **Tên** | Đăng ký nhận TB kỷ niệm |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `khach-hang` |
+| **Route UI** | `/khach-hang` |
+| **API** | `customers`, `contacts`, `crm-activities`, `customer-anniversaries`, `anniversary-subscriptions` |
+| **Mô tả** | Submodule: `khach-hang.loyalty` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Đăng ký nhận TB kỷ niệm»"
+    S-->>U: "Submodule – khach-hang.loyalty"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Đăng ký nhận TB kỷ niệm» |
+| 2 | Hệ thống | Submodule: `khach-hang.loyalty` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### 5.9. Phản ánh khách hàng *(✅ đang vận hành)*
+
+**Route UI:** `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke`
+
+Phân hệ gồm **18** use case:
+
+### UC-PA-01: Xem danh sách phản ánh
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Admin: tất cả; khác: chỉ được phân công.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-01` |
+| **Tên** | Xem danh sách phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Admin: tất cả; khác: chỉ được phân công |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập /phan-anh"
+    S-->>U: "Quản trị viên xem tất cả PA, vai trò khác chỉ thấy PA được phân công"
+    U->>S: "Lọc trạng thái, ưu tiên, đơn vị ( myUnits )"
+    S-->>U: "Hiển thị danh sách với badge SLA"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập `/phan-anh` |
+| 2 | Hệ thống | Quản trị viên xem tất cả PA; vai trò khác chỉ thấy PA được phân công |
+| 3 | Người dùng | Lọc trạng thái, ưu tiên, đơn vị (`myUnits`) |
+| 4 | Hệ thống | Hiển thị danh sách với badge SLA |
+
+---
+
+### UC-PA-02: Xem chi tiết phản ánh
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Timeline, bình luận.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-02` |
+| **Tên** | Xem chi tiết phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Timeline, bình luận |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /phan-anh , /phan-anh/moi , /phan-anh/ – id , /phan-anh/ – id/sua , /p"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị Timeline, bình luận"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị Timeline, bình luận |
+
+---
+
+### UC-PA-03: Tạo phản ánh
+
+**Mục đích:**
+Cho phép người dùng **tạo phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `/phan-anh/moi`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-03` |
+| **Tên** | Tạo phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `create` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `/phan-anh/moi` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-PA-04: Sửa phản ánh
+
+**Mục đích:**
+Cho phép người dùng **sửa phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Người tạo / quản lý, trạng thái sớm.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-04` |
+| **Tên** | Sửa phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Người tạo / quản lý, trạng thái sớm |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-PA-05: Xóa phản ánh
+
+**Mục đích:**
+Cho phép người dùng **xóa phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-05` |
+| **Tên** | Xóa phản ánh |
+| **Tác nhân** | delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-PA-06: Phân công người / vai trò
+
+**Mục đích:**
+Cho phép người dùng **phân công người / vai trò** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Multi-assignee.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-06` |
+| **Tên** | Phân công người / vai trò |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Multi-assignee |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Quản lý
+    participant S as Hệ thống ASMS
+    U->>S: "Mở chi tiết phản ánh"
+    U->>S: "Chọn người / vai trò xử lý"
+    S-->>U: "Cập nhật phân công, trạng thái đã giao"
+    S-->>U: "Gửi thông báo cho người được phân công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản lý | Mở chi tiết phản ánh |
+| 2 | Quản lý | Chọn người / vai trò xử lý |
+| 3 | Hệ thống | Cập nhật phân công, trạng thái đã giao |
+| 4 | Hệ thống | Gửi thông báo cho người được phân công |
+
+---
+
+### UC-PA-07: Phân luồng theo SP / đơn vị
+
+**Mục đích:**
+Cho phép người dùng **phân luồng theo sp / đơn vị** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Routing preview, assignments.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-07` |
+| **Tên** | Phân luồng theo SP / đơn vị |
+| **Tác nhân** | Hệ thống + user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Routing preview, assignments |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Phân luồng theo SP / đơn vị»"
+    S-->>U: "Routing preview, assignments"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Phân luồng theo SP / đơn vị» |
+| 2 | Hệ thống | Routing preview, assignments |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-08: Cập nhật xử lý đơn vị
+
+**Mục đích:**
+Cho phép người dùng **cập nhật xử lý đơn vị** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `PATCH assignments/:id`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-08` |
+| **Tên** | Cập nhật xử lý đơn vị |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `PATCH assignments/:id` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-PA-09: Bình luận phản ánh
+
+**Mục đích:**
+Cho phép người dùng **bình luận phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Issue / fix / note.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-09` |
+| **Tên** | Bình luận phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Issue / fix / note |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Bình luận phản ánh»"
+    S-->>U: "Issue / fix / note"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Bình luận phản ánh» |
+| 2 | Hệ thống | Issue / fix / note |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-10: Yêu cầu đóng
+
+**Mục đích:**
+Cho phép người dùng **yêu cầu đóng** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `request-close`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-10` |
+| **Tên** | Yêu cầu đóng |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `request-close` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Yêu cầu đóng»"
+    S-->>U: "request-close"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Yêu cầu đóng» |
+| 2 | Hệ thống | `request-close` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-11: Đóng phản ánh
+
+**Mục đích:**
+Cho phép người dùng **đóng phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `close`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-11` |
+| **Tên** | Đóng phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `close` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Đóng phản ánh»"
+    S-->>U: "close"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Đóng phản ánh» |
+| 2 | Hệ thống | `close` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-12: Hoàn tất sửa chữa & đóng
+
+**Mục đích:**
+Cho phép người dùng **hoàn tất sửa chữa & đóng** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `complete-repair-close`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-12` |
+| **Tên** | Hoàn tất sửa chữa & đóng |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `complete-repair-close` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-PA-13: Mở lại phản ánh
+
+**Mục đích:**
+Cho phép người dùng **mở lại phản ánh** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `reopen`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-13` |
+| **Tên** | Mở lại phản ánh |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `update` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `reopen` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Mở lại phản ánh»"
+    S-->>U: "reopen"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Mở lại phản ánh» |
+| 2 | Hệ thống | `reopen` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-14: Xem tóm tắt công việc PA
+
+**Mục đích:**
+Cho phép người dùng **xem tóm tắt công việc pa** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `/summary`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-14` |
+| **Tên** | Xem tóm tắt công việc PA |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `/summary` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /phan-anh , /phan-anh/moi , /phan-anh/ – id , /phan-anh/ – id/sua , /p"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị /summary"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị `/summary` |
+
+---
+
+### UC-PA-15: Thống kê theo KH / SP / VT
+
+**Mục đích:**
+Cho phép người dùng **thống kê theo kh / sp / vt** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. `/phan-anh/thong-ke`, analytics API.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-15` |
+| **Tên** | Thống kê theo KH / SP / VT |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | `/phan-anh/thong-ke`, analytics API |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-PA-16: Lọc theo đơn vị của tôi
+
+**Mục đích:**
+Cho phép người dùng **lọc theo đơn vị của tôi** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Query `myUnits`.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-16` |
+| **Tên** | Lọc theo đơn vị của tôi |
+| **Tác nhân** | Theo quyền |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Quyền** | `read` |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Query `myUnits` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Lọc theo đơn vị của tôi»"
+    S-->>U: "Query myUnits"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Lọc theo đơn vị của tôi» |
+| 2 | Hệ thống | Query `myUnits` |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-PA-17: Cấu hình đơn vị thực hiện
+
+**Mục đích:**
+Cho phép người dùng **cấu hình đơn vị thực hiện** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Cài đặt → Đơn vị PA.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-17` |
+| **Tên** | Cấu hình đơn vị thực hiện |
+| **Tác nhân** | Admin / quản lý |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Cài đặt → Đơn vị PA |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-PA-18: Cấu hình quy tắc routing
+
+**Mục đích:**
+Cho phép người dùng **cấu hình quy tắc routing** trên phân hệ **Phản ánh khách hàng**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC. Routing rules.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-PA-18` |
+| **Tên** | Cấu hình quy tắc routing |
+| **Tác nhân** | Admin / quản lý |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `phan-anh` |
+| **Route UI** | `/phan-anh`, `/phan-anh/moi`, `/phan-anh/:id`, `/phan-anh/:id/sua`, `/phan-anh/thong-ke` |
+| **Mô tả** | Routing rules |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### 5.10. Báo cáo *(✅ đang vận hành)*
+
+**Route UI:** `/bao-cao`
+
+Phân hệ gồm **9** use case:
+
+### UC-BC-01: Báo cáo theo khách hàng
+
+**Mục đích:**
+Cho phép người dùng **báo cáo theo khách hàng** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-01` |
+| **Tên** | Báo cáo theo khách hàng |
+| **Tác nhân** | `bao-cao.khach-hang` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-02: Báo cáo theo hợp đồng
+
+**Mục đích:**
+Cho phép người dùng **báo cáo theo hợp đồng** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-02` |
+| **Tên** | Báo cáo theo hợp đồng |
+| **Tác nhân** | `bao-cao.hop-dong` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-03: Báo cáo theo dòng SP
+
+**Mục đích:**
+Cho phép người dùng **báo cáo theo dòng sp** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-03` |
+| **Tên** | Báo cáo theo dòng SP |
+| **Tác nhân** | `bao-cao.dong-sp` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-04: Báo cáo phản ánh
+
+**Mục đích:**
+Cho phép người dùng **báo cáo phản ánh** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-04` |
+| **Tên** | Báo cáo phản ánh |
+| **Tác nhân** | `bao-cao.phan-anh` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-05: Báo cáo đơn vị thực hiện
+
+**Mục đích:**
+Cho phép người dùng **báo cáo đơn vị thực hiện** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-05` |
+| **Tên** | Báo cáo đơn vị thực hiện |
+| **Tác nhân** | `bao-cao.don-vi` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-06: Báo cáo lỗi vật tư
+
+**Mục đích:**
+Cho phép người dùng **báo cáo lỗi vật tư** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-06` |
+| **Tên** | Báo cáo lỗi vật tư |
+| **Tác nhân** | `material-defects` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-07: Lọc báo cáo
+
+**Mục đích:**
+Cho phép người dùng **lọc báo cáo** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-07` |
+| **Tên** | Lọc báo cáo |
+| **Tác nhân** | Năm, từ–đến |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### UC-BC-08: Xuất Excel
+
+**Mục đích:**
+Cho phép người dùng **xuất excel** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-08` |
+| **Tên** | Xuất Excel |
+| **Tác nhân** | UI export |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Xuất Excel»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Xuất Excel» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-BC-09: In báo cáo
+
+**Mục đích:**
+Cho phép người dùng **in báo cáo** trên phân hệ **Báo cáo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-BC-09` |
+| **Tên** | In báo cáo |
+| **Tác nhân** | Print |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `bao-cao` |
+| **Route UI** | `/bao-cao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập tab báo cáo"
+    U->>S: "Chọn năm, khoảng thời gian, bộ lọc"
+    S-->>U: "Tổng hợp từ API reports"
+    S-->>U: "Hiển thị biểu bảng, xuất Excel / in"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập tab báo cáo |
+| 2 | Người dùng | Chọn năm, khoảng thời gian, bộ lọc |
+| 3 | Hệ thống | Tổng hợp từ API reports |
+| 4 | Hệ thống | Hiển thị biểu bảng, xuất Excel / in |
+
+---
+
+### 5.11. Tài liệu *(✅ đang vận hành)*
+
+**Route UI:** `/tai-lieu`
+
+Phân hệ gồm **8** use case:
+
+### UC-TL-01: Xem danh sách tài liệu
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách tài liệu** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-01` |
+| **Tên** | Xem danh sách tài liệu |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-TL-02: Xem chi tiết / tải file
+
+**Mục đích:**
+Cho phép người dùng **xem chi tiết / tải file** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-02` |
+| **Tên** | Xem chi tiết / tải file |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /tai-lieu )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị thông tin đầy đủ và tab liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/tai-lieu`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị thông tin đầy đủ và tab liên quan |
+
+---
+
+### UC-TL-03: Tạo metadata tài liệu
+
+**Mục đích:**
+Cho phép người dùng **tạo metadata tài liệu** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-03` |
+| **Tên** | Tạo metadata tài liệu |
+| **Tác nhân** | create |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-TL-04: Upload file
+
+**Mục đích:**
+Cho phép người dùng **upload file** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-04` |
+| **Tên** | Upload file |
+| **Tác nhân** | create |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn tệp tải lên"
+    S-->>U: "Kiểm tra định dạng, tải lên multipart"
+    S-->>U: "Lưu metadata, liên kết bản ghi"
+    S-->>U: "Hiển thị trong tab tài liệu / bước QT"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn tệp tải lên |
+| 2 | Hệ thống | Kiểm tra định dạng, tải lên multipart |
+| 3 | Hệ thống | Lưu metadata, liên kết bản ghi |
+| 4 | Hệ thống | Hiển thị trong tab tài liệu / bước QT |
+
+---
+
+### UC-TL-05: Sửa tài liệu
+
+**Mục đích:**
+Cho phép người dùng **sửa tài liệu** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-05` |
+| **Tên** | Sửa tài liệu |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-TL-06: Xóa tài liệu
+
+**Mục đích:**
+Cho phép người dùng **xóa tài liệu** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-06` |
+| **Tên** | Xóa tài liệu |
+| **Tác nhân** | delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-TL-07: Lọc theo loại
+
+**Mục đích:**
+Cho phép người dùng **lọc theo loại** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-07` |
+| **Tên** | Lọc theo loại |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Lọc theo loại»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Lọc theo loại» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-TL-08: Liên kết HĐ / SP / đề tài / khóa HL
+
+**Mục đích:**
+Cho phép người dùng **liên kết hđ / sp / đề tài / khóa hl** trên phân hệ **Tài liệu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TL-08` |
+| **Tên** | Liên kết HĐ / SP / đề tài / khóa HL |
+| **Tác nhân** | create / update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `tai-lieu` |
+| **Route UI** | `/tai-lieu` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Liên kết HĐ / SP / đề tài / khóa HL»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Liên kết HĐ / SP / đề tài / khóa HL» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### 5.12. Quy trình *(✅ đang vận hành)*
+
+**Route UI:** `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId`
+
+Phân hệ gồm **13** use case:
+
+### UC-QT-01: Xem tổng quan nhóm QT
+
+**Mục đích:**
+Cho phép người dùng **xem tổng quan nhóm qt** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-01` |
+| **Tên** | Xem tổng quan nhóm QT |
+| **Tác nhân** | — |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /quy-trinh , /quy-trinh/ – moduleKey , /quy-trinh/ – moduleKey/ – work"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị thông tin đầy đủ và tab liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị thông tin đầy đủ và tab liên quan |
+
+---
+
+### UC-QT-02: Xem danh sách QT theo module
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách qt theo module** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-02` |
+| **Tên** | Xem danh sách QT theo module |
+| **Tác nhân** | handover, warranty, training, coaching, product |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-QT-03: Tạo quy trình
+
+**Mục đích:**
+Cho phép người dùng **tạo quy trình** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-03` |
+| **Tên** | Tạo quy trình |
+| **Tác nhân** | create |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-QT-04: Sửa thông tin QT
+
+**Mục đích:**
+Cho phép người dùng **sửa thông tin qt** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-04` |
+| **Tên** | Sửa thông tin QT |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-QT-05: Xóa quy trình
+
+**Mục đích:**
+Cho phép người dùng **xóa quy trình** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-05` |
+| **Tên** | Xóa quy trình |
+| **Tác nhân** | delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn Xóa (quyền delete)"
+    S-->>U: "Hiển thị xác nhận"
+    U->>S: "Xác nhận xóa"
+    S-->>U: "Xóa mềm, ẩn khỏi danh sách"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn Xóa (quyền delete) |
+| 2 | Hệ thống | Hiển thị xác nhận |
+| 3 | Người dùng | Xác nhận xóa |
+| 4 | Hệ thống | Xóa mềm, ẩn khỏi danh sách |
+
+---
+
+### UC-QT-06: Thêm / sửa / xóa bước
+
+**Mục đích:**
+Cho phép người dùng **thêm / sửa / xóa bước** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-06` |
+| **Tên** | Thêm / sửa / xóa bước |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi sửa (quyền update )"
+    U->>S: "Chỉnh sửa trường / payload bước QT"
+    S-->>U: "Kiểm tra và lưu qua API"
+    S-->>U: "Ghi nhật ký thao tác, cập nhật giao diện"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi sửa (quyền `update`) |
+| 2 | Người dùng | Chỉnh sửa trường / payload bước QT |
+| 3 | Hệ thống | Kiểm tra và lưu qua API |
+| 4 | Hệ thống | Ghi nhật ký thao tác, cập nhật giao diện |
+
+---
+
+### UC-QT-07: Sắp xếp lại bước
+
+**Mục đích:**
+Cho phép người dùng **sắp xếp lại bước** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-07` |
+| **Tên** | Sắp xếp lại bước |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Sắp xếp lại bước»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Sắp xếp lại bước» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-QT-08: Cấu hình trường nhập bước
+
+**Mục đích:**
+Cho phép người dùng **cấu hình trường nhập bước** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-08` |
+| **Tên** | Cấu hình trường nhập bước |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-QT-09: Tạo bộ bước chuẩn
+
+**Mục đích:**
+Cho phép người dùng **tạo bộ bước chuẩn** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-09` |
+| **Tên** | Tạo bộ bước chuẩn |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-QT-10: Gắn QT cho entity
+
+**Mục đích:**
+Cho phép người dùng **gắn qt cho entity** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-10` |
+| **Tên** | Gắn QT cho entity |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Gắn QT cho entity»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Gắn QT cho entity» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-QT-11: Chuyển bước QT
+
+**Mục đích:**
+Cho phép người dùng **chuyển bước qt** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-11` |
+| **Tên** | Chuyển bước QT |
+| **Tác nhân** | update |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Chuyển bước QT»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Chuyển bước QT» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-QT-12: Xem lịch sử bước
+
+**Mục đích:**
+Cho phép người dùng **xem lịch sử bước** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-12` |
+| **Tên** | Xem lịch sử bước |
+| **Tác nhân** | read |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-QT-13: Đính kèm tài liệu instance
+
+**Mục đích:**
+Cho phép người dùng **đính kèm tài liệu instance** trên phân hệ **Quy trình**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-QT-13` |
+| **Tên** | Đính kèm tài liệu instance |
+| **Tác nhân** | create / delete |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `quy-trinh` |
+| **Route UI** | `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Chọn tệp tải lên"
+    S-->>U: "Kiểm tra định dạng, tải lên multipart"
+    S-->>U: "Lưu metadata, liên kết bản ghi"
+    S-->>U: "Hiển thị trong tab tài liệu / bước QT"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Chọn tệp tải lên |
+| 2 | Hệ thống | Kiểm tra định dạng, tải lên multipart |
+| 3 | Hệ thống | Lưu metadata, liên kết bản ghi |
+| 4 | Hệ thống | Hiển thị trong tab tài liệu / bước QT |
+
+---
+
+### 5.13. Cài đặt *(✅ đang vận hành)*
+
+**Route UI:** `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey`
+
+Phân hệ gồm **11** use case:
+
+### UC-CD-01: Quản lý người dùng
+
+**Mục đích:**
+Cho phép người dùng **quản lý người dùng** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-01` |
+| **Tên** | Quản lý người dùng |
+| **Tác nhân** | `cai-dat.nguoi-dung` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-02: Quản lý vai trò
+
+**Mục đích:**
+Cho phép người dùng **quản lý vai trò** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-02` |
+| **Tên** | Quản lý vai trò |
+| **Tác nhân** | `cai-dat.vai-tro` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-03: Cấu hình ma trận phân quyền
+
+**Mục đích:**
+Cho phép người dùng **cấu hình ma trận phân quyền** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-03` |
+| **Tên** | Cấu hình ma trận phân quyền |
+| **Tác nhân** | `cai-dat.phan-quyen` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-04: Cấu hình thông báo cá nhân
+
+**Mục đích:**
+Cho phép người dùng **cấu hình thông báo cá nhân** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-04` |
+| **Tên** | Cấu hình thông báo cá nhân |
+| **Tác nhân** | `cai-dat.thong-bao` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    S-->>U: "Phát sinh sự kiện SLA / PA / HĐ hết hạn"
+    S-->>U: "Tạo thông báo theo tùy chọn người dùng"
+    U->>S: "Nhận badge và xem /thong-bao"
+    U->>S: "Nhấn để điều hướng tới bản ghi liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Hệ thống | Phát sinh sự kiện SLA / PA / HĐ hết hạn |
+| 2 | Hệ thống | Tạo thông báo theo tùy chọn người dùng |
+| 3 | Người dùng | Nhận badge và xem `/thong-bao` |
+| 4 | Người dùng | Nhấn để điều hướng tới bản ghi liên quan |
+
+---
+
+### UC-CD-05: Cấu hình đơn vị PA & routing
+
+**Mục đích:**
+Cho phép người dùng **cấu hình đơn vị pa & routing** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-05` |
+| **Tên** | Cấu hình đơn vị PA & routing |
+| **Tác nhân** | Đơn vị PA |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-06: Cấu hình hệ thống
+
+**Mục đích:**
+Cho phép người dùng **cấu hình hệ thống** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-06` |
+| **Tên** | Cấu hình hệ thống |
+| **Tác nhân** | `cai-dat.he-thong` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-07: Quản lý phiên đăng nhập
+
+**Mục đích:**
+Cho phép người dùng **quản lý phiên đăng nhập** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-07` |
+| **Tên** | Quản lý phiên đăng nhập |
+| **Tác nhân** | `cai-dat.phien` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở form tạo mới (quyền create )"
+    U->>S: "Điền trường bắt buộc, chọn liên kết HĐ/KH/SP"
+    S-->>U: "Kiểm tra dữ liệu (Zod FE + BE)"
+    S-->>U: "Lưu bản ghi, khởi tạo quy trình nếu có"
+    S-->>U: "Thông báo thành công"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở form tạo mới (quyền `create`) |
+| 2 | Người dùng | Điền trường bắt buộc, chọn liên kết HĐ/KH/SP |
+| 3 | Hệ thống | Kiểm tra dữ liệu (Zod FE + BE) |
+| 4 | Hệ thống | Lưu bản ghi, khởi tạo quy trình nếu có |
+| 5 | Hệ thống | Thông báo thành công |
+
+---
+
+### UC-CD-08: Xem nhật ký audit
+
+**Mục đích:**
+Cho phép người dùng **xem nhật ký audit** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-08` |
+| **Tên** | Xem nhật ký audit |
+| **Tác nhân** | `cai-dat.nhat-ky` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Mở bản ghi từ danh sách ( /cai-dat , /cai-dat/thuoc-tinh , /cai-dat/thuoc-tinh/ – moduleKey )"
+    S-->>U: "Tải chi tiết từ API"
+    S-->>U: "Hiển thị thông tin đầy đủ và tab liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Mở bản ghi từ danh sách (`/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey`) |
+| 2 | Hệ thống | Tải chi tiết từ API |
+| 3 | Hệ thống | Hiển thị thông tin đầy đủ và tab liên quan |
+
+---
+
+### UC-CD-09: Quản lý danh mục thuộc tính
+
+**Mục đích:**
+Cho phép người dùng **quản lý danh mục thuộc tính** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-09` |
+| **Tên** | Quản lý danh mục thuộc tính |
+| **Tác nhân** | `cai-dat.thuoc-tinh` |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập Cài đặt"
+    U->>S: "Thêm / sửa / xóa cấu hình"
+    S-->>U: "Kiểm tra và lưu cấu hình"
+    S-->>U: "Áp dụng cho phiên tiếp theo"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Quản trị viên | Truy cập Cài đặt |
+| 2 | Quản trị viên | Thêm / sửa / xóa cấu hình |
+| 3 | Hệ thống | Kiểm tra và lưu cấu hình |
+| 4 | Hệ thống | Áp dụng cho phiên tiếp theo |
+
+---
+
+### UC-CD-10: Sắp xếp danh mục
+
+**Mục đích:**
+Cho phép người dùng **sắp xếp danh mục** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-10` |
+| **Tên** | Sắp xếp danh mục |
+| **Tác nhân** | Reorder definitions |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Sắp xếp danh mục»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Sắp xếp danh mục» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-CD-11: Kiểm tra danh mục đang dùng
+
+**Mục đích:**
+Cho phép người dùng **kiểm tra danh mục đang dùng** trên phân hệ **Cài đặt**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-CD-11` |
+| **Tên** | Kiểm tra danh mục đang dùng |
+| **Tác nhân** | Usage check |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `cai-dat` |
+| **Route UI** | `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Kiểm tra danh mục đang dùng»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Kiểm tra danh mục đang dùng» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### 5.14. Thông báo *(✅ đang vận hành)*
+
+**Route UI:** `/thong-bao`
+
+Phân hệ gồm **5** use case:
+
+### UC-TB-01: Xem danh sách thông báo
+
+**Mục đích:**
+Cho phép người dùng **xem danh sách thông báo** trên phân hệ **Thông báo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TB-01` |
+| **Tên** | Xem danh sách thông báo |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `thong-bao` |
+| **Route UI** | `/thong-bao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Truy cập màn hình, quyền read"
+    U->>S: "Áp dụng bộ lọc / tìm kiếm"
+    S-->>U: "Gọi API danh sách"
+    S-->>U: "Hiển thị bảng / kanban với trạng thái"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Truy cập màn hình, quyền `read` |
+| 2 | Người dùng | Áp dụng bộ lọc / tìm kiếm |
+| 3 | Hệ thống | Gọi API danh sách |
+| 4 | Hệ thống | Hiển thị bảng / kanban với trạng thái |
+
+---
+
+### UC-TB-02: Đánh dấu đã đọc
+
+**Mục đích:**
+Cho phép người dùng **đánh dấu đã đọc** trên phân hệ **Thông báo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TB-02` |
+| **Tên** | Đánh dấu đã đọc |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `thong-bao` |
+| **Route UI** | `/thong-bao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Đánh dấu đã đọc»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Đánh dấu đã đọc» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-TB-03: Đánh dấu tất cả đã đọc
+
+**Mục đích:**
+Cho phép người dùng **đánh dấu tất cả đã đọc** trên phân hệ **Thông báo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TB-03` |
+| **Tên** | Đánh dấu tất cả đã đọc |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `thong-bao` |
+| **Route UI** | `/thong-bao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    U->>S: "Thực hiện «Đánh dấu tất cả đã đọc»"
+    S-->>U: "Xử lý theo mô tả use case"
+    S-->>U: "Trả kết quả và cập nhật dữ liệu"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Người dùng | Thực hiện «Đánh dấu tất cả đã đọc» |
+| 2 | Hệ thống | Xử lý theo mô tả use case |
+| 3 | Hệ thống | Trả kết quả và cập nhật dữ liệu |
+
+---
+
+### UC-TB-04: Điều hướng từ thông báo
+
+**Mục đích:**
+Cho phép người dùng **điều hướng từ thông báo** trên phân hệ **Thông báo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TB-04` |
+| **Tên** | Điều hướng từ thông báo |
+| **Tác nhân** | Mọi user |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `thong-bao` |
+| **Route UI** | `/thong-bao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    S-->>U: "Phát sinh sự kiện SLA / PA / HĐ hết hạn"
+    S-->>U: "Tạo thông báo theo tùy chọn người dùng"
+    U->>S: "Nhận badge và xem /thong-bao"
+    U->>S: "Nhấn để điều hướng tới bản ghi liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Hệ thống | Phát sinh sự kiện SLA / PA / HĐ hết hạn |
+| 2 | Hệ thống | Tạo thông báo theo tùy chọn người dùng |
+| 3 | Người dùng | Nhận badge và xem `/thong-bao` |
+| 4 | Người dùng | Nhấn để điều hướng tới bản ghi liên quan |
+
+---
+
+### UC-TB-05: Nhận thông báo tự động
+
+**Mục đích:**
+Cho phép người dùng **nhận thông báo tự động** trên phân hệ **Thông báo**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
+
+| Thuộc tính | Giá trị |
+|---|---|
+| **Mã UC** | `UC-TB-05` |
+| **Tên** | Nhận thông báo tự động |
+| **Tác nhân** | Hệ thống |
+| **Trạng thái** | ✅ Đang vận hành |
+| **Module** | `thong-bao` |
+| **Route UI** | `/thong-bao` |
+
+
+```mermaid
+sequenceDiagram
+    actor U as Người dùng
+    participant S as Hệ thống ASMS
+    S-->>U: "Phát sinh sự kiện SLA / PA / HĐ hết hạn"
+    S-->>U: "Tạo thông báo theo tùy chọn người dùng"
+    U->>S: "Nhận badge và xem /thong-bao"
+    U->>S: "Nhấn để điều hướng tới bản ghi liên quan"
+```
+
+**Diễn giải các bước:**
+
+| Bước | Người thực hiện | Mô tả |
+|---|---|---|
+| 1 | Hệ thống | Phát sinh sự kiện SLA / PA / HĐ hết hạn |
+| 2 | Hệ thống | Tạo thông báo theo tùy chọn người dùng |
+| 3 | Người dùng | Nhận badge và xem `/thong-bao` |
+| 4 | Người dùng | Nhấn để điều hướng tới bản ghi liên quan |
+
+---
+
+---
+
+## 6. MA TRẬN PHÂN QUYỀN (PHẠM VI VẬN HÀNH)
+
+| Phân hệ | Menu | admin | manager | technician | viewer | sales |
+|---|:---:|---|:---:|:---:|:---:|:---:|
+| Dashboard | ✅ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Hợp đồng | ✅ | ✓ | ✓ | — | đọc | ✓ |
+| Bàn giao / HL | ✅ | ✓ | ✓ | ✓ | — | — |
+| Bảo hành | ✅ | ✓ | ✓ | ✓ | — | — |
+| Vật tư | ✅ | ✓ | ✓ | ✓ | — | — |
+| Sản phẩm | ✅ | ✓ | ✓ | ✓ | đọc | đọc |
+| Khách hàng / CRM | ✅ | ✓ | ✓ | tùy | đọc | ✓ |
+| Phản ánh | ✅ | ✓ | ✓ | ✓ | đọc | đọc |
+| Báo cáo | ✅ | ✓ | ✓ | — | ✓ | ✓ |
+| Quy trình | ✅ | ✓ | ✓ | theo bước | đọc | đọc |
+| Cài đặt | ✅ | ✓ | giới hạn | — | — | — |
+
+---
+
+## 7. NHÓM QUY TRÌNH (ĐANG HIỂN THỊ)
+
+| Module key | Tên | Áp dụng | Menu QT |
+|---|---|---|:---:|
+| `handover` | Bàn giao | Phiếu bàn giao | ✅ |
+| `coaching` | Huấn luyện | Tab HL trên Bàn giao | ✅ |
+| `training` | Đào tạo | Khóa đào tạo (API) | ✅ |
+| `warranty` | Bảo hành | Phiếu BH/SC | ✅ |
+| `product` | Sản phẩm | Quy trình SP | ✅ |
+
+---
+
+## 8. KẾT LUẬN
+
+BRD cập nhật ASMS v1.1 mô tả **152 use case vận hành** trên **14 phân hệ** có menu, phục vụ phạm vi triển khai hiện tại.
+
+**Tham chiếu:** `docs/file docs/use-case-asms.md` · `src/lib/nav-visibility.ts` · `src/lib/workflow-visibility.ts`
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+
+function decodeHtmlEntities(text) {
+  const el = document.createElement('textarea');
+  el.innerHTML = text;
+  return el.value;
+}
+
+function mermaidBlocksToDivs(html) {
+  return html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/gi, function(_, raw) {
+    const code = decodeHtmlEntities(raw);
+    return '<div class="mermaid">' + code.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
+  });
+}
+
+const renderer = new marked.Renderer();
+const baseCode = renderer.code.bind(renderer);
+renderer.code = function(code, lang) {
+  if (lang === 'mermaid') {
+    const safe = code.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return '<div class="mermaid">' + safe + '</div>';
+  }
+  return baseCode(code, lang);
+};
+marked.setOptions({ renderer, gfm: true, breaks: false });
+const mdRaw = document.getElementById('md-source').textContent;
+let htmlContent = mermaidBlocksToDivs(marked.parse(mdRaw));
+const host = document.getElementById('content-host');
+const wrapper = document.createElement('div');
+wrapper.className = 'doc-page';
+wrapper.innerHTML = '<div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-002</span></div><div class="inner-brd-right">ASMS</div></div><div class="inner-brd-divider"></div><div class="content-area"><div class="md-render">' + htmlContent + '</div></div><div class="inner-brd-footer"><div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div><div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD Cập nhật v1.1</span></div></div>';
+host.appendChild(wrapper);
+const archHtml = "\n<figure class=\"arch-figure\">\n<div class=\"arch-diagram\">\n  <div class=\"arch-title\">ASMS — After-Sales Management System (5 tầng)</div>\n  <div class=\"arch-layer l1\">\n    <div class=\"arch-layer-hd\">TẦNG 1 — NGƯỜI DÙNG &amp; KÊNH TRUY CẬP</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>Web Quản trị</strong><br>Admin · Manager · Sales<br><em>React + Vite — Dashboard, Cài đặt</em></div>\n      <div class=\"arch-box\"><strong>Web Vận hành</strong><br>Technician · Viewer<br><em>HĐ · BG · BH · VT · SP · PA</em></div>\n      <div class=\"arch-box\"><strong>Đăng nhập &amp; API</strong><br>/login · Bearer JWT<br><em>/api/v1/auth · refresh token</em></div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l2\">\n    <div class=\"arch-layer-hd\">TẦNG 2 — CỔNG GIAO TIẾP &amp; BẢO MẬT</div>\n    <div class=\"arch-row two\">\n      <div class=\"arch-box\"><strong>Express API Gateway</strong><br>/api/v1 · CORS · rate limit<br>Envelope { success, data }</div>\n      <div class=\"arch-box\"><strong>JWT Guard &amp; RBAC</strong><br>5 roles · module permissions<br>read / create / update / delete</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l3\">\n    <div class=\"arch-layer-hd\">TẦNG 3 — HỆ THỐNG LÕI (Express + TypeScript)</div>\n    <div class=\"arch-grid\">\n      <div class=\"arch-box\"><strong>Hợp đồng &amp; Điều khoản</strong><br>contracts · contract-clauses<br>Workflow HĐ · gán SP</div>\n      <div class=\"arch-box\"><strong>Bàn giao &amp; Huấn luyện</strong><br>handovers · training coaching<br>WF handover / coaching</div>\n      <div class=\"arch-box\"><strong>Bảo hành / Sửa chữa</strong><br>warranties · SLA<br>WF warranty · BOM vật tư</div>\n      <div class=\"arch-box\"><strong>Sản phẩm &amp; Vật tư</strong><br>products · materials<br>BOM · điều chuyển kho</div>\n      <div class=\"arch-box\"><strong>CRM &amp; Phản ánh</strong><br>customers · feedbacks<br>routing · multi-assignee</div>\n      <div class=\"arch-box\"><strong>Workflow &amp; Cài đặt</strong><br>workflows · definitions<br>users · roles · audit</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l4\">\n    <div class=\"arch-layer-hd\">TẦNG 4 — LƯU TRỮ DỮ LIỆU &amp; FILE</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>PostgreSQL</strong><br>Prisma ORM · soft delete<br>audit logs · notifications</div>\n      <div class=\"arch-box\"><strong>File Uploads</strong><br>uploads/ · multipart<br>documents · workflow files</div>\n      <div class=\"arch-box\"><strong>Job &amp; Thông báo</strong><br>notify jobs · SLA scan<br>in-app notifications</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l5\">\n    <div class=\"arch-layer-hd\">TẦNG 5 — NỀN TẢNG CÔNG NGHỆ</div>\n    <div class=\"arch-tech\">\n      <span>React + Vite</span><span>Express + TS</span><span>Prisma</span><span>PostgreSQL</span><span>Zod</span><span>Docker</span>\n    </div>\n  </div>\n</div>\n<figcaption>Hình 1. Kiến trúc tổng thể hệ thống ASMS — 5 tầng logic (đồng bộ BRD &amp; TechSpec)</figcaption>\n</figure>";
+const renderRoot = wrapper.querySelector('.md-render');
+renderRoot.innerHTML = renderRoot.innerHTML.replace('<p>[[ARCHITECTURE_DIAGRAM]]</p>', archHtml);
+function slugify(text) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+const seenIds = new Map();
+const headings = Array.from(renderRoot.querySelectorAll('h2, h3, h4'));
+headings.forEach((heading, index) => {
+  const base = slugify(heading.textContent) || 'section-' + (index + 1);
+  const count = seenIds.get(base) || 0;
+  seenIds.set(base, count + 1);
+  heading.id = count ? base + '-' + (count + 1) : base;
+});
+const tocList = document.getElementById('toc-list');
+headings.forEach((heading, index) => {
+  const link = document.createElement('a');
+  const level = heading.tagName === 'H2' ? '2' : heading.tagName === 'H3' ? '3' : '4';
+  link.className = 'toc-item level-' + level;
+  link.href = '#' + heading.id;
+  link.innerHTML = '<span class="toc-index">' + (index + 1) + '.</span><span class="toc-text">' + heading.textContent + '</span>';
+  tocList.appendChild(link);
+});
+(async function() {
+  try {
+    await mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
+  } catch (err) {
+    console.error('Mermaid render error:', err);
+  }
+})();
+</script>
+</body>
+</html>

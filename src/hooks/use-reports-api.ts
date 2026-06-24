@@ -72,9 +72,9 @@ function filterKey(filters: ReportFilters) {
 }
 
 export function useReports(filters: ReportFilters) {
-  const [year, from, to] = filterKey(filters);
+  const [year, from, to, customerId] = filterKey(filters);
   return useQuery({
-    queryKey: qk.reports.main(year, from, to),
+    queryKey: qk.reports.main(year, from, to, customerId),
     queryFn: async () => {
       const res = await api.get<ApiSuccess<ReportsApi>>(`/api/v1/reports${buildReportQuery(filters)}`);
       return res.data.data;

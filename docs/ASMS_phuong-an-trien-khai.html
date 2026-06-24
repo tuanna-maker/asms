@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn Triển khai — ASMS v3.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #d0d0d0;
+            font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif;
+            font-size: 14px;
+            color: #0d1e34;
+            line-height: 1.6;
+        }
+
+        .doc-page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 10mm auto;
+            background: #fff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .25);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @media print {
+            @page { margin: 0; size: A4 portrait; }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background: #fff;
+            }
+            .doc-page {
+                margin: 0 !important;
+                box-shadow: none !important;
+                page-break-after: always;
+            }
+        }
+
+        /* ===== COVER ===== */
+        .doc-page.cover { padding: 0; }
+        .doc-page.cover .accent-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #3d7de8, #0ab4d8);
+            flex-shrink: 0;
+        }
+        .doc-page.cover .header {
+            padding: 22px 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .doc-page.cover .header-code {
+            font-size: 9.5px;
+            font-weight: 600;
+            letter-spacing: .8px;
+        }
+        .doc-page.cover .header-right {
+            font-size: 9.5px;
+            text-align: right;
+            line-height: 1.7;
+        }
+        .doc-page.cover .divider {
+            margin: 0 52px;
+            height: 1px;
+            background: #eaeff8;
+            flex-shrink: 0;
+        }
+        .doc-page.cover .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding-bottom: 80px;
+            text-align: center;
+        }
+        .doc-page.cover .logo-wrap { margin-bottom: 44px; }
+        .doc-page.cover .logo-wrap img { width: 280px; display: block; }
+        .doc-page.cover .sep {
+            width: 52px;
+            height: 3px;
+            background: linear-gradient(90deg, #3d7de8, #0ab4d8);
+            border-radius: 2px;
+            margin: 0 auto 32px;
+        }
+        .doc-page.cover .doc-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .doc-page.cover .project-title {
+            font-size: 40px;
+            font-weight: 900;
+            line-height: 1;
+            letter-spacing: 1px;
+        }
+        .doc-page.cover .project-title .brand-grad {
+            background: linear-gradient(135deg, #3d7de8, #0ab4d8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .doc-page.cover .project-title .sep-dot {
+            color: #c8d8ec;
+            margin: 0 6px;
+            font-weight: 300;
+        }
+        .doc-page.cover .project-title .client {
+            color: #0d1e34;
+            letter-spacing: 4px;
+        }
+        .doc-page.cover .subtitle {
+            margin-top: 16px;
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: .3px;
+            max-width: 520px;
+            line-height: 1.7;
+        }
+        .doc-page.cover .meta-info {
+            margin-top: 36px;
+            font-size: 10.5px;
+            line-height: 1.85;
+            color: #3a4a64;
+        }
+        .doc-page.cover .meta-info strong {
+            color: #0d1e34;
+            font-weight: 600;
+        }
+        .doc-page.cover .footer {
+            padding: 18px 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #eaeff8;
+            flex-shrink: 0;
+        }
+        .doc-page.cover .footer-l,
+        .doc-page.cover .footer-r { font-size: 9.5px; }
+        .doc-page.cover .footer-r { text-align: right; }
+
+        /* ===== INNER PAGES ===== */
+        .inner-brd-header {
+            padding: 22px 48px 22px 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .inner-brd-header .inner-brd-code {
+            font-size: 9.5px;
+            font-weight: 600;
+            letter-spacing: .8px;
+        }
+        .inner-brd-header .inner-brd-right {
+            font-size: 9.5px;
+            text-align: right;
+            line-height: 1.7;
+        }
+        .inner-brd-divider {
+            margin: 0 48px 0 68px;
+            height: 1px;
+            background: #eaeff8;
+            flex-shrink: 0;
+        }
+        .inner-brd-footer {
+            padding: 18px 48px 18px 68px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid #eaeff8;
+            flex-shrink: 0;
+        }
+        .inner-brd-footer-l { font-size: 9.5px; }
+        .inner-brd-footer-r {
+            font-size: 9.5px;
+            text-align: right;
+            line-height: 1.65;
+        }
+        .inner-brd-footer-r .ft-page {
+            display: block;
+            font-weight: 600;
+        }
+        .content-area {
+            flex: 1;
+            padding: 20px 48px 60px 68px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1a2740;
+        }
+
+        /* ===== TYPOGRAPHY ===== */
+        h1.toc-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #0d1e34;
+            margin: 4px 0 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3d7de8;
+        }
+        h2 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0d1e34;
+            margin: 18px 0 10px;
+            padding: 6px 10px;
+            background: linear-gradient(90deg, #eef4ff, transparent);
+            border-left: 4px solid #3d7de8;
+        }
+        h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin: 14px 0 6px;
+        }
+        h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1e3a5f;
+            margin: 10px 0 4px;
+        }
+        p { margin: 6px 0; }
+        ul, ol { margin: 6px 0 6px 20px; }
+        .section-unit {
+            page-break-inside: avoid;
+            margin-bottom: 20px;
+        }
+
+        /* ===== TABLES ===== */
+        .spec-table, .endpoint-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin: 10px 0;
+        }
+        .spec-table th, .endpoint-table th {
+            background: #1e3a5f;
+            color: #fff;
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #cbd5e0;
+        }
+        .spec-table td, .endpoint-table td {
+            border: 1px solid #cbd5e0;
+            padding: 8px;
+            vertical-align: top;
+        }
+        .spec-table tr:nth-child(even) td { background: #f7fafc; }
+
+        /* ===== BOXES & CARDS ===== */
+        .highlight-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px 14px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+        }
+        .step-card {
+            border-left: 4px solid #3d7de8;
+            background: #f8fafc;
+            padding: 12px 14px;
+            margin: 10px 0;
+            border-radius: 0 8px 8px 0;
+            font-size: 13px;
+        }
+        .step-card strong { color: #1e3a5f; }
+        .card {
+            margin-bottom: 1.5rem;
+            border: 1px solid #eaeff8;
+            padding: 1.5rem;
+            background: #fdfdfd;
+            border-radius: 8px;
+        }
+        .card h4 { margin-top: 0; }
+
+        /* ===== CODE ===== */
+        pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 10.5px;
+            line-height: 1.5;
+            overflow-x: auto;
+            border: 1px solid #1e293b;
+            margin: 12px 0;
+        }
+        code {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            color: #3d7de8;
+            background: #f1f5f9;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        pre code {
+            color: #cbd5e1;
+            background: transparent;
+            padding: 0;
+        }
+        .step-card code, .highlight-box code {
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 2px 0;
+            font-weight: 500;
+        }
+
+        /* ===== TOC ===== */
+        .toc-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toc-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #1a2740;
+            border: 1px solid #eaeff8;
+            background: #fbfdff;
+        }
+        .toc-row:hover {
+            border-color: #3d7de8;
+            background: #f5f9ff;
+        }
+        .toc-num {
+            min-width: 22px;
+            font-size: 12px;
+            font-weight: 800;
+            color: #3d7de8;
+        }
+        .toc-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .toc-dots {
+            flex: 1;
+            border-bottom: 1px dotted #cbd5e1;
+            margin-bottom: 4px;
+        }
+        .toc-category-title {
+            font-size: 12px;
+            font-weight: 800;
+            color: #64748b;
+            margin: 20px 0 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== MERMAID & STACK ===== */
+        .mermaid-card {
+            margin: 14px 0;
+            background: #fafbfd;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #eaeff8;
+        }
+        .stack-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .stack-card {
+            border: 1px solid #eaeff8;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 15px;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .stack-icon { font-size: 1.8rem; }
+        .stack-card-body h4 { margin: 0 0 5px 0; }
+        .stack-card-body p {
+            margin: 0;
+            font-size: 11px;
+            color: #52637d;
+        }
+
+        /* ===== TASECO ARCH DIAGRAM ===== */
+        .taseco-arch {
+            background: #fff;
+            padding: 2.5rem 1.5rem;
+            font-family: 'Inter', sans-serif;
+            margin: 2rem 0;
+            border: 1px solid #eaeff8;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+        .taseco-header {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #111827;
+            margin-bottom: 3rem;
+            letter-spacing: 0.05em;
+        }
+        .taseco-arch .arch-row {
+            display: flex;
+            margin-bottom: 1.25rem;
+            align-items: stretch;
+            gap: 1.5rem;
+        }
+        .taseco-arch .arch-row:last-child { margin-bottom: 0; }
+        .row-label {
+            width: 150px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            line-height: 1.4;
+            padding-right: 0.5rem;
+            border-right: 2px solid #e5e7eb;
+        }
+        .row-label strong {
+            font-size: 0.82rem;
+            color: #111827;
+            margin-bottom: 0.2rem;
+        }
+        .row-content {
+            flex-grow: 1;
+            display: grid;
+            gap: 0.85rem;
+        }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .arch-block {
+            border-radius: 8px;
+            padding: 0.85rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 64px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .arch-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .arch-block-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+        .arch-block-sub {
+            font-size: 0.68rem;
+            opacity: 0.85;
+        }
+        .bg-light-blue {
+            background: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #bae6fd;
+        }
+        .bg-light-blue .arch-block-title { color: #082f49; }
+        .bg-purple {
+            background: #6366f1;
+            color: #fff;
+            border: 1px solid #4f46e5;
+        }
+        .bg-white-border {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        .bg-white-border .arch-block-sub { color: #6b7280; }
+        .bg-green {
+            background: #10b981;
+            color: #fff;
+            border: 1px solid #059669;
+        }
+        .bg-grey {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+        .bg-grey .arch-block-sub { color: #6b7280; }
+        .core-wrap {
+            background: #111827;
+            padding: 1.25rem;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .core-title {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .flow-arrow {
+            text-align: center;
+            color: #d1d5db;
+            font-size: 1.2rem;
+            margin: -0.75rem 0 -0.75rem 170px;
+        }
+
+        .checklist { list-style: none; margin-left: 0; }
+        .checklist li {
+            padding: 4px 0 4px 22px;
+            position: relative;
+            font-size: 12px;
+        }
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            color: #3d7de8;
+            font-weight: 700;
+        }
+        .warn-item {
+            border: 1px solid #fecaca;
+            background: #fff5f5;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        .warn-item strong { color: #b91c1c; }
+    </style>
+</head>
+<body>
+
+<!-- TRANG BÌA -->
+<div class="doc-page cover">
+    <div class="accent-bar"></div>
+    <div class="header">
+        <div class="header-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div>
+        <div class="header-right">
+            Phiên bản v3.0 &nbsp;·&nbsp; 24/06/2026 &nbsp;·&nbsp; Hệ thống ASMS — VTX
+        </div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+        <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Unicom"></div>
+        <div class="sep"></div>
+        <div class="doc-label">Deployment &amp; Operations Guide</div>
+        <div class="project-title">
+            <span class="brand-grad">ASMS</span><span class="sep-dot">/</span><span class="client">VTX</span>
+        </div>
+        <div class="subtitle">Hướng dẫn Triển khai &amp; Vận hành<br>Hệ thống Quản lý Hậu mãi — On-premise · Docker · PostgreSQL</div>
+        <div class="meta-info">
+            <strong>Khách hàng:</strong> Viện Công nghệ (VTX)<br>
+            <strong>Đơn vị phát triển:</strong> Unicom Technology Solutions Co., Ltd<br>
+            <strong>Đối tượng:</strong> Kỹ thuật triển khai · Quản trị hệ thống · Dev vận hành<br>
+            <strong>Phạm vi:</strong> Dev → Staging → Production · Bàn giao source &amp; vận hành nội bộ
+        </div>
+    </div>
+    <div class="footer">
+        <div class="footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="footer-r">© 2026 — All Rights Reserved</div>
+    </div>
+</div>
+
+<!-- MỤC LỤC -->
+<div class="doc-page">
+    <div class="inner-brd-header">
+        <div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div>
+        <div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Hướng dẫn Triển khai v3.0</div>
+    </div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h1 class="toc-title">Mục lục</h1>
+        <div class="toc-list">
+            <div class="toc-category">
+                <div class="toc-category-title">I. TỔNG QUAN &amp; KIẾN TRÚC</div>
+                <a href="#s01" class="toc-row"><span class="toc-num">01</span><span class="toc-text">Giới thiệu &amp; phạm vi</span><div class="toc-dots"></div></a>
+                <a href="#s02" class="toc-row"><span class="toc-num">02</span><span class="toc-text">Kiến trúc triển khai &amp; mạng</span><div class="toc-dots"></div></a>
+                <a href="#s03" class="toc-row"><span class="toc-num">03</span><span class="toc-text">Yêu cầu hạ tầng &amp; phần mềm</span><div class="toc-dots"></div></a>
+                <a href="#s04" class="toc-row"><span class="toc-num">04</span><span class="toc-text">Cấu trúc thư mục &amp; gói bàn giao</span><div class="toc-dots"></div></a>
+            </div>
+            <div class="toc-category">
+                <div class="toc-category-title">II. HẠ TẦNG &amp; CẤU HÌNH</div>
+                <a href="#s05" class="toc-row"><span class="toc-num">05</span><span class="toc-text">Hạ tầng &amp; Docker</span><div class="toc-dots"></div></a>
+                <a href="#s06" class="toc-row"><span class="toc-num">06</span><span class="toc-text">Biến môi trường (.env)</span><div class="toc-dots"></div></a>
+                <a href="#s07" class="toc-row"><span class="toc-num">07</span><span class="toc-text">PostgreSQL — cài đặt &amp; tạo DB</span><div class="toc-dots"></div></a>
+                <a href="#s08" class="toc-row"><span class="toc-num">08</span><span class="toc-text">Nginx reverse proxy &amp; HTTPS</span><div class="toc-dots"></div></a>
+            </div>
+            <div class="toc-category">
+                <div class="toc-category-title">III. QUY CHUẨN TRIỂN KHAI</div>
+                <a href="#s09" class="toc-row"><span class="toc-num">09</span><span class="toc-text">Phát triển Local (Developer)</span><div class="toc-dots"></div></a>
+                <a href="#s10" class="toc-row"><span class="toc-num">10</span><span class="toc-text">Kiểm tra Docker Staging</span><div class="toc-dots"></div></a>
+                <a href="#s11" class="toc-row"><span class="toc-num">11</span><span class="toc-text">Triển khai Production</span><div class="toc-dots"></div></a>
+                <a href="#s12" class="toc-row"><span class="toc-num">12</span><span class="toc-text">Database: migrate, bootstrap, seed</span><div class="toc-dots"></div></a>
+            </div>
+            <div class="toc-category">
+                <div class="toc-category-title">IV. VẬN HÀNH &amp; BÀN GIAO</div>
+                <a href="#s13" class="toc-row"><span class="toc-num">13</span><span class="toc-text">Cấu hình hệ thống sau go-live</span><div class="toc-dots"></div></a>
+                <a href="#s14" class="toc-row"><span class="toc-num">14</span><span class="toc-text">Lưu trữ file &amp; volume uploads</span><div class="toc-dots"></div></a>
+                <a href="#s15" class="toc-row"><span class="toc-num">15</span><span class="toc-text">Cron thông báo &amp; job nền</span><div class="toc-dots"></div></a>
+                <a href="#s16" class="toc-row"><span class="toc-num">16</span><span class="toc-text">Kiểm tra, smoke test &amp; UAT</span><div class="toc-dots"></div></a>
+                <a href="#s17" class="toc-row"><span class="toc-num">17</span><span class="toc-text">Nâng cấp phiên bản (update)</span><div class="toc-dots"></div></a>
+                <a href="#s18" class="toc-row"><span class="toc-num">18</span><span class="toc-text">Backup, rollback &amp; bảo mật</span><div class="toc-dots"></div></a>
+                <a href="#s19" class="toc-row"><span class="toc-num">19</span><span class="toc-text">Xử lý sự cố (troubleshooting)</span><div class="toc-dots"></div></a>
+                <a href="#s20" class="toc-row"><span class="toc-num">20</span><span class="toc-text">Checklist go-live &amp; bàn giao</span><div class="toc-dots"></div></a>
+            </div>
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 01 -->
+<div class="doc-page" id="s01">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §01 Giới thiệu</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>1. Giới thiệu &amp; phạm vi</h2>
+        <div class="highlight-box" style="background: #f0fdf4; border-left-color: #22c55e;">
+            Tài liệu này mô tả <strong>toàn bộ quy trình</strong> triển khai ASMS từ máy dev đến server production nội bộ VTX, bám sát cấu hình thực tế trong repository <code>asms</code>.
+        </div>
+
+        <h3>1.1 ASMS là gì?</h3>
+        <p>ASMS (After-Sales Management System) là ERP web quản lý vòng đời hậu mãi: Khách hàng → Hợp đồng → Bàn giao &amp; Huấn luyện → Bảo hành/Sửa chữa → Phản ánh → Báo cáo điều hành.</p>
+
+        <h3>1.2 Thành phần kỹ thuật</h3>
+        <div class="stack-grid">
+            <div class="stack-card">
+                <div class="stack-icon">🖥</div>
+                <div class="stack-card-body">
+                    <h4>Frontend</h4>
+                    <p>React 18 · Vite · Tailwind · shadcn/ui — Build static, phục vụ bởi Nginx</p>
+                </div>
+            </div>
+            <div class="stack-card">
+                <div class="stack-icon">⚙️</div>
+                <div class="stack-card-body">
+                    <h4>Backend</h4>
+                    <p>Node.js 20 · Express 5 · TypeScript — API prefix <code>/api/v1</code></p>
+                </div>
+            </div>
+            <div class="stack-card">
+                <div class="stack-icon">🗄</div>
+                <div class="stack-card-body">
+                    <h4>Database</h4>
+                    <p>PostgreSQL 14+ · Prisma 6 — ~55 migration trong <code>backend/prisma/migrations/</code></p>
+                </div>
+            </div>
+            <div class="stack-card">
+                <div class="stack-icon">🐳</div>
+                <div class="stack-card-body">
+                    <h4>Container</h4>
+                    <p>Docker + Compose v2 — 2 service: <code>frontend</code> + <code>backend</code></p>
+                </div>
+            </div>
+        </div>
+
+        <h3>1.3 Mô hình triển khai VTX</h3>
+        <ul>
+            <li><strong>On-premise:</strong> Server trong mạng nội bộ / VPN, không phụ thuộc cloud.</li>
+            <li><strong>Bàn giao source:</strong> VTX nhận repo + tài liệu, tự build/deploy (dev hỗ trợ onsite nếu cần).</li>
+            <li><strong>Không Redis:</strong> ASMS hiện không dùng Redis; session JWT stateless + refresh token trong DB.</li>
+            <li><strong>Cron in-process:</strong> Job nhắc lịch/SLA chạy trong process Node backend (không cần worker riêng).</li>
+        </ul>
+
+        <h3>1.4 Phạm vi go-live v1 (màn FE)</h3>
+        <p>12 menu sidebar: Dashboard, Hợp đồng, Bàn giao &amp; HL, Bảo hành/SC, Sản phẩm, Vật tư, Khách hàng, Phản ánh, Báo cáo, Tài liệu, Quy trình, Cài đặt. Các route <code>/de-tai</code>, <code>/cong-viec</code>, <code>/dao-tao</code> ẩn menu — không nghiệm thu v1.</p>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 02 -->
+<div class="doc-page" id="s02">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §02 Kiến trúc</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>2. Kiến trúc triển khai &amp; mạng</h2>
+        <p>Sơ đồ dưới đây mô tả toàn bộ vòng đời một yêu cầu — từ khi người dùng truy cập Web trên LAN/VPN đến khi dữ liệu được lưu trữ.</p>
+
+        <div class="taseco-arch">
+            <div class="taseco-header">KIẾN TRÚC TRIỂN KHAI HỆ THỐNG ASMS</div>
+
+            <div class="arch-row">
+                <div class="row-label">
+                    <strong>1. NGƯỜI DÙNG &amp;</strong>
+                    <span>KÊNH TIẾP NHẬN</span>
+                </div>
+                <div class="row-content grid-2">
+                    <div class="arch-block bg-light-blue">
+                        <div class="arch-block-title">Web Portal</div>
+                        <div class="arch-block-sub">PC — Chrome / Edge (LAN / VPN)</div>
+                    </div>
+                    <div class="arch-block bg-light-blue">
+                        <div class="arch-block-title">HTTPS Reverse Proxy</div>
+                        <div class="arch-block-sub">Nginx host — SSL termination</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow">▼</div>
+
+            <div class="arch-row">
+                <div class="row-label">
+                    <strong>2. CỔNG ĐIỀU PHỐI</strong>
+                    <span>GIAO TIẾP &amp; BẢO MẬT</span>
+                </div>
+                <div class="row-content grid-2">
+                    <div class="arch-block bg-purple">
+                        <div class="arch-block-title">Nginx Container</div>
+                        <div class="arch-block-sub">SPA static + proxy <code>/api/</code></div>
+                    </div>
+                    <div class="arch-block bg-purple">
+                        <div class="arch-block-title">JWT + RBAC</div>
+                        <div class="arch-block-sub">Xác thực Token · 5 role hệ thống</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow" style="margin-bottom: 0.5rem;">▼</div>
+
+            <div class="arch-row">
+                <div class="row-label" style="border-right-color: transparent;">
+                    <strong>3. HỆ THỐNG LÕI</strong>
+                    <span>XỬ LÝ NGHIỆP VỤ</span>
+                </div>
+                <div class="row-content core-wrap">
+                    <div class="core-title">CORE OPERATIONS — EXPRESS API :4001</div>
+                    <div style="display: grid; gap: 0.85rem;" class="grid-4">
+                        <div class="arch-block bg-white-border">
+                            <div class="arch-block-title">Hợp đồng</div>
+                            <div class="arch-block-sub">CRM · Thực thi HĐ</div>
+                        </div>
+                        <div class="arch-block bg-white-border">
+                            <div class="arch-block-title">Bàn giao &amp; HL</div>
+                            <div class="arch-block-sub">Workflow phê duyệt</div>
+                        </div>
+                        <div class="arch-block bg-white-border">
+                            <div class="arch-block-title">Bảo hành / SC</div>
+                            <div class="arch-block-sub">SLA · Vật tư</div>
+                        </div>
+                        <div class="arch-block bg-white-border">
+                            <div class="arch-block-title">Báo cáo</div>
+                            <div class="arch-block-sub">Dashboard điều hành</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flow-arrow" style="margin-top: 0.2rem;">▼</div>
+
+            <div class="arch-row">
+                <div class="row-label">
+                    <strong>4. LƯU TRỮ DỮ LIỆU</strong>
+                    <span>DATA &amp; FILES</span>
+                </div>
+                <div class="row-content grid-2">
+                    <div class="arch-block bg-green">
+                        <div class="arch-block-title">PostgreSQL</div>
+                        <div class="arch-block-sub">Cơ sở dữ liệu chính · Prisma ORM</div>
+                    </div>
+                    <div class="arch-block bg-green">
+                        <div class="arch-block-title">Volume Uploads</div>
+                        <div class="arch-block-sub"><code>backend/uploads</code> — Tài liệu &amp; Workflow</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="arch-row" style="margin-top: 1.5rem;">
+                <div class="row-label">
+                    <strong>5. NỀN TẢNG</strong>
+                    <span>CÔNG NGHỆ</span>
+                </div>
+                <div class="row-content grid-4">
+                    <div class="arch-block bg-grey">
+                        <div class="arch-block-title">React + Vite</div>
+                        <div class="arch-block-sub">Phía Frontend</div>
+                    </div>
+                    <div class="arch-block bg-grey">
+                        <div class="arch-block-title">Express 5</div>
+                        <div class="arch-block-sub">REST API Backend</div>
+                    </div>
+                    <div class="arch-block bg-grey">
+                        <div class="arch-block-title">Prisma</div>
+                        <div class="arch-block-sub">Migration &amp; ORM</div>
+                    </div>
+                    <div class="arch-block bg-grey">
+                        <div class="arch-block-title">Docker</div>
+                        <div class="arch-block-sub">Đóng gói triển khai</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3>2.1 Luồng HTTP</h3>
+        <div class="mermaid-card"><pre class="mermaid">
+sequenceDiagram
+    participant B as Browser
+    participant FN as Nginx FE container
+    participant BE as Express :4001
+    participant DB as PostgreSQL
+    B->>FN: GET /hop-dong (SPA)
+    FN-->>B: index.html + JS
+    B->>FN: GET /api/v1/contracts (Bearer JWT)
+    FN->>BE: proxy_pass backend:4001
+    BE->>DB: Prisma
+    DB-->>BE: data
+    BE-->>FN: JSON
+    FN-->>B: response
+        </pre></div>
+
+        <h3>2.2 Ma trận cổng &amp; firewall</h3>
+        <table class="spec-table">
+            <thead><tr><th>Dịch vụ</th><th>Cổng</th><th>Expose ra LAN?</th><th>Ghi chú</th></tr></thead>
+            <tbody>
+                <tr><td>Reverse proxy (HTTPS)</td><td>443</td><td>✅ Có</td><td>User truy cập duy nhất</td></tr>
+                <tr><td>Frontend container</td><td>80 → FRONTEND_PORT</td><td>⚠️ Tùy chọn</td><td>Thường chỉ bind 127.0.0.1</td></tr>
+                <tr><td>Backend API</td><td>4001</td><td>❌ Không</td><td>Chỉ qua proxy /api hoặc Docker network</td></tr>
+                <tr><td>PostgreSQL</td><td>5432</td><td>❌ Không</td><td>Chỉ IP backend server</td></tr>
+                <tr><td>Dev: PG local</td><td>5433</td><td>❌</td><td><code>docker-compose.local-db.yml</code></td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+            <strong>⚠️ Quan trọng — VITE_API_URL khi build Docker:</strong><br>
+            Trong production Docker, <strong>không set</strong> <code>VITE_API_URL</code> (để trống). Frontend gọi API qua đường dẫn tương đối <code>/api/v1/...</code>, Nginx container proxy tới <code>backend:4001</code> theo <code>nginx.local.conf</code>.
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 03 -->
+<div class="doc-page" id="s03">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §03 Hạ tầng</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>3. Yêu cầu hạ tầng &amp; phần mềm</h2>
+
+        <h3>3.1 Server Production</h3>
+        <table class="spec-table">
+            <thead><tr><th>Hạng mục</th><th>Tối thiểu</th><th>Khuyến nghị</th></tr></thead>
+            <tbody>
+                <tr><td>CPU</td><td>4 vCPU</td><td>8 vCPU</td></tr>
+                <tr><td>RAM</td><td>8 GB</td><td>16 GB (nhiều user + upload)</td></tr>
+                <tr><td>Ổ đĩa</td><td>80 GB SSD</td><td>200 GB+ (upload tài liệu QT/HĐ)</td></tr>
+                <tr><td>OS</td><td colspan="2">Ubuntu 22.04 LTS / Windows Server + WSL2 / Docker Desktop</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.2 Phần mềm cần cài</h3>
+        <table class="spec-table">
+            <thead><tr><th>Phần mềm</th><th>Phiên bản</th><th>Môi trường</th></tr></thead>
+            <tbody>
+                <tr><td>Docker Engine</td><td>24+</td><td>Staging, Production</td></tr>
+                <tr><td>Docker Compose</td><td>v2+</td><td>Staging, Production</td></tr>
+                <tr><td>Node.js</td><td>20 LTS</td><td>Dev, máy build image</td></tr>
+                <tr><td>npm / pnpm</td><td>Mới nhất</td><td>Dev</td></tr>
+                <tr><td>PostgreSQL</td><td>14+ (khuyến nghị 16)</td><td>Tất cả</td></tr>
+                <tr><td>Git</td><td>2.x</td><td>Tùy chọn (clone repo)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>3.3 Ba môi trường</h3>
+        <table class="spec-table">
+            <thead><tr><th>ENV</th><th>Mục đích</th><th>NODE_ENV</th><th>Đăng ký công khai</th></tr></thead>
+            <tbody>
+                <tr><td>Development</td><td>Dev feature, hot-reload</td><td>development</td><td>Tắt (cần admin JWT)</td></tr>
+                <tr><td>Staging</td><td>UAT 5 role trước go-live</td><td>production*</td><td>Tắt (403)</td></tr>
+                <tr><td>Production</td><td>Vận hành VTX</td><td>production</td><td>Tắt (403)</td></tr>
+            </tbody>
+        </table>
+        <p><em>*Staging nên dùng <code>NODE_ENV=production</code> để giống hành vi auth thật.</em></p>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 04 -->
+<div class="doc-page" id="s04">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §04 Cấu trúc repo</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>4. Cấu trúc thư mục &amp; gói bàn giao</h2>
+
+        <h3>4.1 Thư mục quan trọng</h3>
+        <pre><code>asms/
+├── Dockerfile                 # Build frontend (Vite → Nginx)
+├── nginx.local.conf           # SPA + proxy /api/ → backend:4001
+├── docker-compose.yml         # Production: frontend + backend
+├── docker-compose.local-db.yml # Chỉ PostgreSQL dev
+├── src/                       # Frontend React
+├── backend/
+│   ├── Dockerfile             # Build backend Node
+│   ├── docker-entrypoint.sh   # node dist/main.js
+│   ├── .env.example
+│   ├── prisma/
+│   │   ├── schema.prisma
+│   │   └── migrations/        # ~55 migration SQL
+│   ├── uploads/               # File runtime (mount volume)
+│   │   ├── documents/
+│   │   └── workflow/
+│   ├── scripts/
+│   │   └── bootstrap-auth.ts  # Tạo user/role lần đầu prod
+│   └── src/                   # Express modules
+└── docs/
+    ├── ASMS_phuong-an-trien-khai.html  # Tài liệu này
+    ├── production-smoke.md
+    ├── release-readiness.md
+    └── uat-checklist.md</code></pre>
+
+        <h3>4.2 Gói bàn giao cho VTX</h3>
+        <table class="spec-table">
+            <thead><tr><th>#</th><th>Hạng mục</th><th>Định dạng</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Mã nguồn đầy đủ</td><td>Git repo hoặc .zip</td></tr>
+                <tr><td>2</td><td>Image Docker (tùy chọn)</td><td><code>asms-frontend-x.y.z.tar</code>, <code>asms-backend-x.y.z.tar</code></td></tr>
+                <tr><td>3</td><td>File cấu hình mẫu</td><td><code>backend/.env.example</code> (xem mục 6)</td></tr>
+                <tr><td>4</td><td>Tài liệu</td><td>HTML triển khai + hướng dẫn sử dụng + UAT checklist</td></tr>
+                <tr><td>5</td><td>Tag release</td><td><code>v1.0.0</code> trên Git</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 05 INFRA -->
+<div class="doc-page" id="s05">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §05 Hạ tầng &amp; Docker</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>5. Hạ tầng &amp; Triển khai</h2>
+        <div class="highlight-box" style="background: #f0fdf4; border-left-color: #22c55e;">
+            Hệ thống chạy trên nền tảng <strong>Docker</strong>, giúp môi trường DEV và PROD đồng nhất. ASMS không dùng Redis — session JWT stateless, cron chạy in-process trong backend.
+        </div>
+        <ul>
+            <li><strong>Database:</strong> PostgreSQL 14+ (khuyến nghị 16).</li>
+            <li><strong>Reverse Proxy:</strong> Nginx — SPA static + proxy <code>/api/</code> → <code>backend:4001</code>.</li>
+            <li><strong>Deployment:</strong> Build image <code>asms-frontend</code> + <code>asms-backend</code>, chạy qua <code>docker-compose.yml</code> trên server VTX.</li>
+            <li><strong>Port API:</strong> Backend <code>4001</code>, prefix <code>/api/v1</code>.</li>
+        </ul>
+
+        <h3>5.1 Frontend Dockerfile (root)</h3>
+        <ul>
+            <li>Stage 1: <code>node:20-alpine</code> — <code>npm run build</code> (không truyền VITE_API_URL → API relative).</li>
+            <li>Stage 2: <code>nginx:1.27-alpine</code> — copy <code>dist/</code> + <code>nginx.local.conf</code>.</li>
+        </ul>
+
+        <h3>5.2 Backend Dockerfile</h3>
+        <ul>
+            <li><code>npm ci</code> → <code>prisma generate</code> → <code>npm run build</code> (tsc).</li>
+            <li>Entrypoint: <code>node dist/main.js</code> (không tự migrate — chạy thủ công).</li>
+            <li>Khi khởi động: kết nối DB (retry 5 lần), seed definitions/settings, start cron notify.</li>
+        </ul>
+
+        <h3>5.3 docker-compose.yml</h3>
+        <pre><code>services:
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: asms_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: asms_backend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      PORT: "${BACKEND_PORT}"
+      DATABASE_URL: "${DATABASE_URL}"
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    volumes:
+      - ./backend/uploads:/app/uploads</code></pre>
+
+        <h3>5.4 Lệnh build image</h3>
+        <div class="step-card">
+            <strong>Build từ thư mục gốc repo:</strong><br>
+            <code>docker build -t asms-frontend:1.0.0 .</code><br>
+            <code>docker build -t asms-backend:1.0.0 ./backend</code>
+        </div>
+
+        <h3>5.5 nginx.local.conf — proxy API</h3>
+        <pre><code>location /api/ {
+    proxy_pass http://backend:4001/api/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}</code></pre>
+        <p>Tên host <code>backend</code> = tên service trong Compose (Docker DNS nội bộ).</p>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 06 ENV -->
+<div class="doc-page" id="s06">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §06 Biến môi trường</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>6. Hướng dẫn cấu hình Biến môi trường (.env)</h2>
+        <p>Hệ thống sử dụng cơ chế nạp biến môi trường phân cấp để đảm bảo tính linh hoạt giữa các môi trường phát triển và vận hành thực tế.</p>
+
+        <div class="card">
+            <h4>1. Cấu hình chạy Local (Phát triển trực tiếp)</h4>
+            <p>Dành cho lập trình viên chạy <code>npm run dev</code> trên máy cá nhân (DB có thể qua Docker <code>docker-compose.local-db.yml</code>).</p>
+            <table class="spec-table">
+                <thead>
+                    <tr><th>Thành phần</th><th>File cần sửa</th><th>Biến quan trọng &amp; Giá trị tiêu chuẩn</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Backend (Express)</strong></td>
+                        <td><code>backend/.env</code></td>
+                        <td>
+                            <code>PORT=4001</code><br>
+                            <code>DATABASE_URL="postgresql://asms:asms_local_dev@localhost:5433/asms?schema=public"</code><br>
+                            <code>JWT_SECRET="dev-only-change-in-production"</code><br>
+                            <code>NODE_ENV=development</code>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Frontend (React)</strong></td>
+                        <td><em>Không bắt buộc</em></td>
+                        <td>
+                            Vite dev proxy <code>/api</code> → <code>127.0.0.1:4001</code><br>
+                            Nếu preview: <code>VITE_API_URL=http://localhost:4001</code>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h4>2. Cấu hình Docker (Staging / Production)</h4>
+            <p>Khi đóng gói container, các biến được quản lý tập trung tại thư mục deploy để Docker Compose nạp vào các service.</p>
+            <table class="spec-table">
+                <thead>
+                    <tr><th>Loại cấu hình</th><th>File cần sửa</th><th>Cơ chế ánh xạ biến</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Docker Staging / Prod</strong></td>
+                        <td><code>.env</code> (thư mục deploy)</td>
+                        <td>Nạp mặc định qua <code>env_file</code> trong <code>docker-compose.yml</code></td>
+                    </tr>
+                </tbody>
+            </table>
+            <pre style="margin-top:10px"><code>FRONTEND_IMAGE=asms-frontend:1.0.0
+BACKEND_IMAGE=asms-backend:1.0.0
+FRONTEND_PORT=80
+BACKEND_PORT=4001
+NODE_ENV=production
+JWT_SECRET=&lt;sinh-ngẫu-nhiên-64-hex&gt;
+DATABASE_URL="postgresql://asms_app:PASS@10.0.0.50:5432/asms?schema=public"</code></pre>
+        </div>
+
+        <h4>Chi tiết các nhóm biến hệ thống (Production):</h4>
+        <table class="spec-table">
+            <thead>
+                <tr><th style="width: 220px;">Nhóm / Biến</th><th>Mô tả chi tiết &amp; Yêu cầu cấu hình</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>DATABASE_URL</strong></td>
+                    <td>Chuỗi Prisma PostgreSQL. Host = IP/hostname DB server — <strong>không</strong> dùng <code>localhost</code> nếu DB ngoài container backend.</td>
+                </tr>
+                <tr>
+                    <td><strong>JWT_SECRET</strong></td>
+                    <td>Chuỗi mã hóa Token. Sinh ngẫu nhiên:<br>
+                        <code>node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"</code></td>
+                </tr>
+                <tr>
+                    <td><strong>NODE_ENV</strong></td>
+                    <td><code>production</code> → tắt auto-seed user demo, chặn <code>POST /auth/register</code> công khai.</td>
+                </tr>
+                <tr>
+                    <td><strong>AUTH_*</strong></td>
+                    <td>Rate limit login/refresh — xem <code>backend/src/config/env.ts</code>.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box" style="background: #fffbeb; border-left-color: #f59e0b; margin-top: 1rem;">
+            <strong>⚠️ Lưu ý về bảo mật:</strong><br>
+            Tuyệt đối không lưu các giá trị thực tế của môi trường Production vào git. Luôn sử dụng file <code>backend/.env.example</code> làm mẫu và cấu hình file <code>.env</code> riêng biệt trên server.
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 07 PG -->
+<div class="doc-page" id="s07">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §07 PostgreSQL</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>7. PostgreSQL — cài đặt &amp; tạo DB</h2>
+
+        <h3>7.1 Dev local — Docker chỉ DB</h3>
+        <pre><code>docker compose -f docker-compose.local-db.yml up -d
+# PostgreSQL: localhost:5433, user/pass/db: asms / asms_local_dev / asms</code></pre>
+
+        <h3>7.2 Production — tạo user &amp; database (psql)</h3>
+        <pre><code>-- Chạy với quyền superuser
+CREATE USER asms_app WITH PASSWORD 'ThayBangMatKhauManh!';
+CREATE DATABASE asms OWNER asms_app ENCODING 'UTF8';
+GRANT ALL PRIVILEGES ON DATABASE asms TO asms_app;
+
+-- PostgreSQL 15+: quyền schema public
+\c asms
+GRANT ALL ON SCHEMA public TO asms_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO asms_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO asms_app;</code></pre>
+
+        <h3>7.3 Chuỗi DATABASE_URL</h3>
+        <pre><code>postgresql://asms_app:PASSWORD@HOST:5432/asms?schema=public</code></pre>
+        <p>Nếu mật khẩu có ký tự đặc biệt (<code>@ # %</code>…), phải URL-encode trong chuỗi connection.</p>
+
+        <h3>7.4 Kiểm tra kết nối</h3>
+        <pre><code>cd backend
+npx prisma db execute --stdin &lt;&lt;'SQL'
+SELECT 1;
+SQL
+# Hoặc: npm run db:check</code></pre>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 08 NGINX HOST -->
+<div class="doc-page" id="s08">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §08 Reverse proxy</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>8. Nginx reverse proxy &amp; HTTPS (host)</h2>
+        <p>Khuyến nghị đặt Nginx trên <strong>host</strong> (ngoài Docker) để terminate SSL, proxy vào container frontend.</p>
+
+        <h3>8.1 Ví dụ cấu hình Nginx host</h3>
+        <pre><code>server {
+    listen 443 ssl http2;
+    server_name asms.vtx.local;
+
+    ssl_certificate     /etc/ssl/certs/asms.crt;
+    ssl_certificate_key /etc/ssl/private/asms.key;
+
+    client_max_body_size 50M;   # upload tài liệu
+
+    location / {
+        proxy_pass http://127.0.0.1:80;   # FRONTEND_PORT
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+server {
+    listen 80;
+    server_name asms.vtx.local;
+    return 301 https://$host$request_uri;
+}</code></pre>
+
+        <h3>8.2 Lưu ý upload file lớn</h3>
+        <p>Đồng bộ <code>client_max_body_size</code> trên cả Nginx host và container FE nếu cần file &gt; 1MB.</p>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 09 DEV -->
+<div class="doc-page" id="s09">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §09 Development</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>9. Hướng dẫn cho Developer — Phát triển Local</h2>
+        <p>Chào mừng bạn gia nhập dự án! Dưới đây là các bước để chạy môi trường Local và quy chuẩn đóng gói Production.</p>
+
+        <h3>9.1 Phát triển trực tiếp (Local Machine Development)</h3>
+        <p>Khởi tạo nhanh cho lập trình viên phát triển tính năng, không dùng Docker cho app (chỉ DB nếu cần).</p>
+        <div class="step-card">
+            <strong>1. Cài đặt cơ bản:</strong> Node.js 20 LTS, Docker Desktop (cho PostgreSQL local), Git.
+        </div>
+        <div class="step-card">
+            <strong>2. Khởi tạo Database (Local):</strong><br>
+            <code>docker compose -f docker-compose.local-db.yml up -d</code><br>
+            Copy <code>backend/.env.example</code> → <code>backend/.env</code>, cập nhật <code>DATABASE_URL</code>.
+        </div>
+        <div class="step-card">
+            <strong>3. Chạy Backend:</strong><br>
+            <code>cd backend && npm install && npx prisma migrate dev && npm run bootstrap:auth && npm run dev</code>
+            <div style="margin-top: 8px; font-size: 0.85rem; color: #475569;">
+                <em>Lưu ý:</em> <code>migrate dev</code> chỉ dùng local. Production dùng <code>migrate deploy</code>.
+            </div>
+        </div>
+        <div class="step-card">
+            <strong>4. Chạy Frontend:</strong><br>
+            Từ root: <code>npm install && npm run dev</code> hoặc <code>npm run dev:all</code><br>
+            FE: <code>http://localhost:8080</code> · BE: <code>http://localhost:4001</code>
+        </div>
+
+        <h3>9.1 Tài khoản demo (sau seed dev)</h3>
+        <table class="spec-table">
+            <thead><tr><th>Email</th><th>Role</th><th>Mật khẩu mặc định</th></tr></thead>
+            <tbody>
+                <tr><td>admin@demo.local</td><td>admin</td><td rowspan="5"><code>Password123!</code></td></tr>
+                <tr><td>manager@demo.local</td><td>manager</td></tr>
+                <tr><td>technician@demo.local</td><td>technician</td></tr>
+                <tr><td>viewer@demo.local</td><td>viewer</td></tr>
+                <tr><td>sales@demo.local</td><td>sales</td></tr>
+            </tbody>
+        </table>
+        <p><em>Chỉ dùng dev/staging. Production: bootstrap một lần rồi đổi mật khẩu ngay.</em></p>
+
+        <h3>9.2 Lệnh hữu ích</h3>
+        <pre><code>npm run lint && npm run test && npm run build
+cd backend && npm run build
+cd backend && npm run prisma:studio    # GUI xem DB
+node ../scripts/uc-smoke-test.mjs      # cần BE đang chạy</code></pre>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 10 STAGING -->
+<div class="doc-page" id="s10">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §10 Staging</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>10. Kiểm tra Docker Staging (Bắt buộc trước triển khai)</h2>
+        <p>Tuyệt đối không deploy production khi chưa pass bước staging này.</p>
+        <div class="highlight-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+            <strong>Quy tắc:</strong> Phải chạy thử Docker local/staging trước khi đóng gói lên server VTX.
+        </div>
+
+        <h3>10.1 Chuẩn bị thư mục deploy</h3>
+        <pre><code>mkdir -p /opt/asms-staging
+cd /opt/asms-staging
+# Copy: docker-compose.yml, .env, backend/uploads (mkdir)</code></pre>
+
+        <h3>10.2 Build &amp; Run</h3>
+        <div class="step-card" style="border-left-color: #f59e0b;">
+            <strong>Build &amp; Run:</strong><br>
+            <code>docker build -t asms-frontend:staging .</code><br>
+            <code>docker build -t asms-backend:staging ./backend</code><br>
+            <code>docker compose up -d</code><br>
+            <code>docker compose logs -f backend</code>
+        </div>
+
+        <h3>10.3 Migrate &amp; bootstrap (lần đầu)</h3>
+        <pre><code>docker compose exec backend npx prisma migrate deploy
+docker compose exec backend npm run bootstrap:auth</code></pre>
+
+        <h3>10.4 Kiểm tra staging</h3>
+        <ul class="checklist">
+            <li><code>curl http://localhost/api/v1/health</code> → success true</li>
+            <li>Login UI → Dashboard không loop 401</li>
+            <li>CRUD Khách hàng, Hợp đồng, Vật tư</li>
+            <li>Upload tài liệu bước quy trình → file trong <code>backend/uploads/</code></li>
+            <li>Chạy <code>docs/uat-checklist.md</code> — 5 role</li>
+        </ul>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 11 PRODUCTION -->
+<div class="doc-page" id="s11">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §11 Production</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>11. Triển khai Production (Remote Server)</h2>
+        <p>Đóng gói image Docker và triển khai trên server nội bộ VTX (build trên server hoặc chuyển file <code>.tar</code>).</p>
+
+        <div class="highlight-box" style="background: #eff6ff; border-left-color: #3b82f6;">
+            <strong>Cách 1: Build trên Server (có Git)</strong><br>
+            Clone tag release → tạo <code>.env</code> → <code>docker build</code> → <code>docker compose up -d</code> → migrate + bootstrap.
+        </div>
+        <div class="highlight-box" style="background: #f8fafc; border-left-color: #94a3b8;">
+            <strong>Cách 2: Triển khai Thủ công (chuyển image .tar)</strong><br>
+            <code>docker build -t asms-frontend:1.0.0 .</code><br>
+            <code>docker build -t asms-backend:1.0.0 ./backend</code><br>
+            <code>docker save -o asms-frontend-1.0.0.tar asms-frontend:1.0.0</code><br>
+            <code>docker save -o asms-backend-1.0.0.tar asms-backend:1.0.0</code><br>
+            <code>scp *.tar docker-compose.yml .env user@IP:/opt/asms/</code><br>
+            <code>ssh user@IP "docker load -i asms-frontend-1.0.0.tar && docker load -i asms-backend-1.0.0.tar && docker compose up -d"</code>
+        </div>
+
+        <h3>11.1 Checklist triển khai Production</h3>
+        <table class="spec-table">
+            <thead><tr><th>Bước</th><th>Lệnh / Hành động</th><th>Kiểm tra</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Cài Docker Engine + Compose</td><td><code>docker --version</code></td></tr>
+                <tr><td>2</td><td>Clone repo tag <code>v1.0.0</code> → <code>/opt/asms</code></td><td>File Dockerfile có</td></tr>
+                <tr><td>3</td><td>Tạo PostgreSQL + user (mục 7)</td><td>psql connect OK</td></tr>
+                <tr><td>4</td><td>Tạo <code>.env</code> production (mục 5)</td><td>JWT_SECRET mạnh</td></tr>
+                <tr><td>5</td><td><code>mkdir -p backend/uploads/documents backend/uploads/workflow</code></td><td>Quyền ghi</td></tr>
+                <tr><td>6</td><td>Build images (mục 6.4)</td><td><code>docker images</code></td></tr>
+                <tr><td>7</td><td><code>docker compose up -d</code></td><td>2 container running</td></tr>
+                <tr><td>8</td><td>Migrate + bootstrap (mục 12)</td><td>Login admin OK</td></tr>
+                <tr><td>9</td><td>Cấu hình Nginx host + HTTPS (mục 8)</td><td>https://asms.vtx.local</td></tr>
+                <tr><td>10</td><td>Smoke + UAT (mục 16)</td><td>Biên bản ký</td></tr>
+            </tbody>
+        </table>
+
+        <h3>11.2 Lịch triển khai 5 phase</h3>
+        <table class="spec-table">
+            <thead><tr><th>Phase</th><th>Tuần</th><th>Nội dung</th><th>Đầu ra</th></tr></thead>
+            <tbody>
+                <tr><td>P0</td><td>1</td><td>Server, DB, firewall, .env</td><td>Hạ tầng sẵn sàng</td></tr>
+                <tr><td>P1</td><td>2</td><td>Staging Docker, migrate, bootstrap</td><td>Login + CRUD OK</td></tr>
+                <tr><td>P2</td><td>3–4</td><td>UAT 5 role đầy đủ</td><td>Biên bản UAT</td></tr>
+                <tr><td>P3</td><td>5</td><td>Cutover production, HTTPS, backup</td><td>Go-live</td></tr>
+                <tr><td>P4</td><td>6</td><td>Theo dõi 48h, đào tạo admin</td><td>Bàn giao vận hành</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 12 DB -->
+<div class="doc-page" id="s12">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §12 Database</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>12. Database: migrate, bootstrap, seed</h2>
+
+        <h3>12.1 Prisma migrate — Production</h3>
+        <div class="highlight-box" style="background: #fef2f2; border-left-color: #ef4444;"><strong>KHÔNG</strong> dùng <code>prisma migrate dev</code> trên production. Chỉ dùng <code>migrate deploy</code>.</div>
+        <pre><code># Trong container hoặc máy có DATABASE_URL production
+cd backend
+npx prisma migrate deploy
+npx prisma generate</code></pre>
+        <p>Áp dụng tuần tự ~55 migration từ <code>20260429084424_init</code> đến mới nhất.</p>
+
+        <h3>12.2 Khởi động server tự động (mỗi lần start)</h3>
+        <p>Backend <code>startServer()</code> luôn chạy (không phụ thuộc production):</p>
+        <ul>
+            <li><code>seedDataDefinitions()</code> — danh mục thuộc tính mặc định</li>
+            <li><code>ensureDefaultSystemSettings()</code> — SLA, nhắc lịch…</li>
+            <li><code>ensureRolePermissionsSeeded()</code> — ma trận quyền mặc định</li>
+            <li><code>ensureNotificationPreferencesForAllUsers()</code></li>
+            <li><code>startNotificationCron()</code> — job SLA &amp; nhắc ngày</li>
+        </ul>
+        <p><strong>Chỉ non-production:</strong> <code>seedAuthUsers()</code> tự chạy khi start (user demo).</p>
+
+        <h3>12.3 Bootstrap production (một lần)</h3>
+        <pre><code>docker compose exec backend npm run bootstrap:auth</code></pre>
+        <p>Script <code>bootstrap-auth.ts</code> tạo/idempotent:</p>
+        <ul>
+            <li>5 role hệ thống</li>
+            <li>5 user demo (email <code>*@demo.local</code>, pass <code>Password123!</code>)</li>
+            <li>Definitions, điều khoản mẫu, workflow seed</li>
+        </ul>
+        <p><strong>Sau bootstrap:</strong> đổi mật khẩu admin; tạo user thật qua <strong>Cài đặt → Người dùng</strong> hoặc <code>POST /api/v1/users</code> (admin JWT).</p>
+
+        <h3>12.4 Tạo user admin thủ công (API)</h3>
+        <pre><code>POST /api/v1/users
+Authorization: Bearer &lt;admin-token&gt;
+{
+  "email": "admin@vtx.vn",
+  "fullName": "Quản trị VTX",
+  "password": "MatKhauManh!",
+  "roleId": "&lt;uuid-role-admin&gt;"
+}</code></pre>
+
+        <h3>12.5 Backup trước migrate mới</h3>
+        <pre><code>pg_dump -h HOST -U asms_app -d asms -F c -f asms_pre_migrate_$(date +%Y%m%d).dump</code></pre>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 13 SYSTEM CONFIG -->
+<div class="doc-page" id="s13">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §13 Cấu hình hệ thống</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>13. Cấu hình hệ thống sau go-live</h2>
+        <p>Đăng nhập <strong>admin</strong> → <strong>Cài đặt → Hệ thống</strong>. Các tham số mặc định từ <code>system-settings/defaults.ts</code>:</p>
+
+        <table class="spec-table">
+            <thead><tr><th>Key</th><th>Mặc định</th><th>Ý nghĩa</th></tr></thead>
+            <tbody>
+                <tr><td>warranty_sla_default_hours</td><td>48</td><td>SLA phiếu BH mặc định (giờ)</td></tr>
+                <tr><td>material_low_threshold_percent</td><td>10</td><td>Cảnh báo tồn kho thấp (%)</td></tr>
+                <tr><td>contract_expiry_remind_days</td><td>30</td><td>Nhắc HĐ sắp hết hạn (ngày)</td></tr>
+                <tr><td>notification_daily_run_hour</td><td>8</td><td>Giờ chạy cron nhắc ngày (0–23, giờ server)</td></tr>
+                <tr><td>notification_sla_scan_interval_minutes</td><td>60</td><td>Chu kỳ quét SLA HĐ (phút)</td></tr>
+                <tr><td>contract_value_high_threshold</td><td>500000000</td><td>Ngưỡng HĐ lớn (VND)</td></tr>
+                <tr><td>contract_remind_days_high</td><td>90</td><td>Nhắc trước HĐ lớn (ngày)</td></tr>
+                <tr><td>contract_remind_days_low</td><td>14</td><td>Nhắc trước HĐ nhỏ (ngày)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>13.1 Cấu hình bổ sung qua UI</h3>
+        <ul>
+            <li><strong>Cài đặt → Thuộc tính:</strong> loại HĐ, loại BG, ưu tiên BH…</li>
+            <li><strong>Cài đặt → Phân quyền:</strong> ma trận CRUD theo role</li>
+            <li><strong>Quy trình:</strong> workflow BG, HL, BH, SP</li>
+            <li><strong>Cài đặt → Đơn vị phản ánh:</strong> routing phản ánh KH</li>
+        </ul>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 14 UPLOADS -->
+<div class="doc-page" id="s14">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §14 Uploads</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>14. Lưu trữ file &amp; volume uploads</h2>
+
+        <h3>14.1 Cấu hình Volume trong docker-compose.yml</h3>
+        <div class="highlight-box" style="background: #f8fafc; border-left-color: #64748b;">
+            <strong>Cấu hình Volume:</strong><br>
+            <code>volumes:</code><br>
+            <code>&nbsp;&nbsp;- ./backend/uploads:/app/uploads</code><br>
+            <span style="font-size: 0.85rem; color: #64748b;">Tất cả tài liệu và file workflow được lưu vào thư mục host để không mất dữ liệu khi restart container.</span>
+        </div>
+
+        <h3>14.2 Cấu trúc thư mục</h3>
+        <pre><code>backend/uploads/
+├── documents/          # Module tài liệu tổng (multipart upload)
+└── workflow/
+    └── &lt;instanceId&gt;/  # File đính kèm từng bước quy trình</code></pre>
+
+        <h3>14.2 URL truy cập file</h3>
+        <p>Static serve: <code>GET /api/v1/uploads/...</code> (Express static trong <code>app.ts</code>).</p>
+
+        <h3>14.3 Volume Docker</h3>
+        <pre><code>volumes:
+  - ./backend/uploads:/app/uploads</code></pre>
+        <p><strong>Backup:</strong> Sao lưu thư mục <code>uploads/</code> cùng lịch pg_dump.</p>
+
+        <h4>14.4 Kiểm tra file trên Server:</h4>
+        <div class="step-card" style="background: #1e293b; color: #f8fafc; border: none;">
+            <code># Truy cập vào container backend</code><br>
+            <code>docker exec -it asms_backend ls -R /app/uploads</code><br><br>
+            <code># Copy tệp từ server về máy cá nhân để kiểm tra</code><br>
+            <code>docker cp asms_backend:/app/uploads/documents/tenfile.pdf ./test.pdf</code>
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 15 CRON -->
+<div class="doc-page" id="s15">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §15 Cron</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>15. Cron thông báo &amp; job nền</h2>
+        <p>Chạy <strong>trong process Node</strong> backend (<code>jobs/notify.ts</code>) — không cần crontab OS.</p>
+
+        <table class="spec-table">
+            <thead><tr><th>Job</th><th>Tần suất</th><th>Nội dung</th></tr></thead>
+            <tbody>
+                <tr><td>SLA HĐ thực thi</td><td>Mỗi N phút (mặc định 60)</td><td><code>runContractExecutionSlaScan()</code></td></tr>
+                <tr><td>SLA phản ánh</td><td>Cùng chu kỳ SLA</td><td><code>scanFeedbackSlaOverdue()</code></td></tr>
+                <tr><td>Nhắc lịch ngày</td><td>1 lần/ngày tại <code>notification_daily_run_hour</code></td><td>HĐ hết hạn, vật tư thấp, kỷ niệm KH…</td></tr>
+            </tbody>
+        </table>
+
+        <div class="highlight-box">
+            <strong>Lưu ý vận hành:</strong> Giờ cron theo <strong>timezone máy chủ</strong>. Đặt TZ server = <code>Asia/Ho_Chi_Minh</code> hoặc điều chỉnh <code>notification_daily_run_hour</code> cho phù hợp.
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 16 TEST -->
+<div class="doc-page" id="s16">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §16 Kiểm tra</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>16. Kiểm tra, smoke test &amp; UAT</h2>
+
+        <h3>16.1 Smoke API (curl)</h3>
+        <p>Thay <code>BASE</code> = <code>https://asms.vtx.local</code> hoặc <code>http://localhost</code></p>
+        <pre><code># 1. Health
+curl -s BASE/api/v1/health | jq .
+
+# 2. Register bị khóa (production)
+curl -s -o /dev/null -w "%{http_code}" -X POST BASE/api/v1/auth/register
+# Kỳ vọng: 403
+
+# 3. Login
+curl -s -X POST BASE/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@demo.local","password":"Password123!"}'
+
+# 4. Không JWT → 401
+curl -s -o /dev/null -w "%{http_code}" BASE/api/v1/customers
+
+# 5. Có JWT → 200
+curl -s BASE/api/v1/customers -H "Authorization: Bearer TOKEN"</code></pre>
+
+        <h3>16.2 Smoke UI</h3>
+        <ul class="checklist">
+            <li>Login / logout — reload vẫn giữ phiên</li>
+            <li>Dashboard — tab Tổng quan load KPI</li>
+            <li>Khách hàng, Hợp đồng, Vật tư, Báo cáo — không màn trắng</li>
+            <li>Viewer — không nút Tạo/Sửa trái phép</li>
+            <li>Workflow — tạo BG/BH, phê duyệt bước, upload file</li>
+            <li>Thông báo — chuông header, đánh dấu đã đọc</li>
+        </ul>
+
+        <h3>16.3 Quality gates trước release</h3>
+        <pre><code>npm run lint && npm run build && npm run test
+cd backend && npm run build
+node scripts/uc-smoke-test.mjs
+node scripts/crud-validation-test.mjs</code></pre>
+
+        <h3>16.4 UAT</h3>
+        <p>Chạy đầy đủ <code>docs/uat-checklist.md</code> — 5 role trên staging, ký biên bản trước production.</p>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 17 UPDATE -->
+<div class="doc-page" id="s17">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §17 Nâng cấp</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>17. Nâng cấp phiên bản (update)</h2>
+
+        <h3>17.1 Quy trình update an toàn</h3>
+        <ol>
+            <li>Đọc CHANGELOG / release notes tag mới.</li>
+            <li><strong>Backup DB + uploads</strong> (mục 18).</li>
+            <li>Build image mới <code>asms-*:1.0.1</code> hoặc load .tar.</li>
+            <li><code>docker compose down</code> (giữ volume uploads).</li>
+            <li>Cập nhật <code>.env</code> image tag nếu cần.</li>
+            <li><code>docker compose up -d</code></li>
+            <li><code>docker compose exec backend npx prisma migrate deploy</code></li>
+            <li>Smoke test (mục 16).</li>
+        </ol>
+
+        <div class="highlight-box" style="background: #fffbeb; border-left-color: #f59e0b;">
+            Nếu migration thất bại → <strong>rollback DB</strong> từ backup, load image phiên bản cũ, <code>compose up</code> lại.
+        </div>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 18 SECURITY -->
+<div class="doc-page" id="s18">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §18 Bảo mật</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>18. Backup, rollback &amp; bảo mật</h2>
+
+        <h3>18.1 Backup định kỳ</h3>
+        <table class="spec-table">
+            <thead><tr><th>Đối tượng</th><th>Lệnh / Cách</th><th>Tần suất</th></tr></thead>
+            <tbody>
+                <tr><td>PostgreSQL</td><td><code>pg_dump -F c</code></td><td>Hàng ngày, giữ 30 bản</td></tr>
+                <tr><td>uploads/</td><td><code>tar czf uploads_YYYYMMDD.tar.gz backend/uploads</code></td><td>Hàng ngày</td></tr>
+                <tr><td>Docker images</td><td><code>docker save</code> tag đang chạy</td><td>Mỗi release</td></tr>
+                <tr><td>.env</td><td>Copy mã hóa/vault nội bộ</td><td>Khi đổi secret</td></tr>
+            </tbody>
+        </table>
+
+        <h3>18.2 Rollback</h3>
+        <pre><code>docker compose down
+docker load -i asms-backend-PREV.tar
+docker load -i asms-frontend-PREV.tar
+# Sửa .env image tag → PREV
+pg_restore -d asms asms_backup.dump   # nếu migration lỗi
+docker compose up -d
+# Smoke lại</code></pre>
+
+        <h3>18.3 Checklist bảo mật</h3>
+        <ul class="checklist">
+            <li>HTTPS bắt buộc production</li>
+            <li>JWT_SECRET mạnh, không lộ trong log</li>
+            <li>PostgreSQL không expose LAN</li>
+            <li>Đổi mật khẩu demo sau bootstrap</li>
+            <li>Rate limit login đã bật</li>
+            <li>RBAC kiểm tra viewer không ghi được</li>
+            <li>Backup restore test định kỳ (quarterly)</li>
+        </ul>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 19 TROUBLESHOOT -->
+<div class="doc-page" id="s19">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §19 Troubleshooting</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>19. Xử lý sự cố (troubleshooting)</h2>
+
+        <div class="warn-item"><strong>API trả HTML thay JSON</strong><br>
+            Nguyên nhân: <code>VITE_API_URL</code> sai hoặc proxy /api chưa cấu hình.<br>
+            Xử lý: Docker prod để trống VITE_API_URL; kiểm tra <code>nginx.local.conf</code> proxy <code>backend:4001</code>.</div>
+
+        <div class="warn-item"><strong>502 Bad Gateway khi gọi /api</strong><br>
+            Backend chưa chạy hoặc sai tên service Docker.<br>
+            Xử lý: <code>docker compose logs backend</code>; đảm bảo service tên <code>backend</code>.</div>
+
+        <div class="warn-item"><strong>PostgreSQL connection failed</strong><br>
+            Sai <code>DATABASE_URL</code>, firewall chặn 5432, hoặc DB chưa sẵn sàng.<br>
+            Xử lý: Backend retry 5 lần khi start; kiểm tra từ container: <code>docker compose exec backend npm run db:check</code>.</div>
+
+        <div class="warn-item"><strong>401 loop sau login</strong><br>
+            JWT hết hạn / refresh lỗi / clock skew server.<br>
+            Xử lý: Xóa localStorage, login lại; đồng bộ NTP server.</div>
+
+        <div class="warn-item"><strong>403 khi tạo dữ liệu</strong><br>
+            Role không đủ quyền module.<br>
+            Xử lý: Cài đặt → Phân quyền; kiểm tra <code>role_permissions</code>.</div>
+
+        <div class="warn-item"><strong>Upload file thất bại</strong><br>
+            Thiếu quyền ghi volume hoặc <code>client_max_body_size</code> nhỏ.<br>
+            Xử lý: <code>chmod</code> thư mục uploads; tăng limit Nginx.</div>
+
+        <div class="warn-item"><strong>Migrate deploy lỗi</strong><br>
+            Schema lệch hoặc migration đã apply một phần.<br>
+            Xử lý: Khôi phục backup; không sửa tay bảng <code>_prisma_migrations</code> trừ khi hiểu rõ.</div>
+
+        <h3>19.1 Lệnh chẩn đoán nhanh</h3>
+        <pre><code>docker compose ps
+docker compose logs -f --tail=100 backend
+docker compose exec backend npx prisma migrate status
+curl -s http://localhost/api/v1/health</code></pre>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<!-- 20 CHECKLIST -->
+<div class="doc-page" id="s20">
+    <div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/DEPLOY-ASMS-002</span></div><div class="inner-brd-right">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0 &nbsp;·&nbsp; §20 Go-live</div></div>
+    <div class="inner-brd-divider"></div>
+    <div class="content-area">
+        <h2>20. Checklist go-live &amp; bàn giao</h2>
+
+        <h3>20.1 Trước triển khai</h3>
+        <ul class="checklist">
+            <li>Server đủ tài nguyên (mục 3)</li>
+            <li>PostgreSQL + user <code>asms_app</code> đã tạo</li>
+            <li>File <code>.env</code> production (JWT mạnh)</li>
+            <li>Firewall: 443 mở user, 5432 chỉ backend</li>
+            <li>Staging pass UAT 5 role</li>
+            <li>Kế hoạch backup đã thống nhất</li>
+        </ul>
+
+        <h3>20.2 Trong cutover</h3>
+        <ul class="checklist">
+            <li><code>docker compose up -d</code> — 2 container healthy</li>
+            <li><code>prisma migrate deploy</code> — không lỗi</li>
+            <li><code>bootstrap:auth</code> + đổi mật khẩu admin</li>
+            <li>HTTPS reverse proxy hoạt động</li>
+            <li>Smoke API 6 bước + Smoke UI</li>
+            <li>Tạo user thật từng phòng ban</li>
+        </ul>
+
+        <h3>20.3 Sau go-live (48h)</h3>
+        <ul class="checklist">
+            <li>Theo dõi log backend không error lặp</li>
+            <li>Cron thông báo chạy đúng giờ</li>
+            <li>Backup tự động chạy lần đầu</li>
+            <li>Đào tạo admin (mục 13)</li>
+            <li>Tag Git <code>v1.0.0</code></li>
+            <li>Bàn giao: repo + tài liệu + credential vault</li>
+        </ul>
+
+        <div class="highlight-box" style="background: #f0fdf4; border-left-color: #22c55e; margin-top:14px">
+            <strong>Tài liệu liên quan:</strong><br>
+            <code>docs/release-readiness.md</code> · <code>docs/production-smoke.md</code> ·
+            <code>docs/uat-checklist.md</code> · <code>docs/huong-dan-su-dung-asms.md</code> ·
+            <code>docs/ASMS_quan-ly-tien-do-du-an.html</code> ·
+            <code>docs/DOCKER/DOCKER_QUICKSTART.md</code>
+        </div>
+
+        <h3>20.4 Lịch sử phiên bản tài liệu</h3>
+        <table class="spec-table">
+            <thead><tr><th>Ver</th><th>Ngày</th><th>Nội dung</th></tr></thead>
+            <tbody>
+                <tr><td>v1.0</td><td>24/06/2026</td><td>Bản phương án triển khai tóm tắt</td></tr>
+                <tr><td>v2.0</td><td>24/06/2026</td><td>Mở rộng 20 mục: env, PG, Nginx, staging, update, troubleshooting</td></tr>
+                <tr><td>v3.0</td><td>24/06/2026</td><td>Trình bày theo phong cách SAD BATECO: Taseco arch, step-card, card .env, header/footer UNICOM</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-brd-footer">
+        <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div class="inner-brd-footer-r"><span class="ft-page">ASMS VTX &nbsp;·&nbsp; Triển khai v3.0</span></div>
+    </div>
+</div>
+
+<script>mermaid.initialize({startOnLoad:true,theme:'neutral',securityLevel:'loose'});</script>
+</body>
+</html>

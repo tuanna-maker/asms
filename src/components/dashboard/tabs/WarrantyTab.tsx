@@ -11,18 +11,17 @@ import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/Dash
 import { DashboardData } from "@/data/dashboardData";
 import { ComplaintRow } from "@/data/tableData";
 
+import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
+
 interface WarrantyTabProps {
   data: DashboardData;
   complaints?: ComplaintRow[];
 }
 
-const complaintCols: Column<ComplaintRow>[] = [
+function buildComplaintColumns(complaints: ComplaintRow[]): Column<ComplaintRow>[] {
+  return [
   { key: "id", label: "Mã", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
-  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: [
-    { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
-    { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
-    { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
-  ]},
+  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: buildCustomerFilterOptions(complaints.map((r) => r.customer)) },
   { key: "product", label: "Sản phẩm", sortable: true, hideOnMobile: true },
   { key: "type", label: "Loại", filterable: true, filterOptions: [
     { value: "warranty", label: "Bảo hành" }, { value: "repair", label: "Sửa chữa" },
@@ -37,6 +36,7 @@ const complaintCols: Column<ComplaintRow>[] = [
   )},
   { key: "createdDate", label: "Ngày tạo", sortable: true, hideOnMobile: true },
 ];
+}
 
 const widgetTemplates = [
   { id: "stats", title: "Thống kê BH", description: "4 thẻ", icon: Shield, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
@@ -51,6 +51,7 @@ const widgetTemplates = [
 const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const complaintCols = useMemo(() => buildComplaintColumns(complaints), [complaints]);
   const { complaint } = data;
   const resolvedRate = complaint.total > 0 ? Math.round((complaint.done / complaint.total) * 100) : 0;
 
@@ -95,7 +96,7 @@ const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
         compact
       />
     ),
-  }), [complaints, data]);
+  }), [complaint, complaintCols, complaints, data]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

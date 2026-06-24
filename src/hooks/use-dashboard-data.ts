@@ -10,8 +10,14 @@ import {
   useDashboardSummary,
   useReports,
   type DashboardSummaryApi,
+  type ReportsApi,
 } from "@/hooks/use-reports-api";
 import type { ReportFilters } from "@/lib/report-filters";
+import {
+  isInReportDateRange,
+  matchesReportCustomerFilter,
+  resolveReportDateRange,
+} from "@/lib/report-filters";
 
 import type { ComplaintRow, ContractRow, HandoverRow, ProductRow, TrainingRow } from "@/data/tableData";
 import { emptyDashboardData, type DashboardData, type PakdSummary } from "@/data/dashboardData";
@@ -25,6 +31,7 @@ type ApiContractRow = {
   endDate: string;
   status: "draft" | "active" | "completed" | "late" | "liquidated";
   progress: number;
+  customerId?: string;
   customer?: { id: string; code: string; name: string } | null;
 };
 
@@ -69,6 +76,28 @@ function mapContractRow(row: ApiContractRow): ContractRow {
   };
 }
 
+type ReportsContractListRow = NonNullable<ReportsApi["contracts_list"]>[number];
+
+function mapReportsContractRow(row: ReportsContractListRow): ContractRow {
+  const status: ContractRow["status"] =
+    row.status === "completed" || row.status === "liquidated"
+      ? "completed"
+      : row.status === "late"
+        ? "late"
+        : "active";
+  const v = Number(row.value ?? 0);
+  return {
+    id: row.code,
+    name: row.title,
+    customer: row.customerName,
+    value: Number.isFinite(v) ? v : 0,
+    startDate: formatVnDate(row.startDate),
+    endDate: "—",
+    status,
+    progress: Math.round(Number(row.progress ?? 0)),
+  };
+}
+
 function mapHandoverRow(row: HandoverListItem): HandoverRow {
   const isLate = row.status === "late";
   const status: HandoverRow["status"] = row.status === "completed" ? "completed" : "active";
@@ -90,9 +119,24 @@ type TrainingApiRow = {
   startDate: string;
   endDate: string;
   status: string;
-  customer?: { name?: string | null; code?: string | null } | null;
+  customerId?: string | null;
+  customer?: { id?: string; name?: string | null; code?: string | null } | null;
   contract?: { code?: string | null } | null;
 };
+
+function filterLiveRows<T>(
+  items: T[],
+  filters: ReportFilters,
+  getDate: (item: T) => string | null | undefined,
+  getCustomerId: (item: T) => string | null | undefined,
+): T[] {
+  const range = resolveReportDateRange(filters);
+  return items.filter((item) => {
+    if (!isInReportDateRange(getDate(item), range)) return false;
+    if (!matchesReportCustomerFilter(getCustomerId(item), filters)) return false;
+    return true;
+  });
+}
 
 function mapTrainingRow(row: TrainingApiRow): TrainingRow {
   const status: TrainingRow["status"] = row.status === "completed" ? "completed" : "active";
@@ -314,6 +358,31 @@ export function useDashboardData(filters: ReportFilters): UseDashboardDataResult
     const apiWarranties = (warrantiesQ.data ?? []) as WarrantyListRow[];
     const apiProducts = (productsQ.data ?? []) as ProductListItem[];
 
+    const filteredContracts = filterLiveRows(
+      apiContracts,
+      filters,
+      (c) => c.startDate,
+      (c) => c.customerId ?? c.customer?.id ?? null,
+    );
+    const filteredHandovers = filterLiveRows(
+      apiHandovers,
+      filters,
+      (h) => h.startDate,
+      (h) => h.customerId ?? h.customer?.id ?? null,
+    );
+    const filteredTrainings = filterLiveRows(
+      apiTrainings,
+      filters,
+      (t) => t.startDate,
+      (t) => t.customerId ?? t.customer?.id ?? null,
+    );
+    const filteredWarranties = filterLiveRows(
+      apiWarranties,
+      filters,
+      (w) => w.createdAt,
+      (w) => w.customer?.id ?? null,
+    );
+
     const completedThisMonth =
       apiContracts.filter((c) => (c.status === "completed" || c.status === "liquidated") && isThisMonth(c.endDate)).length +
       apiHandovers.filter((h) => h.status === "completed" && isThisMonth(h.completedAt ?? h.dueDate)).length +
@@ -323,13 +392,19 @@ export function useDashboardData(filters: ReportFilters): UseDashboardDataResult
       ? buildDashboardFromSummary(summaryQ.data, reportsQ.data?.trends?.monthly, completedThisMonth)
       : { ...emptyDashboardData, stats: { ...emptyDashboardData.stats, completedThisMonth } };
 
+    const reportsContracts = reportsQ.data?.contracts_list;
+    const liveContracts =
+      reportsContracts !== undefined
+        ? reportsContracts.map(mapReportsContractRow)
+        : filteredContracts.map(mapContractRow);
+
     return {
       data,
-      liveContracts: apiContracts.map(mapContractRow),
-      liveHandovers: apiHandovers.map(mapHandoverRow),
-      liveTrainings: apiTrainings.map(mapTrainingRow),
+      liveContracts,
+      liveHandovers: filteredHandovers.map(mapHandoverRow),
+      liveTrainings: filteredTrainings.map(mapTrainingRow),
       liveProducts: apiProducts.map(mapProductRow),
-      liveWarranties: apiWarranties.map(mapWarrantyRow),
+      liveWarranties: filteredWarranties.map(mapWarrantyRow),
       liveMaterials: apiMaterials,
       isLoading:
         contractsQ.isLoading ||
@@ -375,6 +450,7 @@ export function useDashboardData(filters: ReportFilters): UseDashboardDataResult
     reportsQ.data,
     reportsQ.isLoading,
     reportsQ.isError,
+    filters,
   ]);
 
   return result;

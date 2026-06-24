@@ -49,7 +49,7 @@ export const updateMaterialTransferSchema = z
     type: materialTransferTypeEnum.optional(),
   })
   .refine((o) => o.destination !== undefined || o.status !== undefined || o.type !== undefined, {
-    message: "Provide at least one of destination, status, type",
+    message: "Cần ít nhất một trường: đích đến, trạng thái hoặc loại",
   });
 
 export const materialTransferIdParamSchema = z.object({

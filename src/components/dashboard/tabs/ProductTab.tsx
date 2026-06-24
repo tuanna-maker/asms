@@ -12,24 +12,21 @@ import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/Dash
 import { DashboardData } from "@/data/dashboardData";
 import { ProductRow } from "@/data/tableData";
 
+import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
+
 interface ProductTabProps {
   data: DashboardData;
   products?: ProductRow[];
 }
 
-const productCols: Column<ProductRow>[] = [
+function buildProductColumns(products: ProductRow[]): Column<ProductRow>[] {
+  const categories = [...new Set(products.map((r) => r.category).filter((c) => c && c !== "—"))].sort();
+  const customers = products.map((r) => r.customer);
+  return [
   { key: "id", label: "Mã SP", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
   { key: "name", label: "Tên sản phẩm", sortable: true },
-  { key: "category", label: "Phân loại", sortable: true, filterable: true, filterOptions: [
-    { value: "Vô tuyến", label: "Vô tuyến" }, { value: "Mã hóa", label: "Mã hóa" }, { value: "Trinh sát", label: "Trinh sát" },
-    { value: "Chuyển tiếp", label: "Chuyển tiếp" }, { value: "Vệ tinh", label: "Vệ tinh" }, { value: "Chỉ huy", label: "Chỉ huy" },
-    { value: "Số", label: "Số" }, { value: "Ra đa", label: "Ra đa" }, { value: "Truyền dẫn", label: "Truyền dẫn" },
-  ], hideOnMobile: true },
-  { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: [
-    { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
-    { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
-    { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
-  ], hideOnMobile: true },
+  { key: "category", label: "Phân loại", sortable: true, filterable: categories.length > 0, filterOptions: categories.map((c) => ({ value: c, label: c })), hideOnMobile: true },
+  { key: "customer", label: "Khách hàng", sortable: true, filterable: customers.some((c) => c && c !== "—"), filterOptions: buildCustomerFilterOptions(customers), hideOnMobile: true },
   { key: "quantity", label: "SL", sortable: true, sortValue: (r) => r.quantity },
   { key: "status", label: "Trạng thái", filterable: true, filterOptions: [
     { value: "producing", label: "Đang SX" }, { value: "inspecting", label: "Nghiệm thu" }, { value: "equipped", label: "Đã trang bị" },
@@ -38,6 +35,7 @@ const productCols: Column<ProductRow>[] = [
   )},
   { key: "deliveryDate", label: "Ngày giao", hideOnMobile: true },
 ];
+}
 
 const widgetTemplates = [
   { id: "stats", title: "Thống kê SP", description: "4 thẻ", icon: Package, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
@@ -52,6 +50,7 @@ const widgetTemplates = [
 const ProductTab = ({ data, products = [] }: ProductTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const productCols = useMemo(() => buildProductColumns(products), [products]);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
@@ -84,7 +83,7 @@ const ProductTab = ({ data, products = [] }: ProductTabProps) => {
     "table": (
       <DashboardTable title="Danh sách sản phẩm" columns={productCols} data={products} compact />
     ),
-  }), [data, products]);
+  }), [data, productCols, products]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

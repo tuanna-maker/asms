@@ -10,7 +10,7 @@ import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGri
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
-import type { ContractRow, HandoverRow, TrainingRow } from "@/data/tableData";
+import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
 
 interface ProjectTabProps {
   data: DashboardData;
@@ -19,16 +19,15 @@ interface ProjectTabProps {
   trainings?: TrainingRow[];
 }
 
-const customerFilterOptions = [
-  { value: "Quân khu 1", label: "Quân khu 1" }, { value: "Quân khu 3", label: "Quân khu 3" },
-  { value: "Quân khu 5", label: "Quân khu 5" }, { value: "Quân khu 7", label: "Quân khu 7" },
-  { value: "Quân khu 9", label: "Quân khu 9" }, { value: "Bộ TL TTTM", label: "Bộ TL TTTM" },
-];
+import type { ContractRow, HandoverRow, TrainingRow } from "@/data/tableData";
+
 const statusFilterOptions = [
   { value: "active", label: "Đang TH" }, { value: "completed", label: "Hoàn thành" }, { value: "late", label: "Chậm" },
 ];
 
-const contractCols: Column<ContractRow>[] = [
+function buildProjectColumns(customerNames: string[]) {
+  const customerFilterOptions = buildCustomerFilterOptions(customerNames);
+  const contractCols: Column<ContractRow>[] = [
   { key: "id", label: "Mã HĐ", sortable: true, render: (r) => <span className="font-medium text-primary">{r.id}</span> },
   { key: "name", label: "Tên hợp đồng", sortable: true, hideOnMobile: true },
   { key: "customer", label: "Khách hàng", sortable: true, filterable: true, filterOptions: customerFilterOptions },
@@ -69,7 +68,9 @@ const trainingCols: Column<TrainingRow>[] = [
     <StatusBadge status={r.isLate ? "destructive" : r.status === "completed" ? "success" : "info"} label={r.isLate ? "Chậm" : r.status === "completed" ? "Hoàn thành" : "Đang TH"} />
   )},
   { key: "date", label: "Ngày", sortable: true, hideOnMobile: true },
-];
+  ];
+  return { contractCols, handoverCols, trainingCols };
+}
 
 const widgetTemplates = [
   { id: "stats", title: "Thống kê DA", description: "4 thẻ", icon: FileText, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
@@ -88,6 +89,15 @@ const widgetTemplates = [
 const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: ProjectTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+
+  const { contractCols, handoverCols, trainingCols } = useMemo(() => {
+    const names = [
+      ...contracts.map((r) => r.customer),
+      ...handovers.map((r) => r.customer),
+      ...trainings.map((r) => r.customer),
+    ];
+    return buildProjectColumns(names);
+  }, [contracts, handovers, trainings]);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
@@ -142,7 +152,7 @@ const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: Pr
     "table-training": (
       <DashboardTable title="Danh sách huấn luyện" columns={trainingCols} data={trainings} compact />
     ),
-  }), [data, contracts, handovers, trainings]);
+  }), [contractCols, data, handoverCols, trainingCols, contracts, handovers, trainings]);
 
   const widgets: WidgetConfig[] = useMemo(() =>
     activeWidgetIds.filter(id => widgetComponents[id]).map(id => {

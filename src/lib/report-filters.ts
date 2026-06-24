@@ -48,6 +48,45 @@ export function buildReportQuery(filters: ReportFilters): string {
   return qs ? `?${qs}` : "";
 }
 
+/** Khớp logic backend `resolveDateRange` — dùng lọc bảng dashboard client-side. */
+export function resolveReportDateRange(filters: ReportFilters): { start: Date; end: Date } | null {
+  if (filters.from || filters.to) {
+    const start = filters.from
+      ? new Date(filters.from.includes("T") ? filters.from : `${filters.from}T00:00:00.000Z`)
+      : new Date("1970-01-01T00:00:00.000Z");
+    const end = filters.to
+      ? new Date(filters.to.includes("T") ? filters.to : `${filters.to}T23:59:59.999Z`)
+      : new Date();
+    return { start, end };
+  }
+  if (!filters.year) return null;
+  const y = Number(filters.year);
+  if (!Number.isFinite(y) || y < 1970 || y > 2100) return null;
+  return {
+    start: new Date(`${y}-01-01T00:00:00.000Z`),
+    end: new Date(`${y}-12-31T23:59:59.999Z`),
+  };
+}
+
+export function isInReportDateRange(
+  iso: string | null | undefined,
+  range: { start: Date; end: Date } | null,
+): boolean {
+  if (!range) return true;
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  return d >= range.start && d <= range.end;
+}
+
+export function matchesReportCustomerFilter(
+  entityCustomerId: string | null | undefined,
+  filters: ReportFilters,
+): boolean {
+  if (!filters.customerId) return true;
+  return entityCustomerId === filters.customerId;
+}
+
 export function parseReportFiltersFromSearch(params: URLSearchParams): ReportFilters {
   const year = params.get("year") ?? undefined;
   const from = params.get("from") ?? undefined;

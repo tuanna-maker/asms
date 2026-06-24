@@ -1,0 +1,1668 @@
+{
+  "summary": {
+    "total": 171,
+    "pass": 160,
+    "fail": 0,
+    "skipped": 6,
+    "no_data": 5,
+    "testedAt": "2026-06-22T04:16:43.903Z"
+  },
+  "byModule": {
+    "AUTH": {
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "dashboard": {
+      "pass": 10,
+      "fail": 0,
+      "skipped": 1,
+      "no_data": 0,
+      "fails": []
+    },
+    "hop-dong": {
+      "pass": 14,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "hop-dong.dieu-khoan": {
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "ban-giao": {
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "bao-hanh": {
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "san-pham": {
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "vat-tu": {
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "khach-hang": {
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "phan-anh": {
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 2,
+      "fails": []
+    },
+    "bao-cao": {
+      "pass": 7,
+      "fail": 0,
+      "skipped": 2,
+      "no_data": 0,
+      "fails": []
+    },
+    "de-tai": {
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 2,
+      "fails": []
+    },
+    "cong-viec": {
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "dao-tao": {
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 1,
+      "fails": []
+    },
+    "tai-lieu": {
+      "pass": 7,
+      "fail": 0,
+      "skipped": 1,
+      "no_data": 0,
+      "fails": []
+    },
+    "quy-trinh": {
+      "pass": 13,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "cai-dat": {
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0,
+      "no_data": 0,
+      "fails": []
+    },
+    "thong-bao": {
+      "pass": 3,
+      "fail": 0,
+      "skipped": 2,
+      "no_data": 0,
+      "fails": []
+    }
+  },
+  "results": [
+    {
+      "id": "UC-AUTH-01",
+      "name": "Đăng nhập",
+      "module": "AUTH",
+      "mode": "auth",
+      "status": "pass",
+      "http": 200,
+      "message": "Login successful"
+    },
+    {
+      "id": "UC-AUTH-02",
+      "name": "Đăng xuất",
+      "module": "AUTH",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 200,
+      "message": "Logged out"
+    },
+    {
+      "id": "UC-AUTH-03",
+      "name": "Làm mới phiên",
+      "module": "AUTH",
+      "mode": "auth_refresh",
+      "status": "pass",
+      "http": 200,
+      "message": "Token refreshed"
+    },
+    {
+      "id": "UC-AUTH-04",
+      "name": "Xem danh sách phiên",
+      "module": "AUTH",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-AUTH-05",
+      "name": "Thu hồi phiên",
+      "module": "AUTH",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 200,
+      "message": "Session revoked"
+    },
+    {
+      "id": "UC-AUTH-06",
+      "name": "Đăng xuất tất cả",
+      "module": "AUTH",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 200,
+      "message": "Logged out from all devices"
+    },
+    {
+      "id": "UC-AUTH-07",
+      "name": "Tạo tài khoản",
+      "module": "AUTH",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn họ tên"
+    },
+    {
+      "id": "UC-DASH-01",
+      "name": "Xem tổng quan",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-02",
+      "name": "Xem theo khách hàng",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-03",
+      "name": "Xem doanh thu",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-04",
+      "name": "Xem dự án / tiến độ",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-05",
+      "name": "Xem sản phẩm",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-06",
+      "name": "Xem bảo hành",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-07",
+      "name": "Xem vật tư",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-08",
+      "name": "Xem cảnh báo",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-09",
+      "name": "Lọc theo năm/quý/KH",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DASH-10",
+      "name": "Luân chuyển tab tự động",
+      "module": "dashboard",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "UI-only (auto-rotate/fullscreen)"
+    },
+    {
+      "id": "UC-DASH-11",
+      "name": "Xem badge menu",
+      "module": "dashboard",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-01",
+      "name": "Xem danh sách HĐ",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-02",
+      "name": "Xem chi tiết HĐ",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-03",
+      "name": "Tạo HĐ",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn khách hàng"
+    },
+    {
+      "id": "UC-HD-04",
+      "name": "Sửa HĐ",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Không có dữ liệu cần cập nhật"
+    },
+    {
+      "id": "UC-HD-05",
+      "name": "Xóa HĐ",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy hợp đồng"
+    },
+    {
+      "id": "UC-HD-06",
+      "name": "Gán danh mục SP",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn products"
+    },
+    {
+      "id": "UC-HD-07",
+      "name": "Sửa SP trong HĐ",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Cần ít nhất một trường cập nhật"
+    },
+    {
+      "id": "UC-HD-08",
+      "name": "Xem SP thuộc HĐ",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-09",
+      "name": "Chọn điều khoản mẫu",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-10",
+      "name": "Điền nội dung điều khoản",
+      "module": "hop-dong",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Không có dữ liệu cần cập nhật"
+    },
+    {
+      "id": "UC-HD-11",
+      "name": "Xem phản ánh liên quan",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-12",
+      "name": "Xem tài liệu HĐ",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-13",
+      "name": "Xử lý quy trình HĐ",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-14",
+      "name": "Đính kèm tài liệu bước QT",
+      "module": "hop-dong",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-DK-01",
+      "name": "Xem danh sách điều khoản mẫu",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-DK-02",
+      "name": "Tạo/sửa/xóa điều khoản",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn mã"
+    },
+    {
+      "id": "UC-HD-DK-03",
+      "name": "Sắp xếp điều khoản",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn orderedIds"
+    },
+    {
+      "id": "UC-HD-DK-04",
+      "name": "Xem nhóm điều khoản",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-HD-DK-05",
+      "name": "Tạo/sửa/xóa nhóm",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn mã"
+    },
+    {
+      "id": "UC-HD-DK-06",
+      "name": "Gán điều khoản vào nhóm",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn clauseIds"
+    },
+    {
+      "id": "UC-HD-DK-07",
+      "name": "Kiểm tra điều khoản đang dùng",
+      "module": "hop-dong.dieu-khoan",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-01",
+      "name": "Xem danh sách bàn giao",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-02",
+      "name": "Xem chi tiết phiếu BG",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-03",
+      "name": "Tạo phiếu bàn giao",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn hợp đồng"
+    },
+    {
+      "id": "UC-BG-04",
+      "name": "Sửa phiếu bàn giao",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Bước hiện tại không được lớn hơn 99"
+    },
+    {
+      "id": "UC-BG-05",
+      "name": "Xóa phiếu bàn giao",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phiếu bàn giao"
+    },
+    {
+      "id": "UC-BG-06",
+      "name": "Xử lý quy trình bàn giao",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-07",
+      "name": "Đính kèm tài liệu bước BG",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-08",
+      "name": "Xem danh sách khóa HL",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-09",
+      "name": "Tạo khóa huấn luyện",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tiêu đề"
+    },
+    {
+      "id": "UC-BG-10",
+      "name": "Sửa/xóa khóa HL",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Không có dữ liệu cần cập nhật"
+    },
+    {
+      "id": "UC-BG-11",
+      "name": "Xử lý quy trình HL",
+      "module": "ban-giao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BG-12",
+      "name": "Điền payload từng bước HL",
+      "module": "ban-giao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Tiêu đề không hợp lệ"
+    },
+    {
+      "id": "UC-BH-01",
+      "name": "Xem danh sách phiếu BH/SC",
+      "module": "bao-hanh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BH-02",
+      "name": "Xem chi tiết phiếu",
+      "module": "bao-hanh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BH-03",
+      "name": "Tạo phiếu BH/SC",
+      "module": "bao-hanh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn khách hàng"
+    },
+    {
+      "id": "UC-BH-04",
+      "name": "Sửa phiếu",
+      "module": "bao-hanh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Loại không hợp lệ"
+    },
+    {
+      "id": "UC-BH-05",
+      "name": "Xóa phiếu",
+      "module": "bao-hanh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Warranty ticket not found"
+    },
+    {
+      "id": "UC-BH-06",
+      "name": "Xử lý quy trình BH",
+      "module": "bao-hanh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BH-07",
+      "name": "Điền form động theo bước",
+      "module": "bao-hanh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Product not on contract"
+    },
+    {
+      "id": "UC-BH-08",
+      "name": "Đính kèm tài liệu bước BH",
+      "module": "bao-hanh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-01",
+      "name": "Xem danh sách SP",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-02",
+      "name": "Xem chi tiết SP",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-03",
+      "name": "Tạo SP",
+      "module": "san-pham",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn mã"
+    },
+    {
+      "id": "UC-SP-04",
+      "name": "Sửa SP",
+      "module": "san-pham",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Cần ít nhất một trường cập nhật"
+    },
+    {
+      "id": "UC-SP-05",
+      "name": "Xóa SP",
+      "module": "san-pham",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Product not found"
+    },
+    {
+      "id": "UC-SP-06",
+      "name": "Quản lý BOM",
+      "module": "san-pham",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn vật tư"
+    },
+    {
+      "id": "UC-SP-07",
+      "name": "Quản lý thông số kỹ thuật",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-08",
+      "name": "Quản lý serial linh kiện",
+      "module": "san-pham",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Cần ít nhất một trường cập nhật"
+    },
+    {
+      "id": "UC-SP-09",
+      "name": "Xem/gắn tài liệu SP",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-10",
+      "name": "Xem lịch sử thay đổi",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-11",
+      "name": "Xử lý quy trình SP",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-SP-12",
+      "name": "Tab đào tạo trên SP",
+      "module": "san-pham",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-VT-01",
+      "name": "Xem danh sách vật tư",
+      "module": "vat-tu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-VT-02",
+      "name": "Xem chi tiết vật tư",
+      "module": "vat-tu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-VT-03",
+      "name": "Nhập vật tư mới",
+      "module": "vat-tu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn mã"
+    },
+    {
+      "id": "UC-VT-04",
+      "name": "Sửa vật tư",
+      "module": "vat-tu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Loại không hợp lệ"
+    },
+    {
+      "id": "UC-VT-05",
+      "name": "Xóa vật tư",
+      "module": "vat-tu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Material not found"
+    },
+    {
+      "id": "UC-VT-06",
+      "name": "Xem phiếu điều chuyển",
+      "module": "vat-tu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-VT-07",
+      "name": "Tạo phiếu điều chuyển",
+      "module": "vat-tu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn vật tư"
+    },
+    {
+      "id": "UC-VT-08",
+      "name": "Sửa/xóa phiếu điều chuyển",
+      "module": "vat-tu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Cần ít nhất một trường: đích đến, trạng thái hoặc loại"
+    },
+    {
+      "id": "UC-KH-01",
+      "name": "Xem danh sách KH",
+      "module": "khach-hang",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-KH-02",
+      "name": "Xem chi tiết KH",
+      "module": "khach-hang",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-KH-03",
+      "name": "Tạo KH",
+      "module": "khach-hang",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-KH-04",
+      "name": "Sửa KH",
+      "module": "khach-hang",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Customer not found"
+    },
+    {
+      "id": "UC-KH-05",
+      "name": "Xóa KH",
+      "module": "khach-hang",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Customer not found"
+    },
+    {
+      "id": "UC-KH-06",
+      "name": "Quản lý liên hệ",
+      "module": "khach-hang",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-KH-07",
+      "name": "Quản lý hoạt động CRM",
+      "module": "khach-hang",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-KH-08",
+      "name": "Quản lý kỷ niệm KH",
+      "module": "khach-hang",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-KH-09",
+      "name": "Đăng ký nhận TB kỷ niệm",
+      "module": "khach-hang",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn anniversaryId"
+    },
+    {
+      "id": "UC-PA-01",
+      "name": "Xem danh sách phản ánh",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-02",
+      "name": "Xem chi tiết phản ánh",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "no_data",
+      "reason": "Không có dữ liệu mẫu (feedbackId)"
+    },
+    {
+      "id": "UC-PA-03",
+      "name": "Tạo phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn khách hàng"
+    },
+    {
+      "id": "UC-PA-04",
+      "name": "Sửa phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "no_data",
+      "reason": "Không có dữ liệu mẫu (feedbackId)"
+    },
+    {
+      "id": "UC-PA-05",
+      "name": "Xóa phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phản ánh"
+    },
+    {
+      "id": "UC-PA-06",
+      "name": "Phân công người/vai trò",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng chọn ít nhất một người hoặc vai trò phân công"
+    },
+    {
+      "id": "UC-PA-07",
+      "name": "Phân luồng theo SP/đơn vị",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-08",
+      "name": "Cập nhật xử lý đơn vị",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phân công"
+    },
+    {
+      "id": "UC-PA-09",
+      "name": "Bình luận phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Loại không hợp lệ"
+    },
+    {
+      "id": "UC-PA-10",
+      "name": "Yêu cầu đóng",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phản ánh"
+    },
+    {
+      "id": "UC-PA-11",
+      "name": "Đóng phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn customerVerified"
+    },
+    {
+      "id": "UC-PA-12",
+      "name": "Hoàn tất sửa chữa & đóng",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phản ánh"
+    },
+    {
+      "id": "UC-PA-13",
+      "name": "Mở lại phản ánh",
+      "module": "phan-anh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy phản ánh"
+    },
+    {
+      "id": "UC-PA-14",
+      "name": "Xem tóm tắt công việc PA",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-15",
+      "name": "Thống kê theo KH/SP/VT",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-16",
+      "name": "Lọc theo đơn vị của tôi",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-17",
+      "name": "Cấu hình đơn vị thực hiện",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-PA-18",
+      "name": "Cấu hình quy tắc routing",
+      "module": "phan-anh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-01",
+      "name": "Báo cáo theo khách hàng",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-02",
+      "name": "Báo cáo theo hợp đồng",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-03",
+      "name": "Báo cáo theo dòng SP",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-04",
+      "name": "Báo cáo phản ánh",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-05",
+      "name": "Báo cáo đơn vị thực hiện",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-06",
+      "name": "Báo cáo lỗi vật tư",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-07",
+      "name": "Lọc báo cáo",
+      "module": "bao-cao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-BC-08",
+      "name": "Xuất Excel",
+      "module": "bao-cao",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "UI export client-side"
+    },
+    {
+      "id": "UC-BC-09",
+      "name": "In báo cáo",
+      "module": "bao-cao",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "UI print client-side"
+    },
+    {
+      "id": "UC-DT-01",
+      "name": "Xem danh sách đề tài",
+      "module": "de-tai",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DT-02",
+      "name": "Xem chi tiết đề tài",
+      "module": "de-tai",
+      "mode": "read",
+      "status": "no_data",
+      "reason": "Không có dữ liệu mẫu (researchProjectId)"
+    },
+    {
+      "id": "UC-DT-03",
+      "name": "Tạo đề tài",
+      "module": "de-tai",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn mã"
+    },
+    {
+      "id": "UC-DT-04",
+      "name": "Sửa đề tài",
+      "module": "de-tai",
+      "mode": "write_probe",
+      "status": "no_data",
+      "reason": "Không có dữ liệu mẫu (researchProjectId)"
+    },
+    {
+      "id": "UC-DT-05",
+      "name": "Xóa đề tài",
+      "module": "de-tai",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Research project not found"
+    },
+    {
+      "id": "UC-CV-01",
+      "name": "Xem Kanban",
+      "module": "cong-viec",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CV-02",
+      "name": "Xem danh sách",
+      "module": "cong-viec",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CV-03",
+      "name": "Xem lịch",
+      "module": "cong-viec",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CV-04",
+      "name": "Tạo công việc",
+      "module": "cong-viec",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tiêu đề"
+    },
+    {
+      "id": "UC-CV-05",
+      "name": "Sửa công việc",
+      "module": "cong-viec",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "No fields to update"
+    },
+    {
+      "id": "UC-CV-06",
+      "name": "Xóa công việc",
+      "module": "cong-viec",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Task not found"
+    },
+    {
+      "id": "UC-CV-07",
+      "name": "Lọc theo ưu tiên/loại",
+      "module": "cong-viec",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DTao-01",
+      "name": "Xem danh sách khóa",
+      "module": "dao-tao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-DTao-02",
+      "name": "Xem chi tiết khóa",
+      "module": "dao-tao",
+      "mode": "read",
+      "status": "no_data",
+      "reason": "Không có dữ liệu mẫu (trainingId)"
+    },
+    {
+      "id": "UC-DTao-03",
+      "name": "Tạo khóa",
+      "module": "dao-tao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tiêu đề"
+    },
+    {
+      "id": "UC-DTao-04",
+      "name": "Sửa/xóa khóa",
+      "module": "dao-tao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Không có dữ liệu cần cập nhật"
+    },
+    {
+      "id": "UC-DTao-05",
+      "name": "Quản lý học viên",
+      "module": "dao-tao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn họ tên"
+    },
+    {
+      "id": "UC-DTao-06",
+      "name": "Quản lý lịch học",
+      "module": "dao-tao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng chọn date"
+    },
+    {
+      "id": "UC-DTao-07",
+      "name": "Xử lý quy trình khóa",
+      "module": "dao-tao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TL-01",
+      "name": "Xem danh sách tài liệu",
+      "module": "tai-lieu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TL-02",
+      "name": "Xem chi tiết/tải file",
+      "module": "tai-lieu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TL-03",
+      "name": "Tạo metadata tài liệu",
+      "module": "tai-lieu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-TL-04",
+      "name": "Upload file",
+      "module": "tai-lieu",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "Multipart upload — cần file thật"
+    },
+    {
+      "id": "UC-TL-05",
+      "name": "Sửa tài liệu",
+      "module": "tai-lieu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Tên không hợp lệ"
+    },
+    {
+      "id": "UC-TL-06",
+      "name": "Xóa tài liệu",
+      "module": "tai-lieu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy tài liệu"
+    },
+    {
+      "id": "UC-TL-07",
+      "name": "Lọc theo loại",
+      "module": "tai-lieu",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TL-08",
+      "name": "Liên kết HĐ/SP/đề tài",
+      "module": "tai-lieu",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-QT-01",
+      "name": "Xem tổng quan nhóm QT",
+      "module": "quy-trinh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-QT-02",
+      "name": "Xem QT theo module",
+      "module": "quy-trinh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-QT-03",
+      "name": "Tạo quy trình",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-QT-04",
+      "name": "Sửa thông tin QT",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "ModuleKey không hợp lệ"
+    },
+    {
+      "id": "UC-QT-05",
+      "name": "Xóa quy trình",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy quy trình"
+    },
+    {
+      "id": "UC-QT-06",
+      "name": "Thêm/sửa/xóa bước",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-QT-07",
+      "name": "Sắp xếp lại bước",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn items"
+    },
+    {
+      "id": "UC-QT-08",
+      "name": "Cấu hình trường nhập bước",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 404,
+      "message": "Không tìm thấy bước trong quy trình"
+    },
+    {
+      "id": "UC-QT-09",
+      "name": "Tạo bộ bước chuẩn",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn tên"
+    },
+    {
+      "id": "UC-QT-10",
+      "name": "Gắn QT cho entity",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "ModuleKey không hợp lệ"
+    },
+    {
+      "id": "UC-QT-11",
+      "name": "Chuyển bước QT",
+      "module": "quy-trinh",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Action không hợp lệ"
+    },
+    {
+      "id": "UC-QT-12",
+      "name": "Xem lịch sử bước",
+      "module": "quy-trinh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-QT-13",
+      "name": "Đính kèm tài liệu instance",
+      "module": "quy-trinh",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-01",
+      "name": "Quản lý người dùng",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-02",
+      "name": "Quản lý vai trò",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-03",
+      "name": "Ma trận phân quyền",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-04",
+      "name": "Cấu hình TB cá nhân",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-05",
+      "name": "Cấu hình đơn vị PA",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-06",
+      "name": "Cấu hình hệ thống",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-07",
+      "name": "Quản lý phiên đăng nhập",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-08",
+      "name": "Xem nhật ký audit",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-09",
+      "name": "Quản lý danh mục thuộc tính",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-CD-10",
+      "name": "Sắp xếp danh mục",
+      "module": "cai-dat",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 400,
+      "message": "Vui lòng nhập hoặc chọn danh mục"
+    },
+    {
+      "id": "UC-CD-11",
+      "name": "Kiểm tra danh mục đang dùng",
+      "module": "cai-dat",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TB-01",
+      "name": "Xem danh sách thông báo",
+      "module": "thong-bao",
+      "mode": "read",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TB-02",
+      "name": "Đánh dấu đã đọc",
+      "module": "thong-bao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TB-03",
+      "name": "Đánh dấu tất cả đã đọc",
+      "module": "thong-bao",
+      "mode": "write_probe",
+      "status": "pass",
+      "http": 200,
+      "message": null
+    },
+    {
+      "id": "UC-TB-04",
+      "name": "Điều hướng từ thông báo",
+      "module": "thong-bao",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "UI routing"
+    },
+    {
+      "id": "UC-TB-05",
+      "name": "Nhận thông báo tự động",
+      "module": "thong-bao",
+      "mode": "skip",
+      "status": "skipped",
+      "reason": "Hệ thống tự phát sinh"
+    }
+  ]
+}

@@ -1,0 +1,1298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>BRD — ASMS — BRD Dễ hiểu</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif;font-size:11px;color:#0d1e34;}
+.doc-page{width:210mm;min-height:297mm;margin:10mm auto;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.25);position:relative;overflow:hidden;display:flex;flex-direction:column;}
+@media print{
+  body{background:#fff;}
+  @page{size:A4;margin:0;}
+  .doc-page{margin:0;box-shadow:none;width:100%;max-width:100%;}
+  .doc-page.cover,.doc-page.toc-page{page-break-after:always;}
+  body.brd-pdf-v3 .doc-page.cover{min-height:297mm;height:297mm;}
+  body.brd-pdf-v3 .doc-page.content-flow{page-break-after:auto;min-height:auto;height:auto;overflow:visible;}
+  .keep-together,.table-keep,.diagram-keep,.arch-figure{
+    break-inside:avoid;page-break-inside:avoid;-webkit-column-break-inside:avoid;
+  }
+  .md-render .mermaid{break-inside:avoid;page-break-inside:avoid;}
+  .md-render table{break-inside:avoid;page-break-inside:avoid;}
+  .md-render thead{display:table-header-group;}
+  .md-render tr{break-inside:avoid;page-break-inside:avoid;}
+  .md-render h2,.md-render h3,.md-render h4{break-after:avoid;page-break-after:avoid;}
+  body.brd-pdf-v3 .arch-diagram{font-size:9px;}
+  body.brd-pdf-v3 .arch-layer-hd{padding:5px 10px;font-size:9.5px;}
+  body.brd-pdf-v3 .arch-box{padding:6px 8px;}
+}
+.doc-page.cover{padding:0;}
+.doc-page.cover .accent-bar{height:8px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);flex-shrink:0;}
+.doc-page.cover .header{padding:22px 52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.doc-page.cover .header-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.doc-page.cover .header-code span{color:#0d1e34;}
+.doc-page.cover .header-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.doc-page.cover .divider{margin:0 52px;height:1px;background:#eaeff8;flex-shrink:0;}
+.doc-page.cover .main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-bottom:80px;text-align:center;}
+.doc-page.cover .logo-wrap{margin-bottom:36px;}
+.doc-page.cover .logo-wrap img{width:280px;display:block;}
+.doc-page.cover .sep{width:52px;height:3px;background:linear-gradient(90deg,#3d7de8,#0ab4d8);border-radius:2px;margin:0 auto 32px;}
+.doc-page.cover .doc-label{font-size:10px;font-weight:700;letter-spacing:3.5px;text-transform:uppercase;margin-bottom:20px;color:#52637d;}
+.doc-page.cover .project-title{font-size:36px;font-weight:900;line-height:1.15;}
+.doc-page.cover .project-title .brand{background:linear-gradient(135deg,#3d7de8,#0ab4d8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.doc-page.cover .subtitle{margin-top:16px;font-size:12px;color:#3a4a64;}
+.doc-page.cover .meta-info{margin-top:36px;font-size:10.5px;line-height:1.85;color:#3a4a64;}
+.doc-page.cover .meta-info strong{color:#0d1e34;font-weight:600;}
+.doc-page.cover .footer{padding:18px 52px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.doc-page.cover .footer-l,.doc-page.cover .footer-r{font-size:9.5px;}
+.doc-page.cover .footer-r{text-align:right;}
+.inner-brd-header{padding:22px 48px 22px 68px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.inner-brd-header .inner-brd-code{font-size:9.5px;font-weight:600;letter-spacing:.8px;}
+.inner-brd-header .inner-brd-right{font-size:9.5px;text-align:right;line-height:1.7;}
+.inner-brd-divider{margin:0 48px 0 68px;height:1px;background:#eaeff8;flex-shrink:0;}
+.inner-brd-footer{padding:18px 48px 18px 68px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #eaeff8;flex-shrink:0;}
+.inner-brd-footer-l{font-size:9.5px;}
+.inner-brd-footer-r{font-size:9.5px;text-align:right;line-height:1.65;}
+.inner-brd-footer-r .ft-page{display:block;font-weight:600;}
+.content-area{flex:1;overflow:visible;padding:14px 48px 14px 68px;font-size:12.5px;line-height:1.55;color:#1a2740;}
+.md-render h1{font-size:20px;font-weight:900;color:#0d1e34;margin:8px 0 14px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.md-render h2{font-size:16px;font-weight:800;color:#0d1e34;margin:22px 0 10px;padding:6px 10px;background:linear-gradient(90deg,#eef4ff,transparent);border-left:4px solid #3d7de8;page-break-after:avoid;}
+.md-render h3{font-size:13.5px;font-weight:700;color:#1e3a5f;margin:16px 0 6px;page-break-after:avoid;}
+.md-render h4{font-size:12.5px;font-weight:600;color:#1e3a5f;margin:10px 0 4px;}
+.md-render p{margin:6px 0;}
+.md-render ul{margin:6px 0 6px 20px;}
+.md-render table{width:100%;border-collapse:collapse;font-size:10.5px;margin:10px 0;}
+.md-render th,.md-render td{border:1px solid #cbd5e0;padding:5px 8px;vertical-align:top;text-align:left;}
+.md-render th{background:#1e3a5f;color:#fff;font-weight:600;}
+.md-render tr:nth-child(even) td{background:#f7fafc;}
+.md-render hr{border:none;border-top:1px dashed #c8d8ec;margin:14px 0;}
+.md-render .mermaid{text-align:center;margin:14px 0;background:#fafbfd;padding:12px;border-radius:6px;border:1px solid #eaeff8;break-inside:avoid;page-break-inside:avoid;}
+.md-render .mermaid svg{max-width:100%;height:auto;display:block;margin:0 auto;}
+.table-keep,.diagram-keep{break-inside:avoid;page-break-inside:avoid;}
+.keep-together{break-inside:avoid;page-break-inside:avoid;margin-bottom:4px;}
+.arch-figure{margin:16px 0 20px;}
+.arch-figure figcaption{font-size:11px;color:#52637d;text-align:center;margin-top:10px;line-height:1.5;}
+.arch-diagram{border:1px solid #cbd5e0;border-radius:10px;overflow:hidden;font-size:10px;line-height:1.45;}
+.arch-title{text-align:center;font-weight:800;font-size:12px;padding:10px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+.arch-layer{padding:0;}
+.arch-layer-hd{padding:7px 12px;font-weight:700;font-size:10.5px;color:#fff;text-align:center;}
+.arch-layer.l1 .arch-layer-hd{background:#2563eb;}
+.arch-layer.l2 .arch-layer-hd{background:#7c3aed;}
+.arch-layer.l3 .arch-layer-hd{background:#1e293b;}
+.arch-layer.l4 .arch-layer-hd{background:#059669;}
+.arch-layer.l5 .arch-layer-hd{background:#64748b;}
+.arch-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-row.two{grid-template-columns:repeat(2,1fr);}
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px;background:#fff;}
+.arch-box{border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;background:#fafbfd;text-align:center;}
+.arch-box strong{color:#0d1e34;font-size:10.5px;}
+.arch-box em{color:#64748b;font-size:9.5px;}
+.arch-arrow{text-align:center;color:#94a3b8;font-size:14px;padding:2px 0;background:#f8fafc;}
+.arch-tech{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:12px;background:#fff;}
+.arch-tech span{border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;background:#f1f5f9;font-weight:600;font-size:10px;}
+@media screen{.doc-page{height:auto;min-height:297mm;}}
+.toc-page .content-area{padding:22px 48px 18px 68px;}
+.toc-title{font-size:20px;font-weight:900;color:#0d1e34;margin:4px 0 10px;padding-bottom:8px;border-bottom:2px solid #3d7de8;}
+.toc-subtitle{font-size:11.5px;color:#52637d;margin-bottom:18px;}
+.toc-list{display:flex;flex-direction:column;gap:5px;}
+.toc-item{display:flex;align-items:flex-start;gap:10px;padding:6px 10px;border-radius:8px;text-decoration:none;color:#1a2740;border:1px solid #e6edf7;background:#fbfdff;}
+.toc-item:hover{border-color:#3d7de8;background:#f5f9ff;}
+.toc-item.level-3{margin-left:14px;}
+.toc-item.level-4{margin-left:28px;font-size:11px;}
+.toc-index{min-width:22px;font-size:11px;font-weight:800;color:#3d7de8;}
+.toc-text{font-size:11.5px;line-height:1.4;}
+</style>
+</head>
+<body>
+<div class="doc-page cover">
+  <div class="accent-bar"></div>
+  <div class="header">
+    <div class="header-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-004</span></div>
+    <div class="header-right">Phiên bản 1.0 &nbsp;·&nbsp; 06/2026</div>
+  </div>
+  <div class="divider"></div>
+  <div class="main">
+    <div class="logo-wrap"><img src="assets/unicom-logo.png" alt="UNICOM AI Software Factory" /></div>
+    <div class="sep"></div>
+    <div class="doc-label">Business Requirements Document (BRD)</div>
+    <div class="project-title"><span class="brand">Hệ thống ASMS</span></div>
+    <div class="subtitle">Hệ thống quản lý hậu mãi — Phiên bản dễ hiểu cho mọi người dùng</div>
+    <div class="meta-info"><strong>Đối tượng đọc:</strong> Cán bộ nghiệp vụ, lãnh đạo — không cần biết lập trình<br>
+      <strong>Phạm vi:</strong> 14 phần hệ thống · 152 chức năng · 12 quy trình<br>
+      <strong>Đơn vị phát triển:</strong> Unicom Technology Solutions Co., Ltd</div>
+  </div>
+  <div class="footer">
+    <div class="footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="footer-r">Tài liệu trình: Ban quản lý dự án ASMS</div>
+  </div>
+</div>
+<div class="doc-page toc-page">
+  <div class="inner-brd-header">
+    <div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-004</span></div>
+    <div class="inner-brd-right">ASMS &nbsp;·&nbsp; Phiên bản 1.0</div>
+  </div>
+  <div class="inner-brd-divider"></div>
+  <div class="content-area">
+    <h1 class="toc-title">Mục lục</h1>
+    <p class="toc-subtitle">Nhấn vào từng mục để di chuyển nhanh — 152 chức năng · 12 luồng nghiệp vụ.</p>
+    <div id="toc-list" class="toc-list"></div>
+  </div>
+  <div class="inner-brd-footer">
+    <div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+    <div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD dễ hiểu v1.0</span></div>
+  </div>
+</div>
+<div id="content-host"></div>
+<script id="md-source" type="text/markdown">
+## 1. GIỚI THIỆU CHUNG
+
+Hệ thống **ASMS** (After-Sales Management System) là nền tảng quản lý **hậu mãi quốc phòng**, số hóa 4 luồng chính: **tiếp nhận hợp đồng → bàn giao & huấn luyện → bảo hành/sửa chữa → chăm sóc khách hàng**, kèm master data, báo cáo và quản trị workflow.
+
+Tài liệu BRD này mô tả **12 luồng nghiệp vụ cốt lõi** và **152 chức năng (use case)** trên **14 phân hệ** đang vận hành — theo bố cục tài liệu BRD TASMOS (Taseco Air).
+
+### Các nhóm người dùng chính
+
+| Vai trò | Mô tả công việc |
+|---|---|
+| **Admin** | Quản trị hệ thống, người dùng, phân quyền, cấu hình workflow và routing |
+| **Quản lý (manager)** | Phê duyệt quy trình, phân công PA, giám sát KPI và báo cáo |
+| **Kỹ thuật (technician)** | Bàn giao, bảo hành, vật tư, huấn luyện, thực thi kỹ thuật |
+| **Sales** | Khách hàng, hợp đồng, CRM, tài liệu hợp đồng |
+| **Viewer** | Theo dõi dữ liệu và báo cáo (chỉ đọc) |
+| **Hệ thống** | Job thông báo, SLA, routing phản ánh tự động |
+
+### Bốn luồng vận hành chính
+
+| # | Luồng | Mô tả |
+|---|---|---|
+| 1 | Tiếp nhận hợp đồng | Tạo HĐ, gán KH/SP, điều khoản, phê duyệt |
+| 2 | Bàn giao & huấn luyện | Workflow 5 bước bàn giao và khóa HL |
+| 3 | Bảo hành & sửa chữa | Ticket BH/SC, SLA, vật tư, nghiệm thu |
+| 4 | Chăm sóc khách hàng | CRM, phản ánh, routing đa đơn vị |
+
+---
+
+
+## 2. TỔNG QUAN CÁCH HỆ THỐNG HOẠT ĐỘNG
+
+Sơ đồ dưới mô tả **các lớp** của hệ thống — từ màn hình người dùng thấy hàng ngày đến nơi lưu dữ liệu.
+
+[[ARCHITECTURE_DIAGRAM]]
+
+**Giải thích bằng lời:**
+
+| Tầng | Ý nghĩa với người dùng |
+|---|---|
+| **1. Người sử dụng** | Màn hình web trên trình duyệt — đăng nhập và làm việc |
+| **2. Bảo mật** | Mỗi người chỉ thấy đúng phần việc được giao |
+| **3. Nghiệp vụ** | Các màn hình: Hợp đồng, Bàn giao, Bảo hành, Khách hàng… |
+| **4. Lưu trữ** | Cơ sở dữ liệu, file đính kèm, thông báo |
+| **5. Nền tảng** | Hạ tầng kỹ thuật vận hành phần mềm |
+
+---
+
+## 3. ĐIỂM NỔI BẬT: QUY TRÌNH PHÊ DUYỆT & PHÂN CÔNG PHẢN ÁNH
+
+**Vấn đề thực tế:** Nhiều hồ sơ (bàn giao, bảo hành…) phải qua nhiều bước trình — duyệt. Phản ánh khách hàng cần chuyển đúng đơn vị xử lý.
+
+**Cách ASMS hỗ trợ:**
+
+| Bước | Ai làm | Việc làm |
+|---:|---|---|
+| 1 | Quản trị viên | Thiết lập các bước phê duyệt cho từng loại hồ sơ |
+| 2 | Cán bộ xử lý | Điền thông tin và trình bước hiện tại |
+| 3 | Hệ thống | Lưu dữ liệu, chuyển bước, báo người duyệt tiếp theo |
+| 4 | Quản lý | Tạo phản ánh; hệ thống gợi ý đơn vị nên xử lý |
+| 5 | Hệ thống | Phân công và theo dõi đến khi đóng hồ sơ |
+
+**Lợi ích:**
+- Mọi hồ sơ đi đúng quy trình nội bộ, có người chịu trách nhiệm từng bước
+- Phản ánh không bị “lạc” giữa các đơn vị
+- Lãnh đạo tra cứu được lịch sử xử lý
+
+---
+
+## 4. QUY TRÌNH TỔNG THỂ (TỪ HỢP ĐỒNG ĐẾN BÁO CÁO)
+
+```mermaid
+flowchart LR
+    A[Ký hợp đồng] --> B[Bàn giao thiết bị]
+    B --> C[Huấn luyện]
+    C --> D[Bảo hành / Sửa chữa]
+    D --> E[Phản ánh khách hàng]
+    E --> F[Báo cáo cho lãnh đạo]
+```
+
+**Tóm tắt:** Khách hàng ký hợp đồng → bàn giao và tập huấn → trong quá trình sử dụng có bảo hành, sửa chữa, phản ánh → cuối cùng tổng hợp báo cáo phục vụ điều hành.
+
+### Sơ đồ tương tác các bên
+
+```mermaid
+sequenceDiagram
+    actor KH as Khách hàng
+    actor KD as Kinh doanh
+    actor KT as Kỹ thuật
+    actor QL as Quản lý
+    participant HT as Hệ thống ASMS
+
+    rect rgb(238, 242, 255)
+    Note over KD,HT: Giai đoạn 1 — Hợp đồng
+    KD->>HT: Lập hợp đồng
+    QL->>HT: Phê duyệt
+    end
+
+    rect rgb(220, 252, 231)
+    Note over KT,HT: Giai đoạn 2 — Bàn giao & Huấn luyện
+    KT->>HT: Thực hiện bàn giao
+    QL->>HT: Duyệt và hoàn tất huấn luyện
+    end
+
+    rect rgb(254, 243, 199)
+    Note over KH,HT: Giai đoạn 3 — Bảo hành & Phản ánh
+    KH->>KT: Yêu cầu hỗ trợ
+    KT->>HT: Xử lý bảo hành / phản ánh
+    end
+
+    rect rgb(207, 250, 254)
+    Note over QL,HT: Giai đoạn 4 — Báo cáo
+    QL->>HT: Xem tổng quan và báo cáo
+    end
+```
+
+| Vai trò | Phần việc chính trên hệ thống |
+|---|---|
+| **Kinh doanh** | Hợp đồng, khách hàng, tài liệu |
+| **Kỹ thuật** | Bàn giao, bảo hành, vật tư, sản phẩm |
+| **Quản lý** | Duyệt hồ sơ, phân công, báo cáo |
+| **Quản trị viên** | Cài đặt toàn hệ thống |
+
+---
+
+## 5. CHI TIẾT TỪNG QUY TRÌNH LÀM VIỆC
+
+### LUỒNG 1: Đăng nhập và sử dụng an toàn
+
+**Mục đích:** Mỗi cán bộ đăng nhập bằng tài khoản riêng. Hệ thống chỉ cho phép xem và thao tác đúng phần việc được giao — tránh nhầm lẫn và lộ thông tin.
+
+**Người dùng có thể:**
+
+- Đăng nhập bằng email và mật khẩu
+- Đăng xuất khi không dùng nữa
+- Quản trị viên tạo tài khoản cho đồng nghiệp mới
+- Xem và quản lý các thiết bị đang đăng nhập
+
+```mermaid
+sequenceDiagram
+    actor NV as Cán bộ
+    participant HT as Hệ thống ASMS
+    NV->>HT: Nhập email và mật khẩu
+    HT->>HT: Kiểm tra tài khoản
+    HT-->>NV: Vào màn hình làm việc
+    NV->>HT: Thao tác theo quyền được cấp
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Cán bộ | Mở trang đăng nhập, nhập email và mật khẩu |
+| 2 | Hệ thống | Xác nhận đúng tài khoản, mở màn hình chính |
+| 3 | Cán bộ | Làm việc trên các màn hình được phép |
+| 4 | Cán bộ | Đăng xuất khi kết thúc phiên làm việc |
+
+**Các thao tác trên phần mềm (7 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Đăng nhập | Mọi người dùng | Vào hệ thống bằng email và mật khẩu. |
+| 2 | Đăng xuất | Mọi người dùng | Thu hồi refresh token |
+| 3 | Làm mới phiên | Mọi người dùng | Refresh access token |
+| 4 | Xem danh sách phiên | Mọi người dùng | Thiết bị/phiên đang đăng nhập |
+| 5 | Thu hồi phiên | Mọi người dùng | Đăng xuất một phiên cụ thể |
+| 6 | Đăng xuất tất cả | Mọi người dùng | Hủy mọi phiên |
+| 7 | Tạo tài khoản | Quản trị viên | Thêm hồ sơ mới vào hệ thống. |
+
+---
+
+### LUỒNG 2: Quản lý hợp đồng
+
+**Mục đích:** Lưu trữ toàn bộ thông tin hợp đồng với khách hàng: sản phẩm, giá trị, thời hạn, điều khoản và tiến độ. Một hợp đồng là điểm xuất phát cho bàn giao, bảo hành và chăm sóc sau này.
+
+**Người dùng có thể:**
+
+- Tạo và cập nhật hợp đồng
+- Chọn khách hàng và danh sách sản phẩm
+- Soạn điều khoản từ mẫu có sẵn
+- Trình lãnh đạo duyệt qua các bước
+- Đính kèm file hợp đồng, biên bản
+
+```mermaid
+sequenceDiagram
+    actor KD as Kinh doanh
+    actor QL as Quản lý
+    participant HT as Hệ thống
+    KD->>HT: Tạo hợp đồng mới
+    KD->>HT: Chọn khách hàng và sản phẩm
+    KD->>HT: Trình duyệt
+    QL->>HT: Phê duyệt hoặc yêu cầu sửa
+    HT-->>KD: Hợp đồng có hiệu lực, sẵn sàng bàn giao
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Nhân viên kinh doanh | Tạo hợp đồng, điền thông tin khách hàng và giá trị |
+| 2 | Nhân viên kinh doanh | Chọn sản phẩm và điều khoản áp dụng |
+| 3 | Quản lý | Xem và phê duyệt từng bước |
+| 4 | Hệ thống | Lưu trạng thái, thông báo các bên liên quan |
+
+**Các thao tác trên phần mềm (21 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách HĐ | Tùy vai trò được cấp | Lọc, tìm kiếm, phân trang |
+| 2 | Xem chi tiết HĐ | Tùy vai trò được cấp | Thông tin, tiến độ, quy trình |
+| 3 | Tạo HĐ | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa HĐ | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa HĐ | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Gán danh mục SP | Tùy vai trò được cấp | Thực hiện thao tác «Gán danh mục SP» trên phần mềm. |
+| 7 | Sửa SP trong HĐ | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 8 | Xem SP thuộc HĐ | Tùy vai trò được cấp | Thực hiện thao tác «Xem SP thuộc HĐ» trên phần mềm. |
+| 9 | Chọn điều khoản mẫu | read/update | Tab điều khoản |
+| 10 | Điền nội dung điều khoản | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 11 | Xem phản ánh liên quan | Tùy vai trò được cấp | Thực hiện thao tác «Xem phản ánh liên quan» trên phần mềm. |
+| 12 | Xem tài liệu HĐ | Tùy vai trò được cấp | Thực hiện thao tác «Xem tài liệu HĐ» trên phần mềm. |
+| 13 | Xử lý quy trình HĐ | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 14 | Đính kèm tài liệu bước QT | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 15 | Xem danh sách điều khoản mẫu | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 16 | Tạo / sửa / xóa điều khoản | create / update / delete | Thêm hồ sơ mới vào hệ thống. |
+| 17 | Sắp xếp điều khoản | Tùy vai trò được cấp | Thực hiện thao tác «Sắp xếp điều khoản» trên phần mềm. |
+| 18 | Xem nhóm điều khoản | Tùy vai trò được cấp | Thực hiện thao tác «Xem nhóm điều khoản» trên phần mềm. |
+| 19 | Tạo / sửa / xóa nhóm | create / update / delete | Thêm hồ sơ mới vào hệ thống. |
+| 20 | Gán điều khoản vào nhóm | Tùy vai trò được cấp | Thực hiện thao tác «Gán điều khoản vào nhóm» trên phần mềm. |
+| 21 | Kiểm tra điều khoản đang dùng | Tùy vai trò được cấp | Thực hiện thao tác «Kiểm tra điều khoản đang dùng» trên phần mềm. |
+
+---
+
+### LUỒNG 3: Bàn giao thiết bị và huấn luyện
+
+**Mục đích:** Theo dõi từng đợt bàn giao thiết bị cho khách hàng và tổ chức huấn luyện sử dụng. Quy trình gồm: lập kế hoạch → xin kinh phí → chuẩn bị hàng → bàn giao → tập huấn.
+
+**Người dùng có thể:**
+
+- Mở phiếu bàn giao theo hợp đồng
+- Theo dõi từng bước trên màn hình
+- Trình và duyệt kế hoạch, tờ trình
+- Ghi nhận biên bản bàn giao
+- Quản lý khóa huấn luyện cho khách hàng
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật viên
+    actor QL as Quản lý
+    participant HT as Hệ thống
+    KT->>HT: Tạo phiếu bàn giao
+    KT->>HT: Hoàn thành từng bước quy trình
+    QL->>HT: Ký duyệt
+    KT->>HT: Tổ chức huấn luyện
+    HT-->>KT: Hoàn tất bàn giao
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Kỹ thuật viên | Tạo phiếu bàn giao gắn với hợp đồng |
+| 2 | Kỹ thuật viên | Thực hiện lần lượt: kế hoạch, kinh phí, chuẩn bị, bàn giao |
+| 3 | Quản lý | Duyệt các bước cần phê duyệt |
+| 4 | Kỹ thuật viên | Mở khóa huấn luyện và ghi kết quả |
+
+**Các thao tác trên phần mềm (12 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách bàn giao | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết phiếu BG | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo phiếu bàn giao | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phiếu bàn giao | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phiếu bàn giao | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xử lý quy trình bàn giao | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 7 | Đính kèm tài liệu bước BG | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 8 | Xem danh sách khóa HL | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 9 | Tạo khóa huấn luyện | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 10 | Sửa / xóa khóa HL | update / delete | Chỉnh sửa thông tin đã lưu. |
+| 11 | Xử lý quy trình HL | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 12 | Điền payload từng bước HL | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+
+---
+
+### LUỒNG 4: Bảo hành và sửa chữa
+
+**Mục đích:** Tiếp nhận yêu cầu bảo hành hoặc sửa chữa, phân loại mức độ, giao việc cho kỹ thuật viên và theo dõi đến khi khách hàng nghiệm thu xong.
+
+**Người dùng có thể:**
+
+- Tạo phiếu tiếp nhận sự cố
+- Phân loại trong/ngoài bảo hành
+- Lập kế hoạch sửa chữa và vật tư cần dùng
+- Ghi nhận kết quả và đóng phiếu
+
+```mermaid
+sequenceDiagram
+    actor KH as Khách hàng
+    actor KT as Kỹ thuật viên
+    participant HT as Hệ thống
+    KH->>KT: Báo sự cố
+    KT->>HT: Tạo phiếu bảo hành
+    KT->>HT: Xử lý và cập nhật tiến độ
+    KT->>HT: Nghiệm thu và đóng phiếu
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Kỹ thuật viên | Ghi nhận yêu cầu, thiết bị và mô tả sự cố |
+| 2 | Hệ thống | Ghi thời hạn xử lý cần hoàn thành |
+| 3 | Kỹ thuật viên | Sửa chữa, thay linh kiện nếu cần |
+| 4 | Kỹ thuật viên | Xác nhận đã xử lý xong và đóng phiếu |
+
+**Các thao tác trên phần mềm (8 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách phiếu BH/SC | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết phiếu | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo phiếu BH/SC | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phiếu | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phiếu | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xử lý quy trình BH | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 7 | Điền form động theo bước | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 8 | Đính kèm tài liệu bước BH | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+
+---
+
+### LUỒNG 5: Tiếp nhận và xử lý phản ánh
+
+**Mục đích:** Ghi nhận ý kiến, khiếu nại của khách hàng; phân công đúng đơn vị xử lý; theo dõi tiến độ đến khi đóng hồ sơ.
+
+**Người dùng có thể:**
+
+- Tạo phản ánh mới
+- Hệ thống gợi ý đơn vị xử lý phù hợp
+- Quản lý phân công người phụ trách
+- Trao đổi, cập nhật tiến độ trên hồ sơ
+- Đóng phản ánh khi đã xử lý xong
+
+```mermaid
+sequenceDiagram
+    actor NV as Nhân viên
+    actor QL as Quản lý
+    participant HT as Hệ thống
+    NV->>HT: Tạo phản ánh
+    HT->>HT: Gợi ý đơn vị xử lý
+    QL->>HT: Phân công người phụ trách
+    NV->>HT: Cập nhật xử lý
+    QL->>HT: Đóng phản ánh
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Nhân viên | Tạo phản ánh, mô tả vấn đề và khách hàng liên quan |
+| 2 | Hệ thống | Gợi ý đơn vị nên xử lý theo quy tắc đã thiết lập |
+| 3 | Quản lý | Chỉ định người hoặc nhóm phụ trách |
+| 4 | Người được giao | Cập nhật tiến độ và trao đổi trên hồ sơ |
+| 5 | Quản lý | Xác nhận xử lý xong và đóng phản ánh |
+
+**Các thao tác trên phần mềm (18 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách phản ánh | Tùy vai trò được cấp | Admin: tất cả; khác: chỉ được phân công |
+| 2 | Xem chi tiết phản ánh | Tùy vai trò được cấp | Timeline, bình luận |
+| 3 | Tạo phản ánh | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phản ánh | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phản ánh | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Phân công người / vai trò | Tùy vai trò được cấp | Chỉ định người hoặc đơn vị phụ trách xử lý. |
+| 7 | Phân luồng theo SP / đơn vị | Hệ thống + user | Routing preview, assignments |
+| 8 | Cập nhật xử lý đơn vị | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 9 | Bình luận phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Bình luận phản ánh» trên phần mềm. |
+| 10 | Yêu cầu đóng | Tùy vai trò được cấp | Thực hiện thao tác «Yêu cầu đóng» trên phần mềm. |
+| 11 | Đóng phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Đóng phản ánh» trên phần mềm. |
+| 12 | Hoàn tất sửa chữa & đóng | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 13 | Mở lại phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Mở lại phản ánh» trên phần mềm. |
+| 14 | Xem tóm tắt công việc PA | Tùy vai trò được cấp | Thực hiện thao tác «Xem tóm tắt công việc PA» trên phần mềm. |
+| 15 | Thống kê theo KH / SP / VT | Tùy vai trò được cấp | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 16 | Lọc theo đơn vị của tôi | Tùy vai trò được cấp | Thực hiện thao tác «Lọc theo đơn vị của tôi» trên phần mềm. |
+| 17 | Cấu hình đơn vị thực hiện | Admin / quản lý | Cài đặt → Đơn vị PA |
+| 18 | Cấu hình quy tắc routing | Admin / quản lý | Routing rules |
+
+---
+
+### LUỒNG 6: Chăm sóc khách hàng
+
+**Mục đích:** Lưu hồ sơ khách hàng, người liên hệ, lịch sử chăm sóc và các dịp quan trọng (kỷ niệm, sinh nhật…) để chủ động duy trì quan hệ.
+
+**Người dùng có thể:**
+
+- Quản lý thông tin khách hàng
+- Lưu danh sách người liên hệ
+- Ghi nhận các lần gặp gỡ, gọi điện, email
+- Nhắc lịch các dịp cần chúc mừng
+
+```mermaid
+sequenceDiagram
+    actor KD as Kinh doanh
+    participant HT as Hệ thống
+    KD->>HT: Cập nhật hồ sơ khách hàng
+    KD->>HT: Ghi hoạt động chăm sóc
+    HT-->>KD: Nhắc lịch kỷ niệm
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Nhân viên kinh doanh | Tạo hoặc cập nhật thông tin khách hàng |
+| 2 | Nhân viên kinh doanh | Thêm người liên hệ và vai trò |
+| 3 | Nhân viên kinh doanh | Ghi lại các hoạt động chăm sóc |
+| 4 | Hệ thống | Nhắc nhở khi đến ngày kỷ niệm quan trọng |
+
+**Các thao tác trên phần mềm (9 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách KH | `khach-hang.khach-hang` | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết KH | `khach-hang.khach-hang` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo KH | `khach-hang.khach-hang` | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa KH | `khach-hang.khach-hang` | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa KH | `khach-hang.khach-hang` | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Quản lý liên hệ | `khach-hang.lien-he` | Thực hiện thao tác «Quản lý liên hệ» trên phần mềm. |
+| 7 | Quản lý hoạt động CRM | `khach-hang.hoat-dong` | Thực hiện thao tác «Quản lý hoạt động CRM» trên phần mềm. |
+| 8 | Quản lý kỷ niệm KH | `khach-hang.loyalty` | Thực hiện thao tác «Quản lý kỷ niệm KH» trên phần mềm. |
+| 9 | Đăng ký nhận TB kỷ niệm | `khach-hang.loyalty` | Thực hiện thao tác «Đăng ký nhận TB kỷ niệm» trên phần mềm. |
+
+---
+
+### LUỒNG 7: Quản lý sản phẩm
+
+**Mục đích:** Danh mục sản phẩm/trang bị: thông tin kỹ thuật, linh kiện đi kèm, giai đoạn sản xuất — nghiệm thu — đưa vào sử dụng.
+
+**Người dùng có thể:**
+
+- Thêm và cập nhật thông tin sản phẩm
+- Quản lý linh kiện, thông số kỹ thuật
+- Theo dõi giai đoạn vòng đời sản phẩm
+- Gắn tài liệu kỹ thuật
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật viên
+    participant HT as Hệ thống
+    KT->>HT: Cập nhật danh mục sản phẩm
+    KT->>HT: Quản lý linh kiện và tài liệu
+    HT-->>KT: Liên kết với hợp đồng và bảo hành
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Kỹ thuật viên | Nhập thông tin sản phẩm: mã, tên, phân loại |
+| 2 | Kỹ thuật viên | Cập nhật linh kiện và thông số |
+| 3 | Kỹ thuật viên | Theo dõi trạng thái: sản xuất, nghiệm thu, trang bị |
+
+**Các thao tác trên phần mềm (12 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách SP | — | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết SP | `san-pham.tong-quan` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo SP | — | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa SP | — | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa SP | — | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Quản lý BOM / linh kiện | `san-pham.linh-kien` | Thực hiện thao tác «Quản lý BOM / linh kiện» trên phần mềm. |
+| 7 | Quản lý thông số kỹ thuật | `san-pham.thong-so` | Thực hiện thao tác «Quản lý thông số kỹ thuật» trên phần mềm. |
+| 8 | Quản lý serial linh kiện | `san-pham.linh-kien` | Thực hiện thao tác «Quản lý serial linh kiện» trên phần mềm. |
+| 9 | Xem / gắn tài liệu SP | `san-pham.tai-lieu` | Thực hiện thao tác «Xem / gắn tài liệu SP» trên phần mềm. |
+| 10 | Xem lịch sử thay đổi | `san-pham.lich-su` | Thực hiện thao tác «Xem lịch sử thay đổi» trên phần mềm. |
+| 11 | Xử lý quy trình SP | — | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 12 | Tab đào tạo trên SP | `san-pham.dao-tao` | Thêm hồ sơ mới vào hệ thống. |
+
+---
+
+### LUỒNG 8: Quản lý vật tư và kho
+
+**Mục đích:** Biết rõ vật tư đang có, nhập kho, xuất dùng cho sửa chữa hoặc điều chuyển giữa các đơn vị.
+
+**Người dùng có thể:**
+
+- Nhập vật tư mới vào kho
+- Xem tồn kho hiện tại
+- Lập phiếu điều chuyển giữa các nơi
+- Liên kết vật tư với phiếu sửa chữa
+
+```mermaid
+sequenceDiagram
+    actor KT as Kỹ thuật viên
+    participant HT as Hệ thống
+    KT->>HT: Nhập vật tư
+    KT->>HT: Lập phiếu điều chuyển
+    HT-->>KT: Cập nhật số lượng tồn
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Kỹ thuật viên | Ghi nhận vật tư nhập kho |
+| 2 | Kỹ thuật viên | Theo dõi số lượng còn lại |
+| 3 | Kỹ thuật viên | Tạo phiếu chuyển vật tư khi cần |
+
+**Các thao tác trên phần mềm (8 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách vật tư | `vat-tu.kho` | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết vật tư | `vat-tu.kho` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Nhập vật tư mới | `vat-tu.kho` | Thực hiện thao tác «Nhập vật tư mới» trên phần mềm. |
+| 4 | Sửa vật tư | `vat-tu.kho` | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa vật tư | `vat-tu.kho` | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xem phiếu điều chuyển | `vat-tu.dieu-chuyen` | Thực hiện thao tác «Xem phiếu điều chuyển» trên phần mềm. |
+| 7 | Tạo phiếu điều chuyển | `vat-tu.dieu-chuyen` | Thêm hồ sơ mới vào hệ thống. |
+| 8 | Sửa / xóa phiếu điều chuyển | `vat-tu.dieu-chuyen` | Chỉnh sửa thông tin đã lưu. |
+
+---
+
+### LUỒNG 9: Kho tài liệu
+
+**Mục đích:** Lưu trữ tập trung file hợp đồng, tài liệu kỹ thuật, biên bản… và gắn đúng hồ sơ để tra cứu nhanh.
+
+**Người dùng có thể:**
+
+- Tải file lên hệ thống
+- Phân loại: hợp đồng, kỹ thuật, đào tạo, báo cáo…
+- Gắn tài liệu vào hợp đồng hoặc sản phẩm
+- Tìm kiếm và tải về khi cần
+
+```mermaid
+sequenceDiagram
+    actor NV as Nhân viên
+    participant HT as Hệ thống
+    NV->>HT: Tải file lên
+    NV->>HT: Chọn loại và gắn hồ sơ
+    HT-->>NV: Lưu và hiển thị trong thư viện
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Nhân viên | Chọn file cần lưu trên máy tính |
+| 2 | Nhân viên | Chọn loại tài liệu và hồ sơ liên quan |
+| 3 | Hệ thống | Lưu file, cho phép tìm và tải lại sau |
+
+**Các thao tác trên phần mềm (8 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách tài liệu | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết / tải file | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo metadata tài liệu | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Upload file | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 5 | Sửa tài liệu | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 6 | Xóa tài liệu | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 7 | Lọc theo loại | Tùy vai trò được cấp | Thực hiện thao tác «Lọc theo loại» trên phần mềm. |
+| 8 | Liên kết HĐ / SP / đề tài / khóa HL | create / update | Thực hiện thao tác «Liên kết HĐ / SP / đề tài / khóa HL» trên phần mềm. |
+
+---
+
+### LUỒNG 10: Thiết lập quy trình phê duyệt
+
+**Mục đích:** Quản trị viên cấu hình các bước phê duyệt cho bàn giao, bảo hành, sản phẩm… để mỗi hồ sơ đi đúng quy trình nội bộ.
+
+**Người dùng có thể:**
+
+- Xem danh sách quy trình theo loại hồ sơ
+- Thêm hoặc sửa các bước duyệt
+- Quy định ai được duyệt ở từng bước
+- Theo dõi hồ sơ đang ở bước nào
+
+```mermaid
+sequenceDiagram
+    actor QT as Quản trị viên
+    actor NV as Người xử lý
+    participant HT as Hệ thống
+    QT->>HT: Thiết lập quy trình
+    NV->>HT: Thực hiện bước hiện tại
+    HT-->>NV: Chuyển sang bước tiếp theo
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Quản trị viên | Tạo quy trình và các bước cần thực hiện |
+| 2 | Người xử lý | Mở hồ sơ và hoàn thành bước được giao |
+| 3 | Hệ thống | Chuyển bước và báo cho người duyệt tiếp theo |
+
+**Các thao tác trên phần mềm (13 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem tổng quan nhóm QT | — | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 2 | Xem danh sách QT theo module | handover, warranty, training, coaching, product | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 3 | Tạo quy trình | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa thông tin QT | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa quy trình | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Thêm / sửa / xóa bước | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 7 | Sắp xếp lại bước | Tùy vai trò được cấp | Thực hiện thao tác «Sắp xếp lại bước» trên phần mềm. |
+| 8 | Cấu hình trường nhập bước | Tùy vai trò được cấp | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 9 | Tạo bộ bước chuẩn | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 10 | Gắn QT cho entity | Tùy vai trò được cấp | Thực hiện thao tác «Gắn QT cho entity» trên phần mềm. |
+| 11 | Chuyển bước QT | Tùy vai trò được cấp | Thực hiện thao tác «Chuyển bước QT» trên phần mềm. |
+| 12 | Xem lịch sử bước | Tùy vai trò được cấp | Thực hiện thao tác «Xem lịch sử bước» trên phần mềm. |
+| 13 | Đính kèm tài liệu instance | create / delete | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+
+---
+
+### LUỒNG 11: Bảng tổng quan và báo cáo
+
+**Mục đích:** Giúp lãnh đạo nắm nhanh tình hình: hợp đồng, bàn giao, bảo hành, phản ánh… và xuất báo cáo theo kỳ.
+
+**Người dùng có thể:**
+
+- Xem bảng tổng quan các chỉ số chính
+- Lọc theo thời gian, khách hàng
+- Xem báo cáo chi tiết từng mảng
+- Xuất file Excel hoặc in báo cáo
+
+```mermaid
+sequenceDiagram
+    actor QL as Quản lý
+    participant HT as Hệ thống
+    QL->>HT: Mở bảng tổng quan
+    HT-->>QL: Hiển thị số liệu và cảnh báo
+    QL->>HT: Xuất báo cáo theo kỳ
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Quản lý | Mở màn hình tổng quan khi vào hệ thống |
+| 2 | Quản lý | Chọn khoảng thời gian hoặc khách hàng cần xem |
+| 3 | Quản lý | Vào mục báo cáo và xuất file nếu cần |
+
+**Các thao tác trên phần mềm (20 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem tổng quan | Tùy vai trò được cấp | Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+| 2 | Xem theo khách hàng | Tùy vai trò được cấp | Tab Khách hàng |
+| 3 | Xem doanh thu | Tùy vai trò được cấp | Tab Doanh thu |
+| 4 | Xem dự án / tiến độ | Tùy vai trò được cấp | Tab Dự án (HĐ, BG, HL) |
+| 5 | Xem sản phẩm | Tùy vai trò được cấp | Tab Sản phẩm |
+| 6 | Xem bảo hành | Tùy vai trò được cấp | Tab Bảo hành / phản ánh |
+| 7 | Xem vật tư | Tùy vai trò được cấp | Tab Vật tư / PAKD |
+| 8 | Xem cảnh báo | Tùy vai trò được cấp | Tab Alerts, KPI quá hạn |
+| 9 | Lọc theo năm / quý / KH | Tùy vai trò được cấp | Bộ lọc dashboard |
+| 10 | Luân chuyển tab tự động | Tùy vai trò được cấp | Auto-rotate, fullscreen |
+| 11 | Xem badge menu | Tùy vai trò được cấp | Thực hiện thao tác «Xem badge menu» trên phần mềm. |
+| 12 | Báo cáo theo khách hàng | `bao-cao.khach-hang` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 13 | Báo cáo theo hợp đồng | `bao-cao.hop-dong` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 14 | Báo cáo theo dòng SP | `bao-cao.dong-sp` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 15 | Báo cáo phản ánh | `bao-cao.phan-anh` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 16 | Báo cáo đơn vị thực hiện | `bao-cao.don-vi` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 17 | Báo cáo lỗi vật tư | `material-defects` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 18 | Lọc báo cáo | Năm, từ–đến | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 19 | Xuất Excel | UI export | Thực hiện thao tác «Xuất Excel» trên phần mềm. |
+| 20 | In báo cáo | Print | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+
+---
+
+### LUỒNG 12: Cài đặt và thông báo
+
+**Mục đích:** Quản trị viên quản lý tài khoản, phân quyền; mọi người nhận thông báo nhắc việc, hết hạn hợp đồng, quá hạn xử lý…
+
+**Người dùng có thể:**
+
+- Thêm, sửa tài khoản người dùng
+- Phân quyền xem/sửa từng phần hệ thống
+- Thiết lập quy tắc phân phản ánh
+- Nhận và xem thông báo trên hệ thống
+
+```mermaid
+sequenceDiagram
+    actor QT as Quản trị viên
+    actor NV as Nhân viên
+    participant HT as Hệ thống
+    QT->>HT: Cấu hình tài khoản và quyền
+    HT->>HT: Tự động gửi nhắc việc
+    HT-->>NV: Hiển thị thông báo
+```
+
+**Các bước thực hiện:**
+
+| Bước | Người thực hiện | Việc làm |
+|---:|---|---|
+| 1 | Quản trị viên | Tạo tài khoản và gán vai trò cho từng người |
+| 2 | Quản trị viên | Thiết lập ai được làm gì trên từng màn hình |
+| 3 | Hệ thống | Gửi thông báo khi có việc cần xử lý hoặc sắp hết hạn |
+| 4 | Nhân viên | Mở mục thông báo và làm theo hướng dẫn |
+
+**Các thao tác trên phần mềm (16 mục):**
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Quản lý người dùng | `cai-dat.nguoi-dung` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 2 | Quản lý vai trò | `cai-dat.vai-tro` | Thực hiện thao tác «Quản lý vai trò» trên phần mềm. |
+| 3 | Cấu hình ma trận phân quyền | `cai-dat.phan-quyen` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 4 | Cấu hình thông báo cá nhân | `cai-dat.thong-bao` | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+| 5 | Cấu hình đơn vị PA & routing | Đơn vị PA | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 6 | Cấu hình hệ thống | `cai-dat.he-thong` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 7 | Quản lý phiên đăng nhập | `cai-dat.phien` | Vào hệ thống bằng email và mật khẩu. |
+| 8 | Xem nhật ký audit | `cai-dat.nhat-ky` | Thực hiện thao tác «Xem nhật ký audit» trên phần mềm. |
+| 9 | Quản lý danh mục thuộc tính | `cai-dat.thuoc-tinh` | Thực hiện thao tác «Quản lý danh mục thuộc tính» trên phần mềm. |
+| 10 | Sắp xếp danh mục | Reorder definitions | Thực hiện thao tác «Sắp xếp danh mục» trên phần mềm. |
+| 11 | Kiểm tra danh mục đang dùng | Usage check | Thực hiện thao tác «Kiểm tra danh mục đang dùng» trên phần mềm. |
+| 12 | Xem danh sách thông báo | Mọi người dùng | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 13 | Đánh dấu đã đọc | Mọi người dùng | Thực hiện thao tác «Đánh dấu đã đọc» trên phần mềm. |
+| 14 | Đánh dấu tất cả đã đọc | Mọi người dùng | Thực hiện thao tác «Đánh dấu tất cả đã đọc» trên phần mềm. |
+| 15 | Điều hướng từ thông báo | Mọi người dùng | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+| 16 | Nhận thông báo tự động | Hệ thống (tự động) | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+
+---
+
+
+## 6. TRẠNG THÁI HỒ SƠ (DỄ THEO DÕI)
+
+### 6.1. Hợp đồng
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Mới tạo | Vừa nhập, chưa duyệt xong |
+| Đang thực hiện | Đã có hiệu lực, đang triển khai |
+| Hoàn thành | Đã bàn giao / nghiệm thu |
+| Thanh lý | Kết thúc theo thỏa thuận |
+
+### 6.2. Bàn giao & huấn luyện
+
+| Bước trên hệ thống | Ý nghĩa |
+|---|---|
+| Lập kế hoạch | Soạn kế hoạch bàn giao |
+| Xin kinh phí | Trình và duyệt kinh phí |
+| Chuẩn bị hàng | Chuẩn bị thiết bị |
+| Bàn giao | Thực hiện bàn giao |
+| Huấn luyện | Tập huấn cho khách hàng |
+
+### 6.3. Bảo hành / sửa chữa
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Mới tiếp nhận | Vừa ghi nhận sự cố |
+| Đang xử lý | Kỹ thuật đang sửa |
+| Chờ nghiệm thu | Kiểm tra lại sau sửa |
+| Đã đóng | Hoàn tất |
+
+### 6.4. Phản ánh khách hàng
+
+| Trạng thái | Ý nghĩa |
+|---|---|
+| Mới | Vừa tạo phản ánh |
+| Đang xử lý | Đã giao việc, đang làm |
+| Chờ đóng | Xử lý xong, chờ xác nhận |
+| Đã đóng | Kết thúc |
+
+---
+
+## 7. DANH MỤC CHỨC NĂNG THEO TỪNG PHẦN (152 mục)
+
+### Đăng nhập & bảo mật
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Đăng nhập | Mọi người dùng | Vào hệ thống bằng email và mật khẩu. |
+| 2 | Đăng xuất | Mọi người dùng | Thu hồi refresh token |
+| 3 | Làm mới phiên | Mọi người dùng | Refresh access token |
+| 4 | Xem danh sách phiên | Mọi người dùng | Thiết bị/phiên đang đăng nhập |
+| 5 | Thu hồi phiên | Mọi người dùng | Đăng xuất một phiên cụ thể |
+| 6 | Đăng xuất tất cả | Mọi người dùng | Hủy mọi phiên |
+| 7 | Tạo tài khoản | Quản trị viên | Thêm hồ sơ mới vào hệ thống. |
+
+### Bảng tổng quan
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem tổng quan | Tùy vai trò được cấp | Tab Overview: HĐ, bàn giao, BH, SP, vật tư, PAKD |
+| 2 | Xem theo khách hàng | Tùy vai trò được cấp | Tab Khách hàng |
+| 3 | Xem doanh thu | Tùy vai trò được cấp | Tab Doanh thu |
+| 4 | Xem dự án / tiến độ | Tùy vai trò được cấp | Tab Dự án (HĐ, BG, HL) |
+| 5 | Xem sản phẩm | Tùy vai trò được cấp | Tab Sản phẩm |
+| 6 | Xem bảo hành | Tùy vai trò được cấp | Tab Bảo hành / phản ánh |
+| 7 | Xem vật tư | Tùy vai trò được cấp | Tab Vật tư / PAKD |
+| 8 | Xem cảnh báo | Tùy vai trò được cấp | Tab Alerts, KPI quá hạn |
+| 9 | Lọc theo năm / quý / KH | Tùy vai trò được cấp | Bộ lọc dashboard |
+| 10 | Luân chuyển tab tự động | Tùy vai trò được cấp | Auto-rotate, fullscreen |
+| 11 | Xem badge menu | Tùy vai trò được cấp | Thực hiện thao tác «Xem badge menu» trên phần mềm. |
+
+### Quản lý hợp đồng
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách HĐ | Tùy vai trò được cấp | Lọc, tìm kiếm, phân trang |
+| 2 | Xem chi tiết HĐ | Tùy vai trò được cấp | Thông tin, tiến độ, quy trình |
+| 3 | Tạo HĐ | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa HĐ | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa HĐ | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Gán danh mục SP | Tùy vai trò được cấp | Thực hiện thao tác «Gán danh mục SP» trên phần mềm. |
+| 7 | Sửa SP trong HĐ | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 8 | Xem SP thuộc HĐ | Tùy vai trò được cấp | Thực hiện thao tác «Xem SP thuộc HĐ» trên phần mềm. |
+| 9 | Chọn điều khoản mẫu | read/update | Tab điều khoản |
+| 10 | Điền nội dung điều khoản | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 11 | Xem phản ánh liên quan | Tùy vai trò được cấp | Thực hiện thao tác «Xem phản ánh liên quan» trên phần mềm. |
+| 12 | Xem tài liệu HĐ | Tùy vai trò được cấp | Thực hiện thao tác «Xem tài liệu HĐ» trên phần mềm. |
+| 13 | Xử lý quy trình HĐ | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 14 | Đính kèm tài liệu bước QT | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 15 | Xem danh sách điều khoản mẫu | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 16 | Tạo / sửa / xóa điều khoản | create / update / delete | Thêm hồ sơ mới vào hệ thống. |
+| 17 | Sắp xếp điều khoản | Tùy vai trò được cấp | Thực hiện thao tác «Sắp xếp điều khoản» trên phần mềm. |
+| 18 | Xem nhóm điều khoản | Tùy vai trò được cấp | Thực hiện thao tác «Xem nhóm điều khoản» trên phần mềm. |
+| 19 | Tạo / sửa / xóa nhóm | create / update / delete | Thêm hồ sơ mới vào hệ thống. |
+| 20 | Gán điều khoản vào nhóm | Tùy vai trò được cấp | Thực hiện thao tác «Gán điều khoản vào nhóm» trên phần mềm. |
+| 21 | Kiểm tra điều khoản đang dùng | Tùy vai trò được cấp | Thực hiện thao tác «Kiểm tra điều khoản đang dùng» trên phần mềm. |
+
+### Bàn giao & huấn luyện
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách bàn giao | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết phiếu BG | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo phiếu bàn giao | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phiếu bàn giao | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phiếu bàn giao | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xử lý quy trình bàn giao | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 7 | Đính kèm tài liệu bước BG | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 8 | Xem danh sách khóa HL | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 9 | Tạo khóa huấn luyện | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 10 | Sửa / xóa khóa HL | update / delete | Chỉnh sửa thông tin đã lưu. |
+| 11 | Xử lý quy trình HL | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 12 | Điền payload từng bước HL | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+
+### Bảo hành & sửa chữa
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách phiếu BH/SC | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết phiếu | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo phiếu BH/SC | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phiếu | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phiếu | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xử lý quy trình BH | Tùy vai trò được cấp | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 7 | Điền form động theo bước | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 8 | Đính kèm tài liệu bước BH | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+
+### Quản lý sản phẩm
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách SP | — | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết SP | `san-pham.tong-quan` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo SP | — | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa SP | — | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa SP | — | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Quản lý BOM / linh kiện | `san-pham.linh-kien` | Thực hiện thao tác «Quản lý BOM / linh kiện» trên phần mềm. |
+| 7 | Quản lý thông số kỹ thuật | `san-pham.thong-so` | Thực hiện thao tác «Quản lý thông số kỹ thuật» trên phần mềm. |
+| 8 | Quản lý serial linh kiện | `san-pham.linh-kien` | Thực hiện thao tác «Quản lý serial linh kiện» trên phần mềm. |
+| 9 | Xem / gắn tài liệu SP | `san-pham.tai-lieu` | Thực hiện thao tác «Xem / gắn tài liệu SP» trên phần mềm. |
+| 10 | Xem lịch sử thay đổi | `san-pham.lich-su` | Thực hiện thao tác «Xem lịch sử thay đổi» trên phần mềm. |
+| 11 | Xử lý quy trình SP | — | Thực hiện bước phê duyệt: trình, duyệt hoặc từ chối. |
+| 12 | Tab đào tạo trên SP | `san-pham.dao-tao` | Thêm hồ sơ mới vào hệ thống. |
+
+### Quản lý vật tư
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách vật tư | `vat-tu.kho` | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết vật tư | `vat-tu.kho` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Nhập vật tư mới | `vat-tu.kho` | Thực hiện thao tác «Nhập vật tư mới» trên phần mềm. |
+| 4 | Sửa vật tư | `vat-tu.kho` | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa vật tư | `vat-tu.kho` | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Xem phiếu điều chuyển | `vat-tu.dieu-chuyen` | Thực hiện thao tác «Xem phiếu điều chuyển» trên phần mềm. |
+| 7 | Tạo phiếu điều chuyển | `vat-tu.dieu-chuyen` | Thêm hồ sơ mới vào hệ thống. |
+| 8 | Sửa / xóa phiếu điều chuyển | `vat-tu.dieu-chuyen` | Chỉnh sửa thông tin đã lưu. |
+
+### Khách hàng & chăm sóc
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách KH | `khach-hang.khach-hang` | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết KH | `khach-hang.khach-hang` | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo KH | `khach-hang.khach-hang` | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa KH | `khach-hang.khach-hang` | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa KH | `khach-hang.khach-hang` | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Quản lý liên hệ | `khach-hang.lien-he` | Thực hiện thao tác «Quản lý liên hệ» trên phần mềm. |
+| 7 | Quản lý hoạt động CRM | `khach-hang.hoat-dong` | Thực hiện thao tác «Quản lý hoạt động CRM» trên phần mềm. |
+| 8 | Quản lý kỷ niệm KH | `khach-hang.loyalty` | Thực hiện thao tác «Quản lý kỷ niệm KH» trên phần mềm. |
+| 9 | Đăng ký nhận TB kỷ niệm | `khach-hang.loyalty` | Thực hiện thao tác «Đăng ký nhận TB kỷ niệm» trên phần mềm. |
+
+### Phản ánh khách hàng
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách phản ánh | Tùy vai trò được cấp | Admin: tất cả; khác: chỉ được phân công |
+| 2 | Xem chi tiết phản ánh | Tùy vai trò được cấp | Timeline, bình luận |
+| 3 | Tạo phản ánh | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa phản ánh | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa phản ánh | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Phân công người / vai trò | Tùy vai trò được cấp | Chỉ định người hoặc đơn vị phụ trách xử lý. |
+| 7 | Phân luồng theo SP / đơn vị | Hệ thống + user | Routing preview, assignments |
+| 8 | Cập nhật xử lý đơn vị | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 9 | Bình luận phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Bình luận phản ánh» trên phần mềm. |
+| 10 | Yêu cầu đóng | Tùy vai trò được cấp | Thực hiện thao tác «Yêu cầu đóng» trên phần mềm. |
+| 11 | Đóng phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Đóng phản ánh» trên phần mềm. |
+| 12 | Hoàn tất sửa chữa & đóng | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 13 | Mở lại phản ánh | Tùy vai trò được cấp | Thực hiện thao tác «Mở lại phản ánh» trên phần mềm. |
+| 14 | Xem tóm tắt công việc PA | Tùy vai trò được cấp | Thực hiện thao tác «Xem tóm tắt công việc PA» trên phần mềm. |
+| 15 | Thống kê theo KH / SP / VT | Tùy vai trò được cấp | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 16 | Lọc theo đơn vị của tôi | Tùy vai trò được cấp | Thực hiện thao tác «Lọc theo đơn vị của tôi» trên phần mềm. |
+| 17 | Cấu hình đơn vị thực hiện | Admin / quản lý | Cài đặt → Đơn vị PA |
+| 18 | Cấu hình quy tắc routing | Admin / quản lý | Routing rules |
+
+### Báo cáo & thống kê
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Báo cáo theo khách hàng | `bao-cao.khach-hang` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 2 | Báo cáo theo hợp đồng | `bao-cao.hop-dong` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 3 | Báo cáo theo dòng SP | `bao-cao.dong-sp` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 4 | Báo cáo phản ánh | `bao-cao.phan-anh` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 5 | Báo cáo đơn vị thực hiện | `bao-cao.don-vi` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 6 | Báo cáo lỗi vật tư | `material-defects` | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 7 | Lọc báo cáo | Năm, từ–đến | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+| 8 | Xuất Excel | UI export | Thực hiện thao tác «Xuất Excel» trên phần mềm. |
+| 9 | In báo cáo | Print | Xem số liệu tổng hợp, có thể xuất file hoặc in. |
+
+### Kho tài liệu
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách tài liệu | Tùy vai trò được cấp | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Xem chi tiết / tải file | Tùy vai trò được cấp | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 3 | Tạo metadata tài liệu | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Upload file | Tùy vai trò được cấp | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+| 5 | Sửa tài liệu | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 6 | Xóa tài liệu | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 7 | Lọc theo loại | Tùy vai trò được cấp | Thực hiện thao tác «Lọc theo loại» trên phần mềm. |
+| 8 | Liên kết HĐ / SP / đề tài / khóa HL | create / update | Thực hiện thao tác «Liên kết HĐ / SP / đề tài / khóa HL» trên phần mềm. |
+
+### Quy trình phê duyệt
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem tổng quan nhóm QT | — | Mở một hồ sơ cụ thể để xem đầy đủ thông tin. |
+| 2 | Xem danh sách QT theo module | handover, warranty, training, coaching, product | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 3 | Tạo quy trình | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 4 | Sửa thông tin QT | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 5 | Xóa quy trình | Tùy vai trò được cấp | Xóa hồ sơ khỏi danh sách (vẫn lưu lịch sử phía hệ thống). |
+| 6 | Thêm / sửa / xóa bước | Tùy vai trò được cấp | Chỉnh sửa thông tin đã lưu. |
+| 7 | Sắp xếp lại bước | Tùy vai trò được cấp | Thực hiện thao tác «Sắp xếp lại bước» trên phần mềm. |
+| 8 | Cấu hình trường nhập bước | Tùy vai trò được cấp | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 9 | Tạo bộ bước chuẩn | Tùy vai trò được cấp | Thêm hồ sơ mới vào hệ thống. |
+| 10 | Gắn QT cho entity | Tùy vai trò được cấp | Thực hiện thao tác «Gắn QT cho entity» trên phần mềm. |
+| 11 | Chuyển bước QT | Tùy vai trò được cấp | Thực hiện thao tác «Chuyển bước QT» trên phần mềm. |
+| 12 | Xem lịch sử bước | Tùy vai trò được cấp | Thực hiện thao tác «Xem lịch sử bước» trên phần mềm. |
+| 13 | Đính kèm tài liệu instance | create / delete | Tải file (biên bản, ảnh…) gắn vào hồ sơ. |
+
+### Cài đặt hệ thống
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Quản lý người dùng | `cai-dat.nguoi-dung` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 2 | Quản lý vai trò | `cai-dat.vai-tro` | Thực hiện thao tác «Quản lý vai trò» trên phần mềm. |
+| 3 | Cấu hình ma trận phân quyền | `cai-dat.phan-quyen` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 4 | Cấu hình thông báo cá nhân | `cai-dat.thong-bao` | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+| 5 | Cấu hình đơn vị PA & routing | Đơn vị PA | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 6 | Cấu hình hệ thống | `cai-dat.he-thong` | Thiết lập tài khoản, quyền hoặc danh mục dùng chung. |
+| 7 | Quản lý phiên đăng nhập | `cai-dat.phien` | Vào hệ thống bằng email và mật khẩu. |
+| 8 | Xem nhật ký audit | `cai-dat.nhat-ky` | Thực hiện thao tác «Xem nhật ký audit» trên phần mềm. |
+| 9 | Quản lý danh mục thuộc tính | `cai-dat.thuoc-tinh` | Thực hiện thao tác «Quản lý danh mục thuộc tính» trên phần mềm. |
+| 10 | Sắp xếp danh mục | Reorder definitions | Thực hiện thao tác «Sắp xếp danh mục» trên phần mềm. |
+| 11 | Kiểm tra danh mục đang dùng | Usage check | Thực hiện thao tác «Kiểm tra danh mục đang dùng» trên phần mềm. |
+
+### Thông báo
+
+| STT | Việc cần làm | Ai thực hiện | Giải thích |
+|---:|---|---|---|
+| 1 | Xem danh sách thông báo | Mọi người dùng | Mở màn hình danh sách, tìm kiếm và lọc theo nhu cầu. |
+| 2 | Đánh dấu đã đọc | Mọi người dùng | Thực hiện thao tác «Đánh dấu đã đọc» trên phần mềm. |
+| 3 | Đánh dấu tất cả đã đọc | Mọi người dùng | Thực hiện thao tác «Đánh dấu tất cả đã đọc» trên phần mềm. |
+| 4 | Điều hướng từ thông báo | Mọi người dùng | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+| 5 | Nhận thông báo tự động | Hệ thống (tự động) | Nhận nhắc việc, cảnh báo hết hạn trên hệ thống. |
+
+
+---
+
+## 8. KẾT LUẬN
+
+Tài liệu mô tả **12 quy trình** và **152 chức năng** của ASMS bằng ngôn ngữ dễ hiểu. Hệ thống giúp:
+
+- **Gom hồ sơ một chỗ** — hợp đồng, bàn giao, bảo hành, khách hàng liên thông
+- **Đi đúng quy trình** — trình duyệt rõ ràng, có người chịu trách nhiệm
+- **Theo dõi tiến độ** — bảng tổng quan và báo cáo cho lãnh đạo
+- **Nhắc việc kịp thời** — thông báo hết hạn, quá hạn xử lý
+
+Mọi góp ý xin gửi đội dự án để hoàn thiện trước khi đưa vào sử dụng chính thức.
+
+— Hết —
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+function decodeHtmlEntities(text) {
+  const el = document.createElement('textarea');
+  el.innerHTML = text;
+  return el.value;
+}
+function mermaidBlocksToDivs(html) {
+  return html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/gi, function(_, raw) {
+    const code = decodeHtmlEntities(raw);
+    return '<div class="mermaid">' + code.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</div>';
+  });
+}
+const renderer = new marked.Renderer();
+const baseCode = renderer.code.bind(renderer);
+renderer.code = function(code, lang) {
+  if (lang === 'mermaid') {
+    const safe = code.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return '<div class="mermaid">' + safe + '</div>';
+  }
+  return baseCode(code, lang);
+};
+marked.setOptions({ renderer, gfm: true, breaks: false });
+const mdRaw = document.getElementById('md-source').textContent;
+let htmlContent = mermaidBlocksToDivs(marked.parse(mdRaw));
+const host = document.getElementById('content-host');
+const wrapper = document.createElement('div');
+wrapper.className = 'doc-page content-flow';
+wrapper.innerHTML = '<div class="inner-brd-header"><div class="inner-brd-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-004</span></div><div class="inner-brd-right">ASMS &nbsp;·&nbsp; Phiên bản 1.0</div></div><div class="inner-brd-divider"></div><div class="content-area"><div class="md-render">' + htmlContent + '</div></div><div class="inner-brd-footer"><div class="inner-brd-footer-l">UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div><div class="inner-brd-footer-r"><span class="ft-page">ASMS — BRD dễ hiểu v1.0</span></div></div>';
+host.appendChild(wrapper);
+const archHtml = "\n<figure class=\"arch-figure\">\n<div class=\"arch-diagram\">\n  <div class=\"arch-title\">ASMS — Hệ thống quản lý hậu mãi (5 tầng)</div>\n  <div class=\"arch-layer l1\">\n    <div class=\"arch-layer-hd\">TẦNG 1 — NGƯỜI SỬ DỤNG</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>Màn hình quản trị</strong><br>Quản trị viên · Quản lý · Kinh doanh<br><em>Tổng quan, cài đặt hệ thống</em></div>\n      <div class=\"arch-box\"><strong>Màn hình vận hành</strong><br>Kỹ thuật viên · Người xem<br><em>Hợp đồng, bàn giao, bảo hành, vật tư…</em></div>\n      <div class=\"arch-box\"><strong>Đăng nhập</strong><br>Tài khoản &amp; mật khẩu<br><em>Mỗi người chỉ thấy phần việc của mình</em></div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l2\">\n    <div class=\"arch-layer-hd\">TẦNG 2 — BẢO MẬT &amp; KIỂM SOÁT TRUY CẬP</div>\n    <div class=\"arch-row two\">\n      <div class=\"arch-box\"><strong>Cổng kết nối hệ thống</strong><br>Tiếp nhận yêu cầu từ màn hình<br>Trả kết quả thống nhất</div>\n      <div class=\"arch-box\"><strong>Phân quyền theo vai trò</strong><br>5 nhóm người dùng<br>Xem / thêm / sửa / xóa từng phần</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l3\">\n    <div class=\"arch-layer-hd\">TẦNG 3 — NGHIỆP VỤ CHÍNH</div>\n    <div class=\"arch-grid\">\n      <div class=\"arch-box\"><strong>Hợp đồng</strong><br>Lập, theo dõi, phê duyệt<br>Gắn khách hàng &amp; sản phẩm</div>\n      <div class=\"arch-box\"><strong>Bàn giao &amp; Huấn luyện</strong><br>Quy trình bàn giao thiết bị<br>Tổ chức tập huấn vận hành</div>\n      <div class=\"arch-box\"><strong>Bảo hành &amp; Sửa chữa</strong><br>Tiếp nhận sự cố<br>Theo dõi thời hạn xử lý</div>\n      <div class=\"arch-box\"><strong>Sản phẩm &amp; Vật tư</strong><br>Danh mục trang bị<br>Quản lý kho &amp; điều chuyển</div>\n      <div class=\"arch-box\"><strong>Khách hàng &amp; Phản ánh</strong><br>Hồ sơ khách hàng<br>Tiếp nhận &amp; xử lý ý kiến</div>\n      <div class=\"arch-box\"><strong>Quy trình &amp; Cài đặt</strong><br>Thiết lập bước phê duyệt<br>Quản lý người dùng</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l4\">\n    <div class=\"arch-layer-hd\">TẦNG 4 — LƯU TRỮ DỮ LIỆU &amp; TÀI LIỆU</div>\n    <div class=\"arch-row\">\n      <div class=\"arch-box\"><strong>Cơ sở dữ liệu</strong><br>Lưu hồ sơ nghiệp vụ<br>Lịch sử thao tác</div>\n      <div class=\"arch-box\"><strong>Tệp đính kèm</strong><br>Hợp đồng, biên bản, ảnh…<br>Gắn theo từng hồ sơ</div>\n      <div class=\"arch-box\"><strong>Thông báo tự động</strong><br>Nhắc hết hạn, quá hạn<br>Thông báo trên màn hình</div>\n    </div>\n  </div>\n  <div class=\"arch-arrow\">▼</div>\n  <div class=\"arch-layer l5\">\n    <div class=\"arch-layer-hd\">TẦNG 5 — NỀN TẢNG CÔNG NGHỆ</div>\n    <div class=\"arch-tech\">\n      <span>Giao diện web</span><span>Máy chủ ứng dụng</span><span>Cơ sở dữ liệu</span><span>Triển khai an toàn</span>\n    </div>\n  </div>\n</div>\n<figcaption>Hình 1. Cách hệ thống ASMS được tổ chức — từ người dùng đến dữ liệu</figcaption>\n</figure>";
+const renderRoot = wrapper.querySelector('.md-render');
+renderRoot.innerHTML = renderRoot.innerHTML.replace('<p>[[ARCHITECTURE_DIAGRAM]]</p>', archHtml);
+function slugify(text) {
+  return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+const seenIds = new Map();
+const headings = Array.from(renderRoot.querySelectorAll('h2, h3, h4'));
+headings.forEach((heading, index) => {
+  const base = slugify(heading.textContent) || 'section-' + (index + 1);
+  const count = seenIds.get(base) || 0;
+  seenIds.set(base, count + 1);
+  heading.id = count ? base + '-' + (count + 1) : base;
+});
+const tocList = document.getElementById('toc-list');
+headings.forEach((heading, index) => {
+  const link = document.createElement('a');
+  const level = heading.tagName === 'H2' ? '2' : heading.tagName === 'H3' ? '3' : '4';
+  link.className = 'toc-item level-' + level;
+  link.href = '#' + heading.id;
+  link.innerHTML = '<span class="toc-index">' + (index + 1) + '.</span><span class="toc-text">' + heading.textContent + '</span>';
+  tocList.appendChild(link);
+});
+function wrapKeepTogether(root) {
+  root.querySelectorAll('table').forEach(function(table) {
+    if (table.closest('.table-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'table-keep';
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  });
+  root.querySelectorAll('.mermaid').forEach(function(el) {
+    if (el.closest('.diagram-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'diagram-keep';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  });
+  root.querySelectorAll('h3').forEach(function(h3) {
+    var t = h3.textContent || '';
+    if (!/^Phụ lục —/.test(t)) return;
+    if (h3.closest('.keep-together')) return;
+    var box = document.createElement('div');
+    box.className = 'keep-together';
+    h3.parentNode.insertBefore(box, h3);
+    box.appendChild(h3);
+    var next = h3.nextElementSibling;
+    while (next && next.tagName !== 'H3' && next.tagName !== 'H2') {
+      var grab = next;
+      next = next.nextElementSibling;
+      box.appendChild(grab);
+    }
+  });
+  root.querySelectorAll('h4').forEach(function(h4) {
+    var next = h4.nextElementSibling;
+    if (!next || next.tagName !== 'TABLE') return;
+    if (h4.closest('.keep-together')) return;
+    var box = document.createElement('div');
+    box.className = 'keep-together';
+    h4.parentNode.insertBefore(box, h4);
+    box.appendChild(h4);
+    box.appendChild(next);
+  });
+  root.querySelectorAll('.arch-figure').forEach(function(el) {
+    if (el.closest('.diagram-keep')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'diagram-keep';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  });
+}
+function paginateForPrint() {
+  var hostEl = document.getElementById('content-host');
+  var pageShell = hostEl.querySelector('.doc-page.content-flow');
+  if (!pageShell || pageShell.classList.contains('print-page')) return;
+  var mdRoot = pageShell.querySelector('.md-render');
+  if (!mdRoot) return;
+  var blocks = Array.from(mdRoot.children);
+  var MAX_H = 640;
+  hostEl.removeChild(pageShell);
+  function newPrintPage() {
+    var page = pageShell.cloneNode(true);
+    page.classList.add('print-page');
+    page.classList.remove('content-flow');
+    var md = page.querySelector('.md-render');
+    md.innerHTML = '';
+    hostEl.appendChild(page);
+    return md;
+  }
+  var curMd = newPrintPage();
+  blocks.forEach(function(block) {
+    curMd.appendChild(block);
+    if (curMd.scrollHeight > MAX_H && curMd.children.length > 1) {
+      curMd.removeChild(block);
+      curMd = newPrintPage();
+      curMd.appendChild(block);
+    }
+  });
+}
+window.paginateForPrint = paginateForPrint;
+(async function() {
+  try {
+    await mermaid.run({ querySelector: '.mermaid', suppressErrors: true });
+    wrapKeepTogether(renderRoot);
+    window.__brdLayoutReady = true;
+  } catch (err) {
+    console.error('Mermaid render error:', err);
+    window.__brdLayoutReady = true;
+  }
+})();
+</script>
+</body>
+</html>
