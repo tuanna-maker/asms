@@ -1,0 +1,411 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vận hành &amp; Quản lý ASMS — On-Premise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.6; }
+        .doc-page { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.22); display: flex; flex-direction: column; }
+        @media print { @page { size: A4 portrait; margin: 0; } body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .doc-page { margin: 0; box-shadow: none; page-break-after: always; } }
+        .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); }
+        .cover { padding: 0; }
+        .cover .header { padding: 22px 52px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .cover .divider { margin: 0 52px; height: 1px; background: #eaeff8; }
+        .cover .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 50px 52px; }
+        .cover .logo-wrap img { width: 220px; }
+        .cover .sep { width: 52px; height: 3px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); margin: 24px auto; border-radius: 2px; }
+        .cover .doc-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3d7de8; text-transform: uppercase; }
+        .cover .project-title { font-size: 30px; font-weight: 900; margin-top: 12px; line-height: 1.25; }
+        .cover .project-title span { color: #3d7de8; }
+        .cover .subtitle { margin-top: 14px; font-size: 13px; color: #475569; max-width: 460px; }
+        .cover .badge-row { margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .cover .badge { background: #eef4ff; color: #1e40af; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .cover .footer { padding: 18px 52px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+        .inner-header { padding: 18px 48px 18px 68px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .inner-divider { margin: 0 48px 0 68px; height: 1px; background: #eaeff8; }
+        .inner-footer { padding: 14px 48px 14px 68px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; margin-top: auto; }
+        .content { flex: 1; padding: 16px 48px 40px 68px; }
+        h1.toc-title { font-size: 19px; font-weight: 900; border-bottom: 2px solid #3d7de8; padding-bottom: 8px; margin-bottom: 10px; }
+        h2 { font-size: 16px; font-weight: 800; margin: 14px 0 8px; padding: 6px 12px; background: linear-gradient(90deg, #eef4ff, transparent); border-left: 4px solid #3d7de8; }
+        h3 { font-size: 13px; font-weight: 700; color: #1e3a5f; margin: 10px 0 6px; }
+        p, li { font-size: 12px; color: #334155; margin: 4px 0; }
+        code { background: #eef4ff; padding: 1px 6px; border-radius: 4px; font-family: Consolas, Monaco, monospace; font-size: 11.5px; color: #1e40af; }
+        ul, ol { margin-left: 20px; }
+        .toc-link { display: flex; gap: 10px; padding: 8px 12px; border: 1px solid #eaeff8; border-radius: 8px; text-decoration: none; color: inherit; margin-bottom: 6px; font-size: 12.5px; background: #fbfdff; }
+        .toc-num { font-weight: 800; color: #3d7de8; min-width: 24px; }
+        .plain-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+        .plain-box strong { color: #0d1e34; }
+        .tip { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .important { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .info { background: #eef4ff; border-left: 4px solid #3d7de8; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .cmd-box { background: #1e293b; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-family: Consolas, Monaco, monospace; font-size: 11px; line-height: 1.5; margin: 6px 0; word-break: break-all; }
+        .cmd-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; margin-top: 6px; }
+        table.simple { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+        table.simple th { background: #1e3a5f; color: #fff; padding: 8px; text-align: left; }
+        table.simple td { border: 1px solid #cbd5e0; padding: 7px 8px; vertical-align: top; }
+        table.simple tr:nth-child(even) td { background: #f8fafc; }
+        .faq-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+        .faq-q { font-weight: 700; font-size: 12px; color: #1e3a5f; }
+        .faq-a { font-size: 11.5px; color: #475569; margin-top: 4px; }
+        .contact-card { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .contact-card div { border: 1px solid #eaeff8; border-radius: 10px; padding: 12px; font-size: 11px; background: #fbfdff; }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0; }
+        .stat { border: 1px solid #eaeff8; border-radius: 10px; padding: 12px; background: #fbfdff; text-align: center; }
+        .stat .v { font-size: 20px; font-weight: 900; color: #3d7de8; }
+        .stat .l { font-size: 10.5px; color: #64748b; margin-top: 4px; }
+        .checklist { list-style: none; margin: 8px 0; padding: 0; }
+        .checklist li { padding: 6px 0 6px 28px; position: relative; font-size: 12px; border-bottom: 1px dashed #e2e8f0; }
+        .checklist li::before { content: '\2610'; position: absolute; left: 4px; color: #3d7de8; font-weight: 700; font-size: 14px; }
+        .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .pill { background: #eef4ff; color: #1e40af; padding: 5px 12px; border-radius: 20px; font-size: 10.5px; font-weight: 700; }
+        .pill.success { background: #dcfce7; color: #166534; }
+        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+        .zone-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #fff; }
+        .zone-card .zone-title { font-size: 12.5px; font-weight: 800; color: #1e3a5f; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .zone-card .zone-sub { font-size: 10.5px; color: #64748b; margin-bottom: 8px; }
+        .zone-card table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .zone-card td { padding: 4px 6px; border-bottom: 1px dashed #eaeff8; vertical-align: top; }
+        .zone-card td:first-child { font-weight: 600; color: #1e3a5f; width: 45%; }
+    </style>
+</head>
+<body>
+<!-- BÌA -->
+<div class="doc-page cover">
+    <div class="accent-bar"></div>
+    <div class="header">
+        <div>Mã tài liệu: UNICOM/ASMS-OPS-001</div>
+        <div>Phiên bản 1.0 · 01/07/2026</div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+        <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Unicom"></div>
+        <div class="sep"></div>
+        <div class="doc-label">Tài liệu vận hành &amp; quản lý</div>
+        <div class="project-title">Vận hành &amp; Quản lý<br><span>ASMS</span> — On-Premise</div>
+        <div class="subtitle">Tài liệu dành cho quản trị viên và kỹ sư IT VTX: runbook triển khai, chịu lỗi, giám sát, FAQ và checklist vận hành dài hạn.</div>
+        <div class="badge-row">
+            <span class="badge">Runbook</span>
+            <span class="badge">Backup &amp; Restore</span>
+            <span class="badge">Monitoring</span>
+            <span class="badge">SLA / RPO / RTO</span>
+        </div>
+    </div>
+    <div class="footer">
+        <div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div>© 2026</div>
+    </div>
+</div>
+
+<!-- MỤC LỤC -->
+<div class="doc-page">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>Vận hành &amp; quản lý ASMS</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h1 class="toc-title">Mục lục</h1>
+        <a href="#s14" class="toc-link"><span class="toc-num">14</span> Runbook triển khai &amp; vận hành</a>
+        <a href="#s15" class="toc-link"><span class="toc-num">15</span> Khả năng chịu lỗi &amp; phục hồi</a>
+        <a href="#s16" class="toc-link"><span class="toc-num">16</span> Giám sát đề xuất</a>
+        <a href="#s17" class="toc-link"><span class="toc-num">17</span> Câu hỏi thường gặp (FAQ)</a>
+        <a href="#s18" class="toc-link"><span class="toc-num">18</span> Tài liệu tham chiếu trong repo</a>
+        <a href="#s19" class="toc-link"><span class="toc-num">19</span> Liên hệ hỗ trợ</a>
+        <a href="#s20" class="toc-link"><span class="toc-num">20</span> Checklist hoàn tất triển khai</a>
+        <div class="info" style="margin-top:18px">
+            <strong>Tài liệu này là phần vận hành</strong> của bộ tài liệu triển khai ASMS.
+            Đọc trước <strong>ASMS_trien-khai-day-du.html</strong> (§01–§13) để nắm kiến trúc hệ thống và hướng dẫn cài đặt.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>Vận hành &amp; quản lý v1.0</div></div>
+</div>
+<!-- 14 -->
+<div class="doc-page" id="s14">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§14 Runbook</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>14. Runbook triển khai &amp; vận hành</h2>
+        <p>Tuân thủ quy trình trong <code>docs/cutover-runbook.md</code>. Dưới đây tóm tắt các mốc quan trọng quanh thời điểm go-live.</p>
+        <table class="simple">
+            <thead><tr><th style="width:90px">Mốc</th><th>Công việc</th></tr></thead>
+            <tbody>
+                <tr><td><strong>T-24h</strong></td><td>UAT 5 vai trò, ký biên bản, import ma trận A2</td></tr>
+                <tr><td><strong>T-2h</strong></td><td>Snapshot DB, backup uploads, freeze cấu hình</td></tr>
+                <tr><td><strong>T0</strong></td><td><code>docker compose up -d</code>; entrypoint chạy <code>prisma migrate deploy</code></td></tr>
+                <tr><td><strong>T+5p</strong></td><td><code>docker exec asms_backend npm run bootstrap:auth</code> (lần đầu)</td></tr>
+                <tr><td><strong>T+10p</strong></td><td>Đổi mật khẩu admin, tạo user thật qua UI Cài đặt</td></tr>
+                <tr><td><strong>T+20p</strong></td><td><code>post-deploy-smoke</code>: uat-role + uc-smoke + dashboard-audit</td></tr>
+                <tr><td><strong>Hypercare</strong></td><td>2–4 tuần: theo dõi /api/v1/health, log 5xx, backup, disk</td></tr>
+            </tbody>
+        </table>
+        <h3>14.1 Lệnh vận hành thường dùng</h3>
+        <div class="cmd-label">Verify sau khi up</div>
+        <div class="cmd-box">curl -k https://asms.vtx.local/api/v1/health
+# mong đợi: {"success":true,"data":{"status":"ok","database":"reachable"}}</div>
+        <div class="cmd-label">Xem log backend</div>
+        <div class="cmd-box">docker compose logs -f backend</div>
+        <div class="cmd-label">Backup thủ công</div>
+        <div class="cmd-box">bash /opt/asms/scripts/backup-production.sh</div>
+        <div class="cmd-label">Import RBAC</div>
+        <div class="cmd-box">docker compose exec backend node scripts/import-role-permissions.mjs</div>
+        <div class="cmd-label">Restart containers</div>
+        <div class="cmd-box">docker compose restart backend</div>
+        <div class="cmd-label">Xem container đang chạy</div>
+        <div class="cmd-box">docker compose ps</div>
+        <div class="cmd-label">Post-deploy smoke test</div>
+        <div class="cmd-box">docker compose exec backend node scripts/post-deploy-smoke.mjs</div>
+        <div class="info">
+            <strong>Tip:</strong> chạy <code>node scripts/post-deploy-smoke.mjs</code> sau mỗi lần deploy để tự động kiểm tra
+            health, đăng nhập, RBAC và audit log. Xem chi tiết <code>docs/production-smoke.md</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§14 Runbook</div></div>
+</div>
+<!-- 15 -->
+<div class="doc-page" id="s15">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§15 Chịu lỗi</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>15. Khả năng chịu lỗi &amp; phục hồi</h2>
+        <div class="stat-grid">
+            <div class="stat"><div class="v">RPO</div><div class="l">~24 giờ (backup cron 1 lần/ngày lúc 02:00)</div></div>
+            <div class="stat"><div class="v">RTO</div><div class="l">Phụ thuộc kích thước DB</div></div>
+            <div class="stat"><div class="v">Rollback</div><div class="l">Image tag cũ + DB snapshot</div></div>
+        </div>
+        <h3>15.1 Quy trình restore khi sự cố</h3>
+        <ol>
+            <li>Liệt kê các bản backup: <code>ls -lh /opt/asms/backups/</code></li>
+            <li>Chọn bản <code>asms_db_YYYYMMDD.sql.gz</code> + <code>asms_uploads_YYYYMMDD.tar.gz</code> mới nhất.</li>
+            <li>Dừng containers: <code>docker compose down</code></li>
+            <li>Khôi phục DB: <code>gunzip -c asms_db_*.sql.gz | docker exec -i asms-db psql -U asms</code></li>
+            <li>Khôi phục uploads: <code>tar -xzf asms_uploads_*.tar.gz -C backend/uploads</code></li>
+            <li>Redeploy image trước đó: <code>docker compose up -d</code></li>
+            <li>Verify health: <code>curl /api/v1/health</code> và đăng nhập thử.</li>
+            <li>Ghi incident + thông báo VTX theo quy trình.</li>
+        </ol>
+        <h3>15.2 Sự cố thường gặp</h3>
+        <table class="simple">
+            <thead><tr><th>Sự cố</th><th>Triệu chứng</th><th>Xử lý nhanh</th></tr></thead>
+            <tbody>
+                <tr><td>Backend không khởi động</td><td><code>docker ps</code> thấy <code>Restarting</code></td><td><code>docker logs asms-backend</code>; kiểm tra <code>DATABASE_URL</code>, <code>JWT_SECRET</code></td></tr>
+                <tr><td>DB không kết nối</td><td>Health trả <code>database: unreachable</code></td><td>Kiểm tra <code>asms-db</code> container, <code>pg_isready</code>, firewall port 5432</td></tr>
+                <tr><td>Nginx 502</td><td>Trình duyệt trả 502 Bad Gateway</td><td>Backend down hoặc listen sai cổng; kiểm tra <code>docker logs</code></td></tr>
+                <tr><td>Disk đầy</td><td>Upload thất bại, DB không ghi</td><td>Chạy <code>backup-production.sh</code> ngay, xóa backup cũ hơn retention</td></tr>
+                <tr><td>Mất quyền admin</td><td>Không đăng nhập được admin</td><td>Chạy lại <code>bootstrap:auth</code> hoặc reset qua DB trực tiếp</td></tr>
+            </tbody>
+        </table>
+        <div class="warn">
+            <strong>Lưu ý:</strong> nếu sự cố xảy ra trong vòng 24h sau backup gần nhất, dữ liệu phát sinh sau thời điểm đó sẽ mất.
+            Có thể giảm RPO bằng cách tăng tần suất backup hoặc bật PostgreSQL streaming replication.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§15 Chịu lỗi</div></div>
+</div>
+<!-- 16 -->
+<div class="doc-page" id="s16">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§16 Giám sát</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>16. Giám sát đề xuất</h2>
+        <p>Hệ thống on-premise cần tối thiểu 4 trụ cột giám sát: uptime, log, disk, backup.</p>
+        <div class="zone-grid">
+            <div class="zone-card">
+                <div class="zone-title">Uptime</div>
+                <div class="zone-sub">Probe định kỳ</div>
+                <table>
+                    <tr><td>Mục tiêu</td><td><code>GET /api/v1/health</code> mỗi 1 phút</td></tr>
+                    <tr><td>Cảnh báo</td><td>HTTP khác 200 hoặc <code>database: unreachable</code> &gt; 2 lần liên tiếp</td></tr>
+                </table>
+            </div>
+            <div class="zone-card">
+                <div class="zone-title">Logs</div>
+                <div class="zone-sub">Tổng hợp log tập trung</div>
+                <table>
+                    <tr><td>Backend</td><td>Morgan combined to Docker JSON driver</td></tr>
+                    <tr><td>Tổng hợp</td><td>Loki/ELK hoặc journald to xoay log theo ngày</td></tr>
+                </table>
+            </div>
+            <div class="zone-card">
+                <div class="zone-title">Disk</div>
+                <div class="zone-sub">Dung lượng lưu trữ</div>
+                <table>
+                    <tr><td>Ngưỡng cảnh báo</td><td>&gt; 80% trên DB host và backup host</td></tr>
+                    <tr><td>Upload volume</td><td>Tăng theo tài liệu đính kèm</td></tr>
+                </table>
+            </div>
+            <div class="zone-card">
+                <div class="zone-title">Backup verification</div>
+                <div class="zone-sub">Đảm bảo backup khả dụng</div>
+                <table>
+                    <tr><td>Tần suất</td><td>Drill restore trên staging mỗi tuần</td></tr>
+                    <tr><td>Lưu log</td><td>Mỗi lần chạy <code>backup-production.sh</code> phải có log</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="cmd-label">Curl healthcheck mẫu</div>
+        <div class="cmd-box">curl -s https://asms.vtx.local/api/v1/health | jq .
+# Response mẫu:
+# { "success": true, "data": { "status": "ok", "database": "reachable", "uptime": 3600 } }</div>
+        <div class="info">
+            <strong>Khuyến nghị:</strong> với hệ thống quy mô vài chục user, có thể dùng <strong>Uptime Kuma</strong> (self-hosted, miễn phí)
+            để probe <code>/api/v1/health</code> và gửi cảnh báo qua Telegram/email khi down. Logs tổng hợp bằng <strong>Dozzle</strong>
+            hoặc <code>docker logs</code> + <code>logrotate</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§16 Giám sát</div></div>
+</div>
+<!-- 17 -->
+<div class="doc-page" id="s17">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§17 FAQ</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>17. Câu hỏi thường gặp (FAQ)</h2>
+        <div class="faq-item">
+            <div class="faq-q">Mở trình duyệt báo "Không truy cập được trang"</div>
+            <div class="faq-a">Kiểm tra: (1) Docker đang chạy? (2) Lệnh <code>docker compose ps</code> có 2 dòng running? (3) Máy bạn cùng mạng LAN với server? (4) Firewall có chặn cổng 80 không?</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Đăng nhập được nhưng màn hình trắng hoặc lỗi liên tục</div>
+            <div class="faq-a">Thường do cấu hình sai. Chạy <code>docker compose logs backend</code>, chụp màn hình gửi Unicom. Không tự sửa file trong thư mục phần mềm.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Quên mật khẩu admin</div>
+            <div class="faq-a">Liên hệ Unicom hoặc IT có quyền server để reset qua lệnh bootstrap (cần truy cập máy chủ).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Cần tắt máy chủ bảo trì</div>
+            <div class="faq-a">Chạy <code>docker compose down</code> trước khi tắt. Sau khi bật server lại: <code>docker compose up -d</code>. Dữ liệu vẫn giữ nếu không xóa thư mục uploads và DB.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Cập nhật phiên bản mới</div>
+            <div class="faq-a">Unicom gửi file .tar phiên bản mới + hướng dẫn. Luôn <strong>backup database</strong> trước khi cập nhật. Chi tiết kỹ thuật: xem <code>docs/cutover-runbook.md</code>.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">On-premise là gì? Tại sao không dùng cloud?</div>
+            <div class="faq-a">On-premise = phần mềm chạy trên server nội bộ của VTX, không qua cloud. Chọn on-premise vì: (1) dữ liệu không ra ngoài, (2) tận dụng hạ tầng sẵn có, (3) không phụ thuộc nhà cung cấp cloud, (4) đáp ứng yêu cầu an toàn thông tin nội bộ.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Cổng nào cần mở trên firewall?</div>
+            <div class="faq-a">Chỉ cần mở <code>80</code> và <code>443</code> (HTTP/HTTPS) từ Internet vào Nginx. Các cổng <code>4001</code> (backend), <code>5432</code> (DB) chỉ trong mạng nội bộ, không public.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">Backup tự động chạy lúc nào?</div>
+            <div class="faq-a">Cron chạy <code>scripts/backup-production.sh</code> vào <code>02:00</code> hàng ngày. Output: <code>asms_db_YYYYMMDD.sql.gz</code> và <code>asms_uploads_YYYYMMDD.tar.gz</code> lưu ở <code>/opt/asms/backups/</code>, retention 30 ngày.</div>
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§17 FAQ</div></div>
+</div>
+<!-- 18 -->
+<div class="doc-page" id="s18">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§18 Tham chiếu</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>18. Tài liệu tham chiếu trong repo</h2>
+        <p>Dưới đây là danh sách các file liên quan trong repo:</p>
+        <table class="simple">
+            <thead><tr><th>Tài liệu</th><th>Mô tả</th></tr></thead>
+            <tbody>
+                <tr><td><code>docs/cutover-runbook.md</code></td><td>Quy trình cutover chi tiết trước/sau go-live</td></tr>
+                <tr><td><code>docs/release-readiness.md</code></td><td>Checklist sẵn sàng phát hành</td></tr>
+                <tr><td><code>docs/production-smoke.md</code></td><td>Hướng dẫn chạy post-deploy smoke test</td></tr>
+                <tr><td><code>docs/uat-signoff-production.md</code></td><td>Mẫu biên bản UAT ký duyệt production</td></tr>
+                <tr><td><code>docs/uc-manual-ui-checklist.md</code></td><td>Checklist kiểm thử thủ công theo use case</td></tr>
+                <tr><td><code>docs/a1-workflow-vtx-guide.md</code></td><td>Hướng dẫn quy trình A1 cho VTX</td></tr>
+                <tr><td><code>scripts/backup-production.sh</code></td><td>Script backup DB + uploads (cron 02:00)</td></tr>
+                <tr><td><code>scripts/post-deploy-smoke.mjs</code></td><td>Smoke test tự động sau deploy</td></tr>
+                <tr><td><code>scripts/import-role-permissions.mjs</code></td><td>Import ma trận phân quyền 5 vai trò</td></tr>
+                <tr><td><code>backend/src/middleware/auth.ts</code></td><td>JWT verify middleware</td></tr>
+                <tr><td><code>backend/src/middleware/rbac.ts</code></td><td>RBAC theo module + permission</td></tr>
+                <tr><td><code>backend/src/middleware/rateLimit.ts</code></td><td>Rate-limit 300 request / phút</td></tr>
+                <tr><td><code>backend/src/middleware/uploads.ts</code></td><td>Multer upload — yêu cầu JWT</td></tr>
+                <tr><td><code>nginx.prod.conf</code></td><td>Nginx reverse proxy + TLS + header bảo mật</td></tr>
+                <tr><td><code>docker-compose.yml</code></td><td>Compose stack đầy đủ (Nginx + FE + BE + DB)</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§18 Tham chiếu</div></div>
+</div>
+<!-- 19 -->
+<div class="doc-page" id="s19">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§19 Liên hệ</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>19. Liên hệ hỗ trợ</h2>
+        <div class="contact-card">
+            <div>
+                <strong>Trong giai đoạn triển khai</strong><br>
+                Đội kỹ thuật Unicom (số hotline / email trong hợp đồng bảo hành phần mềm)
+            </div>
+            <div>
+                <strong>Nội bộ VTX</strong><br>
+                Phòng CNTT / quản trị mạng — firewall, HTTPS, backup server
+            </div>
+        </div>
+        <div class="tip" style="margin-top:14px">
+            Khi gọi hỗ trợ, chuẩn bị sẵn: ảnh chụp <code>docker compose ps</code>, 10 dòng cuối của <code>docker compose logs backend</code>, và mô tả "đã làm đến bước mấy".
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§19 Liên hệ</div></div>
+</div>
+<!-- 20 -->
+<div class="doc-page" id="s20">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-OPS-001</div><div>§20 Checklist</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>20. Checklist hoàn tất triển khai</h2>
+        <p>Dùng danh sách này để xác nhận mỗi bước đã hoàn tất trước khi ký biên bản nghiệm thu.</p>
+        <div class="plain-box">
+            <strong>Giai đoạn chuẩn bị</strong>
+            <ul class="checklist">
+                <li>Server đạt thông số tối thiểu (CPU, RAM, disk)</li>
+                <li>Đã cài Docker Desktop / Docker Engine</li>
+                <li>Đã nhận file bàn giao từ Unicom</li>
+                <li>Đã cấu hình PostgreSQL (tạo DB <code>asms</code>)</li>
+                <li>Đã điền file <code>.env</code> với JWT_SECRET &gt;= 32 ký tự</li>
+                <li>Đã tạo thư mục <code>backend/uploads/documents</code> và <code>backend/uploads/workflow</code></li>
+            </ul>
+        </div>
+        <div class="plain-box">
+            <strong>Giai đoạn triển khai</strong>
+            <ul class="checklist">
+                <li><code>docker compose up -d</code> — 2 container running</li>
+                <li><code>docker compose exec backend npx prisma migrate deploy</code> — thành công</li>
+                <li><code>docker compose exec backend npm run bootstrap:auth</code> — tài khoản admin tạo</li>
+                <li><code>curl /api/v1/health</code> — trả <code>{"success":true,"data":{"status":"ok","database":"reachable"}}</code></li>
+                <li>Đăng nhập web bằng tài khoản admin → Dashboard hiển thị</li>
+                <li>Menu bên trái hiển thị đủ các mục (Hợp đồng, Khách hàng, Bảo hành...)</li>
+                <li>Import ma trận RBAC qua <code>scripts/import-role-permissions.mjs</code></li>
+                <li>Tạo thử 1 user thật cho mỗi vai trò</li>
+            </ul>
+        </div>
+        <div class="plain-box">
+            <strong>Giai đoạn vận hành</strong>
+            <ul class="checklist">
+                <li>Đổi mật khẩu admin ngay sau lần đầu đăng nhập</li>
+                <li>Cấu hình backup cron (02:00 hàng ngày) — chạy thử 1 lần</li>
+                <li>Kiểm tra backup gần nhất: <code>ls -lh /opt/asms/backups/</code></li>
+                <li>Đã cài đặt cảnh báo Uptime Kuma / monitoring</li>
+                <li>Firewall chỉ mở 80/443 ra ngoài, 5432 không public</li>
+                <li>Nginx cấu hình TLS (cert từ Let's Encrypt hoặc CA nội bộ)</li>
+                <li>Ký biên bản nghiệm thu cài đặt với Unicom</li>
+                <li>Bàn giao tài liệu + account admin cho VTX</li>
+            </ul>
+        </div>
+        <div class="pill-row" style="margin-top:14px">
+            <span class="pill success">Sẵn sàng triển khai</span>
+            <span class="pill success">On-Premise</span>
+            <span class="pill success">Docker + PostgreSQL</span>
+            <span class="pill success">Defense in depth</span>
+            <span class="pill success">Backup tự động</span>
+            <span class="pill success">Audit log</span>
+        </div>
+        <div class="important" style="margin-top:14px">
+            <strong>Hỗ trợ kỹ thuật:</strong> Unicom Technology Solutions — vui lòng liên hệ khi cần hỗ trợ trong quá trình triển khai,
+            vận hành hoặc khắc phục sự cố. Báo cáo sự cố đính kèm log container, output của health endpoint và thời điểm phát hiện.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div><div>Vận hành &amp; quản lý v1.0 · 01/07/2026</div></div>
+</div>
+</body>
+</html>

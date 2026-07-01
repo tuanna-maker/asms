@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiến trúc triển khai On-Premise — ASMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.6; }
+        .doc-page { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.22); display: flex; flex-direction: column; }
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .doc-page { margin: 0; box-shadow: none; page-break-after: always; }
+        }
+        .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); }
+        .cover { padding: 0; }
+        .cover .header { padding: 22px 52px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .cover .divider { margin: 0 52px; height: 1px; background: #eaeff8; }
+        .cover .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 50px 52px; }
+        .cover .logo-wrap img { width: 220px; }
+        .cover .sep { width: 52px; height: 3px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); margin: 24px auto; border-radius: 2px; }
+        .cover .doc-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3d7de8; text-transform: uppercase; }
+        .cover .project-title { font-size: 30px; font-weight: 900; margin-top: 12px; line-height: 1.25; }
+        .cover .project-title span { color: #3d7de8; }
+        .cover .subtitle { margin-top: 14px; font-size: 13px; color: #475569; max-width: 460px; }
+        .cover .badge-row { margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .cover .badge { background: #eef4ff; color: #1e40af; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .cover .footer { padding: 18px 52px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+        .inner-header { padding: 18px 48px 18px 68px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .inner-divider { margin: 0 48px 0 68px; height: 1px; background: #eaeff8; }
+        .inner-footer { padding: 14px 48px 14px 68px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; margin-top: auto; }
+        .content { flex: 1; padding: 16px 48px 40px 68px; }
+        h1.toc-title { font-size: 19px; font-weight: 900; border-bottom: 2px solid #3d7de8; padding-bottom: 8px; margin-bottom: 10px; }
+        h2 { font-size: 16px; font-weight: 800; margin: 14px 0 8px; padding: 6px 12px; background: linear-gradient(90deg, #eef4ff, transparent); border-left: 4px solid #3d7de8; }
+        h3 { font-size: 13px; font-weight: 700; color: #1e3a5f; margin: 10px 0 6px; }
+        p, li { font-size: 12px; color: #334155; margin: 4px 0; }
+        code { background: #eef4ff; padding: 1px 6px; border-radius: 4px; font-family: Consolas, Monaco, monospace; font-size: 11.5px; color: #1e40af; }
+        ul, ol { margin-left: 20px; }
+
+        .toc-link { display: flex; gap: 10px; padding: 8px 12px; border: 1px solid #eaeff8; border-radius: 8px; text-decoration: none; color: inherit; margin-bottom: 6px; font-size: 12.5px; background: #fbfdff; }
+        .toc-num { font-weight: 800; color: #3d7de8; min-width: 24px; }
+
+        .plain-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+        .plain-box strong { color: #0d1e34; }
+        .tip { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .important { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .info { background: #eef4ff; border-left: 4px solid #3d7de8; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+
+        /* Diagram (layered architecture) */
+        .diagram { border: 2px solid #cbd5e0; border-radius: 12px; padding: 16px; margin: 12px 0; background: #fff; }
+        .diagram-zone-title { font-size: 11px; font-weight: 800; color: #1e3a5f; text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 6px; }
+        .diagram-row { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+        .diagram-box {
+            border: 2px solid #3d7de8; border-radius: 8px; padding: 10px 14px;
+            font-size: 11px; font-weight: 600; min-width: 130px; background: #fff; text-align: center;
+        }
+        .diagram-box strong { display: block; font-size: 11.5px; color: #0d1e34; }
+        .diagram-box small { display: block; font-weight: 400; color: #64748b; margin-top: 2px; font-size: 10px; }
+        .diagram-box.firewall { background: #fef2f2; border-color: #ef4444; }
+        .diagram-box.proxy { background: #eef4ff; border-color: #3d7de8; }
+        .diagram-box.fe { background: #e0f2fe; border-color: #0ea5e9; }
+        .diagram-box.be { background: #ede9fe; border-color: #7c3aed; }
+        .diagram-box.db { background: #dcfce7; border-color: #22c55e; }
+        .diagram-box.bk { background: #fef3c7; border-color: #f59e0b; }
+        .diagram-arrow { font-size: 18px; color: #94a3b8; font-weight: 700; }
+
+        /* Grid cho zones */
+        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+        .zone-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; background: #fff; }
+        .zone-card .zone-title { font-size: 12.5px; font-weight: 800; color: #1e3a5f; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .zone-card .zone-sub { font-size: 10.5px; color: #64748b; margin-bottom: 8px; }
+        .zone-pill { font-size: 9.5px; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .zone-pill.warning { background: #fef3c7; color: #92400e; }
+        .zone-pill.info { background: #dbeafe; color: #1e3a8a; }
+        .zone-pill.success { background: #dcfce7; color: #166534; }
+        .zone-pill.neutral { background: #f1f5f9; color: #475569; }
+        .zone-card table { width: 100%; border-collapse: collapse; font-size: 11px; }
+        .zone-card td { padding: 4px 6px; border-bottom: 1px dashed #eaeff8; vertical-align: top; }
+        .zone-card td:first-child { font-weight: 600; color: #1e3a5f; width: 45%; }
+
+        table.simple { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+        table.simple th { background: #1e3a5f; color: #fff; padding: 8px; text-align: left; }
+        table.simple td { border: 1px solid #cbd5e0; padding: 7px 8px; vertical-align: top; }
+        table.simple tr:nth-child(even) td { background: #f8fafc; }
+
+        .cmd-box {
+            background: #1e293b; color: #e2e8f0; padding: 10px 14px; border-radius: 8px;
+            font-family: Consolas, Monaco, monospace; font-size: 11px; line-height: 1.5;
+            margin: 6px 0; word-break: break-all;
+        }
+        .cmd-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; margin-top: 6px; }
+
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0; }
+        .stat { border: 1px solid #eaeff8; border-radius: 10px; padding: 12px; background: #fbfdff; text-align: center; }
+        .stat .v { font-size: 20px; font-weight: 900; color: #3d7de8; }
+        .stat .l { font-size: 10.5px; color: #64748b; margin-top: 4px; }
+
+        .pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .pill { background: #eef4ff; color: #1e40af; padding: 5px 12px; border-radius: 20px; font-size: 10.5px; font-weight: 700; }
+        .pill.success { background: #dcfce7; color: #166534; }
+        .pill.warning { background: #fef3c7; color: #92400e; }
+
+        .checklist { list-style: none; margin: 8px 0; padding: 0; }
+        .checklist li { padding: 5px 0 5px 24px; position: relative; font-size: 11.5px; border-bottom: 1px dashed #e2e8f0; }
+        .checklist li::before { content: '✓'; position: absolute; left: 4px; color: #22c55e; font-weight: 700; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<!-- BÌA -->
+<div class="doc-page cover">
+    <div class="accent-bar"></div>
+    <div class="header">
+        <div>Mã tài liệu: UNICOM/ARCH-ASMS-ONPREM-001</div>
+        <div>Phiên bản 1.0 · 01/07/2026</div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+        <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Unicom"></div>
+        <div class="sep"></div>
+        <div class="doc-label">Kiến trúc hệ thống</div>
+        <div class="project-title">Kiến trúc triển khai <span>On-Premise</span><br>cho hệ thống ASMS</div>
+        <div class="subtitle">Sơ đồ hạ tầng triển khai nội bộ — dành cho kỹ sư IT, cán bộ quản trị và đơn vị vận hành. Toàn bộ dữ liệu nằm trong hạ tầng của tổ chức, không phụ thuộc cloud.</div>
+        <div class="badge-row">
+            <span class="badge">Reverse proxy Nginx</span>
+            <span class="badge">Backend Node 20 + Prisma</span>
+            <span class="badge">PostgreSQL 16</span>
+            <span class="badge">JWT + RBAC</span>
+            <span class="badge">Backup tự động</span>
+        </div>
+    </div>
+    <div class="footer">
+        <div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div>© 2026</div>
+    </div>
+</div>
+
+<!-- MỤC LỤC -->
+<div class="doc-page">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>Kiến trúc On-Premise ASMS</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h1 class="toc-title">Mục lục</h1>
+        <a href="#s1" class="toc-link"><span class="toc-num">01</span> Nguyên tắc triển khai on-premise</a>
+        <a href="#s2" class="toc-link"><span class="toc-num">02</span> Sơ đồ lớp mạng (Network layers)</a>
+        <a href="#s3" class="toc-link"><span class="toc-num">03</span> Phân vùng mạng (Network zones)</a>
+        <a href="#s4" class="toc-link"><span class="toc-num">04</span> Luồng dữ liệu điển hình</a>
+        <a href="#s5" class="toc-link"><span class="toc-num">05</span> Bản đồ cổng (Port map)</a>
+        <a href="#s6" class="toc-link"><span class="toc-num">06</span> Thông số phần cứng tối thiểu</a>
+        <a href="#s7" class="toc-link"><span class="toc-num">07</span> Lớp bảo mật (Defense in depth)</a>
+        <a href="#s8" class="toc-link"><span class="toc-num">08</span> Runbook triển khai & vận hành</a>
+        <a href="#s9" class="toc-link"><span class="toc-num">09</span> Khả năng chịu lỗi & phục hồi</a>
+        <a href="#s10" class="toc-link"><span class="toc-num">10</span> Giám sát đề xuất</a>
+        <a href="#s11" class="toc-link"><span class="toc-num">11</span> Tài liệu tham chiếu</a>
+
+        <div class="info" style="margin-top:18px">
+            <strong>Đối tượng:</strong> kỹ sư IT VTX phụ trách triển khai, quản trị viên hệ thống, đội ngũ Unicom hỗ trợ vận hành.
+            Tài liệu giả định người đọc đã quen Docker, Linux cơ bản, và khái niệm reverse proxy.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>Kiến trúc On-Premise v1.0</div></div>
+</div>
+
+<!-- 01 -->
+<div class="doc-page" id="s1">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§01 Nguyên tắc</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>1. Nguyên tắc triển khai on-premise</h2>
+
+        <div class="plain-box">
+            <strong>ASMS</strong> được triển khai <strong>hoàn toàn trong hạ tầng nội bộ</strong> của đơn vị: không phụ thuộc cloud,
+            không có traffic ra ngoài Internet trong luồng xử lý. Chỉ cổng <code>80/443</code> được mở ra ngoài qua reverse proxy;
+            backend và database chỉ giao tiếp qua mạng nội bộ (docker network hoặc VLAN riêng).
+        </div>
+
+        <h3>1.1 Các nguyên tắc cốt lõi</h3>
+        <ul class="checklist">
+            <li><strong>Dữ liệu nằm tại chỗ:</strong> PostgreSQL + uploads volume lưu trên server/VM nội bộ, không đồng bộ cloud.</li>
+            <li><strong>Tối thiểu surface ngoài:</strong> chỉ Nginx reverse proxy được public; backend, DB, backup ở mạng riêng.</li>
+            <li><strong>Tách biệt trách nhiệm:</strong> mỗi container đảm nhận một trách nhiệm duy nhất (frontend / backend / db).</li>
+            <li><strong>Cấu hình qua biến môi trường:</strong> <code>.env</code> là nguồn cấu hình duy nhất, không hard-code trong image.</li>
+            <li><strong>Backup có chủ đích:</strong> cron backup hằng ngày cho cả DB lẫn uploads, retention 30 ngày.</li>
+            <li><strong>Defense in depth:</strong> nhiều lớp kiểm soát (edge, transport, gateway, app, auth, data).</li>
+        </ul>
+
+        <h3>1.2 Stack công nghệ</h3>
+        <div class="pill-row">
+            <span class="pill">Frontend: React + Vite + TailwindCSS + shadcn/ui</span>
+            <span class="pill">Backend: Node.js 20 + Express + TypeScript</span>
+            <span class="pill">ORM: Prisma 6</span>
+            <span class="pill">DB: PostgreSQL 16</span>
+            <span class="pill">Auth: JWT (access 1h + refresh 30d)</span>
+            <span class="pill">Reverse proxy: Nginx 1.27-alpine</span>
+            <span class="pill">Container runtime: Docker Engine / Docker Compose</span>
+        </div>
+
+        <div class="warn">
+            <strong>Lưu ý:</strong> JWT secret phải có độ dài tối thiểu 32 ký tự. Backend sẽ từ chối boot nếu
+            <code>JWT_SECRET</code> quá yếu hoặc chưa được thiết lập ở môi trường production (xem <code>backend/src/config/validateEnv.ts</code>).
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§01 Nguyên tắc</div></div>
+</div>
+
+<!-- 02 -->
+<div class="doc-page" id="s2">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§02 Network layers</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>2. Sơ đồ lớp mạng (Network layers)</h2>
+        <p>Mỗi lớp được đặt sau firewall hoặc trong VLAN riêng; traffic chỉ đi xuôi từ ngoài vào trong theo reverse proxy.</p>
+
+        <div class="diagram">
+            <div class="diagram-zone-title">DMZ · Mạng ngoài (Internet)</div>
+            <div class="diagram-row">
+                <div class="diagram-box firewall">
+                    <strong>1 · Edge / Firewall</strong>
+                    <small>NAT, mở 80/443, chặn truy cập trực tiếp vào app/db</small>
+                </div>
+            </div>
+            <div class="diagram-arrow">▼</div>
+            <div class="diagram-row">
+                <div class="diagram-box proxy">
+                    <strong>2 · Nginx Reverse Proxy</strong>
+                    <small>TLS terminate, HSTS, X-Frame-Options, gzip<br>image: nginx:1.27-alpine · port 80, 443</small>
+                </div>
+            </div>
+            <div class="diagram-arrow">▼</div>
+
+            <div class="diagram-zone-title">Application Zone · Mạng nội bộ</div>
+            <div class="diagram-row">
+                <div class="diagram-box fe">
+                    <strong>3 · Frontend (Nginx serve SPA)</strong>
+                    <small>React/Vite build ra dist/<br>SPA + fallback index.html, proxy /api → backend<br>image: asms-frontend:latest · port 8080 → 80</small>
+                </div>
+                <div class="diagram-box be">
+                    <strong>4 · Backend API</strong>
+                    <small>Express + TS + Prisma<br>JWT verify, RBAC, helmet, rate-limit<br>/api/v1/uploads yêu cầu JWT<br>image: asms-backend:latest · port 4001</small>
+                </div>
+            </div>
+            <div class="diagram-arrow">▼</div>
+
+            <div class="diagram-zone-title">Data Zone · Mạng tách biệt</div>
+            <div class="diagram-row">
+                <div class="diagram-box db">
+                    <strong>5 · PostgreSQL 16</strong>
+                    <small>DB chính, soft delete (deleted_at)<br>refresh token, role permission, audit log<br>port 5432 · volume /var/lib/postgresql/data</small>
+                </div>
+            </div>
+            <div class="diagram-arrow">▼</div>
+
+            <div class="diagram-zone-title">Operations Zone · Backup & giám sát</div>
+            <div class="diagram-row">
+                <div class="diagram-box bk">
+                    <strong>6 · Backup Storage</strong>
+                    <small>DB + uploads/ mỗi ngày, retention 30 ngày<br>Mount NAS hoặc rsync sang server dự phòng<br>volume /opt/asms/backups</small>
+                </div>
+            </div>
+        </div>
+
+        <h3>2.1 Cơ chế đi qua các lớp</h3>
+        <table class="simple">
+            <thead>
+                <tr><th>Tầng</th><th>Thành phần</th><th>Image / Host</th><th>Port</th><th>Volume</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1 · Edge</td><td>Firewall</td><td>Thiết bị vật lý</td><td>—</td><td>—</td></tr>
+                <tr><td>2 · Reverse proxy</td><td>Nginx</td><td><code>nginx:1.27-alpine</code></td><td>80, 443</td><td><code>/etc/nginx/ssl</code></td></tr>
+                <tr><td>3 · Frontend</td><td>Nginx serve SPA</td><td><code>asms-frontend:latest</code></td><td>8080 → 80</td><td><code>/usr/share/nginx/html</code></td></tr>
+                <tr><td>4 · Backend</td><td>Express + Prisma</td><td><code>asms-backend:latest</code> (node:20-alpine)</td><td>4001</td><td><code>/app/uploads</code></td></tr>
+                <tr><td>5 · Database</td><td>PostgreSQL 16</td><td>VM / server nội bộ</td><td>5432</td><td><code>/var/lib/postgresql/data</code></td></tr>
+                <tr><td>6 · Backup</td><td>NAS / backup server</td><td>VM dự phòng</td><td>—</td><td><code>/opt/asms/backups</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§02 Network layers</div></div>
+</div>
+
+<!-- 03 -->
+<div class="doc-page" id="s3">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§03 Network zones</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>3. Phân vùng mạng (Network zones)</h2>
+        <p>Hệ thống được chia thành 4 vùng mạng với vai trò rõ ràng. Mỗi vùng có chính sách firewall riêng; traffic chỉ đi qua khi được Nginx proxy chấp nhận.</p>
+
+        <div class="zone-grid">
+            <div class="zone-card">
+                <div class="zone-title">DMZ · Mạng ngoài <span class="zone-pill warning">Public</span></div>
+                <div class="zone-sub">Mạng có thể truy cập từ Internet</div>
+                <table>
+                    <tr><td>Edge firewall</td><td>Public IP, mở 80/443</td></tr>
+                    <tr><td>Nginx reverse proxy</td><td>TLS terminate, HSTS, X-Frame-Options</td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Application Zone <span class="zone-pill info">Internal</span></div>
+                <div class="zone-sub">Mạng nội bộ — không public</div>
+                <table>
+                    <tr><td>asms_frontend</td><td>Nginx serve static SPA</td></tr>
+                    <tr><td>asms_backend</td><td>Express API + cron notify</td></tr>
+                    <tr><td>Uploads volume</td><td><code>backend/uploads</code> (ảnh, tài liệu)</td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Data Zone <span class="zone-pill success">Restricted</span></div>
+                <div class="zone-sub">Mạng tách biệt — chỉ backend truy cập</div>
+                <table>
+                    <tr><td>PostgreSQL 16</td><td><code>DATABASE_URL</code> nội bộ</td></tr>
+                    <tr><td>Schema migrations</td><td><code>prisma migrate deploy</code> tự chạy khi boot</td></tr>
+                    <tr><td>Soft delete + audit log</td><td>Cột <code>deleted_at</code>, bảng <code>audit_logs</code></td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Operations Zone <span class="zone-pill neutral">Ops</span></div>
+                <div class="zone-sub">Truy cập SSH + giám sát</div>
+                <table>
+                    <tr><td>Backup server / NAS</td><td><code>asms_db_*.sql.gz</code> + <code>asms_uploads_*.tar.gz</code></td></tr>
+                    <tr><td>Log + monitoring</td><td>Docker logs, Uptime 1 phút /api/v1/health</td></tr>
+                    <tr><td>Cron backup</td><td><code>scripts/backup-production.sh</code> (0 2 * * *)</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <h3>3.1 Quy tắc đi qua giữa các zone</h3>
+        <table class="simple">
+            <thead>
+                <tr><th>Source</th><th>→ Destination</th><th>Cho phép?</th><th>Điều kiện</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Internet</td><td>→ DMZ (80/443)</td><td>Có</td><td>Qua edge firewall</td></tr>
+                <tr><td>DMZ (Nginx)</td><td>→ Application Zone</td><td>Có</td><td>Chỉ proxy /api/ và /static tới backend/frontend nội bộ</td></tr>
+                <tr><td>Application (backend)</td><td>→ Data Zone (5432)</td><td>Có</td><td>Chỉ từ host backend, qua mạng docker nội bộ</td></tr>
+                <tr><td>Data Zone</td><td>→ Application</td><td>Không</td><td>DB là passive, chỉ phản hồi request từ backend</td></tr>
+                <tr><td>Mọi zone</td><td>→ Internet</td><td>Hạn chế</td><td>Chỉ email notification ra ngoài; không sync cloud</td></tr>
+                <tr><td>Operations (SSH)</td><td>→ Mọi zone</td><td>Có</td><td>Qua VPN hoặc bastion, giới hạn IP admin</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info">
+            <strong>Ghi chú:</strong> Trong triển khai thực tế, các zone có thể ánh xạ thành VLAN khác nhau hoặc chia subnet.
+            Với docker-compose, các service nằm trên cùng bridge network; dùng <code>docker-compose.local-db.yml</code>
+            nếu tách DB sang máy riêng.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§03 Network zones</div></div>
+</div>
+
+<!-- 04 -->
+<div class="doc-page" id="s4">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§04 Data flow</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>4. Luồng dữ liệu điển hình</h2>
+        <p>Trình duyệt người dùng truy cập hệ thống qua HTTPS; backend xử lý và đọc/ghi database trong mạng nội bộ.
+        File đính kèm được lưu vào volume <code>backend/uploads</code> và phát lại qua API có bảo vệ JWT.</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th style="width: 50px">Bước</th><th>Từ</th><th>Đến</th><th>Hành động</th></tr>
+            </thead>
+            <tbody>
+                <tr><td style="text-align:center">1</td><td>Trình duyệt người dùng</td><td>Nginx (443)</td><td><code>GET /</code> — mở trang chủ</td></tr>
+                <tr><td style="text-align:center">2</td><td>Nginx</td><td>asms_frontend (80)</td><td>Serve SPA + index.html fallback</td></tr>
+                <tr><td style="text-align:center">3</td><td>Trình duyệt</td><td>Nginx (443)</td><td><code>POST /api/v1/auth/login</code></td></tr>
+                <tr><td style="text-align:center">4</td><td>Nginx</td><td>asms_backend (4001)</td><td><code>proxy_pass /api/</code></td></tr>
+                <tr><td style="text-align:center">5</td><td>Backend</td><td>PostgreSQL (5432)</td><td>Prisma + JWT verify, audit log</td></tr>
+                <tr><td style="text-align:center">6</td><td>Backend</td><td>Uploads volume</td><td>Multer lưu file đính kèm</td></tr>
+                <tr><td style="text-align:center">7</td><td>Cron (02:00)</td><td>Backup server</td><td><code>pg_dump</code> + tar mỗi ngày</td></tr>
+            </tbody>
+        </table>
+
+        <h3>4.1 Hai luồng chính cần hiểu</h3>
+
+        <div class="plain-box">
+            <strong>Luồng đọc (read):</strong> Browser → Nginx (443) → proxy <code>/api/</code> → Backend (4001) → Prisma → PostgreSQL (5432) → trả ngược lại theo chuỗi.
+        </div>
+
+        <div class="plain-box">
+            <strong>Luồng ghi (write):</strong> Browser gửi form → Nginx → Backend xác thực JWT + RBAC → ghi DB + ghi <code>audit_logs</code> → lưu file (nếu có) vào uploads volume.
+        </div>
+
+        <div class="tip">
+            <strong>Đặc điểm:</strong> tất cả response đều đi theo chuẩn JSON
+            <code>{ success, data, message? }</code>, prefix <code>/api/v1</code>. Mọi input đều validate bằng Zod (xem <code>backend/src/modules/*/route.ts</code>).
+            File đính kèm được truy cập qua <code>/api/v1/uploads/*</code> và bắt buộc có JWT hợp lệ — không lộ file công khai.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§04 Data flow</div></div>
+</div>
+
+<!-- 05 -->
+<div class="doc-page" id="s5">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§05 Port map</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>5. Bản đồ cổng (Port map)</h2>
+        <p>Tổng hợp các cổng được sử dụng trong triển khai on-premise. Cổng <code>5432</code> (PostgreSQL) và cổng backend <code>4001</code> chỉ nên bind trong mạng nội bộ — không publish ra host.</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th>Surface</th><th style="width: 80px">Port</th><th>Đi đến</th><th>Ghi chú</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>HTTPS</td><td style="text-align:center">443</td><td>Nginx</td><td>TLS terminate</td></tr>
+                <tr><td>HTTP → HTTPS</td><td style="text-align:center">80</td><td>Nginx</td><td>301 redirect về HTTPS</td></tr>
+                <tr><td>Frontend public (docker-compose expose)</td><td style="text-align:center">8080</td><td>asms_frontend</td><td>Có thể đổi sang 80 nếu dùng host network</td></tr>
+                <tr><td>Backend (internal)</td><td style="text-align:center">4001</td><td>asms_backend</td><td>Chỉ trong docker network nội bộ</td></tr>
+                <tr><td>PostgreSQL</td><td style="text-align:center">5432</td><td>postgres</td><td>Chỉ từ backend host, không public</td></tr>
+                <tr><td>Healthcheck</td><td style="text-align:center">4001</td><td><code>/api/v1/health</code></td><td>Ping DB <code>SELECT 1</code></td></tr>
+            </tbody>
+        </table>
+
+        <h3>5.1 Cấu hình docker-compose tham chiếu</h3>
+        <p>Trong <code>docker-compose.yml</code>, chỉ Nginx (qua <code>nginx.prod.conf</code>) mới được publish <code>80:80</code> và <code>443:443</code> ra host.
+        Container backend và DB chỉ nội bộ (không có <code>ports:</code> mapping ra host) hoặc map sang cổng khác cho debug.</p>
+
+        <div class="cmd-label">Ví dụ: docker-compose port mapping (rút gọn)</div>
+        <div class="cmd-box">services:<br>&nbsp;&nbsp;nginx:<br>&nbsp;&nbsp;&nbsp;&nbsp;ports:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "80:80"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "443:443"<br>&nbsp;&nbsp;asms-backend:<br>&nbsp;&nbsp;&nbsp;&nbsp;expose:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "4001"   # không publish ra host<br>&nbsp;&nbsp;asms-db:<br>&nbsp;&nbsp;&nbsp;&nbsp;expose:<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- "5432"   # chỉ trong docker network</div>
+
+        <div class="important">
+            <strong>Khuyến nghị:</strong> tuyệt đối không publish cổng <code>5432</code> ra host Internet.
+            Nếu cần debug DB từ máy khác, dùng SSH tunnel hoặc VPN vào bastion.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§05 Port map</div></div>
+</div>
+
+<!-- 06 -->
+<div class="doc-page" id="s6">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§06 Hardware</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>6. Thông số phần cứng tối thiểu</h2>
+        <p>Mức đề xuất cho khoảng <strong>50–150 user đồng thời</strong>, lượng dữ liệu vài trăm GB.
+        Tăng CPU/RAM theo số user đồng thời và dung lượng upload tài liệu đính kèm.</p>
+
+        <div class="stat-grid">
+            <div class="stat"><div class="v">2 vCPU</div><div class="l">Proxy + Frontend</div></div>
+            <div class="stat"><div class="v">4 vCPU</div><div class="l">Backend API</div></div>
+            <div class="stat"><div class="v">16 GB</div><div class="l">RAM cho DB</div></div>
+            <div class="stat"><div class="v">≥ 1 TB</div><div class="l">Backup storage</div></div>
+        </div>
+
+        <table class="simple">
+            <thead>
+                <tr><th>Vai trò</th><th>CPU</th><th>RAM</th><th>Disk</th><th>Số node</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Reverse proxy + frontend</td><td>2 vCPU</td><td>2 GB</td><td>20 GB</td><td>1</td></tr>
+                <tr><td>Backend API</td><td>4 vCPU</td><td>8 GB</td><td>50 GB</td><td>1</td></tr>
+                <tr><td>PostgreSQL</td><td>4 vCPU</td><td>16 GB</td><td>500 GB SSD</td><td>1</td></tr>
+                <tr><td>Backup / NAS</td><td>2 vCPU</td><td>4 GB</td><td>≥ 1 TB</td><td>1</td></tr>
+            </tbody>
+        </table>
+
+        <h3>6.1 Ghi chú chọn phần cứng</h3>
+        <ul>
+            <li><strong>CPU:</strong> DB là tầng nhạy cảm nhất — ưu tiên CPU có clock cao cho query, không nhất thiết nhiều core.</li>
+            <li><strong>RAM:</strong> PostgreSQL nên có <code>shared_buffers ≈ 25% RAM</code>; backend dành RAM cho Multer upload file lớn.</li>
+            <li><strong>Disk:</strong> dùng SSD cho DB host; backup host có thể dùng HDD dung lượng lớn.</li>
+            <li><strong>Mạng:</strong> card mạng 1 Gbps tối thiểu trong VLAN; 10 Gbps nếu tải lớn hoặc streaming replication.</li>
+        </ul>
+
+        <div class="tip">
+            <strong>Quy tắc sizing:</strong> mỗi 50 user đồng thời tăng thêm ~1 vCPU + ~2 GB RAM cho backend, và ~4 GB RAM cho DB.
+            Disk DB tăng ~100 GB mỗi năm tuỳ lượng audit log + attachment.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§06 Hardware</div></div>
+</div>
+
+<!-- 07 -->
+<div class="doc-page" id="s7">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§07 Security</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>7. Lớp bảo mật (Defense in depth)</h2>
+        <p>Bảo mật theo mô hình nhiều lớp: edge, transport, gateway, application, authentication, data. Mỗi lớp có cơ chế độc lập — vô hiệu hoá một lớp không làm hệ thống sụp đổ.</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th style="width: 110px">Lớp</th><th>Kiểm soát</th><th>Lý do</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Edge</td><td>Firewall + VPN cho admin</td><td>Giảm surface area; chỉ mở 80/443 ra ngoài</td></tr>
+                <tr><td>Transport</td><td>TLS 1.2/1.3 + HSTS</td><td>Đảm bảo mọi traffic được mã hoá</td></tr>
+                <tr><td>API gateway</td><td>Nginx header chuẩn (X-Frame-Options, nosniff)</td><td>Chống clickjacking + MIME sniffing</td></tr>
+                <tr><td>Application</td><td><code>helmet</code>, CORS whitelist, rate-limit 300/phút</td><td>Reject origin lạ, chống brute-force / DDoS nhẹ</td></tr>
+                <tr><td>Authentication</td><td>JWT access (1h) + refresh (30d) + bcrypt</td><td>Khó lộ mật khẩu, rotate token được</td></tr>
+                <tr><td>Authorization</td><td>RBAC 5 vai trò + module-permission matrix</td><td>Phân quyền theo module + hành động CRUD</td></tr>
+                <tr><td>Data in transit</td><td>Postgres TLS nội bộ (khuyến nghị)</td><td>Bảo vệ traffic giữa app và DB</td></tr>
+                <tr><td>Data at rest</td><td>Encrypted volume + backup encrypted</td><td>Khó lộ dữ liệu khi ổ cứng bị mất</td></tr>
+                <tr><td>Audit</td><td><code>writeAudit()</code> mọi thao tác CRUD</td><td>Truy vết thay đổi cho audit nội bộ</td></tr>
+                <tr><td>Backup</td><td>Daily DB + uploads, retention 30 ngày</td><td>RPO ~24h, RTO tuỳ kích thước</td></tr>
+                <tr><td>Secret</td><td><code>JWT_SECRET</code> ≥ 32 ký tự, validateProductionEnv</td><td>Server từ chối boot nếu secret yếu</td></tr>
+                <tr><td>Files</td><td><code>/api/v1/uploads</code> yêu cầu JWT</td><td>Không lộ file đính kèm công khai</td></tr>
+            </tbody>
+        </table>
+
+        <h3>7.1 Ma trận RBAC đề xuất</h3>
+        <p>Có 5 vai trò chính: <strong>admin</strong>, <strong>manager</strong>, <strong>technician</strong>, <strong>viewer</strong>, <strong>sales</strong>.
+        Mỗi vai trò được import qua script <code>scripts/import-role-permissions.mjs</code>.</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th>Module</th><th>admin</th><th>manager</th><th>technician</th><th>viewer</th><th>sales</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Auth / Users</td><td>CRUD</td><td>R</td><td>—</td><td>—</td><td>—</td></tr>
+                <tr><td>Customers</td><td>CRUD</td><td>CRUD</td><td>R</td><td>R</td><td>CRUD</td></tr>
+                <tr><td>Contracts</td><td>CRUD</td><td>CRUD</td><td>R</td><td>R</td><td>CRUD</td></tr>
+                <tr><td>Handover</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>R</td><td>—</td></tr>
+                <tr><td>Warranty</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>R</td><td>—</td></tr>
+                <tr><td>Materials</td><td>CRUD</td><td>R</td><td>R</td><td>—</td><td>—</td></tr>
+                <tr><td>Products / Research</td><td>CRUD</td><td>R</td><td>R</td><td>—</td><td>—</td></tr>
+                <tr><td>Tasks</td><td>CRUD</td><td>CRUD</td><td>CRUD</td><td>R</td><td>—</td></tr>
+                <tr><td>Training / Documents</td><td>CRUD</td><td>CR</td><td>R</td><td>R</td><td>R</td></tr>
+                <tr><td>Reports</td><td>R</td><td>R</td><td>R</td><td>R</td><td>R</td></tr>
+            </tbody>
+        </table>
+
+        <div class="warn">
+            <strong>Ghi chú:</strong> bảng trên là hướng dẫn tổng quát — quyền chi tiết phải import từ <code>scripts/import-role-permissions.mjs</code>
+            và cập nhật qua UI Cài đặt của hệ thống.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§07 Security</div></div>
+</div>
+
+<!-- 08 -->
+<div class="doc-page" id="s8">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§08 Runbook</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>8. Runbook triển khai & vận hành</h2>
+        <p>Tuân thủ quy trình trong <code>docs/cutover-runbook.md</code>. Dưới đây tóm tắt các mốc quan trọng quanh thời điểm go-live.</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th style="width: 90px">Mốc</th><th>Công việc</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>T-24h</strong></td><td>UAT 5 vai trò, ký biên bản, import ma trận A2</td></tr>
+                <tr><td><strong>T-2h</strong></td><td>Snapshot DB, backup uploads, freeze cấu hình</td></tr>
+                <tr><td><strong>T0</strong></td><td><code>docker compose up -d</code>; entrypoint chạy <code>prisma migrate deploy</code></td></tr>
+                <tr><td><strong>T+5p</strong></td><td><code>docker exec asms_backend npm run bootstrap:auth</code> (lần đầu)</td></tr>
+                <tr><td><strong>T+10p</strong></td><td>Đổi mật khẩu admin, tạo user thật qua UI Cài đặt</td></tr>
+                <tr><td><strong>T+20p</strong></td><td><code>post-deploy-smoke</code>: uat-role + uc-smoke + dashboard-audit</td></tr>
+                <tr><td><strong>Hypercare</strong></td><td>2–4 tuần: theo dõi /api/v1/health, log 5xx, backup, disk</td></tr>
+            </tbody>
+        </table>
+
+        <h3>8.1 Lệnh triển khai chuẩn</h3>
+        <div class="cmd-label">Khởi chạy lần đầu</div>
+        <div class="cmd-box">cp .env.example .env   # chỉnh sửa các biến bắt buộc<br>docker compose pull<br>docker compose up -d<br>docker compose logs -f asms-backend</div>
+
+        <div class="cmd-label">Verify sau khi up</div>
+        <div class="cmd-box">curl -k https://asms.vtx.local/api/v1/health<br># mong đợi: {"success":true,"data":{"status":"ok","database":"reachable"}}</div>
+
+        <div class="cmd-label">Bootstrap tài khoản admin lần đầu</div>
+        <div class="cmd-box">docker exec -it asms-backend npm run bootstrap:auth</div>
+
+        <div class="cmd-label">Backup thủ công</div>
+        <div class="cmd-box">bash /opt/asms/scripts/backup-production.sh</div>
+
+        <div class="info">
+            <strong>Tip:</strong> chạy <code>node scripts/post-deploy-smoke.mjs</code> sau mỗi lần deploy để tự động kiểm tra
+            health, đăng nhập, RBAC và audit log. Xem chi tiết <code>docs/production-smoke.md</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§08 Runbook</div></div>
+</div>
+
+<!-- 09 -->
+<div class="doc-page" id="s9">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§09 Resilience</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>9. Khả năng chịu lỗi & phục hồi</h2>
+
+        <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr)">
+            <div class="stat"><div class="v">RPO</div><div class="l">~24 giờ (backup cron 1 lần/ngày lúc 02:00)</div></div>
+            <div class="stat"><div class="v">RTO</div><div class="l">Phụ thuộc kích thước DB</div></div>
+            <div class="stat"><div class="v">Rollback</div><div class="l">Image tag cũ + DB snapshot</div></div>
+        </div>
+
+        <h3>9.1 Quy trình restore khi sự cố</h3>
+        <ol>
+            <li>Liệt kê các bản backup gần nhất: <code>ls -lh /opt/asms/backups/</code></li>
+            <li>Chọn bản <code>asms_db_YYYYMMDD.sql.gz</code> + <code>asms_uploads_YYYYMMDD.tar.gz</code> mới nhất còn nguyên vẹn.</li>
+            <li>Dừng containers: <code>docker compose down</code></li>
+            <li>Khôi phục DB: <code>gunzip -c asms_db_*.sql.gz | docker exec -i asms-db psql -U asms</code></li>
+            <li>Khôi phục uploads: <code>tar -xzf asms_uploads_*.tar.gz -C backend/uploads</code></li>
+            <li>Redeploy image trước đó (nếu rollback code): <code>docker compose up -d</code></li>
+            <li>Verify health: <code>curl /api/v1/health</code> và đăng nhập thử bằng 1 tài khoản.</li>
+            <li>Ghi incident + thông báo VTX theo quy trình.</li>
+        </ol>
+
+        <div class="warn">
+            <strong>Lưu ý:</strong> nếu sự cố xảy ra trong vòng 24h sau backup gần nhất, dữ liệu phát sinh sau thời điểm đó sẽ mất.
+            Có thể giảm RPO bằng cách tăng tần suất backup hoặc bật PostgreSQL streaming replication sang máy dự phòng.
+        </div>
+
+        <h3>9.2 Kịch bản sự cố thường gặp</h3>
+        <table class="simple">
+            <thead>
+                <tr><th>Sự cố</th><th>Triệu chứng</th><th>Xử lý nhanh</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Backend không khởi động</td><td><code>docker ps</code> thấy <code>Restarting</code></td><td><code>docker logs asms-backend</code>; kiểm tra <code>DATABASE_URL</code>, <code>JWT_SECRET</code></td></tr>
+                <tr><td>DB không kết nối</td><td>Health trả <code>database: unreachable</code></td><td>Kiểm tra <code>asms-db</code> container, <code>pg_isready</code>, firewall port 5432 nội bộ</td></tr>
+                <tr><td>Nginx 502</td><td>Trình duyệt trả 502 Bad Gateway</td><td>Backend down hoặc listen sai cổng; kiểm tra <code>docker logs</code></td></tr>
+                <tr><td>Disk đầy</td><td>Upload thất bại, DB không ghi</td><td>Chạy <code>backup-production.sh</code> ngay, xoá backup cũ hơn retention</td></tr>
+                <tr><td>Mất quyền admin</td><td>Không đăng nhập được admin</td><td>Chạy lại <code>bootstrap:auth</code> hoặc reset qua DB trực tiếp</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§09 Resilience</div></div>
+</div>
+
+<!-- 10 -->
+<div class="doc-page" id="s10">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§10 Monitoring</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>10. Giám sát đề xuất</h2>
+        <p>Hệ thống on-premise cần tối thiểu 4 trụ cột giám sát: uptime, log, disk, backup. Có thể dùng Prometheus + Grafana, hoặc công cụ đơn giản hơn tuỳ quy mô.</p>
+
+        <div class="zone-grid">
+            <div class="zone-card">
+                <div class="zone-title">Uptime</div>
+                <div class="zone-sub">Probe định kỳ</div>
+                <table>
+                    <tr><td>Mục tiêu</td><td><code>GET /api/v1/health</code> mỗi 1 phút</td></tr>
+                    <tr><td>Cảnh báo</td><td>HTTP ≠ 200 hoặc <code>database: unreachable</code> &gt; 2 lần liên tiếp</td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Logs</div>
+                <div class="zone-sub">Tổng hợp log tập trung</div>
+                <table>
+                    <tr><td>Backend</td><td>Morgan combined → Docker JSON driver</td></tr>
+                    <tr><td>Tổng hợp</td><td>Loki/ELK hoặc journald → xoay log theo ngày</td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Disk</div>
+                <div class="zone-sub">Dung lượng lưu trữ</div>
+                <table>
+                    <tr><td>Ngưỡng cảnh báo</td><td>&gt; 80% trên DB host và backup host</td></tr>
+                    <tr><td>Upload volume</td><td>Tăng theo tài liệu đính kèm</td></tr>
+                </table>
+            </div>
+
+            <div class="zone-card">
+                <div class="zone-title">Backup verification</div>
+                <div class="zone-sub">Đảm bảo backup khả dụng</div>
+                <table>
+                    <tr><td>Tần suất</td><td>Drill restore trên staging mỗi tuần</td></tr>
+                    <tr><td>Lưu log</td><td>Mỗi lần chạy <code>backup-production.sh</code> phải có log</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <h3>10.1 Healthcheck endpoint</h3>
+        <p>Endpoint <code>GET /api/v1/health</code> trả về trạng thái tổng quan của service kèm khả năng kết nối DB:</p>
+        <div class="cmd-label">Curl mẫu</div>
+        <div class="cmd-box">curl -s https://asms.vtx.local/api/v1/health | jq .<br># Response mẫu:<br># { "success": true, "data": { "status": "ok", "database": "reachable", "uptime": 3600 } }</div>
+
+        <h3>10.2 Metric đề xuất thu thập</h3>
+        <ul>
+            <li><strong>App:</strong> request rate, p95/p99 latency, error rate 4xx/5xx, JWT verify fail.</li>
+            <li><strong>DB:</strong> connection count, replication lag (nếu bật), slow query, locks.</li>
+            <li><strong>Infra:</strong> CPU, RAM, disk I/O, network in/out theo host.</li>
+            <li><strong>Business:</strong> số ticket bảo hành mở, số hợp đồng sắp hết hạn (query bảng <code>contracts</code>).</li>
+        </ul>
+
+        <div class="info">
+            <strong>Khuyến nghị:</strong> với hệ thống quy mô vài chục user, có thể dùng <strong>Uptime Kuma</strong> (self-hosted, miễn phí)
+            để probe <code>/api/v1/health</code> và gửi cảnh báo qua Telegram/email khi down. Logs tổng hợp bằng <strong>Dozzle</strong>
+            hoặc <code>docker logs</code> + <code>logrotate</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§10 Monitoring</div></div>
+</div>
+
+<!-- 11 -->
+<div class="doc-page" id="s11">
+    <div class="inner-header"><div>Mã: UNICOM/ARCH-ASMS-ONPREM-001</div><div>§11 Tham chiếu</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>11. Tài liệu tham chiếu trong repo</h2>
+        <p>Tài liệu này là bản tóm tắt trực quan; chi tiết triển khai & vận hành nằm trong các tài liệu sau:</p>
+
+        <table class="simple">
+            <thead>
+                <tr><th>Tài liệu</th><th>Mô tả</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>docs/cutover-runbook.md</code></td><td>Quy trình cutover chi tiết trước/sau go-live</td></tr>
+                <tr><td><code>docs/release-readiness.md</code></td><td>Checklist sẵn sàng phát hành</td></tr>
+                <tr><td><code>docs/production-smoke.md</code></td><td>Hướng dẫn chạy post-deploy smoke test</td></tr>
+                <tr><td><code>docs/uat-signoff-production.md</code></td><td>Mẫu biên bản UAT ký duyệt production</td></tr>
+                <tr><td><code>docs/uc-manual-ui-checklist.md</code></td><td>Checklist kiểm thử thủ công theo use case</td></tr>
+                <tr><td><code>docs/a1-workflow-vtx-guide.md</code></td><td>Hướng dẫn quy trình A1 cho VTX</td></tr>
+                <tr><td><code>scripts/backup-production.sh</code></td><td>Script backup DB + uploads (cron 02:00)</td></tr>
+                <tr><td><code>scripts/post-deploy-smoke.mjs</code></td><td>Smoke test tự động sau deploy</td></tr>
+                <tr><td><code>scripts/import-role-permissions.mjs</code></td><td>Import ma trận phân quyền cho 5 vai trò</td></tr>
+                <tr><td><code>backend/src/config/validateEnv.ts</code></td><td>Validate biến môi trường production</td></tr>
+                <tr><td><code>backend/src/middleware/auth.ts</code></td><td>JWT verify middleware</td></tr>
+                <tr><td><code>backend/src/middleware/rbac.ts</code></td><td>RBAC theo module + permission</td></tr>
+                <tr><td><code>backend/src/middleware/rateLimit.ts</code></td><td>Rate-limit 300 request / phút</td></tr>
+                <tr><td><code>backend/src/middleware/uploads.ts</code></td><td>Multer upload — yêu cầu JWT</td></tr>
+                <tr><td><code>nginx.prod.conf</code></td><td>Nginx reverse proxy + TLS + header bảo mật</td></tr>
+                <tr><td><code>nginx.local.conf</code></td><td>Nginx cho môi trường local (không TLS)</td></tr>
+                <tr><td><code>docker-compose.yml</code></td><td>Compose stack đầy đủ (Nginx + FE + BE + DB)</td></tr>
+                <tr><td><code>docker-compose.local-db.yml</code></td><td>Compose tách DB sang máy riêng</td></tr>
+                <tr><td><code>.env.example</code> / <code>backend/.env.example</code></td><td>Mẫu biến môi trường</td></tr>
+            </tbody>
+        </table>
+
+        <div class="pill-row" style="margin-top: 14px">
+            <span class="pill success">Sẵn sàng triển khai</span>
+            <span class="pill">Defense in depth</span>
+            <span class="pill">Backup tự động</span>
+            <span class="pill">Audit log</span>
+            <span class="pill">RBAC 5 roles</span>
+        </div>
+
+        <div class="important" style="margin-top: 16px">
+            <strong>Hỗ trợ kỹ thuật:</strong> Unicom Technology Solutions — vui lòng liên hệ khi cần hỗ trợ trong quá trình triển khai,
+            vận hành hoặc khắc phục sự cố. Báo cáo sự cố đính kèm log container, output của health endpoint và thời điểm phát hiện.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>Kiến trúc On-Premise v1.0</div></div>
+</div>
+
+</body>
+</html>
