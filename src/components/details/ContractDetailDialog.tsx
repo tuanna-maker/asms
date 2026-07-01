@@ -30,6 +30,7 @@ import {
   type ContractClauseEntry,
 } from "@/lib/contract-clause-items";
 import type { ProductSpec } from "@/hooks/use-products-api";
+import { resolveUploadUrl } from "@/lib/upload-url";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   draft: { label: CONTRACT_STATUS_LABELS.draft ?? "Nháp", variant: "outline" },
@@ -378,7 +379,7 @@ const ContractDetailDialog = ({ contract, open, onOpenChange, readOnly = false }
                     </div>
                     {d.fileUrl ? (
                       <a
-                        href={d.fileUrl}
+                        href={resolveUploadUrl(d.fileUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline shrink-0"

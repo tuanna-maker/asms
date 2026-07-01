@@ -23,6 +23,7 @@ import {
 import { Shield, Monitor, User, Clock, CheckCircle, Trash2, FileText, ExternalLink, Loader2, Package, GitBranch } from "lucide-react";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-errors";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { useContractDetail, useContractsList, useContractProducts } from "@/hooks/use-contracts-api";
 import { useProductDetail } from "@/hooks/use-products-api";
 import { useCreateWarranty, useDeleteWarranty, useUpdateWarranty, useWarrantyDetail } from "@/hooks/use-warranties-api";
@@ -891,7 +892,7 @@ const WarrantyDetailDialog = ({
                 <span className="truncate">{d.name}</span>
                 {d.fileUrl ? (
                   <a
-                    href={d.fileUrl}
+                    href={resolveUploadUrl(d.fileUrl)}
                     className="shrink-0 text-primary inline-flex items-center gap-0.5 text-xs"
                     target="_blank"
                     rel="noreferrer"

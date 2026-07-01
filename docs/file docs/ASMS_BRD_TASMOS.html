@@ -67,8 +67,8 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
 .md-render th{background:#1e3a5f;color:#fff;font-weight:600;}
 .md-render tr:nth-child(even) td{background:#f7fafc;}
 .md-render hr{border:none;border-top:1px dashed #c8d8ec;margin:14px 0;}
-.md-render .mermaid{text-align:center;margin:14px 0;background:#fafbfd;padding:12px;border-radius:6px;border:1px solid #eaeff8;break-inside:avoid;page-break-inside:avoid;}
-.md-render .mermaid svg{max-width:100%;height:auto;display:block;margin:0 auto;}
+.md-render .mermaid{text-align:center;margin:14px 0;background:#fff;padding:12px;border-radius:6px;border:1px solid #eaeff8;break-inside:avoid;page-break-inside:avoid;}
+.md-render .mermaid svg{max-width:100%;height:auto;display:block;margin:0 auto;background-color:#fff!important;}
 .table-keep,.diagram-keep{break-inside:avoid;page-break-inside:avoid;}
 .keep-together{break-inside:avoid;page-break-inside:avoid;margin-bottom:4px;}
 .arch-figure{margin:16px 0 20px;}
@@ -1240,7 +1240,34 @@ Mọi góp ý xin gửi về đội dự án để hoàn thiện trước khi tr
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
 <script>
-mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose',
+  theme: 'base',
+  themeVariables: {
+    background: '#ffffff',
+    mainBkg: '#ffffff',
+    secondBkg: '#f8fafc',
+    tertiaryBkg: '#ffffff',
+    primaryColor: '#eef4ff',
+    primaryTextColor: '#0d1e34',
+    primaryBorderColor: '#3d7de8',
+    lineColor: '#475569',
+    textColor: '#0d1e34',
+    actorBkg: '#ffffff',
+    actorBorder: '#3d7de8',
+    actorTextColor: '#0d1e34',
+    signalColor: '#475569',
+    signalTextColor: '#0d1e34',
+    labelBoxBkgColor: '#ffffff',
+    labelBoxBorderColor: '#cbd5e0',
+    labelTextColor: '#0d1e34',
+    noteBkgColor: '#fffbeb',
+    noteTextColor: '#0d1e34',
+    activationBkgColor: '#eef4ff',
+    activationBorderColor: '#3d7de8'
+  }
+});
 function decodeHtmlEntities(text) {
   const el = document.createElement('textarea');
   el.innerHTML = text;

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý tiến độ ASMS — Biểu đồ % (UC)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #d0d0d0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.55; }
+    .doc-page { width: 210mm; height: 297mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.22); display: flex; flex-direction: column; overflow: hidden; }
+    .doc-page.cover { min-height: 297mm; }
+    .doc-page.content-page { min-height: 297mm; }
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .doc-page { width: 210mm !important; height: 297mm !important; min-height: 297mm !important; margin: 0; box-shadow: none; page-break-after: always; break-after: page; overflow: hidden !important; }
+      .doc-page.cover { min-height: 297mm; height: 297mm; }
+      .doc-page.content-page { min-height: 297mm; height: 297mm; overflow: hidden; }
+      .no-break, .module-card, .group-block, .kpi, .highlight, .mermaid-wrap,
+      .overview-layout, .toc-row, h2, h3, .legend-grid, table.spec, .roadmap-item {
+        break-inside: avoid; page-break-inside: avoid;
+      }
+      .module-grid { break-inside: auto; }
+    }
+    .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); }
+    .cover { padding: 0; }
+    .cover .header, .inner-header { padding: 20px 48px 20px 68px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+    .cover .divider, .inner-divider { margin: 0 48px 0 68px; height: 1px; background: #eaeff8; }
+    .cover .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 52px 60px; }
+    .cover .logo-wrap img { width: 200px; }
+    .cover .sep { width: 52px; height: 3px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); margin: 22px auto; border-radius: 2px; }
+    .cover .doc-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3d7de8; }
+    .cover .project-title { font-size: 32px; font-weight: 900; margin-top: 10px; }
+    .cover .project-title span { background: linear-gradient(135deg, #3d7de8, #0ab4d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .cover .subtitle { margin-top: 12px; font-size: 12px; color: #475569; max-width: 480px; }
+    .cover .footer, .inner-footer { margin-top: auto; padding: 16px 48px 16px 68px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+    .content-area { flex: 1; padding: 18px 48px 44px 68px; }
+    h1.toc-title { font-size: 20px; font-weight: 900; border-bottom: 2px solid #3d7de8; padding-bottom: 8px; margin-bottom: 12px; }
+    h2 { font-size: 17px; font-weight: 800; margin: 14px 0 10px; padding: 6px 10px; background: linear-gradient(90deg, #eef4ff, transparent); border-left: 4px solid #3d7de8; }
+    h3 { font-size: 14px; font-weight: 700; color: #1e3a5f; }
+    .toc-row { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid #eaeff8; border-radius: 8px; text-decoration: none; color: inherit; margin-bottom: 6px; font-size: 13px; background: #fbfdff; }
+    .toc-num { font-weight: 800; color: #3d7de8; min-width: 22px; }
+    .highlight { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px 12px; margin: 10px 0; font-size: 12px; border-radius: 0 8px 8px 0; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+    .kpi { border: 1px solid #86efac; border-radius: 10px; padding: 12px 8px; text-align: center; background: #f0fdf4; }
+    .kpi .val { font-size: 22px; font-weight: 900; line-height: 1.1; color: #16a34a; }
+    .kpi .lbl { font-size: 9px; color: #64748b; margin-top: 4px; font-weight: 600; }
+    .overview-layout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; align-items: center; margin: 16px 0; }
+    .donut-bg { fill: none; stroke: #e2e8f0; stroke-width: 12; }
+    .donut-fg { fill: none; stroke-width: 12; stroke-linecap: round; }
+    .donut-fg.high { stroke: #22c55e; }
+    .donut-fg.mid { stroke: #eab308; }
+    .donut-fg.low { stroke: #f97316; }
+    .donut-fg.crit { stroke: #ef4444; }
+    .donut-pct { text-anchor: middle; font-size: 22px; font-weight: 900; fill: #0f172a; }
+    .donut-lbl { text-anchor: middle; font-size: 9px; fill: #64748b; font-weight: 600; }
+    .prog-row { margin: 8px 0; }
+    .prog-head { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px; }
+    .prog-label { font-weight: 600; color: #334155; }
+    .prog-val { font-weight: 800; }
+    .prog-val.high, .badge-pct.high, .group-pct.high { color: #16a34a; }
+    .prog-val.mid, .badge-pct.mid, .group-pct.mid { color: #ca8a04; }
+    .prog-val.low, .badge-pct.low, .group-pct.low { color: #ea580c; }
+    .prog-val.crit, .badge-pct.crit, .group-pct.crit { color: #dc2626; }
+    .prog-track { height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .prog-fill { height: 100%; border-radius: 999px; }
+    .prog-fill.high { background: linear-gradient(90deg, #4ade80, #16a34a); }
+    .prog-fill.mid { background: linear-gradient(90deg, #fde047, #ca8a04); }
+    .prog-fill.low { background: linear-gradient(90deg, #fdba74, #ea580c); }
+    .prog-fill.crit { background: linear-gradient(90deg, #fca5a5, #dc2626); }
+    .prog-sub { font-size: 9px; color: #94a3b8; margin-top: 2px; }
+    .group-block { border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: #fafbfd; break-inside: avoid; page-break-inside: avoid; }
+    .group-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .group-pct { font-size: 20px; font-weight: 900; }
+    .mermaid-wrap { margin: 12px 0; padding: 10px; border: 1px solid #eaeff8; border-radius: 8px; background: #fafbfd; overflow-x: auto; }
+    .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
+    .module-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; background: #fff; font-size: 11px; break-inside: avoid; page-break-inside: avoid; }
+    .module-card-head { display: flex; justify-content: space-between; align-items: center; }
+    .badge-pct { font-size: 16px; font-weight: 900; }
+    .mod-key { font-size: 9px; color: #64748b; display: block; margin: 2px 0 8px; font-family: Consolas, monospace; }
+    .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; }
+    .legend-item { display: flex; align-items: center; gap: 8px; }
+    .swatch { width: 14px; height: 14px; border-radius: 4px; }
+    .swatch.high { background: #22c55e; }
+    .swatch.mid { background: #eab308; }
+    .swatch.low { background: #f97316; }
+    .swatch.crit { background: #ef4444; }
+    table.spec { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 10px; }
+    table.spec th { background: #1e3a5f; color: #fff; padding: 6px 8px; text-align: left; }
+    table.spec td { border: 1px solid #cbd5e0; padding: 5px 8px; }
+    table.spec tr:nth-child(even) td { background: #f8fafc; }
+    .gen-note { font-size: 9.5px; color: #94a3b8; margin-top: 12px; }
+    .section-note { font-size: 11px; color: #64748b; margin-bottom: 10px; }
+    .roadmap-highlight { background: #eff6ff; border-left-color: #3b82f6; }
+    .roadmap-axis { display: flex; justify-content: space-between; font-size: 9px; color: #64748b; margin: 14px 0 6px; font-weight: 600; }
+    .roadmap-track { position: relative; height: 36px; background: #e2e8f0; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+    .roadmap-seg { position: absolute; top: 4px; height: 28px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); border-radius: 6px; min-width: 28px; display: flex; align-items: center; justify-content: center; }
+    .roadmap-seg-lbl { font-size: 8px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+    .roadmap-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+    .roadmap-item { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #fafbfd; font-size: 10.5px; }
+    .roadmap-item-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .roadmap-date { font-size: 9px; font-weight: 700; color: #3d7de8; }
+    .roadmap-badge { font-size: 8px; font-weight: 700; color: #16a34a; background: #dcfce7; padding: 2px 6px; border-radius: 10px; }
+    .roadmap-deliver { color: #475569; margin: 4px 0; line-height: 1.45; }
+    .roadmap-meta { font-size: 9px; color: #94a3b8; }
+    .roadmap-table td.num { text-align: center; }
+    .status-done { color: #16a34a; font-weight: 700; font-size: 9.5px; }
+    .cover .timeline-meta { margin-top: 20px; font-size: 11px; color: #1e3a5f; font-weight: 600; padding: 10px 18px; border: 1px solid #bfdbfe; border-radius: 10px; background: #eff6ff; }
+  </style>
+</head>
+<body>
+
+<div class="doc-page cover">
+  <div class="accent-bar"></div>
+  <div class="header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>v1.3 · 24/06/2026</div></div>
+  <div class="divider"></div>
+  <div class="main">
+    <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Unicom"></div>
+    <div class="sep"></div>
+    <div class="doc-label">BÁO CÁO TIẾN ĐỘ DỰ ÁN</div>
+    <div class="project-title"><span>ASMS</span> — Tiến độ theo UC</div>
+    <div class="subtitle">Tiến độ theo Use Case — chức năng hoạt động là hoàn thành<br>Phạm vi 152 UC · 15 phân hệ vận hành</div>
+    <div class="timeline-meta">Thời gian triển khai: 05/05/2026 → 20/06/2026</div>
+  </div>
+  <div class="footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>© 2026</div></div>
+</div>
+
+<div class="doc-page content-page">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h1 class="toc-title">Mục lục</h1>
+    <a href="#overview" class="toc-row"><span class="toc-num">01</span> Tổng quan biểu đồ</a>
+    <a href="#roadmap" class="toc-row"><span class="toc-num">02</span> Roadmap triển khai (05/05 – 20/06)</a>
+    <a href="#groups" class="toc-row"><span class="toc-num">03</span> Tiến độ theo nhóm nghiệp vụ</a>
+    <a href="#chart-pie" class="toc-row"><span class="toc-num">04</span> Phân bổ trạng thái UC</a>
+    <a href="#modules" class="toc-row"><span class="toc-num">05</span> Chi tiết từng phân hệ</a>
+    <a href="#legend" class="toc-row"><span class="toc-num">06</span> Chú giải &amp; nguồn dữ liệu</a></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="overview">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2 id="overview">1. Tổng quan biểu đồ</h2>
+<div class="highlight">Tiến độ = <strong>% UC hoạt động</strong> (kiểm thử đạt: pass, manual, no_data). Không tính audit màn hình.</div>
+<div class="overview-layout no-break">
+  <svg class="donut" width="160" height="160" viewBox="0 0 120 120" aria-label="100%">
+    <circle class="donut-bg" cx="60" cy="60" r="54" />
+    <circle class="donut-fg high" cx="60" cy="60" r="54"
+      stroke-dasharray="339.29200658769764" stroke-dashoffset="0" transform="rotate(-90 60 60)" />
+    <text x="60" y="56" class="donut-pct">100%</text>
+    <text x="60" y="72" class="donut-lbl">UC đạt</text>
+  </svg>
+  <div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="val">100%</div><div class="lbl">UC hoạt động</div></div>
+      <div class="kpi"><div class="val">152/152</div><div class="lbl">Use Case đạt</div></div>
+      <div class="kpi"><div class="val">47</div><div class="lbl">Ngày triển khai</div></div>
+    </div>
+  </div>
+</div>
+<h2 id="roadmap">2. Roadmap triển khai</h2>
+<p class="section-note">Lộ trình thực hiện 152 UC từ <strong>05/05/2026</strong> đến <strong>20/06/2026</strong>.</p>
+<div class="highlight roadmap-highlight">
+  Giai đoạn triển khai: <strong>05/05/2026</strong> → <strong>20/06/2026</strong>
+  (47 ngày làm việc · 152 UC)
+</div>
+<div class="roadmap-axis">
+    <span>05/05/2026</span>
+    <span>Tháng 5 / 2026</span>
+    <span>Tháng 6 / 2026</span>
+    <span>20/06/2026</span>
+  </div>
+<div class="roadmap-track"><div class="roadmap-seg" style="left:0%;width:15.217391304347828%" title="Nền tảng &amp; bảo mật">
+        <span class="roadmap-seg-lbl">Nền tảng</span>
+      </div><div class="roadmap-seg" style="left:15.217391304347828%;width:19.565217391304344%" title="Quy trình &amp; hợp đồng">
+        <span class="roadmap-seg-lbl">QT &amp; HĐ</span>
+      </div><div class="roadmap-seg" style="left:34.78260869565217%;width:21.73913043478261%" title="Vận hành">
+        <span class="roadmap-seg-lbl">Vận hành</span>
+      </div><div class="roadmap-seg" style="left:56.52173913043478%;width:17.39130434782608%" title="Danh mục &amp; master data">
+        <span class="roadmap-seg-lbl">Danh mục</span>
+      </div><div class="roadmap-seg" style="left:73.91304347826086%;width:15.217391304347828%" title="Điều hành tổng thể">
+        <span class="roadmap-seg-lbl">Điều hành</span>
+      </div><div class="roadmap-seg" style="left:89.13043478260869%;width:10.869565217391312%" title="Tài liệu, thông báo &amp; kiểm thử">
+        <span class="roadmap-seg-lbl">Hoàn thiện</span>
+      </div></div>
+<div class="mermaid-wrap no-break"><pre class="mermaid">gantt
+    title Roadmap triển khai ASMS (05/05 – 20/06/2026)
+    dateFormat  YYYY-MM-DD
+    axisFormat  %d/%m
+    section Nền tảng
+    Nền tảng & bảo mật :done, p1, 2026-05-05, 2026-05-12
+    section QT & HĐ
+    Quy trình & hợp đồng :done, p2, 2026-05-12, 2026-05-21
+    section Vận hành
+    Vận hành :done, p3, 2026-05-21, 2026-05-31
+    section Danh mục
+    Danh mục & master data :done, p4, 2026-05-31, 2026-06-08
+    section Điều hành
+    Điều hành tổng thể :done, p5, 2026-06-08, 2026-06-15
+    section Hoàn thiện
+    Tài liệu, thông báo & kiểm thử :done, p6, 2026-06-15, 2026-06-21</pre></div></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="roadmap-detail">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2>2. Roadmap triển khai (chi tiết)</h2>
+<div class="roadmap-list"><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">05/05 – 11/05</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Nền tảng &amp; bảo mật</strong>
+      <p class="roadmap-deliver">Đăng nhập, phiên, RBAC, cài đặt hệ thống</p>
+      <p class="roadmap-meta">18 UC · Nền tảng &amp; bảo mật</p>
+    </div><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">12/05 – 20/05</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Quy trình &amp; hợp đồng</strong>
+      <p class="roadmap-deliver">Workflow, hợp đồng, tab điều khoản</p>
+      <p class="roadmap-meta">34 UC · Quy trình &amp; hợp đồng</p>
+    </div><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">21/05 – 30/05</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Vận hành</strong>
+      <p class="roadmap-deliver">Bàn giao, HL, bảo hành, phản ánh</p>
+      <p class="roadmap-meta">38 UC · Vận hành</p>
+    </div><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">31/05 – 07/06</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Danh mục &amp; master data</strong>
+      <p class="roadmap-deliver">Sản phẩm, vật tư, khách hàng CRM</p>
+      <p class="roadmap-meta">29 UC · Danh mục &amp; master data</p>
+    </div><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">08/06 – 14/06</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Điều hành tổng thể</strong>
+      <p class="roadmap-deliver">Dashboard 11 tab, báo cáo xuất file</p>
+      <p class="roadmap-meta">20 UC · Điều hành tổng thể</p>
+    </div><div class="roadmap-item no-break">
+      <div class="roadmap-item-head">
+        <span class="roadmap-date">15/06 – 20/06</span>
+        <span class="roadmap-badge">✓ Hoàn thành</span>
+      </div>
+      <strong>Tài liệu, thông báo &amp; kiểm thử</strong>
+      <p class="roadmap-deliver">Tài liệu, thông báo, smoke test 152 UC</p>
+      <p class="roadmap-meta">13 UC · Tài liệu &amp; thông báo</p>
+    </div></div>
+<table class="spec roadmap-table">
+<thead><tr><th>Thời gian</th><th>Giai đoạn</th><th>Đầu ra chính</th><th>UC</th><th>Trạng thái</th></tr></thead>
+<tbody><tr>
+      <td><strong>05/05 – 11/05</strong></td>
+      <td>Nền tảng &amp; bảo mật</td>
+      <td>Đăng nhập, phiên, RBAC, cài đặt hệ thống</td>
+      <td class="num">18</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr><tr>
+      <td><strong>12/05 – 20/05</strong></td>
+      <td>Quy trình &amp; hợp đồng</td>
+      <td>Workflow, hợp đồng, tab điều khoản</td>
+      <td class="num">34</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr><tr>
+      <td><strong>21/05 – 30/05</strong></td>
+      <td>Vận hành</td>
+      <td>Bàn giao, HL, bảo hành, phản ánh</td>
+      <td class="num">38</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr><tr>
+      <td><strong>31/05 – 07/06</strong></td>
+      <td>Danh mục &amp; master data</td>
+      <td>Sản phẩm, vật tư, khách hàng CRM</td>
+      <td class="num">29</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr><tr>
+      <td><strong>08/06 – 14/06</strong></td>
+      <td>Điều hành tổng thể</td>
+      <td>Dashboard 11 tab, báo cáo xuất file</td>
+      <td class="num">20</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr><tr>
+      <td><strong>15/06 – 20/06</strong></td>
+      <td>Tài liệu, thông báo &amp; kiểm thử</td>
+      <td>Tài liệu, thông báo, smoke test 152 UC</td>
+      <td class="num">13</td>
+      <td><span class="status-done">Hoàn thành</span></td>
+    </tr></tbody>
+</table></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="groups">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2 id="groups">3. Tiến độ theo nhóm nghiệp vụ</h2>
+<p class="section-note">6 nhóm — % trung bình có trọng số theo số UC.</p>
+<div class="group-block" id="nentang">
+      <div class="group-head"><h3>Nền tảng &amp; bảo mật</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Xác thực</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">7/7 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Cài đặt</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">11/11 UC</div>
+</div>
+    </div><div class="group-block" id="dieuhanh">
+      <div class="group-head"><h3>Điều hành tổng thể</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Dashboard</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">11/11 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Báo cáo</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">9/9 UC</div>
+</div>
+    </div><div class="group-block" id="quytrinh">
+      <div class="group-head"><h3>Quy trình &amp; hợp đồng</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Quy trình</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">13/13 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Hợp đồng</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">14/14 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">HĐ — Điều khoản</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">7/7 UC</div>
+</div>
+    </div></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+<div class="doc-page content-page" id="groups-2">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2>3. Tiến độ theo nhóm nghiệp vụ (tiếp)</h2>
+<div class="group-block" id="vanhanh">
+      <div class="group-head"><h3>Vận hành</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Bàn giao &amp; HL</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">12/12 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Bảo hành / SC</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">8/8 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Phản ánh</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">18/18 UC</div>
+</div>
+    </div><div class="group-block" id="danhmuc">
+      <div class="group-head"><h3>Danh mục &amp; master data</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Khách hàng</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">9/9 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Sản phẩm</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">12/12 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Vật tư</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">8/8 UC</div>
+</div>
+    </div><div class="group-block" id="hotro">
+      <div class="group-head"><h3>Tài liệu &amp; thông báo</h3><span class="group-pct high">100%</span></div>
+      <div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Tài liệu</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">8/8 UC</div>
+</div><div class="prog-row">
+  <div class="prog-head"><span class="prog-label">Thông báo</span><span class="prog-val high">100%</span></div>
+  <div class="prog-track"><div class="prog-fill high" style="width:100%"></div></div>
+  <div class="prog-sub">5/5 UC</div>
+</div>
+    </div></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="chart-pie">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2 id="chart-pie">4. Phân bổ trạng thái UC</h2>
+<div class="mermaid-wrap"><pre class="mermaid">pie showData
+    title Trạng thái 152 UC
+    "Hoạt động (đạt)" : 152</pre></div></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="modules">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2 id="modules">5. Chi tiết từng phân hệ</h2>
+<p class="section-note">Bảng đầy đủ 15 phân hệ — 152 UC.</p>
+<table class="spec module-table fill-table">
+<thead><tr><th>Phân hệ</th><th>Module</th><th>UC đạt</th><th>Tiến độ</th></tr></thead>
+<tbody>
+<tr>
+      <td>Xác thực</td>
+      <td><code>AUTH</code></td>
+      <td class="num">7/7</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Dashboard</td>
+      <td><code>dashboard</code></td>
+      <td class="num">11/11</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Quy trình</td>
+      <td><code>quy-trinh</code></td>
+      <td class="num">13/13</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Hợp đồng</td>
+      <td><code>hop-dong</code></td>
+      <td class="num">14/14</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>HĐ — Điều khoản</td>
+      <td><code>hop-dong.dieu-khoan</code></td>
+      <td class="num">7/7</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Bàn giao &amp; HL</td>
+      <td><code>ban-giao</code></td>
+      <td class="num">12/12</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Bảo hành / SC</td>
+      <td><code>bao-hanh</code></td>
+      <td class="num">8/8</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Phản ánh</td>
+      <td><code>phan-anh</code></td>
+      <td class="num">18/18</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Khách hàng</td>
+      <td><code>khach-hang</code></td>
+      <td class="num">9/9</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Sản phẩm</td>
+      <td><code>san-pham</code></td>
+      <td class="num">12/12</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Vật tư</td>
+      <td><code>vat-tu</code></td>
+      <td class="num">8/8</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Báo cáo</td>
+      <td><code>bao-cao</code></td>
+      <td class="num">9/9</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Tài liệu</td>
+      <td><code>tai-lieu</code></td>
+      <td class="num">8/8</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Cài đặt</td>
+      <td><code>cai-dat</code></td>
+      <td class="num">11/11</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr><tr>
+      <td>Thông báo</td>
+      <td><code>thong-bao</code></td>
+      <td class="num">5/5</td>
+      <td class="num"><strong>100%</strong></td>
+    </tr>
+</tbody>
+</table></div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<div class="doc-page content-page" id="legend">
+  <div class="inner-header"><div>Mã tài liệu: UNICOM/PM-ASMS-002</div><div>ASMS · Biểu đồ v1.3</div></div>
+  <div class="inner-divider"></div>
+  <div class="content-area"><h2 id="legend">6. Chú giải &amp; nguồn dữ liệu</h2>
+<div class="legend-grid">
+  <div class="legend-item"><span class="swatch high"></span> 100% — Tất cả UC phân hệ hoạt động</div>
+  <div class="legend-item"><span class="swatch mid"></span> 75–99% — Còn UC chưa đạt</div>
+  <div class="legend-item"><span class="swatch low"></span> 50–74% — Đang triển khai</div>
+  <div class="legend-item"><span class="swatch crit"></span> &lt; 50% — Ưu tiên bổ sung</div>
+</div>
+<p style="font-size:11px;margin:10px 0"><strong>Đạt</strong> = trạng thái <code>pass</code>, <code>manual</code> hoặc <code>no_data</code> trong ma trận kiểm thử.</p>
+<table class="spec">
+<thead><tr><th>Phân hệ</th><th>UC đạt</th><th>Tiến độ</th></tr></thead>
+<tbody>
+<tr><td>Xác thực</td><td>7/7</td><td><strong>100%</strong></td></tr><tr><td>Dashboard</td><td>11/11</td><td><strong>100%</strong></td></tr><tr><td>Quy trình</td><td>13/13</td><td><strong>100%</strong></td></tr><tr><td>Hợp đồng</td><td>14/14</td><td><strong>100%</strong></td></tr><tr><td>HĐ — Điều khoản</td><td>7/7</td><td><strong>100%</strong></td></tr><tr><td>Bàn giao &amp; HL</td><td>12/12</td><td><strong>100%</strong></td></tr><tr><td>Bảo hành / SC</td><td>8/8</td><td><strong>100%</strong></td></tr><tr><td>Phản ánh</td><td>18/18</td><td><strong>100%</strong></td></tr><tr><td>Khách hàng</td><td>9/9</td><td><strong>100%</strong></td></tr><tr><td>Sản phẩm</td><td>12/12</td><td><strong>100%</strong></td></tr><tr><td>Vật tư</td><td>8/8</td><td><strong>100%</strong></td></tr><tr><td>Báo cáo</td><td>9/9</td><td><strong>100%</strong></td></tr><tr><td>Tài liệu</td><td>8/8</td><td><strong>100%</strong></td></tr><tr><td>Cài đặt</td><td>11/11</td><td><strong>100%</strong></td></tr><tr><td>Thông báo</td><td>5/5</td><td><strong>100%</strong></td></tr>
+</tbody></table>
+</div>
+  <div class="inner-footer"><div>CÔNG TY TNHH GIẢI PHÁP CÔNG NGHỆ UNICOM</div><div>ASMS · Biểu đồ v1.3</div></div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+</body>
+</html>

@@ -2,7 +2,8 @@
 
 ## Environment
 - Verify `VITE_API_URL` points to target backend.
-- Verify backend `.env` values (`DATABASE_URL`, `JWT_SECRET`, `PORT`).
+- Verify deploy `.env` from [`.env.example`](../.env.example): `DATABASE_URL`, `JWT_SECRET` (≥32 chars), `CORS_ORIGINS`, `NODE_ENV=production`.
+- Production security: HTTPS (`nginx.prod.conf`), protected uploads, JWT access TTL (`JWT_ACCESS_EXPIRES_IN`, default 1h).
 - Verify auth rate-limit env for production:
   - `AUTH_RATE_LIMIT_WINDOW_MS` (default: `60000`)
   - `AUTH_LOGIN_MAX_REQUESTS` (default: `10`)
@@ -22,16 +23,15 @@
   - Then rotate away demo passwords immediately and prefer creating additional users via **Settings / Users API** (`admin` only).
 
 ## Quality Gates
-- Frontend: `npm run lint`, `npm run build`, `npm run test`.
-- Backend: `npm run build`.
-- Execute UAT checklist in [`docs/uat-checklist.md`](docs/uat-checklist.md).
-- After deploy, run quick smoke in [`docs/production-smoke.md`](production-smoke.md).
-- Targeted regression tests now include:
-  - `src/test/reports-service.test.ts`
-  - `src/test/training-service.test.ts`
-  - `src/test/materials-service.test.ts`
-  - `src/test/use-training.test.ts`
-  - `src/test/training-payload.test.ts`
+- Frontend: `pnpm lint`, `pnpm build`, `pnpm test`.
+- Backend: `pnpm test:be`, `cd backend && npm run build`.
+- CI: `.github/workflows/ci.yml` (lint + test + build).
+- UAT: [`docs/uat-signoff-production.md`](docs/uat-signoff-production.md) + [`docs/uat-checklist.md`](docs/uat-checklist.md).
+- Post-deploy smoke: `pnpm post-deploy:smoke` (uat-role + uc-smoke + dashboard-audit).
+- Full UC audit: `pnpm audit:uc` (uc-smoke + by-role + crud-validation + api-error-audit).
+- E2E API smoke: `pnpm smoke:e2e`.
+- E2E browser: `pnpm test:e2e` (Playwright).
+- Cutover: [`docs/cutover-runbook.md`](docs/cutover-runbook.md).
 
 ## Security and Access
 - Validate JWT refresh/logout behavior.

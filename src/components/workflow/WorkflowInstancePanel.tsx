@@ -5,7 +5,7 @@ import { getApiErrorMessage } from "@/lib/api-errors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { useRole } from "@/hooks/use-role";
 import { useAuth } from "@/hooks/use-auth";
 import { canUserActOnWorkflowStep } from "@/lib/workflow-step-access";
@@ -64,17 +64,7 @@ function formatSize(bytes: number) {
 }
 
 function toWorkflowDocumentUrl(storagePath: string): string {
-  const normalized = storagePath.replace(/\\/g, "/");
-  const marker = "/uploads/";
-  const idx = normalized.lastIndexOf(marker);
-  if (idx >= 0) {
-    const rel = normalized.slice(idx + marker.length);
-    return `/api/v1/uploads/${rel}`;
-  }
-  if (normalized.startsWith("uploads/")) {
-    return `/api/v1/${normalized}`;
-  }
-  return `/api/v1/uploads/${normalized}`;
+  return resolveUploadUrl(storagePath);
 }
 
 export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compact }: Props) {

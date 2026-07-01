@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import type { ApiSuccess } from "@/lib/api-types";
 import { useDeleteDocument, useUploadDocument } from "@/hooks/use-documents-api";
 import { useAuth } from "@/hooks/use-auth";
+import { resolveUploadUrl } from "@/lib/upload-url";
 
 const MAX_IMAGES = 10;
 const MAX_FILE_SIZE = 3 * 1024 * 1024;
@@ -150,10 +151,10 @@ const ProductImageGallery = ({ productId }: Props) => {
               >
                 {doc.fileUrl ? (
                   <img
-                    src={doc.fileUrl}
+                    src={resolveUploadUrl(doc.fileUrl)}
                     alt={doc.name}
                     className="h-full w-full object-cover cursor-pointer"
-                    onClick={() => setPreview(doc.fileUrl!)}
+                    onClick={() => setPreview(resolveUploadUrl(doc.fileUrl!))}
                     loading="lazy"
                   />
                 ) : (

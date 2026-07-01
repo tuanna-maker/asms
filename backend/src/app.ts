@@ -6,17 +6,25 @@ import v1Routes from "./routes/v1";
 import anniversarySubscriptionsRoutes from "./modules/anniversary-subscriptions/route";
 import errorHandler from "./middleware/errorHandler";
 import prisma from "./lib/prisma";
+import { createProtectedUploadsRouter } from "./middleware/uploads";
+import { createGlobalRateLimiter } from "./middleware/rateLimit";
 
 import { corsOptions } from "./config/cors";
+import { env } from "./config/env";
 
 const app = express();
+
+if (env.TRUST_PROXY) {
+  app.set("trust proxy", 1);
+}
 
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
-app.use(morgan("dev"));
-app.use("/api/v1/uploads", express.static("uploads"));
+app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use("/api/v1", createGlobalRateLimiter());
+app.use("/api/v1/uploads", createProtectedUploadsRouter());
 
 app.get("/api/v1/health", async (_req, res) => {
   try {

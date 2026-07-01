@@ -1,5 +1,6 @@
 import app from "./app";
 import { env } from "./config/env";
+import { validateProductionEnv } from "./config/validateEnv";
 import { seedAuthUsers } from "./config/seed-auth";
 import { seedDataDefinitions } from "./config/seed-definitions";
 import { ensureDefaultSystemSettings } from "./modules/system-settings/service";
@@ -27,6 +28,8 @@ async function connectDatabase(retries = 5, delayMs = 3000): Promise<void> {
 }
 
 export async function startServer() {
+  validateProductionEnv();
+
   if (!env.DATABASE_URL) {
     throw new Error("DATABASE_URL chưa cấu hình trong backend/.env");
   }

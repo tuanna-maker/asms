@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import crypto from "crypto";
 import type { z } from "zod";
 
@@ -14,7 +14,9 @@ type RegisterPayload = z.infer<typeof registerSchema>;
 
 type SessionMeta = { userAgent?: string | null; ip?: string | null };
 
-const ACCESS_TOKEN_EXPIRES_IN = "7d";
+function getAccessTokenExpiresIn(): string {
+  return env.JWT_ACCESS_EXPIRES_IN || (env.NODE_ENV === "production" ? "1h" : "7d");
+}
 const REFRESH_TOKEN_TTL_DAYS = 30;
 
 export function hashToken(token: string) {
@@ -52,8 +54,8 @@ function signToken(args: { userId: string; roleCode: string }) {
     env.JWT_SECRET,
     {
       subject: args.userId,
-      expiresIn: ACCESS_TOKEN_EXPIRES_IN,
-    }
+      expiresIn: getAccessTokenExpiresIn(),
+    } as SignOptions,
   );
 }
 

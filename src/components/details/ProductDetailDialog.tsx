@@ -24,6 +24,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { ProductWorkflowSection } from "@/components/products/ProductWorkflowSection";
 import type { ProductStepPayloadRecord } from "@/lib/product-step-payload";
 import { qk } from "@/lib/query-keys";
@@ -629,7 +630,7 @@ const ProductDetailDialog = ({ product, open, onOpenChange, editable = false, on
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {d.fileUrl ? (
-                            <a href={d.fileUrl} target="_blank" rel="noreferrer">
+                            <a href={resolveUploadUrl(d.fileUrl)} target="_blank" rel="noreferrer">
                               <Button size="sm" variant="outline"><Download className="h-3.5 w-3.5 mr-1" />Tải</Button>
                             </a>
                           ) : null}

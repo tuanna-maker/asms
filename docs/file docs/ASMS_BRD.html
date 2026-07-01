@@ -50,8 +50,8 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
 .md-render hr{border:none;border-top:1px dashed #c8d8ec;margin:14px 0;}
 .md-render blockquote{margin:10px 0;padding:8px 14px;background:#fff8e1;border-left:4px solid #f59e0b;font-size:11.5px;}
 .md-render code{font-family:Consolas,monospace;font-size:10px;background:#f1f5f9;padding:1px 5px;border-radius:3px;}
-.md-render .mermaid{text-align:center;margin:14px 0;background:#fafbfd;padding:12px;border-radius:6px;border:1px solid #eaeff8;}
-.md-render .mermaid svg{max-width:100%;height:auto;}
+.md-render .mermaid{text-align:center;margin:14px 0;background:#fff;padding:12px;border-radius:6px;border:1px solid #eaeff8;}
+.md-render .mermaid svg{max-width:100%;height:auto;background-color:#fff!important;}
 .arch-figure{margin:16px 0 20px;}
 .arch-figure figcaption{font-size:11px;color:#52637d;text-align:center;margin-top:10px;line-height:1.5;}
 .arch-diagram{border:1px solid #cbd5e0;border-radius:10px;overflow:hidden;font-size:10px;line-height:1.45;}
@@ -90,7 +90,7 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
   <div class="accent-bar"></div>
   <div class="header">
     <div class="header-code">Mã tài liệu: <span>UNICOM/BRD-ASMS-001</span></div>
-    <div class="header-right">Phiên bản 1.0 &nbsp;·&nbsp; 06/2026 &nbsp;·&nbsp; 171 Use Case</div>
+    <div class="header-right">Phiên bản 1.0 &nbsp;·&nbsp; 06/2026 &nbsp;·&nbsp; 152 Use Case</div>
   </div>
   <div class="divider"></div>
   <div class="main">
@@ -100,8 +100,9 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
     <div class="project-title"><span class="brand">Hệ thống ASMS</span></div>
     <div class="subtitle">After-Sales Management System — Quản lý hậu mãi quốc phòng</div>
     <div class="meta-info">
-      <strong>Phạm vi:</strong> 17 phân hệ · 171 use case (đầy đủ codebase)<br>
+      <strong>Phạm vi:</strong> 14 phân hệ · 152 use case (vận hành)<br>
       <strong>Nguồn:</strong> docs/file docs/use-case-asms.md<br>
+      <strong>Loại trừ:</strong> 3 màn ẩn (19 UC) — Đề tài, Công việc, Đào tạo<br>
       <strong>Định dạng:</strong> Mục đích · Thuộc tính · Sequence · Diễn giải bước
     </div>
   </div>
@@ -118,7 +119,7 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
   <div class="inner-brd-divider"></div>
   <div class="content-area">
     <h1 class="toc-title">Mục lục</h1>
-    <p class="toc-subtitle">Danh mục 171 use case — nhấn để di chuyển nhanh.</p>
+    <p class="toc-subtitle">Danh mục 152 use case — nhấn để di chuyển nhanh.</p>
     <div id="toc-list" class="toc-list"></div>
   </div>
   <div class="inner-brd-footer">
@@ -130,36 +131,32 @@ body{background:#d0d0d0;font-family:'Be Vietnam Pro','Segoe UI',Arial,sans-serif
 <script id="md-source" type="text/markdown">
 ## 1. GIỚI THIỆU CHUNG
 
-Hệ thống **ASMS** (After-Sales Management System) là nền tảng quản lý **hậu mãi** quốc phòng: hợp đồng, bàn giao, huấn luyện, bảo hành/sửa chữa, vật tư, sản phẩm, CRM, phản ánh khách hàng, báo cáo và quản trị workflow.
+Hệ thống **ASMS** (After-Sales Management System) quản lý **hậu mãi** quốc phòng. **BRD cập nhật v1.1** mô tả **152 use case đang vận hành** trên **14 phân hệ** có menu hiển thị.
 
-Tài liệu BRD này (phiên bản 1.0) mô tả **171 use case** theo hiện trạng codebase, mỗi UC gồm: **Mục đích → Thuộc tính → Biểu đồ tuần tự → Diễn giải các bước** (theo mẫu BRD TASMOS).
-
-> **Phạm vi:** 17 phân hệ. Màn **ẩn menu**: Đề tài NC, Công việc, Đào tạo & HL. QT **Hợp đồng (tổng hợp)** ẩn UI.
+> **Khác với BRD đầy đủ (v1.0):** Tài liệu này **loại trừ** 19 UC thuộc 3 màn ẩn (`de-tai`, `cong-viec`, `dao-tao`) và ghi rõ nhóm QT `contract` không dùng. Chi tiết UC ẩn xem **Phụ lục A**.
 
 ### Các nhóm người dùng chính
 
 | Vai trò | Mô tả công việc |
 |---|---|
 | **Admin** | Quản trị toàn hệ thống, người dùng, phân quyền, cấu hình, audit |
-| **Quản lý (manager)** | Điều hành nghiệp vụ, phê duyệt workflow, báo cáo |
-| **Kỹ thuật (technician)** | Bàn giao, bảo hành, vật tư, đào tạo, thực thi kỹ thuật |
+| **Quản lý (manager)** | Điều hành nghiệp vụ, phê duyệt quy trình, báo cáo |
+| **Kỹ thuật (technician)** | Bàn giao, bảo hành, vật tư, huấn luyện (tab Bàn giao), thực thi |
 | **Sales** | Khách hàng, hợp đồng, CRM, tài liệu |
 | **Viewer** | Theo dõi dữ liệu và báo cáo (chỉ đọc) |
 | **Hệ thống** | Job thông báo, SLA, routing phản ánh tự động |
 
-### Quy ước mã UC
+### Menu đang hiển thị (14 phân hệ)
 
-| Ký hiệu | Ý nghĩa |
-|---|---|
-| `UC-<MODULE>-<STT>` | Mã use case (ví dụ `UC-HD-01`) |
-| **Theo quyền** | Kiểm tra ma trận RBAC module tương ứng |
-| **Admin** | Admin xem toàn bộ (ví dụ danh sách PA) |
+Bảng điều khiển · Hợp đồng · Bàn giao & HL · Bảo hành · Sản phẩm · Vật tư · Khách hàng · Phản ánh · Báo cáo · Tài liệu · Quy trình · Cài đặt · Thông báo · Đăng nhập
 
 ---
 
 ## 2. KIẾN TRÚC TỔNG THỂ HỆ THỐNG
 
 ### 2.1 Sơ đồ kiến trúc logic — 5 tầng
+
+> Kiến trúc chỉ mô tả **luồng vận hành đang dùng**. Màn ẩn (Đề tài, Công việc, Đào tạo riêng) không xuất hiện trên menu.
 
 [[ARCHITECTURE_DIAGRAM]]
 
@@ -247,11 +244,11 @@ sequenceDiagram
 | 16 | Cài đặt | cai-dat | 11 | ✅ Đang vận hành |
 | 17 | Thông báo | thong-bao | 5 | ✅ Đang vận hành |
 | | **Tổng codebase** | | **171** | |
-
+| | **Phạm vi vận hành** | | **152** | ✅ |
 
 ---
 
-## 5. CÁC USE CASE CHI TIẾT
+## 5. CÁC USE CASE CHI TIẾT (ĐANG VẬN HÀNH)
 
 ### 5.1. Xác thực & Phiên *(✅ đang vận hành)*
 
@@ -4593,392 +4590,7 @@ sequenceDiagram
 
 ---
 
-### 5.11. Đề tài nghiên cứu *(⛔ ẩn — không sử dụng)*
-
-**Route UI:** `/de-tai`, `/de-tai/:id`
-
-> Phân hệ **không nằm trong phạm vi vận hành hiện tại**. Route bị chặn qua `nav-visibility.ts`.
-
-Phân hệ gồm **5** use case:
-
-### UC-DT-01: Xem danh sách đề tài
-
-**Mục đích:**
-Cho phép người dùng **xem danh sách đề tài** trên phân hệ **Đề tài nghiên cứu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DT-01` |
-| **Tên** | Xem danh sách đề tài |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `de-tai` |
-| **Route UI** | `/de-tai`, `/de-tai/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DT-02: Xem chi tiết đề tài
-
-**Mục đích:**
-Cho phép người dùng **xem chi tiết đề tài** trên phân hệ **Đề tài nghiên cứu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DT-02` |
-| **Tên** | Xem chi tiết đề tài |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `de-tai` |
-| **Route UI** | `/de-tai`, `/de-tai/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DT-03: Tạo đề tài
-
-**Mục đích:**
-Cho phép người dùng **tạo đề tài** trên phân hệ **Đề tài nghiên cứu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DT-03` |
-| **Tên** | Tạo đề tài |
-| **Tác nhân** | create |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `de-tai` |
-| **Route UI** | `/de-tai`, `/de-tai/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DT-04: Sửa đề tài
-
-**Mục đích:**
-Cho phép người dùng **sửa đề tài** trên phân hệ **Đề tài nghiên cứu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DT-04` |
-| **Tên** | Sửa đề tài |
-| **Tác nhân** | update |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `de-tai` |
-| **Route UI** | `/de-tai`, `/de-tai/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DT-05: Xóa đề tài
-
-**Mục đích:**
-Cho phép người dùng **xóa đề tài** trên phân hệ **Đề tài nghiên cứu**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DT-05` |
-| **Tên** | Xóa đề tài |
-| **Tác nhân** | delete |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `de-tai` |
-| **Route UI** | `/de-tai`, `/de-tai/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### 5.12. Công việc *(⛔ ẩn — không sử dụng)*
-
-**Route UI:** `/cong-viec`
-
-> Phân hệ **không nằm trong phạm vi vận hành hiện tại**. Route bị chặn qua `nav-visibility.ts`.
-
-Phân hệ gồm **7** use case:
-
-### UC-CV-01: Xem Kanban
-
-**Mục đích:**
-Cho phép người dùng **xem kanban** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-01` |
-| **Tên** | Xem Kanban |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-02: Xem danh sách
-
-**Mục đích:**
-Cho phép người dùng **xem danh sách** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-02` |
-| **Tên** | Xem danh sách |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-03: Xem lịch
-
-**Mục đích:**
-Cho phép người dùng **xem lịch** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-03` |
-| **Tên** | Xem lịch |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-04: Tạo công việc
-
-**Mục đích:**
-Cho phép người dùng **tạo công việc** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-04` |
-| **Tên** | Tạo công việc |
-| **Tác nhân** | create |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-05: Sửa công việc
-
-**Mục đích:**
-Cho phép người dùng **sửa công việc** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-05` |
-| **Tên** | Sửa công việc |
-| **Tác nhân** | update |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-06: Xóa công việc
-
-**Mục đích:**
-Cho phép người dùng **xóa công việc** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-06` |
-| **Tên** | Xóa công việc |
-| **Tác nhân** | delete |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-CV-07: Lọc theo ưu tiên / loại
-
-**Mục đích:**
-Cho phép người dùng **lọc theo ưu tiên / loại** trên phân hệ **Công việc**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-CV-07` |
-| **Tên** | Lọc theo ưu tiên / loại |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `cong-viec` |
-| **Route UI** | `/cong-viec` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### 5.13. Đào tạo & Huấn luyện *(⛔ ẩn — không sử dụng)*
-
-**Route UI:** `/dao-tao`, `/dao-tao/:id`
-
-> Phân hệ **không nằm trong phạm vi vận hành hiện tại**. Route bị chặn qua `nav-visibility.ts`.
-
-Phân hệ gồm **7** use case:
-
-### UC-DTao-01: Xem danh sách khóa
-
-**Mục đích:**
-Cho phép người dùng **xem danh sách khóa** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-01` |
-| **Tên** | Xem danh sách khóa |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-02: Xem chi tiết khóa
-
-**Mục đích:**
-Cho phép người dùng **xem chi tiết khóa** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-02` |
-| **Tên** | Xem chi tiết khóa |
-| **Tác nhân** | read |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-03: Tạo khóa (đào tạo / huấn luyện)
-
-**Mục đích:**
-Cho phép người dùng **tạo khóa (đào tạo / huấn luyện)** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-03` |
-| **Tên** | Tạo khóa (đào tạo / huấn luyện) |
-| **Tác nhân** | create |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-04: Sửa / xóa khóa
-
-**Mục đích:**
-Cho phép người dùng **sửa / xóa khóa** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-04` |
-| **Tên** | Sửa / xóa khóa |
-| **Tác nhân** | update / delete |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-05: Quản lý học viên
-
-**Mục đích:**
-Cho phép người dùng **quản lý học viên** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-05` |
-| **Tên** | Quản lý học viên |
-| **Tác nhân** | update |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-06: Quản lý lịch học
-
-**Mục đích:**
-Cho phép người dùng **quản lý lịch học** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-06` |
-| **Tên** | Quản lý lịch học |
-| **Tác nhân** | create / update / delete |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### UC-DTao-07: Xử lý quy trình khóa
-
-**Mục đích:**
-Cho phép người dùng **xử lý quy trình khóa** trên phân hệ **Đào tạo & Huấn luyện**, đảm bảo dữ liệu đồng bộ với API backend và tuân thủ phân quyền RBAC.
-
-| Thuộc tính | Giá trị |
-|---|---|
-| **Mã UC** | `UC-DTao-07` |
-| **Tên** | Xử lý quy trình khóa |
-| **Tác nhân** | update |
-| **Trạng thái** | ⛔ Ẩn menu — không sử dụng |
-| **Module** | `dao-tao` |
-| **Route UI** | `/dao-tao`, `/dao-tao/:id` |
-
-
-> **Ghi chú:** Use case thuộc phân hệ ẩn — không hiển thị menu, chặn truy cập trực tiếp (mọi vai trò). API có thể còn trong codebase nhưng **ngoài phạm vi UAT/vận hành**.
-
----
-
-### 5.14. Tài liệu *(✅ đang vận hành)*
+### 5.11. Tài liệu *(✅ đang vận hành)*
 
 **Route UI:** `/tai-lieu`
 
@@ -5268,7 +4880,7 @@ sequenceDiagram
 
 ---
 
-### 5.15. Quy trình *(✅ đang vận hành)*
+### 5.12. Quy trình *(✅ đang vận hành)*
 
 **Route UI:** `/quy-trinh`, `/quy-trinh/:moduleKey`, `/quy-trinh/:moduleKey/:workflowId`
 
@@ -5740,7 +5352,7 @@ sequenceDiagram
 
 ---
 
-### 5.16. Cài đặt *(✅ đang vận hành)*
+### 5.13. Cài đặt *(✅ đang vận hành)*
 
 **Route UI:** `/cai-dat`, `/cai-dat/thuoc-tinh`, `/cai-dat/thuoc-tinh/:moduleKey`
 
@@ -6138,7 +5750,7 @@ sequenceDiagram
 
 ---
 
-### 5.17. Thông báo *(✅ đang vận hành)*
+### 5.14. Thông báo *(✅ đang vận hành)*
 
 **Route UI:** `/thong-bao`
 
@@ -6322,48 +5934,128 @@ sequenceDiagram
 
 ---
 
-## 6. MA TRẬN PHÂN QUYỀN NGHIỆP VỤ
+## 6. MA TRẬN PHÂN QUYỀN (PHẠM VI VẬN HÀNH)
 
-| Phân hệ | admin | manager | technician | viewer | sales |
-|---|:---:|:---:|:---:|:---:|:---:|
-| Dashboard | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Hợp đồng | ✓ | ✓ | — | đọc | ✓ |
-| Bàn giao / HL | ✓ | ✓ | ✓ | — | — |
-| Bảo hành | ✓ | ✓ | ✓ | — | — |
-| Vật tư | ✓ | ✓ | ✓ | — | — |
-| Sản phẩm | ✓ | ✓ | ✓ | đọc | đọc |
-| Khách hàng / CRM | ✓ | ✓ | tùy | đọc | ✓ |
-| Phản ánh | ✓ | ✓ | ✓ | đọc | đọc |
-| Báo cáo | ✓ | ✓ | — | ✓ | ✓ |
-| Quy trình | ✓ | ✓ | theo bước | đọc | đọc |
-| Cài đặt | ✓ | giới hạn | — | — | — |
+| Phân hệ | Menu | admin | manager | technician | viewer | sales |
+|---|:---:|---|:---:|:---:|:---:|:---:|
+| Dashboard | ✅ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Hợp đồng | ✅ | ✓ | ✓ | — | đọc | ✓ |
+| Bàn giao / HL | ✅ | ✓ | ✓ | ✓ | — | — |
+| Bảo hành | ✅ | ✓ | ✓ | ✓ | — | — |
+| Vật tư | ✅ | ✓ | ✓ | ✓ | — | — |
+| Sản phẩm | ✅ | ✓ | ✓ | ✓ | đọc | đọc |
+| Khách hàng / CRM | ✅ | ✓ | ✓ | tùy | đọc | ✓ |
+| Phản ánh | ✅ | ✓ | ✓ | ✓ | đọc | đọc |
+| Báo cáo | ✅ | ✓ | ✓ | — | ✓ | ✓ |
+| Quy trình | ✅ | ✓ | ✓ | theo bước | đọc | đọc |
+| Cài đặt | ✅ | ✓ | giới hạn | — | — | — |
+| Đề tài NC | ⛔ | — | — | — | — | — |
+| Công việc | ⛔ | — | — | — | — | — |
+| Đào tạo (màn riêng) | ⛔ | — | — | — | — | — |
 
 ---
 
-## 7. NHÓM WORKFLOW MODULE
+## 7. NHÓM QUY TRÌNH (ĐANG HIỂN THỊ)
 
-| Module key | Tên hiển thị | Áp dụng |
+| Module key | Tên | Áp dụng | Menu QT |
+|---|---|---|:---:|
+| `handover` | Bàn giao | Phiếu bàn giao | ✅ |
+| `coaching` | Huấn luyện | Tab HL trên Bàn giao | ✅ |
+| `training` | Đào tạo | Khóa đào tạo (API) | ✅ |
+| `warranty` | Bảo hành | Phiếu BH/SC | ✅ |
+| `product` | Sản phẩm | Quy trình SP | ✅ |
+| `contract` | Hợp đồng (tổng hợp) | — | ⛔ Ẩn |
+
+---
+
+## 8. PHỤ LỤC A — USE CASE MÀN ẨN (KHÔNG SỬ DỤNG)
+
+Các UC sau **không** có trong phạm vi UAT/vận hành hiện tại. Liệt kê tham chiếu — **không** có biểu đồ tuần tự.
+
+### A.11. Đề tài nghiên cứu
+
+**Route:** `/de-tai`, `/de-tai/:id` · **Module:** `de-tai` · **Số UC:** 5
+
+| Mã UC | Use Case | Trạng thái |
 |---|---|---|
-| `handover` | Bàn giao | Phiếu bàn giao |
-| `coaching` | Huấn luyện | Khóa HL |
-| `training` | Đào tạo | Khóa đào tạo |
-| `warranty` | Bảo hành | Phiếu BH/SC |
-| `product` | Sản phẩm | Quy trình SP |
-| `contract` | Hợp đồng (tổng hợp) | **Ẩn UI** |
+| `UC-DT-01` | Xem danh sách đề tài | ⛔ Ẩn menu — không sử dụng |
+| `UC-DT-02` | Xem chi tiết đề tài | ⛔ Ẩn menu — không sử dụng |
+| `UC-DT-03` | Tạo đề tài | ⛔ Ẩn menu — không sử dụng |
+| `UC-DT-04` | Sửa đề tài | ⛔ Ẩn menu — không sử dụng |
+| `UC-DT-05` | Xóa đề tài | ⛔ Ẩn menu — không sử dụng |
+
+
+### A.12. Công việc
+
+**Route:** `/cong-viec` · **Module:** `cong-viec` · **Số UC:** 7
+
+| Mã UC | Use Case | Trạng thái |
+|---|---|---|
+| `UC-CV-01` | Xem Kanban | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-02` | Xem danh sách | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-03` | Xem lịch | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-04` | Tạo công việc | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-05` | Sửa công việc | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-06` | Xóa công việc | ⛔ Ẩn menu — không sử dụng |
+| `UC-CV-07` | Lọc theo ưu tiên / loại | ⛔ Ẩn menu — không sử dụng |
+
+
+### A.13. Đào tạo & Huấn luyện
+
+**Route:** `/dao-tao`, `/dao-tao/:id` · **Module:** `dao-tao` · **Số UC:** 7
+
+| Mã UC | Use Case | Trạng thái |
+|---|---|---|
+| `UC-DTao-01` | Xem danh sách khóa | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-02` | Xem chi tiết khóa | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-03` | Tạo khóa (đào tạo / huấn luyện) | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-04` | Sửa / xóa khóa | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-05` | Quản lý học viên | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-06` | Quản lý lịch học | ⛔ Ẩn menu — không sử dụng |
+| `UC-DTao-07` | Xử lý quy trình khóa | ⛔ Ẩn menu — không sử dụng |
+
+
 
 ---
 
-## 8. KẾT LUẬN
+## 9. KẾT LUẬN
 
-Tài liệu BRD ASMS v1.0 liệt kê **171 use case** trên **17 phân hệ**, phục vụ UAT và nghiệm thu. Nguồn: `docs/file docs/use-case-asms.md`.
+BRD cập nhật ASMS v1.1 mô tả **152 use case vận hành** trên **14 phân hệ** có menu. **19 UC** thuộc **3 màn ẩn** được liệt kê tại Phụ lục A — ngoài phạm vi triển khai hiện tại.
 
-**Tài liệu liên quan:** `docs/SRS-ASMS.md`, `docs/BRD-TONG-THE-ASMS.md`
+**Tham chiếu:** `docs/file docs/use-case-asms.md` · `src/lib/nav-visibility.ts` · `src/lib/workflow-visibility.ts`
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
 <script>
-mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose',
+  theme: 'base',
+  themeVariables: {
+    background: '#ffffff',
+    mainBkg: '#ffffff',
+    secondBkg: '#f8fafc',
+    tertiaryBkg: '#ffffff',
+    primaryColor: '#eef4ff',
+    primaryTextColor: '#0d1e34',
+    primaryBorderColor: '#3d7de8',
+    lineColor: '#475569',
+    textColor: '#0d1e34',
+    actorBkg: '#ffffff',
+    actorBorder: '#3d7de8',
+    actorTextColor: '#0d1e34',
+    signalColor: '#475569',
+    signalTextColor: '#0d1e34',
+    labelBoxBkgColor: '#ffffff',
+    labelBoxBorderColor: '#cbd5e0',
+    labelTextColor: '#0d1e34',
+    noteBkgColor: '#fffbeb',
+    noteTextColor: '#0d1e34',
+    activationBkgColor: '#eef4ff',
+    activationBorderColor: '#3d7de8'
+  }
+});
 
 function decodeHtmlEntities(text) {
   const el = document.createElement('textarea');

@@ -10,8 +10,8 @@ import {
 export function requireRoles(roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     const userRole = req.user?.role;
-    if (!userRole) throw new HttpError(401, "Missing role");
-    if (!roles.includes(userRole)) throw new HttpError(403, "Forbidden");
+    if (!userRole) throw new HttpError(401, "Thiếu thông tin vai trò");
+    if (!roles.includes(userRole)) throw new HttpError(403, "Bạn không có quyền thực hiện thao tác này");
     return next();
   };
 }
@@ -24,9 +24,9 @@ export function requireRole(...roles: string[]) {
 export function requireModulePermission(moduleKey: string, action: CrudAction) {
   return async (req: Request, _res: Response, next: NextFunction) => {
     const userRole = req.user?.role;
-    if (!userRole) throw new HttpError(401, "Missing role");
+    if (!userRole) throw new HttpError(401, "Thiếu thông tin vai trò");
     const allowed = await roleCanPerformAction(userRole, moduleKey, action);
-    if (!allowed) throw new HttpError(403, "Forbidden");
+    if (!allowed) throw new HttpError(403, "Bạn không có quyền thực hiện thao tác này");
     return next();
   };
 }

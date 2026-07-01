@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { HttpError } from "../../lib/errors/HttpError";
+import { zodParseOrThrow } from "../../lib/errors/zodParse";
 import { sendSuccess } from "../../lib/response";
 
 import { materialDefectsQuerySchema, reportsQuerySchema } from "./schema";
@@ -30,46 +30,40 @@ function parseDateFilters(query: {
 }
 
 export async function getDashboardSummaryController(req: Request, res: Response) {
-  const query = reportsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
-  const data = await getDashboardSummaryService(parseDateFilters(query.data));
+  const query = zodParseOrThrow(reportsQuerySchema, req.query);
+  const data = await getDashboardSummaryService(parseDateFilters(query));
   return sendSuccess(res, data);
 }
 
 export async function getReportsController(req: Request, res: Response) {
-  const query = reportsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
-  const data = await getReportsService(parseDateFilters(query.data));
+  const query = zodParseOrThrow(reportsQuerySchema, req.query);
+  const data = await getReportsService(parseDateFilters(query));
   return sendSuccess(res, data);
 }
 
 export async function getReportsByProductLineController(req: Request, res: Response) {
-  const query = reportsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
-  const data = await getReportsByProductLineService(parseDateFilters(query.data));
+  const query = zodParseOrThrow(reportsQuerySchema, req.query);
+  const data = await getReportsByProductLineService(parseDateFilters(query));
   return sendSuccess(res, data);
 }
 
 export async function getReportsFeedbackByCustomerController(req: Request, res: Response) {
-  const query = reportsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
-  const data = await getReportsFeedbackByCustomerService(parseDateFilters(query.data));
+  const query = zodParseOrThrow(reportsQuerySchema, req.query);
+  const data = await getReportsFeedbackByCustomerService(parseDateFilters(query));
   return sendSuccess(res, data);
 }
 
 export async function getReportsFeedbackByProductLineController(req: Request, res: Response) {
-  const query = reportsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
-  const data = await getReportsFeedbackByProductLineService(parseDateFilters(query.data));
+  const query = zodParseOrThrow(reportsQuerySchema, req.query);
+  const data = await getReportsFeedbackByProductLineService(parseDateFilters(query));
   return sendSuccess(res, data);
 }
 
 export async function getMaterialDefectsController(req: Request, res: Response) {
-  const query = materialDefectsQuerySchema.safeParse(req.query);
-  if (!query.success) throw new HttpError(400, "Invalid request input", query.error.flatten());
+  const query = zodParseOrThrow(materialDefectsQuerySchema, req.query);
   const data = await getMaterialDefectsService({
-    ...parseDateFilters(query.data),
-    ...(query.data.limit != null ? { limit: query.data.limit } : {}),
+    ...parseDateFilters(query),
+    ...(query.limit != null ? { limit: query.limit } : {}),
   });
   return sendSuccess(res, data);
 }

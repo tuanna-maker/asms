@@ -16,9 +16,19 @@ services:
     env_file:
       - ./.env
     environment:
+      NODE_ENV: "${NODE_ENV:-production}"
       PORT: "${BACKEND_PORT}"
       DATABASE_URL: "${DATABASE_URL}"
+      JWT_SECRET: "${JWT_SECRET}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-}"
+      TRUST_PROXY: "true"
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./backend/uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s

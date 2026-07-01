@@ -1,0 +1,75 @@
+{
+  "summary": {
+    "total": 11,
+    "passed": 1,
+    "failed": 10,
+    "englishMessages": 1,
+    "testedAt": "2026-06-24T16:23:58.884Z"
+  },
+  "englishMessages": [
+    {
+      "case": "auth_no_token",
+      "message": "Missing Authorization header"
+    }
+  ],
+  "results": [
+    {
+      "name": "auth_wrong_password",
+      "ok": false,
+      "status": 429,
+      "message": "Too many authentication attempts, please try again later.",
+      "detail": ""
+    },
+    {
+      "name": "auth_no_token",
+      "ok": true,
+      "status": 401,
+      "message": "Missing Authorization header"
+    },
+    {
+      "name": "rbac_sales_materials",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "rbac_viewer_create_contract",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "not_found_contract",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "validation_contracts_empty",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "validation_reports_bad_year",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "validation_role_permissions_empty",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "validation_workflows_empty",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "validation_definitions_empty",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    },
+    {
+      "name": "no_500_probe",
+      "ok": false,
+      "detail": "Too many authentication attempts, please try again later."
+    }
+  ]
+}

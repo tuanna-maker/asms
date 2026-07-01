@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hướng dẫn cài đặt ASMS — Dễ hiểu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.6; }
+        .doc-page { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.22); display: flex; flex-direction: column; }
+        @media print {
+            @page { size: A4 portrait; margin: 0; }
+            body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .doc-page { margin: 0; box-shadow: none; page-break-after: always; }
+        }
+        .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); }
+        .cover { padding: 0; }
+        .cover .header { padding: 22px 52px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .cover .divider { margin: 0 52px; height: 1px; background: #eaeff8; }
+        .cover .main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 50px 52px; }
+        .cover .logo-wrap img { width: 220px; }
+        .cover .sep { width: 52px; height: 3px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); margin: 24px auto; border-radius: 2px; }
+        .cover .doc-label { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: #3d7de8; text-transform: uppercase; }
+        .cover .project-title { font-size: 30px; font-weight: 900; margin-top: 12px; line-height: 1.25; }
+        .cover .project-title span { color: #3d7de8; }
+        .cover .subtitle { margin-top: 14px; font-size: 13px; color: #475569; max-width: 440px; }
+        .cover .badge-row { margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+        .cover .badge { background: #eef4ff; color: #1e40af; padding: 6px 14px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+        .cover .footer { padding: 18px 52px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; }
+        .inner-header { padding: 18px 48px 18px 68px; display: flex; justify-content: space-between; font-size: 9.5px; font-weight: 600; }
+        .inner-divider { margin: 0 48px 0 68px; height: 1px; background: #eaeff8; }
+        .inner-footer { padding: 14px 48px 14px 68px; display: flex; justify-content: space-between; border-top: 1px solid #eaeff8; font-size: 9.5px; margin-top: auto; }
+        .content { flex: 1; padding: 16px 48px 40px 68px; }
+        h1.toc-title { font-size: 19px; font-weight: 900; border-bottom: 2px solid #3d7de8; padding-bottom: 8px; margin-bottom: 10px; }
+        h2 { font-size: 16px; font-weight: 800; margin: 14px 0 8px; padding: 6px 12px; background: linear-gradient(90deg, #eef4ff, transparent); border-left: 4px solid #3d7de8; }
+        h3 { font-size: 13px; font-weight: 700; color: #1e3a5f; margin: 10px 0 6px; }
+        p, li { font-size: 12px; color: #334155; margin: 4px 0; }
+        ul, ol { margin-left: 20px; }
+        .toc-link { display: flex; gap: 10px; padding: 8px 12px; border: 1px solid #eaeff8; border-radius: 8px; text-decoration: none; color: inherit; margin-bottom: 6px; font-size: 12.5px; background: #fbfdff; }
+        .toc-num { font-weight: 800; color: #3d7de8; min-width: 24px; }
+
+        .plain-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+        .plain-box strong { color: #0d1e34; }
+        .tip { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .warn { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+        .important { background: #fef2f2; border-left: 4px solid #ef4444; padding: 10px 14px; margin: 10px 0; border-radius: 0 10px 10px 0; font-size: 11.5px; }
+
+        .step { display: grid; grid-template-columns: 44px 1fr; gap: 14px; margin: 14px 0; align-items: start; }
+        .step-no {
+            width: 44px; height: 44px; border-radius: 50%;
+            background: linear-gradient(135deg, #3d7de8, #0ab4d8);
+            color: #fff; font-size: 18px; font-weight: 900;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .step-body h3 { margin-top: 0; font-size: 14px; }
+        .step-body p { margin: 4px 0; }
+
+        .diagram { border: 2px solid #cbd5e0; border-radius: 12px; padding: 16px; margin: 12px 0; text-align: center; background: #fff; }
+        .diagram-row { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+        .diagram-box {
+            border: 2px solid #3d7de8; border-radius: 8px; padding: 10px 14px;
+            font-size: 11px; font-weight: 600; min-width: 120px; background: #fff;
+        }
+        .diagram-box.user { background: #e0f2fe; border-color: #0ea5e9; }
+        .diagram-box.server { background: #eef4ff; }
+        .diagram-box.db { background: #dcfce7; border-color: #22c55e; }
+        .diagram-arrow { font-size: 18px; color: #94a3b8; }
+
+        .checklist { list-style: none; margin: 8px 0 8px 0; padding: 0; }
+        .checklist li { padding: 6px 0 6px 28px; position: relative; font-size: 12px; border-bottom: 1px dashed #e2e8f0; }
+        .checklist li::before { content: '☐'; position: absolute; left: 4px; color: #3d7de8; font-weight: 700; font-size: 14px; }
+
+        .cmd-box {
+            background: #1e293b; color: #e2e8f0; padding: 12px 14px; border-radius: 8px;
+            font-family: Consolas, Monaco, monospace; font-size: 11px; line-height: 1.5;
+            margin: 8px 0; word-break: break-all;
+        }
+        .cmd-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+        .cmd-hint { font-size: 10.5px; color: #64748b; font-style: italic; margin-top: 4px; }
+
+        table.simple { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+        table.simple th { background: #1e3a5f; color: #fff; padding: 8px; text-align: left; }
+        table.simple td { border: 1px solid #cbd5e0; padding: 7px 8px; vertical-align: top; }
+        table.simple tr:nth-child(even) td { background: #f8fafc; }
+
+        .faq-item { border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; margin: 8px 0; }
+        .faq-q { font-weight: 700; font-size: 12px; color: #1e3a5f; }
+        .faq-a { font-size: 11.5px; color: #475569; margin-top: 4px; }
+
+        .contact-card { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .contact-card div { border: 1px solid #eaeff8; border-radius: 10px; padding: 12px; font-size: 11px; background: #fbfdff; }
+    </style>
+</head>
+<body>
+
+<!-- BÌA -->
+<div class="doc-page cover">
+    <div class="accent-bar"></div>
+    <div class="header">
+        <div>Mã tài liệu: UNICOM/GUIDE-ASMS-INSTALL-001</div>
+        <div>Phiên bản 1.0 · 24/06/2026</div>
+    </div>
+    <div class="divider"></div>
+    <div class="main">
+        <div class="logo-wrap"><img src="file%20docs/assets/unicom-logo.png" alt="Unicom"></div>
+        <div class="sep"></div>
+        <div class="doc-label">Hướng dẫn cài đặt</div>
+        <div class="project-title">Cài đặt hệ thống <span>ASMS</span><br>cho người không chuyên lập trình</div>
+        <div class="subtitle">Tài liệu dành cho cán bộ IT VTX, quản trị viên và người phụ trách triển khai — giải thích bằng tiếng Việt thông thường, từng bước có hình minh họa.</div>
+        <div class="badge-row">
+            <span class="badge">Không cần biết code</span>
+            <span class="badge">Copy &amp; dán lệnh</span>
+            <span class="badge">~30–60 phút</span>
+        </div>
+    </div>
+    <div class="footer">
+        <div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
+        <div>© 2026</div>
+    </div>
+</div>
+
+<!-- MỤC LỤC -->
+<div class="doc-page">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>Hướng dẫn cài đặt dễ hiểu</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h1 class="toc-title">Mục lục</h1>
+        <a href="#s1" class="toc-link"><span class="toc-num">01</span> ASMS là gì? Cần chuẩn bị gì?</a>
+        <a href="#s2" class="toc-link"><span class="toc-num">02</span> Hệ thống gồm những phần nào?</a>
+        <a href="#s3" class="toc-link"><span class="toc-num">03</span> Nhận bàn giao từ Unicom</a>
+        <a href="#s4" class="toc-link"><span class="toc-num">04</span> Cài Docker (phần mềm chạy ASMS)</a>
+        <a href="#s5" class="toc-link"><span class="toc-num">05</span> Đặt file lên máy chủ</a>
+        <a href="#s6" class="toc-link"><span class="toc-num">06</span> Điền file cấu hình (.env)</a>
+        <a href="#s7" class="toc-link"><span class="toc-num">07</span> Khởi chạy ASMS (5 lệnh chính)</a>
+        <a href="#s8" class="toc-link"><span class="toc-num">08</span> Mở trình duyệt &amp; đăng nhập</a>
+        <a href="#s9" class="toc-link"><span class="toc-num">09</span> Câu hỏi thường gặp</a>
+        <a href="#s10" class="toc-link"><span class="toc-num">10</span> Liên hệ hỗ trợ</a>
+
+        <div class="tip" style="margin-top:20px">
+            <strong>Tài liệu kỹ thuật chi tiết</strong> (dành cho kỹ sư): xem <code>ASMS_phuong-an-trien-khai.html</code> trong cùng thư mục <code>docs/</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>Hướng dẫn cài đặt v1.0</div></div>
+</div>
+
+<!-- 01 -->
+<div class="doc-page" id="s1">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§01 Chuẩn bị</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>1. ASMS là gì? Cần chuẩn bị gì?</h2>
+
+        <div class="plain-box">
+            <strong>ASMS</strong> là phần mềm quản lý hậu mãi chạy trên <strong>máy chủ nội bộ</strong> của Viện (VTX).
+            Nhân viên chỉ cần mở <strong>trình duyệt web</strong> (Chrome, Edge) để sử dụng — không cài app trên từng máy tính.
+        </div>
+
+        <h3>1.1 Máy chủ cần có (tối thiểu)</h3>
+        <table class="simple">
+            <thead><tr><th>Hạng mục</th><th>Yêu cầu</th><th>Giải thích đơn giản</th></tr></thead>
+            <tbody>
+                <tr><td>CPU</td><td>4 nhân trở lên</td><td>Máy chủ ảo hoặc vật lý trong mạng nội bộ</td></tr>
+                <tr><td>RAM</td><td>8 GB (nên 16 GB)</td><td>Càng nhiều người dùng càng cần RAM lớn</td></tr>
+                <tr><td>Ổ cứng</td><td>80 GB SSD trở lên</td><td>Lưu phần mềm + file tài liệu upload</td></tr>
+                <tr><td>Hệ điều hành</td><td>Windows Server hoặc Ubuntu</td><td>Ubuntu 22.04 khuyến nghị cho server</td></tr>
+                <tr><td>Mạng</td><td>LAN / VPN nội bộ</td><td>Nhân viên truy cập qua địa chỉ nội bộ (ví dụ <code>https://asms.vtx.local</code>)</td></tr>
+            </tbody>
+        </table>
+
+        <h3>1.2 Phần mềm cần cài trên máy chủ</h3>
+        <ul class="checklist">
+            <li><strong>Docker Desktop</strong> hoặc <strong>Docker Engine</strong> — “hộp đựng” chạy ASMS, không cần cài Node.js thủ công</li>
+            <li><strong>PostgreSQL</strong> — cơ sở dữ liệu (có thể cài trên cùng máy hoặc máy DB riêng)</li>
+            <li><strong>Trình duyệt</strong> trên máy bạn — để kiểm tra sau khi cài xong</li>
+        </ul>
+
+        <div class="warn">
+            <strong>Lưu ý:</strong> Bạn <em>không</em> cần biết lập trình. Chỉ cần làm theo từng bước, copy dán lệnh đúng như hướng dẫn.
+            Nếu chưa quen Docker, nên nhờ Unicom hỗ trợ lần đầu (onsite hoặc TeamViewer).
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§01 Chuẩn bị</div></div>
+</div>
+
+<!-- 02 -->
+<div class="doc-page" id="s2">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§02 Cấu trúc</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>2. Hệ thống gồm những phần nào?</h2>
+        <p>Hiểu đơn giản: người dùng mở web → máy chủ xử lý → lưu vào cơ sở dữ liệu.</p>
+
+        <div class="diagram">
+            <div class="diagram-row">
+                <div class="diagram-box user">👤 Nhân viên VTX<br><small>Mở Chrome / Edge</small></div>
+            </div>
+            <div class="diagram-arrow">▼ truy cập địa chỉ web</div>
+            <div class="diagram-row">
+                <div class="diagram-box server">🖥 Giao diện ASMS<br><small>Hiển thị màn hình, biểu mẫu</small></div>
+                <div class="diagram-arrow">↔</div>
+                <div class="diagram-box server">⚙️ Xử lý nghiệp vụ<br><small>Đăng nhập, lưu HĐ, BH…</small></div>
+            </div>
+            <div class="diagram-arrow">▼ lưu / đọc dữ liệu</div>
+            <div class="diagram-row">
+                <div class="diagram-box db">🗄 PostgreSQL<br><small>Kho dữ liệu chính</small></div>
+                <div class="diagram-box db">📁 Thư mục uploads<br><small>File PDF, đính kèm</small></div>
+            </div>
+        </div>
+
+        <table class="simple">
+            <thead><tr><th>Tên kỹ thuật</th><th>Bạn cần nhớ</th></tr></thead>
+            <tbody>
+                <tr><td>Frontend</td><td>Phần giao diện web người dùng nhìn thấy</td></tr>
+                <tr><td>Backend</td><td>Phần xử lý phía máy chủ (ẩn, không cần mở trực tiếp)</td></tr>
+                <tr><td>Docker</td><td>Công cụ gói 2 phần trên thành 2 “hộp” chạy tự động</td></tr>
+                <tr><td>File .env</td><td>File cấu hình mật khẩu, địa chỉ DB — <strong>giữ bí mật</strong></td></tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§02 Cấu trúc</div></div>
+</div>
+
+<!-- 03 -->
+<div class="doc-page" id="s3">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§03 Bàn giao</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>3. Nhận bàn giao từ Unicom</h2>
+        <p>Sau khi ký biên bản bàn giao, bạn sẽ nhận một trong hai cách:</p>
+
+        <h3>Cách A — Nhận file nén / USB (khuyến nghị nếu không có Git)</h3>
+        <ul>
+            <li><code>asms-frontend-1.0.0.tar</code> — gói giao diện web</li>
+            <li><code>asms-backend-1.0.0.tar</code> — gói xử lý máy chủ</li>
+            <li><code>docker-compose.yml</code> — “bản đồ” khởi chạy</li>
+            <li><code>.env.mau</code> — mẫu cấu hình (đổi tên thành <code>.env</code> và điền thông tin thật)</li>
+            <li>Thư mục <code>backend/uploads</code> (tạo mới nếu chưa có)</li>
+        </ul>
+
+        <h3>Cách B — Clone mã nguồn (nếu VTX có Git)</h3>
+        <p>Unicom cung cấp đường dẫn repo và tag phiên bản <code>v1.0.0</code>. Kỹ sư IT clone về thư mục <code>C:\asms</code> hoặc <code>/opt/asms</code>.</p>
+
+        <div class="tip">
+            Ghi chú thư mục làm việc trong suốt tài liệu: <strong><code>C:\asms</code></strong> (Windows) hoặc <strong><code>/opt/asms</code></strong> (Linux).
+            Mọi lệnh bên dưới chạy <em>trong thư mục đó</em>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§03 Bàn giao</div></div>
+</div>
+
+<!-- 04 + 05 -->
+<div class="doc-page" id="s4">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§04–05 Docker &amp; file</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>4. Cài Docker (phần mềm chạy ASMS)</h2>
+
+        <div class="step">
+            <div class="step-no">1</div>
+            <div class="step-body">
+                <h3>Tải Docker</h3>
+                <p>Vào trang <strong>docker.com</strong> → tải <strong>Docker Desktop</strong> (Windows) hoặc cài Docker Engine (Ubuntu theo hướng dẫn IT).</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">2</div>
+            <div class="step-body">
+                <h3>Cài đặt và khởi động</h3>
+                <p>Bấm Next → Finish. Mở Docker Desktop, đợi biểu tượng cá voi ở khay hệ thống hiện <strong>“Running”</strong> (màu xanh).</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">3</div>
+            <div class="step-body">
+                <h3>Kiểm tra đã cài thành công</h3>
+                <p>Mở <strong>PowerShell</strong> (Windows) hoặc <strong>Terminal</strong> (Linux), gõ:</p>
+                <div class="cmd-label">Lệnh kiểm tra</div>
+                <div class="cmd-box">docker --version</div>
+                <p class="cmd-hint">Nếu hiện số phiên bản (ví dụ 24.x) → Docker đã sẵn sàng.</p>
+            </div>
+        </div>
+
+        <h2 id="s5">5. Đặt file lên máy chủ</h2>
+        <ol>
+            <li>Tạo thư mục <code>C:\asms</code> (hoặc <code>/opt/asms</code>).</li>
+            <li>Copy toàn bộ file bàn giao vào thư mục đó.</li>
+            <li>Tạo thêm 2 thư mục con (nếu chưa có):<br>
+                <code>backend\uploads\documents</code> và <code>backend\uploads\workflow</code>
+            </li>
+        </ol>
+
+        <div class="warn">
+            <strong>Nếu nhận file .tar:</strong> mở PowerShell trong thư mục <code>C:\asms</code>, chạy lần lượt:
+        </div>
+        <div class="cmd-box">docker load -i asms-frontend-1.0.0.tar<br>docker load -i asms-backend-1.0.0.tar</div>
+        <p class="cmd-hint">Chờ đến khi báo “Loaded image”. Đây là bước “nhập hộp” phần mềm vào Docker.</p>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§04–05</div></div>
+</div>
+
+<!-- 06 -->
+<div class="doc-page" id="s6">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§06 Cấu hình</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>6. Điền file cấu hình (.env)</h2>
+        <p>File <code>.env</code> giống “phiếu khai thông tin” cho máy chủ. Mở bằng <strong>Notepad</strong> (không dùng Word).</p>
+
+        <table class="simple">
+            <thead><tr><th>Dòng cần điền</th><th>Ý nghĩa (dễ hiểu)</th><th>Ví dụ</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><code>FRONTEND_IMAGE</code></td>
+                    <td>Tên gói giao diện</td>
+                    <td><code>asms-frontend:1.0.0</code></td>
+                </tr>
+                <tr>
+                    <td><code>BACKEND_IMAGE</code></td>
+                    <td>Tên gói xử lý</td>
+                    <td><code>asms-backend:1.0.0</code></td>
+                </tr>
+                <tr>
+                    <td><code>FRONTEND_PORT</code></td>
+                    <td>Cổng web (thường để 80)</td>
+                    <td><code>80</code></td>
+                </tr>
+                <tr>
+                    <td><code>DATABASE_URL</code></td>
+                    <td>Địa chỉ + mật khẩu PostgreSQL</td>
+                    <td>Unicom / DBA cung cấp</td>
+                </tr>
+                <tr>
+                    <td><code>JWT_SECRET</code></td>
+                    <td>Mã bí mật đăng nhập (chuỗi dài ngẫu nhiên)</td>
+                    <td>Nhờ IT sinh — không chia sẻ</td>
+                </tr>
+                <tr>
+                    <td><code>NODE_ENV</code></td>
+                    <td>Môi trường chạy thật</td>
+                    <td><code>production</code></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="important">
+            <strong>Không gửi file .env qua email công khai.</strong> Không đăng lên mạng. Lưu backup trong két mật khẩu nội bộ VTX.
+        </div>
+
+        <h3>6.1 Cơ sở dữ liệu PostgreSQL</h3>
+        <p>Nếu chưa có DB, nhờ quản trị CSDL tạo:</p>
+        <ul>
+            <li>Tên database: <code>asms</code></li>
+            <li>Tài khoản riêng (ví dụ <code>asms_app</code>) + mật khẩu mạnh</li>
+            <li>Chỉ cho phép máy chủ ASMS kết nối (cổng 5432)</li>
+        </ul>
+        <p>Unicom có thể hỗ trợ tạo DB lần đầu qua TeamViewer.</p>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§06 Cấu hình</div></div>
+</div>
+
+<!-- 07 -->
+<div class="doc-page" id="s7">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§07 Khởi chạy</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>7. Khởi chạy ASMS — 5 lệnh chính</h2>
+        <p>Mở PowerShell / Terminal, <strong>cd</strong> vào thư mục <code>asms</code>, chạy lần lượt từ trên xuống. Chờ lệnh trước xong rồi mới chạy lệnh sau.</p>
+
+        <div class="step">
+            <div class="step-no">①</div>
+            <div class="step-body">
+                <h3>Bật hệ thống</h3>
+                <div class="cmd-box">docker compose up -d</div>
+                <p class="cmd-hint">Lần đầu có thể mất 1–2 phút. Khi xong, 2 “hộp” frontend + backend đang chạy ngầm.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">②</div>
+            <div class="step-body">
+                <h3>Kiểm tra đang chạy</h3>
+                <div class="cmd-box">docker compose ps</div>
+                <p class="cmd-hint">Cột STATUS phải ghi <strong>running</strong> cho cả <code>asms_frontend</code> và <code>asms_backend</code>.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">③</div>
+            <div class="step-body">
+                <h3>Tạo bảng dữ liệu (chỉ lần đầu)</h3>
+                <div class="cmd-box">docker compose exec backend npx prisma migrate deploy</div>
+                <p class="cmd-hint">Chờ đến khi không còn dòng lỗi màu đỏ.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">④</div>
+            <div class="step-body">
+                <h3>Tạo tài khoản quản trị lần đầu</h3>
+                <div class="cmd-box">docker compose exec backend npm run bootstrap:auth</div>
+                <p class="cmd-hint">Tạo user mẫu. <strong>Đổi mật khẩu ngay</strong> sau khi đăng nhập lần đầu.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">⑤</div>
+            <div class="step-body">
+                <h3>Xem nhật ký nếu có lỗi</h3>
+                <div class="cmd-box">docker compose logs -f backend</div>
+                <p class="cmd-hint">Bấm Ctrl+C để thoát. Chụp màn hình gửi Unicom nếu cần hỗ trợ.</p>
+            </div>
+        </div>
+
+        <div class="tip">
+            <strong>Tắt / bật lại sau khi khởi động server:</strong><br>
+            Tắt: <code>docker compose down</code> · Bật lại: <code>docker compose up -d</code>
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§07 Khởi chạy</div></div>
+</div>
+
+<!-- 08 -->
+<div class="doc-page" id="s8">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§08 Đăng nhập</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>8. Mở trình duyệt &amp; đăng nhập</h2>
+
+        <div class="step">
+            <div class="step-no">1</div>
+            <div class="step-body">
+                <h3>Mở địa chỉ web</h3>
+                <p>Trên máy cùng mạng nội bộ, mở Chrome/Edge và gõ:</p>
+                <div class="cmd-box" style="background:#eef4ff;color:#1e40af;border:1px solid #93c5fd">http://&lt;địa-chỉ-máy-chủ&gt;/login</div>
+                <p class="cmd-hint">Ví dụ: <code>http://192.168.1.50/login</code> hoặc <code>https://asms.vtx.local/login</code> (nếu IT đã cấu hình HTTPS).</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">2</div>
+            <div class="step-body">
+                <h3>Đăng nhập lần đầu</h3>
+                <p>Dùng tài khoản do bước bootstrap tạo (Unicom cung cấp trong biên bản). Mật khẩu mặc định demo: <code>Password123!</code> — <strong>phải đổi ngay</strong>.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">3</div>
+            <div class="step-body">
+                <h3>Kiểm tra nhanh</h3>
+                <ul class="checklist">
+                    <li>Vào được màn hình Dashboard (trang chủ)</li>
+                    <li>Menu bên trái hiện đủ mục (Hợp đồng, Khách hàng…)</li>
+                    <li>Đăng xuất và đăng nhập lại được</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>8.1 Sau khi cài xong — việc quản trị viên nên làm</h3>
+        <ol>
+            <li>Đổi mật khẩu admin</li>
+            <li>Vào <strong>Cài đặt → Người dùng</strong> tạo tài khoản thật cho từng phòng ban</li>
+            <li>Vào <strong>Cài đặt → Hệ thống</strong> chỉnh SLA, nhắc lịch (nếu cần)</li>
+            <li>Thống nhất lịch backup database với IT (hàng ngày)</li>
+        </ol>
+
+        <div class="plain-box">
+            <strong>Hướng dẫn sử dụng phần mềm</strong> (không phải cài đặt): xem <code>docs/huong-dan-su-dung-asms.md</code>.
+        </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§08 Đăng nhập</div></div>
+</div>
+
+<!-- 09 + 10 -->
+<div class="doc-page" id="s9">
+    <div class="inner-header"><div>Mã: UNICOM/GUIDE-ASMS-INSTALL-001</div><div>§09–10 FAQ &amp; liên hệ</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
+        <h2>9. Câu hỏi thường gặp</h2>
+
+        <div class="faq-item">
+            <div class="faq-q">❓ Mở trình duyệt báo “Không truy cập được trang”</div>
+            <div class="faq-a">Kiểm tra: (1) Docker đang chạy? (2) Lệnh <code>docker compose ps</code> có 2 dòng running? (3) Máy bạn cùng mạng LAN với server? (4) Firewall có chặn cổng 80 không?</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">❓ Đăng nhập được nhưng màn hình trắng hoặc lỗi liên tục</div>
+            <div class="faq-a">Thường do cấu hình sai. Chạy <code>docker compose logs backend</code>, chụp màn hình gửi Unicom. Không tự sửa file trong thư mục phần mềm.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">❓ Quên mật khẩu admin</div>
+            <div class="faq-a">Liên hệ Unicom hoặc IT có quyền server để reset qua lệnh bootstrap (cần truy cập máy chủ).</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">❓ Cần tắt máy server bảo trì</div>
+            <div class="faq-a">Chạy <code>docker compose down</code> trước khi tắt. Sau khi bật server lại: <code>docker compose up -d</code>. Dữ liệu vẫn giữ nếu không xóa thư mục uploads và DB.</div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-q">❓ Cập nhật phiên bản mới</div>
+            <div class="faq-a">Unicom gửi file .tar phiên bản mới + hướng dẫn. Luôn <strong>backup database</strong> trước khi cập nhật. Chi tiết kỹ thuật: mục 17 trong <code>ASMS_phuong-an-trien-khai.html</code>.</div>
+        </div>
+
+        <h2 id="s10">10. Liên hệ hỗ trợ</h2>
+        <div class="contact-card">
+            <div>
+                <strong>Trong giờ triển khai</strong><br>
+                Đội kỹ thuật Unicom (số hotline / email trong hợp đồng bảo hành phần mềm)
+            </div>
+            <div>
+                <strong>Nội bộ VTX</strong><br>
+                Phòng CNTT / quản trị mạng — firewall, HTTPS, backup server
+            </div>
+        </div>
+
+        <div class="tip" style="margin-top:14px">
+            Khi gọi hỗ trợ, chuẩn bị sẵn: ảnh chụp <code>docker compose ps</code>, 10 dòng cuối của <code>docker compose logs backend</code>, và mô tả “đã làm đến bước mấy”.
+        </div>
+
+        <h3>Checklist hoàn tất cài đặt</h3>
+        <ul class="checklist">
+            <li>Docker chạy · 2 container running</li>
+            <li>Migrate + bootstrap thành công</li>
+            <li>Đăng nhập web OK · đổi mật khẩu admin</li>
+            <li>Tạo user thật · backup DB lần đầu</li>
+            <li>Ký biên bản nghiệm thu cài đặt</li>
+        </ul>
+    </div>
+    <div class="inner-footer"><div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div><div>Hướng dẫn cài đặt v1.0 · 24/06/2026</div></div>
+</div>
+
+</body>
+</html>

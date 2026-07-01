@@ -19,6 +19,8 @@ interface CustomerSummary {
   name: string;
   products: number;
   revenue: number;
+  expense: number;
+  profit: number;
   share: string;
 }
 
@@ -48,9 +50,13 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
 
   const customerSummary: CustomerSummary[] = data.customerProducts.map((cp) => {
     const rev = data.customerRevenue.find(cr => cr.name === cp.name);
+    const breakdown = data.customerCare.customerBreakdown.find((b) => b.name === cp.name);
+    const revenue = rev?.revenue || 0;
+    const expense = breakdown?.expense ?? 0;
     return {
-      name: cp.name, products: cp.products, revenue: rev?.revenue || 0,
-      share: totalRevenue > 0 ? `${Math.round(((rev?.revenue || 0) / totalRevenue) * 100)}%` : "0%",
+      name: cp.name, products: cp.products, revenue, expense,
+      profit: revenue - expense,
+      share: totalRevenue > 0 ? `${Math.round((revenue / totalRevenue) * 100)}%` : "0%",
     };
   });
 
@@ -58,6 +64,12 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
     { key: "name", label: "Khách hàng", sortable: true, render: (r) => <span className="font-medium text-card-foreground">{r.name}</span> },
     { key: "products", label: "Sản phẩm", sortable: true, sortValue: (r) => r.products, render: (r) => r.products.toLocaleString() },
     { key: "revenue", label: "Doanh thu (tr)", sortable: true, sortValue: (r) => r.revenue, render: (r) => r.revenue.toLocaleString() },
+    { key: "expense", label: "Chi phí (tr)", sortable: true, sortValue: (r) => r.expense, render: (r) => r.expense.toLocaleString(), hideOnMobile: true },
+    {
+      key: "profit", label: "Lãi/lỗ (tr)", sortable: true, sortValue: (r) => r.profit,
+      render: (r) => <span className={r.profit < 0 ? "text-destructive font-medium" : "text-emerald-600 font-medium"}>{r.profit.toLocaleString()}</span>,
+      hideOnMobile: true,
+    },
     { key: "share", label: "Tỷ trọng DT", render: (r) => <span className="font-semibold text-primary">{r.share}</span>, hideOnMobile: true },
   ];
 

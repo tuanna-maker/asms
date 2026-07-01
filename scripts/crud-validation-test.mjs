@@ -2,6 +2,11 @@
  * Kiểm tra phản hồi lỗi validation khi gửi dữ liệu sai qua API CRUD (không insert DB trực tiếp).
  * Chạy: node scripts/crud-validation-test.mjs
  */
+import { writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const BASE = process.env.API_BASE ?? "http://127.0.0.1:4001/api/v1";
 
 async function api(method, path, body, token) {
@@ -70,6 +75,14 @@ const CASES = [
   { screen: "Người dùng", method: "POST", path: "/users", case: "Thiếu trường bắt buộc", payload: {}, expectStatus: 400 },
   { screen: "Người dùng", method: "POST", path: "/users", case: "Mật khẩu ngắn + email sai", payload: { fullName: "User", email: "bad", password: "123", roleCode: "admin" }, expectStatus: 400 },
   { screen: "Người dùng", method: "POST", path: "/users", case: "roleCode không tồn tại", payload: { fullName: "User", email: "u@test.local", password: "Password123!", roleCode: "superadmin" }, expectStatus: 400 },
+  { screen: "Quy trình", method: "POST", path: "/workflows", case: "Body rỗng", payload: {}, expectStatus: 400 },
+  { screen: "Quy trình", method: "POST", path: "/workflows", case: "moduleKey sai", payload: { name: "QT", moduleKey: "invalid_mod" }, expectStatus: 400 },
+  { screen: "Thuộc tính", method: "POST", path: "/definitions", case: "Body rỗng", payload: {}, expectStatus: 400 },
+  { screen: "Điều khoản HĐ", method: "POST", path: "/contract-clauses", case: "Body rỗng", payload: {}, expectStatus: 400 },
+  { screen: "Phân quyền", method: "PUT", path: "/role-permissions", case: "items rỗng", payload: { items: [] }, expectStatus: 400 },
+  { screen: "Báo cáo", method: "GET", path: "/reports/dashboard-summary?year=not-year", case: "year sai", payload: undefined, expectStatus: 400, queryGet: true },
+  { screen: "Kỷ niệm KH", method: "POST", path: "/customer-anniversaries", case: "Ngày không hợp lệ", payload: { customerId: "c1", label: "KN", type: "other", occursAt: "bad-date" }, expectStatus: 400 },
+  { screen: "Đơn vị PA", method: "POST", path: "/feedback-execution-units", case: "Body rỗng", payload: {}, expectStatus: 400 },
 ];
 
 function flattenFieldErrors(data) {
@@ -87,6 +100,11 @@ function hasEnglishFieldErrors(fieldErrors) {
   );
 }
 
+function hasBadMessage(message) {
+  if (!message) return false;
+  return /invalid request input/i.test(message);
+}
+
 async function main() {
   let token;
   try {
@@ -101,9 +119,17 @@ async function main() {
 
   for (const tc of CASES) {
     const auth = tc.noAuth ? undefined : token;
-    const res = await api(tc.method, tc.path, tc.payload, auth);
+    const path = tc.queryGet ? tc.path : tc.path;
+    const res = tc.queryGet
+      ? await fetch(`${BASE}${path}`, { headers: auth ? { Authorization: `Bearer ${auth}` } : {} })
+          .then(async (r) => ({ status: r.status, ...(await r.json()) }))
+      : await api(tc.method, path, tc.payload, auth);
     const fieldErrors = flattenFieldErrors(res.data);
-    const passed = res.status === tc.expectStatus && res.success === false && !hasEnglishFieldErrors(fieldErrors);
+    const passed =
+      res.status === tc.expectStatus &&
+      res.success === false &&
+      !hasEnglishFieldErrors(fieldErrors) &&
+      !hasBadMessage(res.message);
 
     results.push({
       screen: tc.screen,
@@ -132,9 +158,11 @@ async function main() {
       testedAt: new Date().toISOString(),
     },
     issues,
+    results,
   };
 
-  console.log(JSON.stringify(report, null, 2));
+  writeFileSync(resolve(__dirname, "crud-validation-report.json"), JSON.stringify(report, null, 2));
+  console.log(JSON.stringify(report.summary, null, 2));
   process.exit(issues.length > 0 ? 1 : 0);
 }
 

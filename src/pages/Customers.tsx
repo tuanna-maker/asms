@@ -333,6 +333,10 @@ const Customers = () => {
   const contactsPag = usePaginatedSlice(contacts, [contacts.length]);
 
   const handleSave = async (updated: Customer) => {
+    if (!updated.name?.trim()) {
+      toast.error("Vui lòng nhập tên đơn vị");
+      return;
+    }
     try {
       await updateCustomerMutation.mutateAsync({
         id: updated.id,

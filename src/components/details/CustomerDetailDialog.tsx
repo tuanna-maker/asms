@@ -14,9 +14,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import {
   Users, Phone, Mail, MapPin, FileText, Cake, AlertTriangle,
   X, PlusCircle, Trash2, Wrench, Activity, Edit,
-  Building2, CalendarDays, DollarSign,
+  Building2, CalendarDays, DollarSign, TrendingUp,
   Contact as ContactIcon, Bell, BellOff, MessageSquareWarning,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
@@ -451,6 +452,11 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
 
   if (!customer) return null;
 
+  const profitTotal = (summary?.revenueTotal ?? 0) - (summary?.expenseTotal ?? 0);
+  const crmTimeline = [...crmActivities].sort(
+    (a, b) => new Date(b.activityAt).getTime() - new Date(a.activityAt).getTime(),
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-3xl overflow-hidden p-0 [&>button]:hidden flex flex-col">
@@ -470,9 +476,10 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
           </SheetClose>
         </SheetHeader>
 
-        <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-border/50 px-6 shrink-0">
-            <TabsList className="h-11 bg-transparent p-0 gap-1">
+        <Tabs defaultValue="overview" className="flex-1 flex flex-col overflow-hidden">
+          <div className="border-b border-border/50 px-6 shrink-0 overflow-x-auto">
+            <TabsList className="h-11 bg-transparent p-0 gap-1 w-max min-w-full">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Tổng quan 360°</TabsTrigger>
               <TabsTrigger value="info" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Thông tin KH</TabsTrigger>
               <TabsTrigger value="contacts" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Đầu mối liên lạc</TabsTrigger>
               <TabsTrigger value="care" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Chăm sóc & Tiếp xúc</TabsTrigger>
@@ -480,6 +487,76 @@ const CustomerDetailDialog = ({ customer, open, onOpenChange, mode = "view", onS
               <TabsTrigger value="feedback" className="data-[state=active]:bg-secondary text-xs sm:text-sm">Phản ánh</TabsTrigger>
             </TabsList>
           </div>
+
+          {/* ============ TAB 0: TỔNG QUAN 360° ============ */}
+          <TabsContent value="overview" className="flex-1 overflow-y-auto p-6 space-y-5 mt-0">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <Kpi icon={<DollarSign className="h-5 w-5 text-sky-600" />} label="Doanh thu" value={formatCurrency(summary?.revenueTotal ?? 0)} />
+              <Kpi icon={<DollarSign className="h-5 w-5 text-rose-600" />} label="Chi phí" value={formatCurrency(summary?.expenseTotal ?? 0)} />
+              <Kpi
+                icon={<TrendingUp className={`h-5 w-5 ${profitTotal >= 0 ? "text-emerald-600" : "text-destructive"}`} />}
+                label="Lãi / lỗ"
+                value={formatCurrency(profitTotal)}
+              />
+              <Kpi icon={<FileText className="h-5 w-5 text-primary" />} label="HĐ đang chạy" value={summary?.activeContracts ?? customer.activeContracts} />
+            </div>
+
+            {contracts.length > 0 && (
+              <section>
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-card-foreground">
+                  <FileText className="h-4 w-4 text-primary" /> Tiến độ hợp đồng
+                </h4>
+                <div className="space-y-2">
+                  {contracts.map((c) => (
+                    <div key={c.id} className="rounded-lg border border-border/50 bg-card p-3">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <p className="font-medium text-sm">{c.title}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{c.code} · {formatCurrency(Number(c.value))}</p>
+                        </div>
+                        <Badge variant="outline">{STATUS_MAP[c.status] ?? c.status}</Badge>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Progress value={Math.min(100, Math.max(0, c.progress ?? 0))} className="h-2 flex-1" />
+                        <span className="text-xs text-muted-foreground w-10 text-right">{c.progress ?? 0}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <div className="grid md:grid-cols-2 gap-4">
+              <section>
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-card-foreground">
+                  <Wrench className="h-4 w-4 text-rose-600" /> Bảo hành & phản ánh
+                </h4>
+                <div className="rounded-lg border border-border/50 bg-card p-3 space-y-1 text-sm">
+                  <p>Phiếu BH mở: <span className="font-semibold">{summary?.openWarranties ?? 0}</span></p>
+                  <p>Phiếu gần đây: <span className="font-semibold">{warranties.length}</span></p>
+                </div>
+              </section>
+              <section>
+                <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-card-foreground">
+                  <Activity className="h-4 w-4 text-violet-600" /> Timeline CRM
+                </h4>
+                {crmTimeline.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Chưa có hoạt động CRM.</p>
+                ) : (
+                  <ul className="space-y-2 max-h-48 overflow-y-auto">
+                    {crmTimeline.slice(0, 8).map((a) => (
+                      <li key={a.id} className="rounded-md border border-border/50 bg-card p-2 text-xs">
+                        <p className="font-medium">{a.title}</p>
+                        <p className="text-muted-foreground">
+                          {ACTIVITY_TYPE_LABELS[a.type] ?? a.type} · {formatDate(a.activityAt)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </div>
+          </TabsContent>
 
           {/* ============ TAB 1: THÔNG TIN KHÁCH HÀNG ============ */}
           <TabsContent value="info" className="flex-1 overflow-y-auto p-6 space-y-4 mt-0">

@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { HttpError } from "../lib/errors/HttpError";
 import { isDatabaseUnreachableError } from "../lib/db-url";
+import { env } from "../config/env";
 
 export default function errorHandler(
   err: unknown,
@@ -25,7 +26,16 @@ export default function errorHandler(
     });
   }
 
-  // Fallback for unknown errors
+  if (env.NODE_ENV === "production") {
+    // eslint-disable-next-line no-console
+    console.error("Unhandled error:", err);
+    return res.status(500).json({
+      success: false,
+      data: null,
+      message: "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
+    });
+  }
+
   return res.status(500).json({
     success: false,
     data: null,

@@ -1,8 +1,7 @@
 import type { Request, Response } from "express";
-import { z } from "zod";
 
 import { writeAudit } from "../../lib/audit";
-import { HttpError } from "../../lib/errors/HttpError";
+import { zodParseOrThrow } from "../../lib/errors/zodParse";
 import { sendSuccess } from "../../lib/response";
 
 import {
@@ -18,10 +17,8 @@ import {
   updateAnniversaryService,
 } from "./service";
 
-function parseOrThrow<T>(schema: z.ZodType<T>, input: unknown) {
-  const r = schema.safeParse(input);
-  if (!r.success) throw new HttpError(400, "Invalid request input", r.error.flatten());
-  return r.data;
+function parseOrThrow<T>(schema: import("zod").ZodType<T>, input: unknown) {
+  return zodParseOrThrow(schema, input);
 }
 
 export async function listController(req: Request, res: Response) {

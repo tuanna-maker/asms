@@ -10,6 +10,7 @@ import type { ProductBomLine } from "@/components/products/ProductBomEditor";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { toastApiError } from "@/lib/api-errors";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import type { ProductSpec } from "@/hooks/use-products-api";
 import { useUpdateContractProduct } from "@/hooks/use-contracts-api";
 
@@ -273,7 +274,7 @@ const ContractProductDetailDialog = ({
                       </p>
                     </div>
                     {d.fileUrl ? (
-                      <a href={d.fileUrl} target="_blank" rel="noreferrer" className="shrink-0">
+                      <a href={resolveUploadUrl(d.fileUrl)} target="_blank" rel="noreferrer" className="shrink-0">
                         <Button size="sm" variant="outline">
                           <Download className="h-3.5 w-3.5 mr-1" /> Tải
                         </Button>

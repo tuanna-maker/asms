@@ -154,7 +154,7 @@ const AlertTab = ({ data }: AlertTabProps) => {
                 className={cn(
                   "rounded-lg border-l-4 border bg-card p-4",
                   styles.card,
-                  alert.severity === "critical" && "shadow-sm",
+                  alert.severity === "critical" && "shadow-sm dashboard-alert-pulse",
                 )}
               >
                 <div className="flex items-start gap-3">

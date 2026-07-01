@@ -1,0 +1,53 @@
+{
+  "_comment": "Mẫu A2 — thay đổi theo Excel phân quyền VTX. Mỗi item: roleCode, moduleKey, canRead, canCreate, canUpdate, canDelete",
+  "items": [
+    {
+      "roleCode": "manager",
+      "moduleKey": "hop-dong",
+      "canRead": true,
+      "canCreate": true,
+      "canUpdate": true,
+      "canDelete": false
+    },
+    {
+      "roleCode": "technician",
+      "moduleKey": "hop-dong",
+      "canRead": false,
+      "canCreate": false,
+      "canUpdate": false,
+      "canDelete": false
+    },
+    {
+      "roleCode": "sales",
+      "moduleKey": "hop-dong",
+      "canRead": true,
+      "canCreate": true,
+      "canUpdate": true,
+      "canDelete": false
+    },
+    {
+      "roleCode": "sales",
+      "moduleKey": "vat-tu",
+      "canRead": false,
+      "canCreate": false,
+      "canUpdate": false,
+      "canDelete": false
+    },
+    {
+      "roleCode": "sales",
+      "moduleKey": "bao-hanh",
+      "canRead": true,
+      "canCreate": false,
+      "canUpdate": false,
+      "canDelete": false
+    },
+    {
+      "roleCode": "viewer",
+      "moduleKey": "hop-dong",
+      "canRead": true,
+      "canCreate": false,
+      "canUpdate": false,
+      "canDelete": false
+    }
+  ]
+}

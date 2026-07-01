@@ -1,0 +1,178 @@
+{
+  "summary": {
+    "total": 21,
+    "passed": 20,
+    "failed": 1,
+    "testedAt": "2026-06-24T16:23:58.185Z"
+  },
+  "results": [
+    {
+      "type": "forbidden",
+      "path": "/materials",
+      "role": "sales",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/materials",
+      "role": "viewer",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/contracts",
+      "role": "technician",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/contracts",
+      "role": "viewer",
+      "expect": 403,
+      "status": 400,
+      "ok": false
+    },
+    {
+      "type": "forbidden",
+      "path": "/handovers",
+      "role": "sales",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/handovers",
+      "role": "viewer",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/warranties",
+      "role": "sales",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/warranties",
+      "role": "viewer",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/users",
+      "role": "manager",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/users",
+      "role": "technician",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/users",
+      "role": "sales",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "forbidden",
+      "path": "/users",
+      "role": "viewer",
+      "expect": 403,
+      "status": 403,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/contracts",
+      "role": "admin",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/contracts",
+      "role": "manager",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/contracts",
+      "role": "sales",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/materials",
+      "role": "admin",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/materials",
+      "role": "manager",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/materials",
+      "role": "technician",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/customers",
+      "role": "admin",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/customers",
+      "role": "manager",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    },
+    {
+      "type": "validation",
+      "path": "/customers",
+      "role": "sales",
+      "expect": 400,
+      "status": 400,
+      "ok": true
+    }
+  ]
+}
