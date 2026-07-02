@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createCustomerSchema = z.object({
-  code: z.string().min(1).optional(),
+  code: z.string().transform((v) => (v === "" ? undefined : v)).optional(),
   name: z.string().min(1),
   contactName: z.string().optional(),
   phone: z.string().optional(),

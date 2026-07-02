@@ -68,7 +68,7 @@
         .cmd-box { background: #1e293b; color: #e2e8f0; padding: 10px 14px; border-radius: 8px; font-family: Consolas, Monaco, monospace; font-size: 11px; line-height: 1.5; margin: 6px 0; word-break: break-all; }
         .cmd-label { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; margin-top: 6px; }
         .cmd-hint { font-size: 10.5px; color: #64748b; font-style: italic; margin-top: 4px; }
-        table.simple { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+        table.simple { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; page-break-inside: avoid; }
         table.simple th { background: #1e3a5f; color: #fff; padding: 8px; text-align: left; }
         table.simple td { border: 1px solid #cbd5e0; padding: 7px 8px; vertical-align: top; }
         table.simple tr:nth-child(even) td { background: #f8fafc; }
@@ -272,6 +272,14 @@
                 </div>
             </div>
         </div>
+    </div>
+    <div class="inner-footer"><div>UNICOM</div><div>§03 Kiến trúc On-Premise</div></div>
+</div>
+<!-- 03b -->
+<div class="doc-page" id="s3b">
+    <div class="inner-header"><div>Mã: UNICOM/ASMS-FULL-001</div><div>§03 Kiến trúc On-Premise</div></div>
+    <div class="inner-divider"></div>
+    <div class="content">
         <h3>3.1 Cơ chế đi qua các lớp</h3>
         <table class="simple">
             <thead><tr><th>Tầng</th><th>Thành phần</th><th>Image / Host</th><th>Port</th><th>Volume</th></tr></thead>
@@ -445,16 +453,28 @@
         <h2 id="s8">8. Đặt file lên máy chủ</h2>
         <ol>
             <li>Tạo thư mục <code>C:\asms</code> (hoặc <code>/opt/asms</code>).</li>
-            <li>Copy toàn bộ file bàn giao vào thư mục đó.</li>
-            <li>Tạo thêm 2 thư mục con (nếu chưa có):<br>
-                <code>backend\uploads\documents</code> và <code>backend\uploads\workflow</code>
+            <li>Copy toàn bộ file bàn giao vào thư mục đó. Bộ bàn giao từ Unicom gồm:
+                <ul>
+                    <li><code>asms-frontend-1.0.0.tar</code> — gói giao diện web</li>
+                    <li><code>asms-backend-1.0.0.tar</code> — gói xử lý máy chủ</li>
+                    <li><code>docker-compose.yml</code>, <code>Dockerfile</code>, <code>.env.example</code></li>
+                    <li><code>backend/Dockerfile</code> (thư mục backend đầy đủ — bao gồm <code>scripts/</code>, <code>prisma/</code>)</li>
+                    <li><code>scripts/</code> (reset-and-install + restart + import-role-permissions)</li>
+                    <li><code>config/role-permissions-vtx.template.json</code> — ma trận phân quyền</li>
+                </ul>
+            </li>
+            <li>Tạo 2 thư mục con (nếu chưa có) để volume mount không lỗi:
+                <div class="cmd-box">mkdir backend\uploads\documents
+mkdir backend\uploads\workflow</div>
             </li>
         </ol>
         <div class="warn">
             <strong>Nếu nhận file .tar:</strong> mở PowerShell trong thư mục <code>C:\asms</code>, chạy lần lượt:
         </div>
-        <div class="cmd-box">docker load -i asms-frontend-1.0.0.tar<br>docker load -i asms-backend-1.0.0.tar</div>
-        <p class="cmd-hint">Chờ đến khi báo "Loaded image". Đây là bước "nhập hộp" phần mềm vào Docker.</p>
+        <div class="cmd-box">docker load -i asms-frontend-1.0.0.tar
+docker load -i asms-backend-1.0.0.tar</div>
+        <p class="cmd-hint">Chờ đến khi báo "Loaded image: asms-frontend:latest" và "Loaded image: asms-backend:latest".
+        Đây là bước "nhập hộp" phần mềm vào Docker. Lưu ý: tag mặc định sau khi load là <code>:latest</code> — phải khớp với <code>FRONTEND_IMAGE</code>/<code>BACKEND_IMAGE</code> trong <code>.env</code> (xem §09).</p>
     </div>
     <div class="inner-footer"><div>UNICOM</div><div>§07–08 Docker &amp; File</div></div>
 </div>
@@ -464,29 +484,49 @@
     <div class="inner-divider"></div>
     <div class="content">
         <h2>9. Điền file cấu hình (.env)</h2>
-        <p>File <code>.env</code> giống "phiếu khai thông tin" cho máy chủ. Mở bằng <strong>Notepad</strong> (không dùng Word).</p>
+        <p>File <code>.env</code> giống "phiếu khai thông tin" cho máy chủ. Mở bằng <strong>Notepad</strong> (không dùng Word). Cách nhanh nhất: copy <code>.env.example</code> thành <code>.env</code> rồi sửa các giá trị <code>CHANGE_ME_*</code>.</p>
+        <div class="warn">
+            <strong>QUAN TRỌNG — chọn tag image đúng nguồn:</strong>
+            <ul style="margin-top:6px">
+                <li>Nếu dùng file <code>.tar</code> bàn giao từ Unicom (chỉ có tag <code>:latest</code>): đặt <code>FRONTEND_IMAGE=asms-frontend:latest</code> và <code>BACKEND_IMAGE=asms-backend:latest</code></li>
+                <li>Nếu build local từ <code>Dockerfile</code>: cũng dùng <code>:latest</code> sau khi <code>docker build -t asms-frontend:latest .</code></li>
+                <li>KHÔNG đặt version kiểu <code>:1.0.0</code> nếu không push lên registry — Docker sẽ cố pull từ Docker Hub và báo lỗi <em>repository does not exist</em>.</li>
+            </ul>
+        </div>
+        <div class="cmd-label">Sinh JWT_SECRET (PowerShell, chạy 1 lần rồi copy kết quả vào .env)</div>
+        <div class="cmd-box">node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"</div>
         <table class="simple">
-            <thead><tr><th>Dòng cần điền</th><th>Ý nghĩa</th><th>Ví dụ</th></tr></thead>
+            <thead><tr><th>Dòng cần điền</th><th>Ý nghĩa</th><th>Ví dụ / giá trị hợp lệ</th></tr></thead>
             <tbody>
-                <tr><td><code>FRONTEND_IMAGE</code></td><td>Tên gói giao diện</td><td><code>asms-frontend:1.0.0</code></td></tr>
-                <tr><td><code>BACKEND_IMAGE</code></td><td>Tên gói xử lý</td><td><code>asms-backend:1.0.0</code></td></tr>
-                <tr><td><code>FRONTEND_PORT</code></td><td>Cổng web (thường để 80)</td><td><code>80</code></td></tr>
-                <tr><td><code>DATABASE_URL</code></td><td>Địa chỉ + mật khẩu PostgreSQL</td><td>Unicom / DBA cung cấp</td></tr>
-                <tr><td><code>JWT_SECRET</code></td><td>Mã bí mật đăng nhập (chuỗi dài ngẫu nhiên, ≥ 32 ký tự)</td><td>Nhờ IT sinh — không chia sẻ</td></tr>
-                <tr><td><code>NODE_ENV</code></td><td>Môi trường chạy thật</td><td><code>production</code></td></tr>
+                <tr><td><code>FRONTEND_IMAGE</code></td><td>Tên + tag gói giao diện</td><td><code>asms-frontend:latest</code></td></tr>
+                <tr><td><code>BACKEND_IMAGE</code></td><td>Tên + tag gói xử lý</td><td><code>asms-backend:latest</code></td></tr>
+                <tr><td><code>FRONTEND_PORT</code></td><td>Cổng web (thường để 8080)</td><td><code>8080</code></td></tr>
+                <tr><td><code>BACKEND_PORT</code></td><td>Cổng API (mặc định 4001)</td><td><code>4001</code></td></tr>
+                <tr><td><code>POSTGRES_USER</code></td><td>User DB (compose dùng để tạo &amp; connect)</td><td><code>asms</code></td></tr>
+                <tr><td><code>POSTGRES_PASSWORD</code></td><td>Mật khẩu DB</td><td>Mật khẩu mạnh (≥ 16 ký tự)</td></tr>
+                <tr><td><code>POSTGRES_DB</code></td><td>Tên database</td><td><code>asms</code></td></tr>
+                <tr><td><code>JWT_SECRET</code></td><td>Mã bí mật đăng nhập (≥ 32 ký tự)</td><td>Dùng lệnh sinh ở trên — KHÔNG chia sẻ</td></tr>
+                <tr><td><code>JWT_ACCESS_EXPIRES_IN</code></td><td>Thời hạn access token</td><td><code>1h</code></td></tr>
+                <tr><td><code>NODE_ENV</code></td><td>Môi trường chạy thật</td><td><code>production</code> (bắt buộc khi deploy chính thức)</td></tr>
+                <tr><td><code>CORS_ORIGINS</code></td><td>Domain frontend được phép gọi API (phân cách dấu phẩy)</td><td><code>https://asms.vtx.local</code> (production bắt buộc)</td></tr>
             </tbody>
         </table>
+        <div class="info">
+            <strong>DATABASE_URL</strong> được <code>docker-compose.yml</code> tự build từ <code>POSTGRES_USER</code> + <code>POSTGRES_PASSWORD</code> + <code>POSTGRES_DB</code> cho service <code>backend</code>.
+            Bạn <em>không cần</em> tự điền <code>DATABASE_URL</code> khi chạy trong Docker — chỉ đặt khi chạy backend NGOÀI Docker (dev local dùng <code>docker-compose.local-db.yml</code>).
+        </div>
         <div class="important">
             <strong>Không gửi file .env qua email công khai.</strong> Không đăng lên mạng. Lưu backup trong két mật khẩu nội bộ VTX.
         </div>
         <h3>9.1 Cơ sở dữ liệu PostgreSQL</h3>
-        <p>Nếu chưa có DB, nhờ quản trị CSDL tạo:</p>
+        <p>Nếu chưa có DB, <code>docker-compose.yml</code> sẽ tự tạo PostgreSQL 16 từ image <code>postgres:16-alpine</code> với các biến ở trên. Không cần cài thủ công.</p>
+        <p>Nếu muốn dùng DB có sẵn (không dùng service <code>postgres</code> trong compose): nhờ quản trị CSDL tạo:</p>
         <ul>
             <li>Tên database: <code>asms</code></li>
             <li>Tài khoản riêng (ví dụ <code>asms_app</code>) + mật khẩu mạnh</li>
             <li>Chỉ cho phép máy chủ ASMS kết nối (cổng 5432)</li>
+            <li>Set <code>DATABASE_URL</code> trong <code>.env</code> thủ công và xóa service <code>postgres</code> khỏi compose</li>
         </ul>
-        <p>Unicom có thể hỗ trợ tạo DB lần đầu qua TeamViewer.</p>
     </div>
     <div class="inner-footer"><div>UNICOM</div><div>§09 Cấu hình</div></div>
 </div>
@@ -497,6 +537,15 @@
     <div class="content">
         <h2>10. Khởi chạy ASMS — 5 lệnh chính</h2>
         <p>Mở PowerShell / Terminal, <strong>cd</strong> vào thư mục <code>asms</code>, chạy lần lượt từ trên xuống. Chờ lệnh trước xong rồi mới chạy lệnh sau.</p>
+        <div class="important">
+            <strong>Hoặc dùng 1 lệnh duy nhất (khuyến nghị):</strong>
+            <ul style="margin-top:6px">
+                <li>Windows: <code>powershell scripts/reset-and-install.ps1</code></li>
+                <li>Linux / macOS bash: <code>bash scripts/reset-and-install.sh</code></li>
+            </ul>
+            Script tự chạy cả 8 bước bên dưới (reset → up → migrate → bootstrap → seed → import role → verify).
+            Cờ <code>-Hard</code> (hoặc <code>--hard</code>) xóa luôn thư mục uploads; <code>-SkipSeed</code> (hoặc <code>--skip-seed</code>) bỏ seed dữ liệu mẫu.
+        </div>
         <div class="step">
             <div class="step-no">①</div>
             <div class="step-body">
@@ -537,9 +586,28 @@
                 <p class="cmd-hint">Bấm Ctrl+C để thoát. Chụp màn hình gửi Unicom nếu cần hỗ trợ.</p>
             </div>
         </div>
+        <div class="step">
+            <div class="step-no">⑥</div>
+            <div class="step-body">
+                <h3>Seed dữ liệu mô phỏng (chỉ lần đầu / sau khi xóa volume)</h3>
+                <div class="cmd-box">docker compose exec backend npm run seed:demo</div>
+                <p class="cmd-hint">Tạo <strong>khách hàng, hợp đồng, vật tư, sản phẩm, bàn giao, bảo hành, ...</strong> để giao diện có dữ liệu hiển thị.
+                Nếu bỏ qua bước này, mọi nút "Tạo mới" sẽ trả lỗi <em>Foreign key constraint</em> vì bảng <code>customers</code> trống.
+                Không cần chạy lại nếu chỉ restart (<code>docker compose restart</code>) — chỉ chạy khi DB mới.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">⑦</div>
+            <div class="step-body">
+                <h3>Import ma trận phân quyền (lần đầu hoặc khi đổi)</h3>
+                <div class="cmd-box">node scripts/import-role-permissions.mjs config/role-permissions-vtx.template.json</div>
+                <p class="cmd-hint">Áp dụng ma trận CRUD theo module cho 5 vai trò (admin/manager/technician/viewer/sales). Chạy lại bất cứ khi nào muốn thay đổi quyền hàng loạt.</p>
+            </div>
+        </div>
         <div class="tip">
             <strong>Tắt / bật lại sau khi khởi động server:</strong><br>
-            Tắt: <code>docker compose down</code> · Bật lại: <code>docker compose up -d</code>
+            Tắt: <code>docker compose down</code> · Bật lại: <code>docker compose up -d</code><br>
+            Hoặc dùng 1 lệnh (giữ data): <code>powershell scripts/restart.ps1</code> / <code>bash scripts/restart.sh</code>
         </div>
     </div>
     <div class="inner-footer"><div>UNICOM</div><div>§10 Khởi chạy</div></div>
@@ -582,9 +650,15 @@
             <li>Đổi mật khẩu admin</li>
             <li>Vào <strong>Cài đặt → Người dùng</strong> tạo tài khoản thật cho từng phòng ban</li>
             <li>Vào <strong>Cài đặt → Hệ thống</strong> chỉnh SLA, nhắc lịch (nếu cần)</li>
-            <li>Import ma trận phân quyền qua <code>scripts/import-role-permissions.mjs</code></li>
+            <li>Import ma trận phân quyền:
+                <div class="cmd-box">node scripts/import-role-permissions.mjs config/role-permissions-vtx.template.json</div>
+            </li>
             <li>Thống nhất lịch backup database với IT (hàng ngày)</li>
         </ol>
+        <div class="warn">
+            <strong>Xóa và cài lại từ đầu:</strong> dùng <code>powershell scripts/reset-and-install.ps1</code> (Windows) hoặc <code>bash scripts/reset-and-install.sh</code> (Linux).
+            Script tự chạy đủ 8 bước trong §10 và verify cuối cùng — không cần nhớ lệnh.
+        </div>
         <div class="info">
             <strong>Luồng dữ liệu điển hình:</strong><br>
             Browser → Nginx (443) → proxy <code>/api/</code> → Backend (4001) → Prisma → PostgreSQL (5432).<br>

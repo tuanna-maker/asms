@@ -5,6 +5,7 @@ import { HttpError } from "../../lib/errors/HttpError";
 import { zodParseOrThrow } from "../../lib/errors/zodParse";
 import { sendSuccess } from "../../lib/response";
 import { writeAudit } from "../../lib/audit";
+import { prisma } from "../../utils/prisma";
 
 import {
   contractIdParamSchema,
@@ -66,6 +67,12 @@ export async function createContractController(req: Request, res: Response) {
   const payload = zodParseOrThrow(createContractSchema, req.body);
   const createdById = req.user?.id;
   if (!createdById) throw new HttpError(401, "Thiếu thông tin người dùng");
+
+  const user = await prisma.user.findFirst({
+    where: { id: createdById, deletedAt: null },
+    select: { id: true },
+  });
+  if (!user) throw new HttpError(401, "Tài khoản không tồn tại hoặc đã bị khóa");
 
   const input: Record<string, unknown> & { createdById: string } = {
     ...payload,

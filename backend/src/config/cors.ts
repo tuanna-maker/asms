@@ -1,6 +1,7 @@
 import type { CorsOptions } from "cors";
 
 import { env } from "./env";
+import { HttpError } from "../lib/errors/HttpError";
 
 function resolveCorsOrigin(): CorsOptions["origin"] {
   if (env.NODE_ENV !== "production") {
@@ -15,7 +16,8 @@ function resolveCorsOrigin(): CorsOptions["origin"] {
       callback(null, true);
       return;
     }
-    callback(new Error(`CORS blocked for origin: ${origin}`));
+    // Throw HttpError 403 thay vì Error thường — errorHandler sẽ trả 403 đúng chuẩn.
+    callback(new HttpError(403, `CORS blocked for origin: ${origin}`));
   };
 }
 
