@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hướng dẫn triển khai &amp; vận hành ASMS — On-Premise</title>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="file%20docs/assets/unicom-logo.png" rel="icon">
     <style>
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 400; font-display: block; src: local('Segoe UI'), local('Arial'), local('sans-serif'); }
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 500; font-display: block; src: local('Segoe UI Semibold'), local('Segoe UI'), local('Arial'), local('sans-serif'); }
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 600; font-display: block; src: local('Segoe UI Semibold'), local('Segoe UI'), local('Arial'), local('sans-serif'); }
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 700; font-display: block; src: local('Segoe UI Bold'), local('Segoe UI'), local('Arial Bold'), local('Arial'), local('sans-serif'); }
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 800; font-display: block; src: local('Segoe UI Black'), local('Segoe UI Bold'), local('Arial Black'), local('Arial'), local('sans-serif'); }
+        @font-face { font-family: 'Be Vietnam Pro'; font-style: normal; font-weight: 900; font-display: block; src: local('Segoe UI Black'), local('Segoe UI Bold'), local('Arial Black'), local('Arial'), local('sans-serif'); }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.6; }
+        body { background: #d0d0d0; font-family: 'Be Vietnam Pro', 'Segoe UI', Arial, sans-serif; font-size: 14px; color: #0d1e34; line-height: 1.6; -webkit-font-smoothing: antialiased; }
         .doc-page { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.22); display: flex; flex-direction: column; }
         @media print { @page { size: A4 portrait; margin: 0; } body { background: #fff; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .doc-page { margin: 0; box-shadow: none; page-break-after: always; } }
         .accent-bar { height: 8px; background: linear-gradient(90deg, #3d7de8, #0ab4d8); }
@@ -96,7 +102,7 @@
     <div class="accent-bar"></div>
     <div class="header">
         <div>Mã tài liệu: UNICOM/ASMS-FULL-001</div>
-        <div>Phiên bản 1.0 · 01/07/2026</div>
+        <div>Phiên bản 1.1 · 02/07/2026</div>
     </div>
     <div class="divider"></div>
     <div class="main">
@@ -115,12 +121,12 @@
     </div>
     <div class="footer">
         <div>UNICOM TECHNOLOGY SOLUTIONS CO., LTD</div>
-        <div>© 2026</div>
+        <div>© 2026 · v1.1</div>
     </div>
 </div>
 <!-- MỤC LỤC -->
 <div class="doc-page">
-    <div class="inner-header"><div>Mã: UNICOM/ASMS-FULL-001</div><div>Hướng dẫn triển khai đầy đủ</div></div>
+    <div class="inner-header">    <div>Mã: UNICOM/ASMS-FULL-001</div><div>Hướng dẫn triển khai đầy đủ v1.1</div></div>
     <div class="inner-divider"></div>
     <div class="content">
         <h1 class="toc-title">Mục lục</h1>
@@ -135,7 +141,7 @@
         <a href="#s7" class="toc-link"><span class="toc-num">07</span> Cài Docker (phần mềm chạy ASMS)</a>
         <a href="#s8" class="toc-link"><span class="toc-num">08</span> Đặt file lên máy chủ</a>
         <a href="#s9" class="toc-link"><span class="toc-num">09</span> Điền file cấu hình (.env)</a>
-        <a href="#s10" class="toc-link"><span class="toc-num">10</span> Khởi chạy ASMS — 5 lệnh chính</a>
+        <a href="#s10" class="toc-link"><span class="toc-num">10</span> Khởi chạy ASMS (3 cách: install / fast-deploy / lệnh riêng)</a>
         <a href="#s11" class="toc-link"><span class="toc-num">11</span> Mở trình duyệt &amp; đăng nhập lần đầu</a>
         <div class="toc-section">Phần 3 — Vận hành &amp; Bảo trì</div>
         <a href="#s12" class="toc-link"><span class="toc-num">12</span> Lớp bảo mật (Defense in depth)</a>
@@ -410,6 +416,11 @@
             <li><code>docker-compose.yml</code> — "bản đồ" khởi chạy</li>
             <li><code>.env.mau</code> — mẫu cấu hình (đổi tên thành <code>.env</code> và điền thông tin thật)</li>
             <li>Thư mục <code>backend/uploads</code> (tạo mới nếu chưa có)</li>
+            <li><code>scripts/install.ps1</code> — script cài đặt một lệnh (Windows)</li>
+            <li><code>scripts/fast-deploy.ps1</code> — script build + deploy đầy đủ (Windows)</li>
+            <li><code>scripts/reset-and-install.ps1</code> — script reset + cài lại</li>
+            <li><code>scripts/start.ps1</code>, <code>scripts/stop.ps1</code>, <code>scripts/restart.ps1</code> — script vận hành hàng ngày</li>
+            <li><code>config/role-permissions-vtx.template.json</code> — ma trận phân quyền</li>
         </ul>
         <h3>Cách B — Clone mã nguồn (nếu VTX có Git)</h3>
         <p>Unicom cung cấp đường dẫn repo và tag phiên bản <code>v1.0.0</code>. Kỹ sư IT clone về thư mục <code>C:\asms</code> hoặc <code>/opt/asms</code>.</p>
@@ -459,7 +470,7 @@
                     <li><code>asms-backend-1.0.0.tar</code> — gói xử lý máy chủ</li>
                     <li><code>docker-compose.yml</code>, <code>Dockerfile</code>, <code>.env.example</code></li>
                     <li><code>backend/Dockerfile</code> (thư mục backend đầy đủ — bao gồm <code>scripts/</code>, <code>prisma/</code>)</li>
-                    <li><code>scripts/</code> (reset-and-install + restart + import-role-permissions)</li>
+                    <li><code>scripts/</code> (reset-and-install + install + fast-deploy + restart)</li>
                     <li><code>config/role-permissions-vtx.template.json</code> — ma trận phân quyền</li>
                 </ul>
             </li>
@@ -535,23 +546,39 @@ docker load -i asms-backend-1.0.0.tar</div>
     <div class="inner-header"><div>Mã: UNICOM/ASMS-FULL-001</div><div>§10 Khởi chạy</div></div>
     <div class="inner-divider"></div>
     <div class="content">
-        <h2>10. Khởi chạy ASMS — 5 lệnh chính</h2>
-        <p>Mở PowerShell / Terminal, <strong>cd</strong> vào thư mục <code>asms</code>, chạy lần lượt từ trên xuống. Chờ lệnh trước xong rồi mới chạy lệnh sau.</p>
-        <div class="important">
-            <strong>Hoặc dùng 1 lệnh duy nhất (khuyến nghị):</strong>
-            <ul style="margin-top:6px">
-                <li>Windows: <code>powershell scripts/reset-and-install.ps1</code></li>
-                <li>Linux / macOS bash: <code>bash scripts/reset-and-install.sh</code></li>
-            </ul>
-            Script tự chạy cả 8 bước bên dưới (reset → up → migrate → bootstrap → seed → import role → verify).
-            Cờ <code>-Hard</code> (hoặc <code>--hard</code>) xóa luôn thư mục uploads; <code>-SkipSeed</code> (hoặc <code>--skip-seed</code>) bỏ seed dữ liệu mẫu.
+        <h2>10. Khởi chạy ASMS</h2>
+        <p>ASMS hỗ trợ <strong>3 cách</strong> khởi chạy, từ dễ nhất đến linh hoạt nhất. Chọn cách phù hợp với tình huống của bạn.</p>
+
+        <div class="info">
+            <strong>Cách A — Một lệnh duy nhất (khuyến nghị cho máy mới):</strong><br>
+            Copy thư mục dự án sang máy → mở Docker Desktop → chạy 1 file.<br>
+            <div class="cmd-box">powershell -ExecutionPolicy Bypass -File C:\asms\scripts\install.ps1</div>
+            Script tự động kiểm tra Docker, tạo thư mục, load image, khởi động DB + backend + frontend, migrate schema, seed dữ liệu mẫu, và xác minh đăng nhập.<br>
+            <em>Chỉ cần Docker Desktop — không cần Git, Node.js, hay npm.</em>
         </div>
+
+        <div class="warn">
+            <strong>Cách B — Build + Deploy toàn bộ (cho môi trường staging/production):</strong><br>
+            Script build Docker images từ source, đóng gói .tar, deploy local hoặc remote qua SSH.<br>
+            <div class="cmd-box">powershell scripts/fast-deploy.ps1</div>
+            Tuỳ chọn thêm:<br>
+            <code>-SkipBuild</code> — dùng .tar có sẵn, chỉ deploy lại<br>
+            <code>-SkipSeed</code> — bỏ seed dữ liệu mẫu<br>
+            <code>-Hard</code> — xoá cả volume DB và thư mục uploads<br>
+            <code>-Remote -ServerIP &lt;IP&gt; -ServerUser &lt;user&gt;</code> — deploy lên máy chủ từ xa qua SSH<br>
+            <div style="margin-top:6px">
+            Ví dụ remote deploy: <code>powershell scripts/fast-deploy.ps1 -Remote -ServerIP 192.168.1.50 -ServerUser administrator</code>
+            </div>
+        </div>
+
+        <h3>Cách C — Các lệnh riêng lẻ (dành cho kỹ sư)</h3>
+        <p>Chạy lần lượt từng bước. Mở PowerShell / Terminal, <strong>cd</strong> vào thư mục <code>asms</code>.</p>
         <div class="step">
             <div class="step-no">①</div>
             <div class="step-body">
                 <h3>Bật hệ thống</h3>
                 <div class="cmd-box">docker compose up -d</div>
-                <p class="cmd-hint">Lần đầu có thể mất 1–2 phút. Khi xong, 2 "hộp" frontend + backend đang chạy ngầm.</p>
+                <p class="cmd-hint">Lần đầu có thể mất 1–2 phút. Khi xong, 3 "hộp" postgres + frontend + backend đang chạy ngầm.</p>
             </div>
         </div>
         <div class="step">
@@ -559,7 +586,7 @@ docker load -i asms-backend-1.0.0.tar</div>
             <div class="step-body">
                 <h3>Kiểm tra đang chạy</h3>
                 <div class="cmd-box">docker compose ps</div>
-                <p class="cmd-hint">Cột STATUS phải ghi <strong>running</strong> cho cả <code>asms_frontend</code> và <code>asms_backend</code>.</p>
+                <p class="cmd-hint">Cột STATUS phải ghi <strong>running</strong> cho cả 3 container.</p>
             </div>
         </div>
         <div class="step">
@@ -575,42 +602,42 @@ docker load -i asms-backend-1.0.0.tar</div>
             <div class="step-body">
                 <h3>Tạo tài khoản quản trị lần đầu</h3>
                 <div class="cmd-box">docker compose exec backend npm run bootstrap:auth</div>
-                <p class="cmd-hint">Tạo user mẫu. <strong>Đổi mật khẩu ngay</strong> sau khi đăng nhập lần đầu.</p>
+                <p class="cmd-hint">Tạo 5 user mẫu (admin/manager/technician/viewer/sales). <strong>Đổi mật khẩu ngay</strong> sau khi đăng nhập lần đầu.</p>
             </div>
         </div>
         <div class="step">
             <div class="step-no">⑤</div>
+            <div class="step-body">
+                <h3>Seed dữ liệu mô phỏng (chỉ lần đầu / sau khi xóa volume)</h3>
+                <div class="cmd-box">docker compose exec backend npm run seed:demo</div>
+                <p class="cmd-hint">Tạo <strong>khách hàng, hợp đồng, vật tư, sản phẩm, bàn giao, bảo hành, ...</strong> để giao diện có dữ liệu hiển thị.
+                Nếu bỏ qua bước này, mọi nút "Tạo mới" sẽ trả lỗi <em>Foreign key constraint</em> vì bảng <code>customers</code> trống.
+                Không cần chạy lại nếu chỉ restart — chỉ chạy khi DB mới.</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">⑥</div>
+            <div class="step-body">
+                <h3>Import ma trận phân quyền (lần đầu hoặc khi đổi)</h3>
+                <div class="cmd-box">node scripts/import-role-permissions.mjs config/role-permissions-vtx.template.json</div>
+                <p class="cmd-hint">Áp dụng ma trận CRUD theo module cho 5 vai trò (admin/manager/technician/viewer/sales).</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-no">⑦</div>
             <div class="step-body">
                 <h3>Xem nhật ký nếu có lỗi</h3>
                 <div class="cmd-box">docker compose logs -f backend</div>
                 <p class="cmd-hint">Bấm Ctrl+C để thoát. Chụp màn hình gửi Unicom nếu cần hỗ trợ.</p>
             </div>
         </div>
-        <div class="step">
-            <div class="step-no">⑥</div>
-            <div class="step-body">
-                <h3>Seed dữ liệu mô phỏng (chỉ lần đầu / sau khi xóa volume)</h3>
-                <div class="cmd-box">docker compose exec backend npm run seed:demo</div>
-                <p class="cmd-hint">Tạo <strong>khách hàng, hợp đồng, vật tư, sản phẩm, bàn giao, bảo hành, ...</strong> để giao diện có dữ liệu hiển thị.
-                Nếu bỏ qua bước này, mọi nút "Tạo mới" sẽ trả lỗi <em>Foreign key constraint</em> vì bảng <code>customers</code> trống.
-                Không cần chạy lại nếu chỉ restart (<code>docker compose restart</code>) — chỉ chạy khi DB mới.</p>
-            </div>
-        </div>
-        <div class="step">
-            <div class="step-no">⑦</div>
-            <div class="step-body">
-                <h3>Import ma trận phân quyền (lần đầu hoặc khi đổi)</h3>
-                <div class="cmd-box">node scripts/import-role-permissions.mjs config/role-permissions-vtx.template.json</div>
-                <p class="cmd-hint">Áp dụng ma trận CRUD theo module cho 5 vai trò (admin/manager/technician/viewer/sales). Chạy lại bất cứ khi nào muốn thay đổi quyền hàng loạt.</p>
-            </div>
-        </div>
         <div class="tip">
-            <strong>Tắt / bật lại sau khi khởi động server:</strong><br>
-            Tắt: <code>docker compose down</code> · Bật lại: <code>docker compose up -d</code><br>
-            Hoặc dùng 1 lệnh (giữ data): <code>powershell scripts/restart.ps1</code> / <code>bash scripts/restart.sh</code>
+            <strong>Vận hành hàng ngày:</strong><br>
+            Bật: <code>scripts\start.ps1</code> · Tắt: <code>scripts\stop.ps1</code> · Restart: <code>scripts\restart.ps1</code><br>
+            Reset toàn bộ (xoá DB + uploads + cài lại): <code>powershell scripts/reset-and-install.ps1 -Hard</code>
         </div>
     </div>
-    <div class="inner-footer"><div>UNICOM</div><div>§10 Khởi chạy</div></div>
+    <div class="inner-footer"><div>UNICOM</div><div>§10 Khởi chạy ASMS v1.1</div></div>
 </div>
 <!-- 11 -->
 <div class="doc-page" id="s11">
@@ -656,8 +683,8 @@ docker load -i asms-backend-1.0.0.tar</div>
             <li>Thống nhất lịch backup database với IT (hàng ngày)</li>
         </ol>
         <div class="warn">
-            <strong>Xóa và cài lại từ đầu:</strong> dùng <code>powershell scripts/reset-and-install.ps1</code> (Windows) hoặc <code>bash scripts/reset-and-install.sh</code> (Linux).
-            Script tự chạy đủ 8 bước trong §10 và verify cuối cùng — không cần nhớ lệnh.
+            <strong>Xóa và cài lại từ đầu:</strong> dùng <code>powershell -ExecutionPolicy Bypass -File scripts/install.ps1</code> (Windows) để cài mới hoàn toàn,
+            hoặc <code>powershell scripts/reset-and-install.ps1 -Hard</code> để reset toàn bộ (xoá DB + uploads + cài lại).
         </div>
         <div class="info">
             <strong>Luồng dữ liệu điển hình:</strong><br>
