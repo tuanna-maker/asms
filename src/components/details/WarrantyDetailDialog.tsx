@@ -179,6 +179,7 @@ const WarrantyDetailDialog = ({
   const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
   const [source, setSource] = useState<"customer" | "internal">("customer");
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [mainTab, setMainTab] = useState<"info" | "steps">("info");
   const [warrantyFormTab, setWarrantyFormTab] = useState("1");
   const [genericNotesByStepId, setGenericNotesByStepId] = useState<Record<string, string>>({});
   const [stepPayloads, setStepPayloads] = useState<WarrantyStepPayloadRecord>({});
@@ -332,6 +333,7 @@ const WarrantyDetailDialog = ({
 
   useEffect(() => {
     if (!open) return;
+    setMainTab("info");
     if (isCreateMode) {
       setIssue("");
       setPriority("medium");
@@ -923,251 +925,271 @@ const WarrantyDetailDialog = ({
             </SheetTitle>
           </SheetHeader>
 
-          <div className="space-y-6 px-6 py-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
-            {(isCreateMode || ticket) && (
-              <>
-                <div className="flex flex-wrap items-center gap-2">
-                  {isSummaryEditable ? (
-                    <>
-                      <Select value={type} onValueChange={setType}>
-                        <SelectTrigger className="h-8 w-[130px] text-xs font-medium">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="warranty">Bảo hành</SelectItem>
-                          <SelectItem value="repair">Sửa chữa</SelectItem>
-                          <SelectItem value="maintenance">Bảo trì</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Select value={priority} onValueChange={setPriority}>
-                        <SelectTrigger className={cn("h-8 w-[130px] text-xs font-medium", pCfg.className)}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {priorityOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {isEditMode ? (
-                        <Select value={status} onValueChange={(v) => setStatus(v as WarrantyTicketUi["backendStatus"])}>
-                          <SelectTrigger className="h-8 w-[140px] text-xs font-medium">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {statusOptions.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      ) : null}
-                    </>
-                  ) : (
-                    <>
-                      <Badge variant={tCfg.variant}>{tCfg.label}</Badge>
-                      <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${pCfg.className}`}>
-                        {pCfg.label}
-                      </span>
-                      {displayStatus === "completed" ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <CheckCircle className="h-3 w-3" /> Hoàn thành
-                        </Badge>
+          <Tabs
+            value={mainTab}
+            onValueChange={(v) => setMainTab(v as "info" | "steps")}
+            className="min-h-0 flex-1 flex flex-col overflow-hidden"
+          >
+            <div className="shrink-0 border-b border-border/50 px-6 bg-background">
+              <TabsList className="h-11 w-full justify-start bg-transparent p-0 gap-1 rounded-none">
+                <TabsTrigger
+                  value="info"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3"
+                >
+                  Thông tin phiếu
+                </TabsTrigger>
+                <TabsTrigger
+                  value="steps"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3"
+                >
+                  Quy trình áp dụng
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <TabsContent value="info" className="mt-0 space-y-6 px-6 py-4 focus-visible:outline-none">
+                {(isCreateMode || ticket) && (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {isSummaryEditable ? (
+                        <>
+                          <Select value={type} onValueChange={setType}>
+                            <SelectTrigger className="h-8 w-[130px] text-xs font-medium">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="warranty">Bảo hành</SelectItem>
+                              <SelectItem value="repair">Sửa chữa</SelectItem>
+                              <SelectItem value="maintenance">Bảo trì</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select value={priority} onValueChange={setPriority}>
+                            <SelectTrigger className={cn("h-8 w-[130px] text-xs font-medium", pCfg.className)}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {priorityOptions.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {isEditMode ? (
+                            <Select value={status} onValueChange={(v) => setStatus(v as WarrantyTicketUi["backendStatus"])}>
+                              <SelectTrigger className="h-8 w-[140px] text-xs font-medium">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statusOptions.map((opt) => (
+                                  <SelectItem key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : null}
+                        </>
                       ) : (
-                        <Badge variant="outline" className="gap-1">
-                          <Clock className="h-3 w-3" /> Đang xử lý
-                        </Badge>
+                        <>
+                          <Badge variant={tCfg.variant}>{tCfg.label}</Badge>
+                          <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${pCfg.className}`}>
+                            {pCfg.label}
+                          </span>
+                          {displayStatus === "completed" ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <CheckCircle className="h-3 w-3" /> Hoàn thành
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="gap-1">
+                              <Clock className="h-3 w-3" /> Đang xử lý
+                            </Badge>
+                          )}
+                        </>
                       )}
-                    </>
-                  )}
-                </div>
+                    </div>
 
-                {!isCreateMode ? <Separator /> : null}
+                    {!isCreateMode ? <Separator /> : null}
 
-                {!isCreateMode && hasEngineSteps && liveInstance ? (
-                  <p className="text-sm rounded-md bg-muted/30 px-3 py-2">
-                    <span className="text-muted-foreground">Luồng xử lý:</span>{" "}
-                    <span className="font-medium text-foreground">{liveInstance.workflow.name}</span>
-                    <br />
-                    <span className="text-muted-foreground">Bước hiện tại:</span>{" "}
-                    <span className="font-medium text-foreground">
-                      {liveInstance.currentStep
-                        ? `${liveInstance.workflow.steps.findIndex((s) => s.id === liveInstance.currentStep!.id) + 1}/${liveInstance.workflow.steps.length} · ${liveInstance.currentStep.name}`
-                        : liveInstance.status === "completed"
-                          ? `Hoàn tất (${liveInstance.workflow.steps.length} bước)`
-                          : "Chưa xác định"}
-                    </span>
-                  </p>
-                ) : !isCreateMode && liveInstanceFetching && !liveInstance ? (
-                  <p className="text-sm rounded-md bg-muted/30 px-3 py-2 flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                    Đang tải tiến trình quy trình…
-                  </p>
-                ) : !isCreateMode && ticket?.workflow && ticket.workflow.totalSteps > 0 ? (
-                  <p className="text-sm rounded-md bg-muted/30 px-3 py-2">
-                    <span className="text-muted-foreground">Luồng xử lý:</span>{" "}
-                    <span className="font-medium text-foreground">{ticket.workflow.workflowName}</span>
-                    <br />
-                    <span className="text-muted-foreground">Bước hiện tại:</span>{" "}
-                    <span className="font-medium text-foreground">
-                      {ticket.workflow.status === "completed"
-                        ? `${ticket.workflow.totalSteps}/${ticket.workflow.totalSteps} · Hoàn tất`
-                        : `${ticket.workflow.currentStepIndex}/${ticket.workflow.totalSteps} · ${ticket.workflow.currentStepName ?? "—"}`}
-                    </span>
-                  </p>
-                ) : !isCreateMode ? (
-                  <p className="text-sm rounded-md bg-muted/30 px-3 py-2 text-muted-foreground">
-                    Phiếu chưa được gắn quy trình áp dụng hoặc chưa khởi tạo tiến trình xử lý.
+                    {!isCreateMode && hasEngineSteps && liveInstance ? (
+                      <p className="text-sm rounded-md bg-muted/30 px-3 py-2">
+                        <span className="text-muted-foreground">Luồng xử lý:</span>{" "}
+                        <span className="font-medium text-foreground">{liveInstance.workflow.name}</span>
+                        <br />
+                        <span className="text-muted-foreground">Bước hiện tại:</span>{" "}
+                        <span className="font-medium text-foreground">
+                          {liveInstance.currentStep
+                            ? `${liveInstance.workflow.steps.findIndex((s) => s.id === liveInstance.currentStep!.id) + 1}/${liveInstance.workflow.steps.length} · ${liveInstance.currentStep.name}`
+                            : liveInstance.status === "completed"
+                              ? `Hoàn tất (${liveInstance.workflow.steps.length} bước)`
+                              : "Chưa xác định"}
+                        </span>
+                      </p>
+                    ) : !isCreateMode && liveInstanceFetching && !liveInstance ? (
+                      <p className="text-sm rounded-md bg-muted/30 px-3 py-2 flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
+                        Đang tải tiến trình quy trình…
+                      </p>
+                    ) : !isCreateMode && ticket?.workflow && ticket.workflow.totalSteps > 0 ? (
+                      <p className="text-sm rounded-md bg-muted/30 px-3 py-2">
+                        <span className="text-muted-foreground">Luồng xử lý:</span>{" "}
+                        <span className="font-medium text-foreground">{ticket.workflow.workflowName}</span>
+                        <br />
+                        <span className="text-muted-foreground">Bước hiện tại:</span>{" "}
+                        <span className="font-medium text-foreground">
+                          {ticket.workflow.status === "completed"
+                            ? `${ticket.workflow.totalSteps}/${ticket.workflow.totalSteps} · Hoàn tất`
+                            : `${ticket.workflow.currentStepIndex}/${ticket.workflow.totalSteps} · ${ticket.workflow.currentStepName ?? "—"}`}
+                        </span>
+                      </p>
+                    ) : !isCreateMode ? (
+                      <p className="text-sm rounded-md bg-muted/30 px-3 py-2 text-muted-foreground">
+                        Phiếu chưa được gắn quy trình áp dụng hoặc chưa khởi tạo tiến trình xử lý.
+                      </p>
+                    ) : null}
+
+                    <Separator />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {isSummaryEditable ? (
+                        <>
+                          <SummaryFieldCard icon={<User className="h-4 w-4" />} label="Khách hàng">
+                            {customerSelect}
+                          </SummaryFieldCard>
+                          <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Hợp đồng">
+                            {contractSelect}
+                          </SummaryFieldCard>
+                          <SummaryFieldCard icon={<Monitor className="h-4 w-4" />} label="Thiết bị">
+                            {productSelect}
+                          </SummaryFieldCard>
+                          <SummaryFieldCard icon={<Package className="h-4 w-4" />} label="Vật tư (BOM)">
+                            {materialsSummaryEdit}
+                          </SummaryFieldCard>
+                          <SummaryFieldCard icon={<Shield className="h-4 w-4" />} label="Nguồn">
+                            {sourceSelect}
+                          </SummaryFieldCard>
+                          <SummaryFieldCard icon={<GitBranch className="h-4 w-4" />} label="Quy trình áp dụng">
+                            {isCreateMode && workflowPreviewLoading && selectedWorkflowId ? (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Loader2 className="h-3 w-3 animate-spin shrink-0" aria-hidden />
+                                Đang tải quy trình…
+                              </p>
+                            ) : (
+                              workflowSelect
+                            )}
+                          </SummaryFieldCard>
+                        </>
+                      ) : (
+                        <>
+                          <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket?.customer ?? "—"} />
+                          <InfoItem
+                            icon={<FileText className="h-4 w-4" />}
+                            label="Hợp đồng"
+                            value={detail ? formatContractSummary(detail.contract) : "…"}
+                          />
+                          <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket?.device ?? "—"} />
+                          <InfoItem
+                            icon={<Package className="h-4 w-4" />}
+                            label="Vật tư (BOM)"
+                            value={
+                              detail?.materialIds?.length ? `${detail.materialIds.length} mục đã ghi nhận` : "—"
+                            }
+                          />
+                          <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket?.source ?? "—"} />
+                          <InfoItem
+                            icon={<GitBranch className="h-4 w-4" />}
+                            label="Quy trình áp dụng"
+                            value={appliedWorkflowName ?? "—"}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {!isCreateMode && customerId && ticket ? (
+                  <CustomerFeedbackSection
+                    customerId={customerId}
+                    contractId={detail?.contractId ?? undefined}
+                    readonly={readOnly}
+                  />
+                ) : null}
+
+                {!isCreateMode && ticket ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    Ngày tạo: {ticket.createdAt ?? "—"}
+                  </div>
+                ) : null}
+              </TabsContent>
+
+              <TabsContent value="steps" className="mt-0 space-y-4 px-6 py-4 pb-8 focus-visible:outline-none">
+                {!isCreateMode && (detail?.orphanStepPayloads?.length ?? 0) > 0 ? (
+                  <p className="text-xs rounded-md border border-amber-300 bg-amber-50/60 px-2.5 py-2 text-amber-900">
+                    Có {detail!.orphanStepPayloads!.length} nhóm nội dung không còn khớp bước quy trình hiện tại (sẽ bị xóa khi lưu).
                   </p>
                 ) : null}
 
-                <Separator />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {isSummaryEditable ? (
-                    <>
-                      <SummaryFieldCard icon={<User className="h-4 w-4" />} label="Khách hàng">
-                        {customerSelect}
-                      </SummaryFieldCard>
-                      <SummaryFieldCard icon={<FileText className="h-4 w-4" />} label="Hợp đồng">
-                        {contractSelect}
-                      </SummaryFieldCard>
-                      <SummaryFieldCard icon={<Monitor className="h-4 w-4" />} label="Thiết bị">
-                        {productSelect}
-                      </SummaryFieldCard>
-                      <SummaryFieldCard icon={<Package className="h-4 w-4" />} label="Vật tư (BOM)">
-                        {materialsSummaryEdit}
-                      </SummaryFieldCard>
-                      <SummaryFieldCard icon={<Shield className="h-4 w-4" />} label="Nguồn">
-                        {sourceSelect}
-                      </SummaryFieldCard>
-                      <SummaryFieldCard icon={<GitBranch className="h-4 w-4" />} label="Quy trình áp dụng">
-                        {isCreateMode && workflowPreviewLoading && selectedWorkflowId ? (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin shrink-0" aria-hidden />
-                            Đang tải quy trình…
-                          </p>
-                        ) : (
-                          workflowSelect
-                        )}
-                      </SummaryFieldCard>
-                    </>
-                  ) : (
-                    <>
-                      <InfoItem icon={<User className="h-4 w-4" />} label="Khách hàng" value={ticket?.customer ?? "—"} />
-                      <InfoItem
-                        icon={<FileText className="h-4 w-4" />}
-                        label="Hợp đồng"
-                        value={detail ? formatContractSummary(detail.contract) : "…"}
-                      />
-                      <InfoItem icon={<Monitor className="h-4 w-4" />} label="Thiết bị" value={ticket?.device ?? "—"} />
-                      <InfoItem
-                        icon={<Package className="h-4 w-4" />}
-                        label="Vật tư (BOM)"
-                        value={
-                          detail?.materialIds?.length ? `${detail.materialIds.length} mục đã ghi nhận` : "—"
-                        }
-                      />
-                      <InfoItem icon={<Shield className="h-4 w-4" />} label="Nguồn" value={ticket?.source ?? "—"} />
-                      <InfoItem
-                        icon={<GitBranch className="h-4 w-4" />}
-                        label="Quy trình áp dụng"
-                        value={appliedWorkflowName ?? "—"}
-                      />
-                    </>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!isCreateMode && customerId && ticket ? (
-              <CustomerFeedbackSection
-                customerId={customerId}
-                contractId={detail?.contractId ?? undefined}
-                readonly={readOnly}
-              />
-            ) : null}
-
-            <div className="rounded-lg border border-border p-3 sm:p-4 space-y-3">
-              <h4 className="text-sm font-semibold text-card-foreground">
-                {isViewMode ? "Chi tiết phiếu" : "Nội dung phiếu (QT BH/SC)"}
-              </h4>
-              <p className="text-xs text-muted-foreground">
-                Mỗi bước của quy trình áp dụng là một tab; nội dung lưu theo bước. Hành động và tài liệu quy trình nằm trong từng tab bước.
-              </p>
-
-              {!isCreateMode && (detail?.orphanStepPayloads?.length ?? 0) > 0 ? (
-                <p className="text-xs rounded-md border border-amber-300 bg-amber-50/60 px-2.5 py-2 text-amber-900">
-                  Có {detail!.orphanStepPayloads!.length} nhóm nội dung không còn khớp bước quy trình hiện tại (sẽ bị xóa khi lưu).
-                </p>
-              ) : null}
-
-              {showDynamicTabs ? (
-                <Tabs value={warrantyFormTab} onValueChange={setWarrantyFormTab} className="w-full">
-                  <TabsList className="w-full h-auto flex flex-nowrap justify-start gap-1 overflow-x-auto rounded-md border border-border/60 bg-muted/30 p-1">
-                    {stepsForTabs.map((step) => {
-                      const isCurrent =
-                        !isCreateMode &&
-                        liveInstance?.currentStepId === step.id &&
-                        liveInstance.status === "running";
-                      return (
-                        <TabsTrigger
-                          key={step.id}
-                          value={step.id}
-                          className={cn(
-                            "shrink-0 whitespace-nowrap px-2.5 text-xs sm:text-sm",
-                            isCurrent && "ring-1 ring-amber-400/80",
-                          )}
-                        >
-                          {stepTabLabel(step.order, step.name)}
-                        </TabsTrigger>
-                      );
-                    })}
-                  </TabsList>
-                  {stepsForTabs.map((step, idx) => (
-                    <TabsContent key={step.id} value={step.id} className="mt-4 space-y-4 focus-visible:outline-none">
-                      <DynamicStepFormFields
-                        fieldSchema={step.fieldSchema}
-                        values={stepPayloads[step.id] ?? {}}
-                        onChange={(key, value) => patchStepPayload(step.id, key, value)}
-                        readOnly={readOnly}
-                        stepDescription={step.description}
-                      />
-                      {!isCreateMode && ticket ? (
-                        <WorkflowInstancePanel
-                          moduleKey="warranty"
-                          entityId={ticket.apiId}
-                          focusStepId={step.id}
-                          compact
+                {showDynamicTabs ? (
+                  <Tabs value={warrantyFormTab} onValueChange={setWarrantyFormTab} className="w-full">
+                    <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/80 overflow-x-auto">
+                      <TabsList className="h-11 w-max min-w-full bg-transparent p-0 gap-1">
+                        {stepsForTabs.map((step) => {
+                          const isCurrent =
+                            !isCreateMode &&
+                            liveInstance?.currentStepId === step.id &&
+                            liveInstance.status === "running";
+                          return (
+                            <TabsTrigger
+                              key={step.id}
+                              value={step.id}
+                              className={cn(
+                                "shrink-0 whitespace-nowrap px-2.5 text-xs sm:text-sm rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none",
+                                isCurrent && "ring-1 ring-amber-400/80",
+                              )}
+                            >
+                              {stepTabLabel(step.order, step.name)}
+                            </TabsTrigger>
+                          );
+                        })}
+                      </TabsList>
+                    </div>
+                    {stepsForTabs.map((step, idx) => (
+                      <TabsContent key={step.id} value={step.id} className="mt-0 space-y-4 py-4 focus-visible:outline-none">
+                        <DynamicStepFormFields
+                          fieldSchema={step.fieldSchema}
+                          values={stepPayloads[step.id] ?? {}}
+                          onChange={(key, value) => patchStepPayload(step.id, key, value)}
+                          readOnly={readOnly}
+                          stepDescription={step.description}
                         />
-                      ) : null}
-                      {!isCreateMode && idx === stepsForTabs.length - 1 ? renderTicketDocuments() : null}
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              ) : (
-                <p className="text-sm rounded-md border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-muted-foreground text-center">
-                  {isCreateMode
-                    ? "Chọn quy trình áp dụng ở trên để nhập nội dung theo từng bước."
-                    : "Phiếu chưa có quy trình đang chạy hoặc quy trình chưa có bước. Chọn quy trình ở phần tóm tắt và xác nhận áp dụng để bật form động."}
-                </p>
-              )}
+                        {!isCreateMode && ticket ? (
+                          <WorkflowInstancePanel
+                            moduleKey="warranty"
+                            entityId={ticket.apiId}
+                            focusStepId={step.id}
+                            compact
+                          />
+                        ) : null}
+                        {!isCreateMode && idx === stepsForTabs.length - 1 ? renderTicketDocuments() : null}
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                ) : (
+                  <p className="text-sm rounded-md border border-dashed border-border/80 bg-muted/20 px-3 py-4 text-muted-foreground text-center">
+                    {isCreateMode
+                      ? "Chọn quy trình áp dụng ở tab «Thông tin phiếu» để nhập nội dung theo từng bước."
+                      : "Phiếu chưa có quy trình đang chạy hoặc quy trình chưa có bước. Chọn quy trình ở tab «Thông tin phiếu» và xác nhận áp dụng để bật form động."}
+                  </p>
+                )}
+
+                {!isCreateMode && ticket && !hasEngineSteps ? (
+                  <WorkflowInstancePanel moduleKey="warranty" entityId={ticket.apiId} />
+                ) : null}
+              </TabsContent>
             </div>
-
-            {!isCreateMode && ticket && !hasEngineSteps ? (
-              <WorkflowInstancePanel moduleKey="warranty" entityId={ticket.apiId} />
-            ) : null}
-
-            {!isCreateMode && ticket ? (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="h-3 w-3" />
-                Ngày tạo: {ticket.createdAt ?? "—"}
-              </div>
-            ) : null}
-          </div>
+          </Tabs>
 
           <div className="flex flex-wrap gap-2 sm:justify-between border-t border-border/60 px-6 py-4 mt-auto shrink-0 bg-background">
             {!isViewMode && !isCreateMode ? (

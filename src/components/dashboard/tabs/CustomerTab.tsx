@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Users, TrendingUp, Package, FileText } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
 import CustomerProductChart from "@/components/dashboard/CustomerProductChart";
 import CustomerRevenueChart from "@/components/dashboard/CustomerRevenueChart";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
@@ -10,6 +11,9 @@ import { buildCustomerLayouts } from "@/components/dashboard/dashboardLayouts";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
+import { useDashboardActiveWidgets } from "@/hooks/use-dashboard-active-widgets";
+
+const DEFAULT_ACTIVE_WIDGETS = ["stats", "chart-product", "chart-revenue", "customer-care"];
 
 interface CustomerTabProps {
   data: DashboardData;
@@ -25,7 +29,7 @@ interface CustomerSummary {
 }
 
 const widgetTemplates = [
-  { id: "stats", title: "Thống kê KH", description: "4 thẻ thống kê", icon: Users, category: "Tổng hợp", defaultSize: { w: 12, h: 3 } },
+  { id: "stats", title: "Thống kê KH", description: "4 thẻ thống kê", icon: Users, category: "Tổng hợp", defaultSize: { w: 12, h: 2 } },
   { id: "chart-product", title: "SP theo KH", description: "Biểu đồ cột", icon: Package, category: "Biểu đồ", defaultSize: { w: 6, h: 6 } },
   { id: "chart-revenue", title: "DT theo KH", description: "Biểu đồ ngang", icon: TrendingUp, category: "Biểu đồ", defaultSize: { w: 6, h: 6 } },
   { id: "pie-product", title: "Tỷ lệ SP theo KH", description: "Biểu đồ tròn", icon: Users, category: "Biểu đồ", defaultSize: { w: 6, h: 5 } },
@@ -36,12 +40,7 @@ const widgetTemplates = [
 
 const CustomerTab = ({ data }: CustomerTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
-    "stats",
-    "chart-product",
-    "chart-revenue",
-    "customer-care",
-  ]);
+  const { activeWidgetIds, addWidget } = useDashboardActiveWidgets("customer-dashboard", DEFAULT_ACTIVE_WIDGETS);
 
   const totalCustomerProducts = data.customerProducts.reduce((s, c) => s + c.products, 0);
   const totalRevenue = data.customerRevenue.reduce((s, c) => s + c.revenue, 0);
@@ -75,12 +74,12 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[7rem]">
+      <StatCardsGrid>
         <StatCard title="Tổng khách hàng" value={data.customerCare.totalCustomers || data.customerProducts.length} icon={Users} color="primary" />
         <StatCard title="Tổng sản phẩm" value={totalCustomerProducts} icon={Package} color="info" />
         <StatCard title="Tổng doanh thu (tr)" value={totalRevenue.toLocaleString()} icon={TrendingUp} color="success" />
         <StatCard title="KH DT cao nhất" value={topCustomer?.name || "—"} icon={FileText} color="warning" />
-      </div>
+      </StatCardsGrid>
     ),
     "chart-product": <CustomerProductChart data={data.customerProducts} />,
     "chart-revenue": <CustomerRevenueChart data={data.customerRevenue} />,
@@ -120,12 +119,12 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
         type: id,
         title: tpl?.title || id,
         component: widgetComponents[id],
-        contentOverflow: id === "stats" ? "visible" : "hidden",
+        contentOverflow: id === "stats" ? undefined : "hidden",
         defaultLayout: {
           w: tpl?.defaultSize.w || 6,
           h: defaultH,
-          minW: 3,
-          minH: id === "stats" ? 3 : Math.max(3, defaultH - 1),
+          minW: 1,
+          minH: 1,
         },
       };
     }), [activeWidgetIds, widgetComponents]);
@@ -138,7 +137,7 @@ const CustomerTab = ({ data }: CustomerTabProps) => {
         buildDefaultLayouts={buildCustomerLayouts}
         onAddWidget={() => setShowAddWidget(true)}
       />
-      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={(id) => { if (!activeWidgetIds.includes(id)) setActiveWidgetIds(prev => [...prev, id]); }} />
+      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={addWidget} />
     </>
   );
 };

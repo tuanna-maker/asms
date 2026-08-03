@@ -5,7 +5,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   clearStep3BranchFields,
-  docHintsForWarrantyStep,
   isGenericNotesStep,
   ROOT_CAUSE_LABELS,
 } from "@/lib/warranty-step-field-template";
@@ -64,27 +63,8 @@ export type WarrantyStepFormFieldsProps = {
   cascadeBlock?: React.ReactNode;
 };
 
-function StepHints({ stepIndex, executionMode }: { stepIndex: number; executionMode: string }) {
-  const hints = docHintsForWarrantyStep(stepIndex, { executionMode });
-  if (hints.length === 0) return null;
-  return <p className="text-xs text-muted-foreground">Gợi ý chứng từ: {hints.join(" · ")}</p>;
-}
-
-function FieldBlock({
-  stepIndex,
-  executionMode,
-  children,
-}: {
-  stepIndex: number;
-  executionMode: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-4">
-      <StepHints stepIndex={stepIndex} executionMode={executionMode} />
-      {children}
-    </div>
-  );
+function FieldBlock({ children }: { children: React.ReactNode }) {
+  return <div className="space-y-4">{children}</div>;
 }
 
 function receiptCategorySelectValue(receiptCategory: string): string {
@@ -193,7 +173,7 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
 
   if (isGenericNotesStep(stepIndex)) {
     return (
-      <FieldBlock stepIndex={stepIndex} executionMode={executionMode}>
+      <FieldBlock>
         <div className="space-y-2">
           <Label>Ghi chú bước</Label>
           <Textarea
@@ -245,7 +225,7 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
 
   if (stepIndex === 1) {
     return (
-      <FieldBlock stepIndex={1} executionMode={executionMode}>
+      <FieldBlock>
         <div className="space-y-3">
           <RootCauseField rootCause={rootCause} setRootCause={setRootCause} readOnly={readOnly} />
           <div className="space-y-2">
@@ -298,7 +278,7 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
     const showModeHint = executionMode !== "outsource" && executionMode !== "self";
 
     return (
-      <FieldBlock stepIndex={2} executionMode={executionMode}>
+      <FieldBlock>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Hình thức thực hiện</Label>
@@ -354,7 +334,7 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
 
   if (stepIndex === 3) {
     return (
-      <FieldBlock stepIndex={3} executionMode={executionMode}>
+      <FieldBlock>
         <div className="space-y-2">
           <Label>Đánh giá hàng sau SC với khách hàng</Label>
           <Textarea
@@ -370,7 +350,7 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
 
   if (stepIndex === 4) {
     return (
-      <FieldBlock stepIndex={4} executionMode={executionMode}>
+      <FieldBlock>
         <div className="space-y-2">
           <Label>Ghi chú bàn giao</Label>
           <p className="text-xs text-muted-foreground">Biên bản: BBBG hàng hóa</p>

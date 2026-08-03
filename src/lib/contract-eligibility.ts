@@ -16,21 +16,30 @@ export function buildAssignedContractSets(
   return { withHandover, withCoaching };
 }
 
-/** HĐ chưa có bàn giao và chưa có huấn luyện (cho tạo mới từ màn list). */
+export type ContractEligibilityMode = "handover" | "coaching" | "both";
+
+/**
+ * Lọc HĐ còn trống theo ngữ cảnh tạo mới:
+ * - handover: chưa có bàn giao (vẫn hiện nếu đã có huấn luyện)
+ * - coaching: chưa có huấn luyện (vẫn hiện nếu đã có bàn giao)
+ * - both: chưa có cả hai (legacy)
+ */
 export function filterContractsEligibleForNewLink(
   contracts: ContractOption[],
   sets: ReturnType<typeof buildAssignedContractSets>,
   includeContractId?: string | null,
+  mode: ContractEligibilityMode = "both",
 ): ContractOption[] {
-  const eligible = contracts.filter(
-    (c) => !sets.withHandover.has(c.id) && !sets.withCoaching.has(c.id),
-  );
+  const eligible = contracts.filter((c) => {
+    const hasHandover = sets.withHandover.has(c.id);
+    const hasCoaching = sets.withCoaching.has(c.id);
+    if (mode === "handover") return !hasHandover;
+    if (mode === "coaching") return !hasCoaching;
+    return !hasHandover && !hasCoaching;
+  });
   if (includeContractId && !eligible.some((c) => c.id === includeContractId)) {
     const extra = contracts.find((c) => c.id === includeContractId);
     if (extra) return [extra, ...eligible];
   }
   return eligible;
 }
-
-export const NO_ELIGIBLE_CONTRACTS_HINT =
-  "Không còn hợp đồng trống (chưa có bàn giao và huấn luyện). Tạo hợp đồng mới hoặc mở Hợp đồng để bổ sung.";

@@ -17,6 +17,7 @@ import AlertTab from "@/components/dashboard/tabs/AlertTab";
 import ProductTab from "@/components/dashboard/tabs/ProductTab";
 import WarrantyTab from "@/components/dashboard/tabs/WarrantyTab";
 import MaterialTab from "@/components/dashboard/tabs/MaterialTab";
+import { DashboardFullscreenProvider } from "@/hooks/use-dashboard-fullscreen";
 
 const years = ["2026", "2024", "2023", "2022"];
 const quarters = [
@@ -110,10 +111,22 @@ export default function Index() {
     }
   };
 
+  const tabContentClass = isFullscreen
+    ? "flex-1 min-h-0 mt-2 overflow-hidden data-[state=inactive]:hidden flex flex-col"
+    : undefined;
+
   return (
-    <div ref={dashboardRef} className={`space-y-4 sm:space-y-5 ${isFullscreen ? "bg-background p-4 sm:p-6 overflow-y-auto h-screen" : ""}`}>
+    <DashboardFullscreenProvider isFullscreen={isFullscreen}>
+    <div
+      ref={dashboardRef}
+      className={
+        isFullscreen
+          ? "bg-background p-3 sm:p-4 h-screen flex flex-col overflow-hidden gap-2"
+          : "space-y-4 sm:space-y-5"
+      }
+    >
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+      <div className={`flex flex-wrap items-center gap-2 shrink-0 ${isFullscreen ? "sm:gap-2" : "sm:gap-3"}`}>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
@@ -222,7 +235,11 @@ export default function Index() {
       </div>
 
       {/* Dashboard Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setAutoRotate(false); }} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => { setActiveTab(v); setAutoRotate(false); }}
+        className={isFullscreen ? "flex flex-col flex-1 min-h-0 w-full" : "w-full"}
+      >
         <div className="relative">
           <TabsList className="w-full justify-start overflow-x-auto flex-nowrap h-auto gap-0.5 bg-muted/50 p-1 no-scrollbar">
             <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap px-2.5 sm:px-3">Tổng quan điều hành</TabsTrigger>
@@ -268,20 +285,20 @@ export default function Index() {
             Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.
           </div>
         )}
-        <TabsContent value="overview">
+        <TabsContent value="overview" className={tabContentClass}>
           <OverviewTab data={data} contractsTableData={liveContracts} />
         </TabsContent>
-        <TabsContent value="customer"><CustomerTab data={data} /></TabsContent>
-        <TabsContent value="revenue"><RevenueTab data={data} contracts={liveContracts} /></TabsContent>
-        <TabsContent value="project">
+        <TabsContent value="customer" className={tabContentClass}><CustomerTab data={data} /></TabsContent>
+        <TabsContent value="revenue" className={tabContentClass}><RevenueTab data={data} contracts={liveContracts} /></TabsContent>
+        <TabsContent value="project" className={tabContentClass}>
           <ProjectTab data={data} contracts={liveContracts} handovers={liveHandovers} trainings={liveTrainings} />
         </TabsContent>
-        <TabsContent value="product"><ProductTab data={data} products={liveProducts} /></TabsContent>
-        <TabsContent value="warranty"><WarrantyTab data={data} complaints={liveWarranties} /></TabsContent>
-        <TabsContent value="material">
+        <TabsContent value="product" className={tabContentClass}><ProductTab data={data} products={liveProducts} /></TabsContent>
+        <TabsContent value="warranty" className={tabContentClass}><WarrantyTab data={data} complaints={liveWarranties} /></TabsContent>
+        <TabsContent value="material" className={tabContentClass}>
           <MaterialTab data={data} materials={liveMaterials} />
         </TabsContent>
-        <TabsContent value="alerts"><AlertTab data={data} /></TabsContent>
+        <TabsContent value="alerts" className={tabContentClass}><AlertTab data={data} /></TabsContent>
       </Tabs>
 
       <style>{`
@@ -291,5 +308,6 @@ export default function Index() {
         }
       `}</style>
     </div>
+    </DashboardFullscreenProvider>
   );
 }

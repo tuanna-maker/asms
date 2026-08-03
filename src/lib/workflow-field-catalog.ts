@@ -236,7 +236,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     roleCode: "manager",
     phaseCode: "handover",
     requireDocument: true,
-    description: "Gợi ý: TTr xin KP BG",
   },
   {
     order: 30,
@@ -245,7 +244,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     roleCode: "technician",
     phaseCode: "handover",
     requireDocument: true,
-    description: "Gợi ý: Checklist kiểm tra ĐK · bảo dưỡng · Hợp đồng",
   },
   {
     order: 40,
@@ -254,7 +252,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     roleCode: "manager",
     phaseCode: "training",
     requireDocument: true,
-    description: "Gợi ý: KH HL · TTr HL · BBBG tạm · Báo cáo KT · QĐ công nhận KQ HL",
   },
   {
     order: 50,
@@ -263,7 +260,6 @@ const HANDOVER_STANDARD_STEPS: Omit<ModuleStandardStep, "fieldSchema">[] = [
     roleCode: "manager",
     phaseCode: "handover",
     requireDocument: true,
-    description: "Gợi ý: BBBG cuối cùng",
   },
 ];
 

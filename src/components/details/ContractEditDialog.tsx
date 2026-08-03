@@ -790,10 +790,6 @@ const ContractEditDialog = ({
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Đã chọn Hoàn thành — không tự đổi theo ngày/SLA.
                   </p>
-                ) : form.status !== suggestedStatus ? (
-                  <p className="text-[11px] text-muted-foreground mt-1">
-                    Gợi ý theo ngày/SLA: {CONTRACT_STATUS_LABELS[suggestedStatus] ?? suggestedStatus}
-                  </p>
                 ) : null}
               </InfoItem>
               <InfoItem icon={<Clock className="h-4 w-4" />} label="SLA thực hiện (giờ)">

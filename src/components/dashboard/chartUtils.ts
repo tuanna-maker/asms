@@ -1,6 +1,16 @@
-/** Vùng vẽ Recharts trong grid flex — tránh height 0 khi dùng ResponsiveContainer */
-/** Không đặt min-height cố định — biểu đồ co theo chiều cao ô grid, tránh scrollbar trong widget */
-export const chartPlotAreaClass = "flex-1 min-h-0 w-full";
+/** Vùng vẽ Recharts trong grid flex — căn giữa, co theo chiều cao ô */
+export const chartPlotAreaClass = "flex-1 min-h-0 w-full flex items-center justify-center";
+
+/** Shell card widget dashboard */
+export const dashboardWidgetShellClass =
+  "rounded-xl bg-card p-3 sm:p-4 shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden";
+
+/** Header widget — luôn trên cùng */
+export const dashboardWidgetHeaderClass = "flex items-center gap-2 sm:gap-3 mb-2 shrink-0";
+
+/** Nội dung chính — căn giữa theo chiều dọc khi ô cao hơn nội dung */
+export const dashboardWidgetBodyCenterClass =
+  "flex-1 min-h-0 flex flex-col justify-center overflow-auto w-full";
 
 export type ChartDatum = { name: string; value: number };
 

@@ -229,6 +229,10 @@
   flex-shrink: 0;
 }
 
+.dashboard-grid--fullscreen .react-grid-item > div {
+  overflow: auto;
+}
+
 @keyframes dashboard-alert-pulse {
   0%,
   100% {

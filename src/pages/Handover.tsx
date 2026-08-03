@@ -41,7 +41,6 @@ import { WorkflowStepProgressPill } from "@/components/workflow/WorkflowStepSegm
 import {
   buildAssignedContractSets,
   filterContractsEligibleForNewLink,
-  NO_ELIGIBLE_CONTRACTS_HINT,
 } from "@/lib/contract-eligibility";
 import { lateProgressRowClass } from "@/lib/late-row-highlight";
 
@@ -227,6 +226,7 @@ const Handover = () => {
         contractOptions,
         assignedContractSets,
         editingHandover?.contractId,
+        "handover",
       ),
     [contractOptions, assignedContractSets, editingHandover?.contractId],
   );
@@ -241,6 +241,7 @@ const Handover = () => {
         contractOptions,
         assignedContractSets,
         trainingEditingId ? trainingForm.contractId || null : null,
+        "coaching",
       ),
     [contractOptions, assignedContractSets, trainingEditingId, trainingForm.contractId],
   );
@@ -319,7 +320,7 @@ const Handover = () => {
       return;
     }
     if (!trainingEditingId && !trainingForm.contractId) {
-      toast.error("Chọn hợp đồng chưa có bàn giao và huấn luyện");
+      toast.error("Chọn hợp đồng chưa có huấn luyện");
       return;
     }
     try {
@@ -792,9 +793,6 @@ const Handover = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {trainingCreateBlocked ? (
-                  <p className="text-xs text-muted-foreground">{NO_ELIGIBLE_CONTRACTS_HINT}</p>
-                ) : null}
               </div>
               <div className="space-y-1.5">
                 <Label>Loại</Label>

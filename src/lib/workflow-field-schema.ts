@@ -1,6 +1,13 @@
 /** Schema trường nhập liệu động cho từng bước workflow — đồng bộ backend WorkflowStep.fieldSchema */
 
-export type FieldInputType = "text" | "textarea" | "number" | "date" | "select" | "boolean";
+export type FieldInputType =
+  | "text"
+  | "textarea_md"
+  | "textarea"
+  | "number"
+  | "date"
+  | "select"
+  | "boolean";
 
 export type FieldOption = { value: string; label: string };
 
@@ -24,6 +31,7 @@ export type FieldDef = {
 
 export const FIELD_INPUT_TYPES: Array<{ value: FieldInputType; label: string }> = [
   { value: "text", label: "Văn bản ngắn" },
+  { value: "textarea_md", label: "Văn bản vừa" },
   { value: "textarea", label: "Văn bản dài" },
   { value: "number", label: "Số" },
   { value: "date", label: "Ngày" },

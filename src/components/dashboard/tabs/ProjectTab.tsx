@@ -1,16 +1,19 @@
 import { useState, useMemo } from "react";
 import { FileText, Truck, GraduationCap, Clock, CheckCircle } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
 import PAKDWidget from "@/components/dashboard/PAKDWidget";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import TrendChart from "@/components/dashboard/TrendChart";
+import { buildProjectLayouts } from "@/components/dashboard/dashboardLayouts";
 import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
 import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
+import { useDashboardActiveWidgets } from "@/hooks/use-dashboard-active-widgets";
 
 interface ProjectTabProps {
   data: DashboardData;
@@ -88,7 +91,23 @@ const widgetTemplates = [
 
 const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: ProjectTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const defaultActive = useMemo(
+    () => [
+      "stats",
+      "progress-contract",
+      "progress-handover",
+      "progress-training",
+      "pie-contract",
+      "complaint",
+      "pakd",
+      "trend",
+      "table-contract",
+      "table-handover",
+      "table-training",
+    ],
+    [],
+  );
+  const { activeWidgetIds, addWidget } = useDashboardActiveWidgets("project-dashboard", defaultActive);
 
   const { contractCols, handoverCols, trainingCols } = useMemo(() => {
     const names = [
@@ -101,12 +120,12 @@ const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: Pr
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+      <StatCardsGrid>
         <StatCard title="Tổng hợp đồng" value={data.contract.total} icon={FileText} color="primary" />
         <StatCard title="Đang thực hiện" value={data.contract.active} icon={Clock} color="info" />
         <StatCard title="Hoàn thành đúng hạn" value={data.contract.onTime} icon={CheckCircle} color="success" />
         <StatCard title="Chậm tiến độ" value={data.contract.late} icon={Clock} color="destructive" alertLevel="critical" />
-      </div>
+      </StatCardsGrid>
     ),
     "progress-contract": (
       <ProgressWidget title="Tiến độ hợp đồng" icon={FileText} total={data.contract.total}
@@ -162,15 +181,20 @@ const ProjectTab = ({ data, contracts = [], handovers = [], trainings = [] }: Pr
         type: id,
         title: tpl?.title || id,
         component: widgetComponents[id],
-        contentOverflow: id === "stats" ? "visible" : "hidden",
-        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 },
+        contentOverflow: id === "stats" ? undefined : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 1, minH: 1 },
       };
     }), [activeWidgetIds, widgetComponents]);
 
   return (
     <>
-      <DashboardGrid widgets={widgets} storageKey="project-dashboard" onAddWidget={() => setShowAddWidget(true)} />
-      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={(id) => { if (!activeWidgetIds.includes(id)) setActiveWidgetIds(prev => [...prev, id]); }} />
+      <DashboardGrid
+        widgets={widgets}
+        storageKey="project-dashboard"
+        buildDefaultLayouts={buildProjectLayouts}
+        onAddWidget={() => setShowAddWidget(true)}
+      />
+      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={addWidget} />
     </>
   );
 };

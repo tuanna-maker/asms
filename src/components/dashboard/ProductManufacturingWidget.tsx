@@ -1,5 +1,6 @@
 import { Factory, ClipboardCheck, Award, Package } from "lucide-react";
 import FullscreenWrapper from "./FullscreenWrapper";
+import { dashboardWidgetBodyCenterClass, dashboardWidgetHeaderClass, dashboardWidgetShellClass } from "./chartUtils";
 import type { ProductProgress } from "@/data/dashboardData";
 
 interface ProductManufacturingWidgetProps {
@@ -28,16 +29,17 @@ const ProductManufacturingWidget = ({ data }: ProductManufacturingWidgetProps) =
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 h-full min-h-0 flex flex-col overflow-hidden">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Factory className="h-5 w-5" />
+      <div className={dashboardWidgetShellClass}>
+        <div className={dashboardWidgetHeaderClass}>
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <Factory className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h3 className="font-semibold text-card-foreground">Tiến độ sản xuất SP</h3>
-          <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
+          <h3 className="font-semibold text-sm sm:text-base text-card-foreground truncate flex-1">Tiến độ sản xuất SP</h3>
+          <span className="text-lg sm:text-xl font-bold text-card-foreground tabular-nums shrink-0">{total}</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 min-h-0 overflow-hidden">
+        <div className={`${dashboardWidgetBodyCenterClass} py-1`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full content-center">
           <div className="rounded-lg bg-secondary/40 p-3">
             <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
               <Package className="h-3.5 w-3.5" /> Số lượng
@@ -74,6 +76,7 @@ const ProductManufacturingWidget = ({ data }: ProductManufacturingWidgetProps) =
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </FullscreenWrapper>

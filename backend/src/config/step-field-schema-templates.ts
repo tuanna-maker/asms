@@ -3,7 +3,7 @@
 export type FieldSchemaTemplate = {
   key: string;
   label: string;
-  type: "text" | "textarea" | "number" | "date" | "select" | "boolean";
+  type: "text" | "textarea_md" | "textarea" | "number" | "date" | "select" | "boolean";
   required?: boolean;
   placeholder?: string;
   definitionCategory?: string;

@@ -33,7 +33,7 @@ const fieldOptionSchema = z.object({
 const fieldDefSchema = z.object({
   key: z.string().min(1).max(128).regex(/^[a-zA-Z][a-zA-Z0-9_]*$/, "Mã trường: chữ Latin, số, _"),
   label: z.string().min(1).max(255),
-  type: z.enum(["text", "textarea", "number", "date", "select", "boolean"]),
+  type: z.enum(["text", "textarea_md", "textarea", "number", "date", "select", "boolean"]),
   required: z.boolean().optional(),
   placeholder: z.string().max(500).optional(),
   definitionCategory: z.string().max(64).optional(),

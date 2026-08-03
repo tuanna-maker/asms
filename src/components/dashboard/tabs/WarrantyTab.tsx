@@ -1,10 +1,12 @@
 import { useState, useMemo } from "react";
 import { Shield, Wrench, Clock, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
 import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import TrendChart from "@/components/dashboard/TrendChart";
+import { buildWarrantyLayouts } from "@/components/dashboard/dashboardLayouts";
 import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
@@ -12,6 +14,7 @@ import { DashboardData } from "@/data/dashboardData";
 import { ComplaintRow } from "@/data/tableData";
 
 import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
+import { useDashboardActiveWidgets } from "@/hooks/use-dashboard-active-widgets";
 
 interface WarrantyTabProps {
   data: DashboardData;
@@ -50,19 +53,23 @@ const widgetTemplates = [
 
 const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const defaultActive = useMemo(
+    () => ["stats", "complaint", "pie-type", "progress", "pie-status", "trend", "table"],
+    [],
+  );
+  const { activeWidgetIds, addWidget } = useDashboardActiveWidgets("warranty-dashboard", defaultActive);
   const complaintCols = useMemo(() => buildComplaintColumns(complaints), [complaints]);
   const { complaint } = data;
   const resolvedRate = complaint.total > 0 ? Math.round((complaint.done / complaint.total) * 100) : 0;
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+      <StatCardsGrid>
         <StatCard title="Chờ xử lý" value={complaint.processing} icon={Clock} color="destructive" alertLevel="critical" />
         <StatCard title="Trễ hạn SLA" value={complaint.late} icon={AlertTriangle} color="destructive" alertLevel="critical" />
         <StatCard title="Bảo hành" value={complaint.warranty} icon={Shield} color="primary" />
         <StatCard title="Sửa chữa" value={complaint.repair} icon={Wrench} color="accent" />
-      </div>
+      </StatCardsGrid>
     ),
     "complaint": (
       <ComplaintWidget total={complaint.total} warranty={complaint.warranty} repair={complaint.repair}
@@ -106,15 +113,20 @@ const WarrantyTab = ({ data, complaints = [] }: WarrantyTabProps) => {
         type: id,
         title: tpl?.title || id,
         component: widgetComponents[id],
-        contentOverflow: id === "stats" ? "visible" : "hidden",
-        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 },
+        contentOverflow: id === "stats" ? undefined : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 1, minH: 1 },
       };
     }), [activeWidgetIds, widgetComponents]);
 
   return (
     <>
-      <DashboardGrid widgets={widgets} storageKey="warranty-dashboard" onAddWidget={() => setShowAddWidget(true)} />
-      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={(id) => { if (!activeWidgetIds.includes(id)) setActiveWidgetIds(prev => [...prev, id]); }} />
+      <DashboardGrid
+        widgets={widgets}
+        storageKey="warranty-dashboard"
+        buildDefaultLayouts={buildWarrantyLayouts}
+        onAddWidget={() => setShowAddWidget(true)}
+      />
+      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={addWidget} />
     </>
   );
 };

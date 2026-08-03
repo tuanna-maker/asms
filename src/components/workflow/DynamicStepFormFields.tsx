@@ -7,6 +7,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDefinitionOptions } from "@/hooks/use-definition-options";
 import { isFieldVisible, parseFieldSchema, type FieldDef } from "@/lib/workflow-field-schema";
 
+/** Ẩn dòng "Gợi ý: ..." trong mô tả bước (không hiện trên form). */
+function visibleStepDescription(raw?: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const kept = raw
+    .split(/\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !/^gợi ý\s*:/i.test(l));
+  const text = kept.join("\n").trim();
+  return text || null;
+}
 export type DynamicStepFormFieldsProps = {
   fieldSchema: FieldDef[] | null | undefined;
   values: Record<string, unknown>;
@@ -54,7 +64,10 @@ function SelectField({
 
 function fieldGridSpanClass(def: FieldDef): string {
   if (def.type === "textarea" || def.type === "boolean") return "col-span-full";
-  return "";
+  // Văn bản vừa: 2 cột / hàng (1/2 trên sm+ và lg)
+  if (def.type === "textarea_md") return "col-span-full sm:col-span-1 lg:col-span-3";
+  // Văn bản ngắn / số / ngày / select: 3 cột / hàng trên lg
+  return "lg:col-span-2";
 }
 
 function FieldRow({
@@ -94,13 +107,13 @@ function FieldRow({
             {def.label}
             {def.required ? <span className="text-destructive"> *</span> : null}
           </Label>
-          {def.type === "textarea" ? (
+          {def.type === "textarea" || def.type === "textarea_md" ? (
             <Textarea
               id={id}
               value={val == null ? "" : String(val)}
               onChange={(e) => onChange(def.key, e.target.value)}
               readOnly={readOnly}
-              rows={4}
+              rows={def.type === "textarea_md" ? 3 : 4}
             />
           ) : def.type === "select" ? (
             <SelectField
@@ -150,12 +163,13 @@ export function DynamicStepFormFields({
   workflowEditHref,
 }: DynamicStepFormFieldsProps) {
   const schema = parseFieldSchema(rawSchema ?? []);
+  const description = visibleStepDescription(stepDescription);
 
   if (schema.length === 0) {
     return (
       <div className="space-y-3 rounded-lg border border-dashed border-border/60 bg-muted/20 p-4">
-        {stepDescription ? (
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{stepDescription}</p>
+        {description ? (
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{description}</p>
         ) : null}
         <p className="text-sm text-muted-foreground">
           Bước này chưa khai báo trường nhập trên màn Quy trình — không hiển thị form tại đây.
@@ -171,10 +185,10 @@ export function DynamicStepFormFields({
 
   return (
     <div className="space-y-3">
-      {stepDescription ? (
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{stepDescription}</p>
+      {description ? (
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{description}</p>
       ) : null}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-x-4 gap-y-3">
         {schema.map((def) => (
           <FieldRow key={def.key} def={def} values={values} onChange={onChange} readOnly={readOnly} />
         ))}

@@ -2,7 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { DollarSign } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
-import { chartCategoryAxisWidth, chartPlotAreaClass } from "./chartUtils";
+import { chartCategoryAxisWidth, chartPlotAreaClass, dashboardWidgetHeaderClass, dashboardWidgetShellClass } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -27,14 +27,15 @@ const CustomerRevenueChart = ({ data }: CustomerRevenueChartProps) => {
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-3 mb-3 shrink-0">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-success/10 text-success">
-            <DollarSign className="h-5 w-5" />
+      <div className={dashboardWidgetShellClass}>
+        <div className={dashboardWidgetHeaderClass}>
+          <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg bg-success/10 text-success">
+            <DollarSign className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h3 className="font-semibold text-card-foreground">Doanh thu theo khách hàng</h3>
+          <h3 className="font-semibold text-sm sm:text-base text-card-foreground truncate">Doanh thu theo khách hàng</h3>
         </div>
         <div className={chartPlotAreaClass}>
+          <div className="w-full h-full min-h-[6rem]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
@@ -71,6 +72,7 @@ const CustomerRevenueChart = ({ data }: CustomerRevenueChartProps) => {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </FullscreenWrapper>

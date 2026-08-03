@@ -41,6 +41,17 @@ function clearAuthTokens() {
   window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
 }
 
+/** Backend restart / Vite proxy tạm chết → browser nhận 500 hoặc không có response */
+function isTransientApiError(error: AxiosError): boolean {
+  if (!error.response) return true;
+  const status = error.response.status;
+  return status === 502 || status === 503 || status === 504;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
@@ -63,11 +74,28 @@ let refreshPromise: Promise<string> | null = null;
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    const originalRequest = error.config as AxiosRequestConfig & {
+      _retry?: boolean;
+      _transientRetry?: number;
+    };
+    if (!originalRequest) throw error;
+
+    // Retry khi backend đang restart (ECONNREFUSED → proxy 500/network)
+    const method = (originalRequest.method ?? "get").toLowerCase();
+    const transientRetries = originalRequest._transientRetry ?? 0;
+    if (
+      method === "get" &&
+      transientRetries < 3 &&
+      (isTransientApiError(error) || error.response?.status === 500)
+    ) {
+      originalRequest._transientRetry = transientRetries + 1;
+      await sleep(400 * 2 ** transientRetries);
+      return api.request(originalRequest);
+    }
+
     const status = error.response?.status;
     if (status !== 401) throw error;
 
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
-    if (!originalRequest) throw error;
     if (originalRequest._retry) throw error;
     originalRequest._retry = true;
 
@@ -99,12 +127,11 @@ api.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
       return api.request(originalRequest);
-    } catch (e) {
+    } catch {
       clearAuthTokens();
       throw error;
     }
   }
 );
 
-export { api, setAuthTokens, clearAuthTokens, AUTH_EXPIRED_EVENT };
-
+export { api, setAuthTokens, clearAuthTokens, AUTH_EXPIRED_EVENT, isTransientApiError };

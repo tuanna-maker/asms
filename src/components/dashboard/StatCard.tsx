@@ -33,7 +33,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, alertLevel }: Sta
   return (
     <div
       className={cn(
-        "flex items-center gap-3 sm:gap-4 rounded-xl bg-card p-4 sm:p-5 shadow-sm border h-full min-h-[5.5rem] transition-colors",
+        "flex items-center gap-2 sm:gap-3 rounded-xl bg-card p-2 sm:p-3 shadow-sm border h-full min-h-0 min-w-0 transition-colors",
         isCritical
           ? "border-destructive/50 bg-destructive/5 ring-1 ring-destructive/25 dashboard-alert-pulse"
           : isWarning
@@ -43,7 +43,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, alertLevel }: Sta
     >
       <div
         className={cn(
-          "flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-lg",
+          "flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg",
           isCritical
             ? "bg-destructive text-destructive-foreground"
             : isWarning
@@ -51,22 +51,23 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, alertLevel }: Sta
               : colorMap[color],
         )}
       >
-        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+        <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
       </div>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <p
           className={cn(
-            "text-xs sm:text-sm",
+            "text-[10px] sm:text-xs leading-tight truncate",
             isCritical ? "text-destructive font-medium" : isWarning ? "text-warning font-medium" : "text-muted-foreground",
           )}
+          title={title}
         >
           {title}
         </p>
         <p
           className={cn(
             isLongText
-              ? "text-sm sm:text-base font-semibold leading-snug mt-1 line-clamp-2 break-words"
-              : "text-xl sm:text-2xl font-bold leading-tight mt-0.5 tabular-nums",
+              ? "text-xs sm:text-sm font-semibold leading-snug mt-0.5 line-clamp-2 break-words"
+              : "text-base sm:text-lg font-bold leading-tight tabular-nums",
             isCritical
               ? "text-destructive"
               : isWarning
@@ -79,9 +80,10 @@ const StatCard = ({ title, value, icon: Icon, color, subtitle, alertLevel }: Sta
         {subtitle && (
           <p
             className={cn(
-              "text-[10px] sm:text-xs mt-1",
+              "text-[10px] sm:text-xs mt-0.5 truncate",
               isCritical ? "text-destructive/80" : "text-muted-foreground",
             )}
+            title={subtitle}
           >
             {subtitle}
           </p>

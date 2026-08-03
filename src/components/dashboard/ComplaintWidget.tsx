@@ -1,6 +1,7 @@
 import { AlertTriangle, Shield, Wrench, Clock, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FullscreenWrapper from "./FullscreenWrapper";
+import { dashboardWidgetBodyCenterClass, dashboardWidgetHeaderClass, dashboardWidgetShellClass } from "./chartUtils";
 
 interface ComplaintWidgetProps {
   total: number;
@@ -34,11 +35,11 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
     <FullscreenWrapper>
       <div
         className={cn(
-          "rounded-xl bg-card p-4 sm:p-5 shadow-sm border h-full min-h-0 flex flex-col overflow-hidden",
+          dashboardWidgetShellClass,
           hasRisk ? "border-destructive/40 ring-1 ring-destructive/20" : "border-border/50",
         )}
       >
-        <div className="flex items-center gap-3 mb-3 shrink-0">
+        <div className={dashboardWidgetHeaderClass}>
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-destructive/10 text-destructive">
             <AlertTriangle className="h-5 w-5" />
           </div>
@@ -55,7 +56,8 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
         {total === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">Không có phản ánh trong kỳ lọc.</p>
         ) : (
-          <div className="space-y-3">
+          <div className={dashboardWidgetBodyCenterClass}>
+          <div className="space-y-3 w-full">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Theo loại phiếu</p>
             <div className="grid grid-cols-2 gap-2">
               {byType.map((s) => (
@@ -94,6 +96,7 @@ const ComplaintWidget = ({ total, warranty, repair, processing, done, onTime, la
                 </div>
               ))}
             </div>
+          </div>
           </div>
         )}
 

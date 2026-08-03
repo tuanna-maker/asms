@@ -1,6 +1,7 @@
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import FullscreenWrapper from "./FullscreenWrapper";
+import { dashboardWidgetBodyCenterClass, dashboardWidgetHeaderClass, dashboardWidgetShellClass } from "./chartUtils";
 
 interface ProgressItem {
   label: string;
@@ -24,31 +25,32 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
     <FullscreenWrapper>
       <div
         className={cn(
-          "rounded-xl bg-card p-4 sm:p-5 shadow-sm border h-full min-h-0 flex flex-col overflow-hidden",
+          dashboardWidgetShellClass,
           hasLate ? "border-destructive/40 ring-1 ring-destructive/20" : "border-border/50",
         )}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className={dashboardWidgetHeaderClass}>
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg",
+              "flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg shrink-0",
               hasLate ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary",
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h3 className="font-semibold text-card-foreground">{title}</h3>
-          <span className="ml-auto text-xl sm:text-2xl font-bold text-card-foreground">{total}</span>
+          <h3 className="font-semibold text-sm sm:text-base text-card-foreground truncate flex-1">{title}</h3>
+          <span className="text-lg sm:text-xl font-bold text-card-foreground tabular-nums shrink-0">{total}</span>
         </div>
 
         {hasLate && (
-          <div className="mb-3 flex items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 dashboard-alert-pulse">
+          <div className="mb-2 flex items-center justify-between gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-2 py-1.5 dashboard-alert-pulse shrink-0">
             <span className="text-xs font-medium text-destructive">Chậm tiến độ</span>
-            <span className="text-lg font-bold text-destructive tabular-nums">{completedLate}</span>
+            <span className="text-base font-bold text-destructive tabular-nums">{completedLate}</span>
           </div>
         )}
 
-        <div className="space-y-3 flex-1 min-h-0 overflow-hidden">
+        <div className={dashboardWidgetBodyCenterClass}>
+          <div className="space-y-2 sm:space-y-3 w-full">
           {items.map((item, i) => {
             const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
             return (
@@ -68,10 +70,11 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
               </div>
             );
           })}
+          </div>
         </div>
 
         {(completedOnTime !== undefined || completedLate !== undefined) && (
-          <div className="mt-4 flex flex-wrap gap-3 sm:gap-4 pt-3 border-t border-border/50">
+          <div className="mt-2 sm:mt-3 flex flex-wrap gap-2 sm:gap-3 pt-2 border-t border-border/50 shrink-0">
             {completedOnTime !== undefined && (
               <div className="flex items-center gap-2 text-sm">
                 <span className="h-2.5 w-2.5 rounded-full bg-success" />

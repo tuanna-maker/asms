@@ -1,11 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { AxiosError } from "axios";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { RoleProvider } from "@/hooks/use-role";
 import { AuthProvider } from "@/hooks/use-auth";
+import { isTransientApiError } from "@/lib/api";
 import ProtectedRoute from "./components/layout/ProtectedRoute";
 import AppLayout from "./components/layout/AppLayout";
 import Login from "./pages/Login";
@@ -36,12 +38,22 @@ import WorkflowEditorPage from "./pages/WorkflowEditorPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
 
+function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 3) return false;
+  if (!(error instanceof AxiosError)) return failureCount < 1;
+  if (error.response?.status === 401 || error.response?.status === 403) return false;
+  if (isTransientApiError(error) || error.response?.status === 500) return true;
+  return failureCount < 1;
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      refetchOnWindowFocus: false,
-      retry: 1,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: shouldRetryQuery,
+      retryDelay: (attempt) => Math.min(500 * 2 ** attempt, 4000),
     },
     mutations: { retry: 0 },
   },

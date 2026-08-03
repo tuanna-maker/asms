@@ -3,6 +3,7 @@ import {
   Package, FileText, Truck, GraduationCap, Clock, Layers, AlertTriangle,
 } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
 import { computeDashboardAlertMetrics } from "@/lib/dashboard-alerts";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import ComplaintWidget from "@/components/dashboard/ComplaintWidget";
@@ -20,6 +21,20 @@ import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
 import { DashboardData } from "@/data/dashboardData";
 import type { ContractRow } from "@/data/tableData";
+import { useDashboardActiveWidgets } from "@/hooks/use-dashboard-active-widgets";
+
+const DEFAULT_ACTIVE_WIDGETS = [
+  "stats",
+  "product-manufacturing",
+  "progress-contract",
+  "progress-handover",
+  "progress-training",
+  "complaint",
+  "pakd",
+  "chart-customer-revenue",
+  "trend",
+  "table-contracts",
+];
 
 interface OverviewTabProps {
   data: DashboardData;
@@ -76,22 +91,11 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
     [contractsTableData],
   );
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>([
-    "stats",
-    "product-manufacturing",
-    "progress-contract",
-    "progress-handover",
-    "progress-training",
-    "complaint",
-    "pakd",
-    "chart-customer-revenue",
-    "trend",
-    "table-contracts",
-  ]);
+  const { activeWidgetIds, addWidget } = useDashboardActiveWidgets("overview-dashboard", DEFAULT_ACTIVE_WIDGETS);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 h-full">
+      <StatCardsGrid>
         <StatCard title="Tổng sản phẩm" value={data.stats.totalProducts} icon={Package} color="primary" />
         <StatCard
           title="HĐ chậm tiến độ"
@@ -124,7 +128,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
           alertLevel="critical"
           subtitle="HĐ · BG · HL · KN"
         />
-      </div>
+      </StatCardsGrid>
     ),
     "product-manufacturing": <ProductManufacturingWidget data={data.productProgress} />,
     "customer-care": <CustomerCareWidget customerCare={data.customerCare} />,
@@ -201,12 +205,12 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
           type: id,
           title: tpl?.title || id,
           component: widgetComponents[id],
-          contentOverflow: id === "stats" ? "visible" : "hidden",
+          contentOverflow: id === "stats" ? undefined : "hidden",
           defaultLayout: {
             w: tpl?.defaultSize.w || 6,
             h: tpl?.defaultSize.h || 4,
-            minW: 3,
-            minH: tpl?.defaultSize.h ? Math.max(2, tpl.defaultSize.h - 1) : 2,
+            minW: 1,
+            minH: 1,
           },
         };
       }),
@@ -214,9 +218,7 @@ const OverviewTab = ({ data, contractsTableData }: OverviewTabProps) => {
   );
 
   const handleAddWidget = (templateId: string) => {
-    if (!activeWidgetIds.includes(templateId)) {
-      setActiveWidgetIds(prev => [...prev, templateId]);
-    }
+    addWidget(templateId);
   };
 
   return (

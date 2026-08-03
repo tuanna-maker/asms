@@ -9,6 +9,7 @@
     "dev:fe": "vite",
     "dev:fe:wait": "wait-on -t 120000 http-get://127.0.0.1:4001/api/v1/health && vite",
     "dev:be": "pnpm --dir backend run predev && pnpm --dir backend dev",
+    "db:tunnel": "powershell -ExecutionPolicy Bypass -File scripts/db-tunnel.ps1",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

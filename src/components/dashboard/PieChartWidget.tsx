@@ -2,7 +2,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recha
 import { LucideIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import FullscreenWrapper from "./FullscreenWrapper";
-import { chartPlotAreaClass, filterNonZeroChartData } from "./chartUtils";
+import { chartPlotAreaClass, dashboardWidgetHeaderClass, dashboardWidgetShellClass, filterNonZeroChartData } from "./chartUtils";
 
 const COLORS = [
   "hsl(var(--primary))",
@@ -28,25 +28,26 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
 
   return (
     <FullscreenWrapper>
-      <div className="rounded-xl bg-card p-4 sm:p-5 shadow-sm border border-border/50 flex flex-col h-full min-h-0">
-        <div className="flex items-center gap-3 mb-3 shrink-0">
-          <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconColor}`}>
-            <Icon className="h-5 w-5" />
+      <div className={dashboardWidgetShellClass}>
+        <div className={dashboardWidgetHeaderClass}>
+          <div className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg ${iconColor}`}>
+            <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h3 className="font-semibold text-card-foreground">{title}</h3>
+          <h3 className="font-semibold text-sm sm:text-base text-card-foreground truncate">{title}</h3>
         </div>
         {total === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-10">Không có dữ liệu</p>
         ) : (
           <div className={chartPlotAreaClass}>
+            <div className="w-full h-full min-h-[6rem]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={compactData}
                   cx="50%"
-                  cy={isMobile ? "42%" : "40%"}
-                  innerRadius={isMobile ? 44 : 74}
-                  outerRadius={isMobile ? 72 : 118}
+                  cy="45%"
+                  innerRadius="42%"
+                  outerRadius="68%"
                   paddingAngle={2}
                   dataKey="value"
                   label={false}
@@ -80,6 +81,7 @@ const PieChartWidget = ({ title, icon: Icon, iconColor, data }: PieChartWidgetPr
                 />
               </PieChart>
             </ResponsiveContainer>
+            </div>
           </div>
         )}
       </div>

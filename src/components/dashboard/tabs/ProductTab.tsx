@@ -1,11 +1,13 @@
 import { useState, useMemo } from "react";
 import { Package, Layers, CheckCircle, Clock } from "lucide-react";
 import StatCard from "@/components/dashboard/StatCard";
+import StatCardsGrid from "@/components/dashboard/StatCardsGrid";
 import ProgressWidget from "@/components/dashboard/ProgressWidget";
 import ProductManufacturingWidget from "@/components/dashboard/ProductManufacturingWidget";
 import CustomerProductChart from "@/components/dashboard/CustomerProductChart";
 import PieChartWidget from "@/components/dashboard/PieChartWidget";
 import TrendChart from "@/components/dashboard/TrendChart";
+import { buildProductLayouts } from "@/components/dashboard/dashboardLayouts";
 import DashboardGrid, { WidgetConfig } from "@/components/dashboard/DashboardGrid";
 import AddWidgetDialog from "@/components/dashboard/AddWidgetDialog";
 import DashboardTable, { StatusBadge, Column } from "@/components/dashboard/DashboardTable";
@@ -13,6 +15,7 @@ import { DashboardData } from "@/data/dashboardData";
 import { ProductRow } from "@/data/tableData";
 
 import { buildCustomerFilterOptions } from "@/lib/dashboard-table-utils";
+import { useDashboardActiveWidgets } from "@/hooks/use-dashboard-active-widgets";
 
 interface ProductTabProps {
   data: DashboardData;
@@ -49,17 +52,21 @@ const widgetTemplates = [
 
 const ProductTab = ({ data, products = [] }: ProductTabProps) => {
   const [showAddWidget, setShowAddWidget] = useState(false);
-  const [activeWidgetIds, setActiveWidgetIds] = useState<string[]>(widgetTemplates.map(w => w.id));
+  const defaultActive = useMemo(
+    () => ["stats", "manufacturing", "progress", "pie", "chart-customer", "trend", "table"],
+    [],
+  );
+  const { activeWidgetIds, addWidget } = useDashboardActiveWidgets("product-dashboard", defaultActive);
   const productCols = useMemo(() => buildProductColumns(products), [products]);
 
   const widgetComponents: Record<string, React.ReactNode> = useMemo(() => ({
     "stats": (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
+      <StatCardsGrid>
         <StatCard title="Tổng sản phẩm" value={data.product.total} icon={Package} color="primary" />
         <StatCard title="Đang sản xuất" value={data.product.producing} icon={Clock} color="info" />
         <StatCard title="Nghiệm thu" value={data.product.inspecting} icon={Layers} color="warning" />
         <StatCard title="Đã trang bị" value={data.product.equipped} icon={CheckCircle} color="success" />
-      </div>
+      </StatCardsGrid>
     ),
     "manufacturing": <ProductManufacturingWidget data={data.productProgress} />,
     "progress": (
@@ -93,15 +100,20 @@ const ProductTab = ({ data, products = [] }: ProductTabProps) => {
         type: id,
         title: tpl?.title || id,
         component: widgetComponents[id],
-        contentOverflow: id === "stats" ? "visible" : "hidden",
-        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 3, minH: 2 },
+        contentOverflow: id === "stats" ? undefined : "hidden",
+        defaultLayout: { w: tpl?.defaultSize.w || 6, h: tpl?.defaultSize.h || 4, minW: 1, minH: 1 },
       };
     }), [activeWidgetIds, widgetComponents]);
 
   return (
     <>
-      <DashboardGrid widgets={widgets} storageKey="product-dashboard" onAddWidget={() => setShowAddWidget(true)} />
-      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={(id) => { if (!activeWidgetIds.includes(id)) setActiveWidgetIds(prev => [...prev, id]); }} />
+      <DashboardGrid
+        widgets={widgets}
+        storageKey="product-dashboard"
+        buildDefaultLayouts={buildProductLayouts}
+        onAddWidget={() => setShowAddWidget(true)}
+      />
+      <AddWidgetDialog open={showAddWidget} onClose={() => setShowAddWidget(false)} templates={widgetTemplates} existingWidgetIds={activeWidgetIds} onAdd={addWidget} />
     </>
   );
 };
