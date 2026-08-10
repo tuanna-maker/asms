@@ -39,7 +39,7 @@ const ProductManufacturingWidget = ({ data }: ProductManufacturingWidgetProps) =
         </div>
 
         <div className={`${dashboardWidgetBodyCenterClass} py-1`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full content-center">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 w-full content-start">
           <div className="rounded-lg bg-secondary/40 p-3">
             <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
               <Package className="h-3.5 w-3.5" /> Số lượng

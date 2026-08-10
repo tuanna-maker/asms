@@ -38,7 +38,12 @@ const ProgressWidget = ({ title, icon: Icon, total, items, completedOnTime, comp
           >
             <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
           </div>
-          <h3 className="font-semibold text-sm sm:text-base text-card-foreground truncate flex-1">{title}</h3>
+          <h3
+            className="font-semibold text-xs sm:text-sm text-card-foreground line-clamp-2 flex-1 min-w-0 leading-snug"
+            title={title}
+          >
+            {title}
+          </h3>
           <span className="text-lg sm:text-xl font-bold text-card-foreground tabular-nums shrink-0">{total}</span>
         </div>
 

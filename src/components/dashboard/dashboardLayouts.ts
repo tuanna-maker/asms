@@ -109,19 +109,19 @@ const DASHBOARD_DEFAULT_LAYOUTS: Record<string, LayoutPos[]> = {
   ],
 };
 
-/** Bố cục compact cho chế độ toàn màn hình / trình chiếu */
+/** Bố cục compact cho chế độ toàn màn hình / trình chiếu (~9 hàng → ô đủ cao, ít khoảng trống đáy) */
 const DASHBOARD_FULLSCREEN_LAYOUTS: Record<string, LayoutPos[]> = {
   "overview-dashboard": [
     { i: "stats", x: 0, y: 0, w: 12, h: 1 },
-    { i: "product-manufacturing", x: 0, y: 1, w: 6, h: 3 },
-    { i: "progress-contract", x: 6, y: 1, w: 2, h: 2 },
-    { i: "progress-handover", x: 8, y: 1, w: 2, h: 2 },
-    { i: "progress-training", x: 10, y: 1, w: 2, h: 2 },
-    { i: "complaint", x: 6, y: 3, w: 3, h: 2 },
-    { i: "pakd", x: 9, y: 3, w: 3, h: 2 },
-    { i: "chart-customer-revenue", x: 0, y: 4, w: 6, h: 3 },
-    { i: "trend", x: 0, y: 7, w: 6, h: 3 },
-    { i: "table-contracts", x: 6, y: 5, w: 6, h: 5 },
+    { i: "progress-contract", x: 0, y: 1, w: 4, h: 2 },
+    { i: "progress-handover", x: 4, y: 1, w: 4, h: 2 },
+    { i: "progress-training", x: 8, y: 1, w: 4, h: 2 },
+    { i: "product-manufacturing", x: 0, y: 3, w: 7, h: 3 },
+    { i: "complaint", x: 7, y: 3, w: 5, h: 2 },
+    { i: "pakd", x: 7, y: 5, w: 5, h: 1 },
+    { i: "chart-customer-revenue", x: 0, y: 6, w: 6, h: 2 },
+    { i: "trend", x: 6, y: 6, w: 6, h: 2 },
+    { i: "table-contracts", x: 0, y: 8, w: 12, h: 2 },
   ],
   "customer-dashboard": [
     { i: "stats", x: 0, y: 0, w: 12, h: 1 },

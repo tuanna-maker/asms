@@ -230,6 +230,17 @@
 }
 
 .dashboard-grid--fullscreen .react-grid-item > div {
+  overflow: hidden;
+  height: 100%;
+}
+
+.dashboard-grid--fullscreen .react-grid-item > div > div {
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-grid--fullscreen .dashboard-widget-body {
+  justify-content: flex-start;
   overflow: auto;
 }
 

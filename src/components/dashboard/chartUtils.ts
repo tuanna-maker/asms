@@ -8,9 +8,9 @@ export const dashboardWidgetShellClass =
 /** Header widget — luôn trên cùng */
 export const dashboardWidgetHeaderClass = "flex items-center gap-2 sm:gap-3 mb-2 shrink-0";
 
-/** Nội dung chính — căn giữa theo chiều dọc khi ô cao hơn nội dung */
+/** Nội dung chính — fullscreen: căn trên để không phình khoảng trống giữa các khối */
 export const dashboardWidgetBodyCenterClass =
-  "flex-1 min-h-0 flex flex-col justify-center overflow-auto w-full";
+  "flex-1 min-h-0 flex flex-col justify-start overflow-auto w-full dashboard-widget-body";
 
 export type ChartDatum = { name: string; value: number };
 

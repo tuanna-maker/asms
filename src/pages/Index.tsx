@@ -121,7 +121,7 @@ export default function Index() {
       ref={dashboardRef}
       className={
         isFullscreen
-          ? "bg-background p-3 sm:p-4 h-screen flex flex-col overflow-hidden gap-2"
+          ? "bg-background p-2 sm:p-3 h-screen flex flex-col overflow-hidden gap-1.5"
           : "space-y-4 sm:space-y-5"
       }
     >

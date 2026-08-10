@@ -40,9 +40,10 @@ const BREAKPOINTS = { lg: 0 };
 const COLS = { lg: 12 };
 const ROW_HEIGHT_DESKTOP = 88;
 const ROW_HEIGHT_MOBILE = 76;
-const FULLSCREEN_GRID_GAP = 4;
-const FULLSCREEN_ROW_HEIGHT_MIN = 36;
-const FULLSCREEN_ROW_HEIGHT_MAX = 72;
+const FULLSCREEN_GRID_GAP = 6;
+/** Fullscreen: rowHeight tính theo viewport, kẹp trong khoảng này */
+const FULLSCREEN_ROW_HEIGHT_MIN = 72;
+const FULLSCREEN_ROW_HEIGHT_MAX = 100;
 const LAYOUT_VERSION_SUFFIX = "-layout-v7";
 const MIN_WIDGET_W = 1;
 const MIN_WIDGET_H = 1;
@@ -71,32 +72,44 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
   const gridAreaRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1280);
   const [gridAreaHeight, setGridAreaHeight] = useState(0);
+  /** Tăng sau khi fullscreen ổn định — ép RGL remount với kích thước đúng */
+  const [fsLayoutNonce, setFsLayoutNonce] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const isEditingRef = useRef(false);
   const presentationMode = isFullscreen && !isEditing;
   isEditingRef.current = isEditing;
 
-  // Đo width ổn định — bỏ qua giá trị quá nhỏ khi DevTools/tab ẩn tạm thời
+  const measureGridMetrics = useCallback(() => {
+    const root = rootRef.current;
+    if (root) {
+      const w = root.getBoundingClientRect().width;
+      if (w >= MIN_MEASURED_WIDTH) {
+        setContainerWidth((prev) => (Math.abs(prev - w) < 1 ? prev : w));
+      }
+    }
+    const area = gridAreaRef.current;
+    if (area && isFullscreen) {
+      const h = area.getBoundingClientRect().height;
+      if (h > 40) {
+        setGridAreaHeight((prev) => (Math.abs(prev - h) < 1 ? prev : h));
+      }
+    }
+  }, [isFullscreen]);
+
+  // Đo width liên tục + ResizeObserver
   useEffect(() => {
     const node = rootRef.current;
     if (!node) return;
 
-    const applyWidth = (raw: number) => {
-      if (raw < MIN_MEASURED_WIDTH) return;
-      setContainerWidth((prev) => (Math.abs(prev - raw) < 1 ? prev : raw));
-    };
-
-    const measure = () => applyWidth(node.getBoundingClientRect().width);
-
-    measure();
-    const observer = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width ?? 0;
-      applyWidth(w);
+    measureGridMetrics();
+    const observer = new ResizeObserver(() => {
+      measureGridMetrics();
     });
     observer.observe(node);
+    if (gridAreaRef.current) observer.observe(gridAreaRef.current);
 
     const onWinResize = () => {
-      requestAnimationFrame(measure);
+      requestAnimationFrame(measureGridMetrics);
     };
     window.addEventListener("resize", onWinResize);
 
@@ -104,7 +117,51 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
       observer.disconnect();
       window.removeEventListener("resize", onWinResize);
     };
-  }, []);
+  }, [isFullscreen, presentationMode, measureGridMetrics]);
+
+  /**
+   * Vừa vào fullscreen: trình duyệt/flex chưa kịp layout → đo sớm bị thấp → cắt widget.
+   * Đo lại nhiều lần sau paint; remount grid khi đã ổn định (giống hiệu ứng đổi tab).
+   */
+  useEffect(() => {
+    if (!isFullscreen) {
+      setGridAreaHeight(0);
+      return;
+    }
+
+    let cancelled = false;
+    const bumpAndMeasure = () => {
+      if (cancelled) return;
+      measureGridMetrics();
+    };
+
+    bumpAndMeasure();
+    const raf1 = requestAnimationFrame(() => {
+      bumpAndMeasure();
+      requestAnimationFrame(bumpAndMeasure);
+    });
+    const t50 = window.setTimeout(bumpAndMeasure, 50);
+    const t120 = window.setTimeout(() => {
+      bumpAndMeasure();
+      if (!cancelled) setFsLayoutNonce((n) => n + 1);
+    }, 120);
+    const t280 = window.setTimeout(bumpAndMeasure, 280);
+
+    const onFsChange = () => {
+      bumpAndMeasure();
+      window.setTimeout(bumpAndMeasure, 80);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      window.clearTimeout(t50);
+      window.clearTimeout(t120);
+      window.clearTimeout(t280);
+      document.removeEventListener("fullscreenchange", onFsChange);
+    };
+  }, [isFullscreen, measureGridMetrics]);
   const gridGapStorageKey = `${storageKey}-grid-gap`;
   const [gridGap, setGridGap] = useState(() => {
     try {
@@ -165,27 +222,18 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
   const totalGridRows = countLayoutRows(displayLayouts);
 
   const rowHeight = useMemo(() => {
-    if (!presentationMode || gridAreaHeight <= 0 || totalGridRows === 0) {
+    if (!presentationMode) {
       return isMobile ? ROW_HEIGHT_MOBILE : ROW_HEIGHT_DESKTOP;
     }
-    const gapTotal = (totalGridRows + 1) * activeGridGap;
-    const computed = Math.floor((gridAreaHeight - gapTotal) / totalGridRows);
+    // Fallback ước lượng khi chưa đo xong (tránh frame đầu dùng height=0 → cắt widget)
+    const fallbackH =
+      typeof window !== "undefined" ? Math.max(420, window.innerHeight - 160) : 720;
+    const effectiveH = gridAreaHeight > 40 ? gridAreaHeight : fallbackH;
+    if (totalGridRows <= 0) return FULLSCREEN_ROW_HEIGHT_MIN;
+    const gapTotal = Math.max(0, totalGridRows - 1) * activeGridGap;
+    const computed = Math.floor((effectiveH - gapTotal) / totalGridRows);
     return Math.max(FULLSCREEN_ROW_HEIGHT_MIN, Math.min(FULLSCREEN_ROW_HEIGHT_MAX, computed));
   }, [presentationMode, gridAreaHeight, totalGridRows, activeGridGap, isMobile]);
-
-  useEffect(() => {
-    if (!presentationMode || !gridAreaRef.current) {
-      setGridAreaHeight(0);
-      return;
-    }
-    const node = gridAreaRef.current;
-    const observer = new ResizeObserver((entries) => {
-      const height = entries[0]?.contentRect.height ?? 0;
-      setGridAreaHeight(height);
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [presentationMode]);
 
   useEffect(() => {
     if (isFullscreen) setIsEditing(false);
@@ -315,24 +363,26 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
         </div>
       )}
 
-      {/* Grid */}
+      {/* Grid — fullscreen: lấp đúng chiều cao vùng còn lại, widget tự cuộn nếu nội dung dài */}
       <div
         ref={gridAreaRef}
-        className={presentationMode ? "flex-1 min-h-0 w-full" : "w-full"}
+        className={presentationMode ? "flex-1 min-h-0 w-full overflow-hidden" : "w-full"}
       >
         <Responsive
+          key={presentationMode ? `fs-${storageKey}-${fsLayoutNonce}` : `norm-${storageKey}`}
           className={`dashboard-grid${presentationMode ? " dashboard-grid--fullscreen" : ""}`}
           breakpoints={BREAKPOINTS}
           layouts={{ lg: displayLayouts }}
           cols={COLS}
           rowHeight={rowHeight}
           width={containerWidth}
+          margin={[activeGridGap, activeGridGap] as const}
+          containerPadding={[0, 0] as const}
+          autoSize={!presentationMode}
           dragConfig={{ enabled: isEditing && !presentationMode, handle: ".drag-handle" }}
           resizeConfig={{ enabled: isEditing && !presentationMode }}
           onLayoutChange={handleLayoutChange}
           compactor={verticalCompactor}
-          margin={[activeGridGap, activeGridGap] as const}
-          containerPadding={[0, 0] as const}
         >
           {visibleWidgets.map(widget => (
             <div key={widget.id} className="relative group/widget h-full min-h-0">
@@ -350,9 +400,7 @@ const DashboardGrid = ({ widgets, storageKey, onAddWidget, buildDefaultLayouts }
                 </>
               )}
               <div
-                className={`h-full w-full min-h-0 flex flex-col ${
-                  presentationMode ? "justify-start" : "justify-center"
-                } ${
+                className={`h-full w-full min-h-0 flex flex-col justify-start ${
                   widget.contentOverflow === "visible" ? "overflow-visible" : "overflow-hidden"
                 } ${isEditing && !presentationMode ? "ring-1 ring-dashed ring-border rounded-xl" : ""}`}
               >
