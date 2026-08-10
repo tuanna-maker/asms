@@ -35,21 +35,15 @@ export function isGenericNotesStep(stepIndex: number): boolean {
 }
 
 export function clearStep3BranchFields(
-  mode: string,
-  setters: {
+  _mode: string,
+  _setters: {
     setOutsourcePartner: (v: string) => void;
     setOutsourceBudget: (v: string) => void;
     setOutsourceTimeline: (v: string) => void;
     setRepairDetails: (v: string) => void;
   },
 ): void {
-  if (mode === "self") {
-    setters.setOutsourcePartner("");
-    setters.setOutsourceBudget("");
-    setters.setOutsourceTimeline("");
-  } else if (mode === "outsource") {
-    setters.setRepairDetails("");
-  }
+  // Không còn xóa nhánh theo lựa chọn — giữ dữ liệu đã nhập.
 }
 
 export const ROOT_CAUSE_LABELS: Record<string, string> = {

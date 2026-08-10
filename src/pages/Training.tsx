@@ -93,8 +93,9 @@ const Training = () => {
 
   const { course: editingDetail } = useTrainingCourse(editingId ?? undefined);
   const editingModuleKey = workflowModuleForCourseKind(editingDetail?.courseKind);
+  const workflowListModule = editingId ? editingModuleKey : "training";
 
-  const { data: trainingWorkflows = [] } = useWorkflowsList("training", { enabled: dialogOpen && !editingId });
+  const { data: trainingWorkflows = [] } = useWorkflowsList(workflowListModule, { enabled: dialogOpen });
   const { data: liveInstance } = useInstanceForEntity(editingModuleKey, editingId, {
     enabled: dialogOpen && Boolean(editingId),
   });
@@ -194,9 +195,20 @@ const Training = () => {
       return;
     }
     const courseKind = editingDetail?.courseKind ?? "training";
+    const allowedIds = new Set(trainingWorkflows.map((w) => w.id));
+    const safeWorkflowId =
+      selectedWorkflowId && allowedIds.has(selectedWorkflowId) ? selectedWorkflowId : undefined;
+    if (selectedWorkflowId && !safeWorkflowId) {
+      toast.error(
+        courseKind === "coaching"
+          ? "Quy trình không thuộc nhóm huấn luyện (coaching). Chọn lại quy trình phù hợp."
+          : "Quy trình không thuộc nhóm đào tạo (training). Chọn lại quy trình phù hợp.",
+      );
+      return;
+    }
     const payload = buildTrainingCoursePayload(
       form,
-      !editingId ? selectedWorkflowId : selectedWorkflowId || undefined,
+      !editingId ? safeWorkflowId : safeWorkflowId || undefined,
       courseKind,
       editingId && Object.keys(stepPayloads).length > 0 ? stepPayloads : undefined,
     );
@@ -420,14 +432,24 @@ const Training = () => {
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent
-          className={`max-h-[90vh] overflow-y-auto ${editingId ? "max-w-3xl" : "max-w-lg"}`}
+          className={
+            editingId
+              ? "flex h-[min(90vh,52rem)] max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:rounded-lg"
+              : "max-h-[90vh] max-w-lg overflow-y-auto"
+          }
         >
-          <DialogHeader>
+          <DialogHeader
+            className={
+              editingId
+                ? "shrink-0 space-y-0 border-b border-border/50 px-6 py-4 pr-12 text-left"
+                : undefined
+            }
+          >
             <DialogTitle>
               {editingId ? "Chỉnh sửa khóa đào tạo" : "Tạo khóa đào tạo mới"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className={editingId ? "min-h-0 flex-1 space-y-3 overflow-y-auto px-6 py-4" : "space-y-3"}>
             <div>
               <Label>Tiêu đề *</Label>
               <Input
@@ -572,7 +594,11 @@ const Training = () => {
               />
             ) : null}
           </div>
-          <DialogFooter>
+          <DialogFooter
+            className={
+              editingId ? "shrink-0 border-t border-border/50 px-6 py-4 sm:space-x-2" : undefined
+            }
+          >
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Hủy
             </Button>

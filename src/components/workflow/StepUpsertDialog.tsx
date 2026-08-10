@@ -106,10 +106,28 @@ export function StepUpsertDialog({
       toast.error("Chọn vai trò xử lý");
       return;
     }
-    const cleanedSchema = fieldSchema.filter((f) => f.key.trim() && f.label.trim());
+    const cleanedSchema = fieldSchema
+      .filter((f) => f.key.trim() && f.label.trim())
+      .map((f) => {
+        if (f.type !== "select") {
+          const { options: _o, definitionCategory: _d, ...rest } = f;
+          return rest;
+        }
+        const options = (f.options ?? []).filter((o) => o.value.trim() && o.label.trim());
+        return {
+          ...f,
+          ...(f.definitionCategory
+            ? { definitionCategory: f.definitionCategory, options: undefined }
+            : { options: options.length > 0 ? options : undefined }),
+        };
+      });
     for (const f of cleanedSchema) {
       if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(f.key)) {
         toast.error(`Mã trường không hợp lệ: ${f.label}`);
+        return;
+      }
+      if (f.type === "select" && !f.definitionCategory && !(f.options && f.options.length > 0)) {
+        toast.error(`Trường chọn «${f.label}» cần danh mục hệ thống hoặc ít nhất một tùy chọn.`);
         return;
       }
     }
@@ -137,14 +155,14 @@ export function StepUpsertDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="w-full sm:max-w-[75vw] xl:max-w-[960px] p-0 flex flex-col gap-0 overflow-hidden"
+        className="flex h-full w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(96vw,1200px)]"
       >
-        <SheetHeader className="flex h-16 flex-row items-center justify-between border-b border-border/50 px-6 pr-14 space-y-0 shrink-0 gap-3">
-          <SheetTitle className="flex items-center gap-2 text-left leading-6 m-0 min-w-0">
-            <GitBranch className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
+        <SheetHeader className="flex h-14 shrink-0 flex-row items-center justify-between gap-3 space-y-0 border-b border-border/50 px-5 pr-14">
+          <SheetTitle className="m-0 flex min-w-0 items-center gap-2 text-left leading-6">
+            <GitBranch className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
             <span className="truncate leading-6">{title}</span>
           </SheetTitle>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
             <Button variant="outline" type="button" onClick={() => onOpenChange(false)} disabled={submitting}>
               Hủy
             </Button>
@@ -155,70 +173,88 @@ export function StepUpsertDialog({
           </div>
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           <section className="space-y-3">
             <div className="border-l-4 border-primary pl-3">
               <h3 className="font-semibold text-card-foreground">Thông tin bước</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Cấu hình tên, vai trò và người xử lý cho bước trong quy trình.
-              </p>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="step-name">Tên bước</Label>
-              <Input id="step-name" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Vai trò xử lý</Label>
-              <Select
-                value={roleCode || ROLE_NONE}
-                onValueChange={(v) => setRoleCode(v === ROLE_NONE ? "" : v)}
-                disabled={rolesLoading || roleOptions.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={rolesLoading ? "Đang tải vai trò…" : "Chọn vai trò"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ROLE_NONE} disabled>
-                    — Chọn vai trò —
-                  </SelectItem>
-                  {roleOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {!rolesLoading && roleOptions.length === 0 ? (
-                <p className="text-xs text-destructive">
-                  Chưa có vai trò hoạt động. Tạo vai trò tại Cài đặt → Vai trò.
-                </p>
-              ) : null}
-            </div>
-            <UserMultiSelect
-              value={assigneeIds}
-              onChange={setAssigneeIds}
-              label="Người xử lý"
-              hint="Tìm theo tên hoặc email. Để trống = mọi người có vai trò xử lý đều được duyệt bước này."
-              addButtonLabel="Tìm và thêm người xử lý…"
-            />
-            <div className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2">
-              <div className="space-y-0.5">
-                <Label htmlFor="step-require-doc" className="cursor-pointer text-sm">
-                  Yêu cầu tài liệu
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Phải có tài liệu đính kèm trước khi phê duyệt bước này.
-                </p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="step-name">Tên bước</Label>
+                <Input id="step-name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
-              <Switch id="step-require-doc" checked={requireDocument} onCheckedChange={setRequireDocument} />
+              <div className="space-y-1.5">
+                <Label>Vai trò xử lý</Label>
+                <Select
+                  value={roleCode || ROLE_NONE}
+                  onValueChange={(v) => setRoleCode(v === ROLE_NONE ? "" : v)}
+                  disabled={rolesLoading || roleOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={rolesLoading ? "Đang tải vai trò…" : "Chọn vai trò"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ROLE_NONE} disabled>
+                      — Chọn vai trò —
+                    </SelectItem>
+                    {roleOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!rolesLoading && roleOptions.length === 0 ? (
+                  <p className="text-xs text-destructive">
+                    Chưa có vai trò hoạt động. Tạo vai trò tại Cài đặt → Vai trò.
+                  </p>
+                ) : null}
+              </div>
+              <div className="sm:col-span-2">
+                <UserMultiSelect
+                  value={assigneeIds}
+                  onChange={setAssigneeIds}
+                  label="Người xử lý"
+                  hint="Để trống = mọi người có vai trò xử lý đều được duyệt."
+                  addButtonLabel="Thêm người xử lý…"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <div className="flex items-center justify-between rounded-md border border-border/50 px-3 py-2">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="step-require-doc" className="cursor-pointer text-sm">
+                      Yêu cầu tài liệu
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Bắt buộc đính kèm trước khi phê duyệt bước này trên màn nghiệp vụ.
+                    </p>
+                  </div>
+                  <Switch id="step-require-doc" checked={requireDocument} onCheckedChange={setRequireDocument} />
+                </div>
+                {requireDocument ? (
+                  <div className="rounded-md border border-dashed border-amber-300 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+                    <p className="font-medium">Ô đính kèm không cấu hình tại đây.</p>
+                    <p className="mt-1 text-amber-800/90 dark:text-amber-200/90">
+                      Sau khi lưu, khi xử lý phiếu (bàn giao / huấn luyện / bảo hành…) người dùng sẽ thấy
+                      vùng «Tài liệu — {name.trim() || "tên bước"}» (bắt buộc) với nút Đính kèm / kéo thả file.
+                    </p>
+                    <div className="mt-2 flex items-center justify-between rounded border border-amber-200/80 bg-white/70 px-2 py-2 dark:border-amber-800 dark:bg-background/40">
+                      <span className="font-medium text-foreground">Tài liệu (bắt buộc)</span>
+                      <span className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground">
+                        Đính kèm
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </section>
 
           <section className="space-y-3">
             <div className="border-l-4 border-primary pl-3">
               <h3 className="font-semibold text-card-foreground">Trường nhập theo bước</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Các trường hiển thị khi người dùng xử lý bước này trên màn nghiệp vụ.
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Mỗi dòng 2 trường — cấu hình gọn, dễ so sánh.
               </p>
             </div>
             <FieldSchemaBuilder

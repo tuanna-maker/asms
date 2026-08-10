@@ -27,7 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { useCanWriteModule } from "@/hooks/use-module-permissions";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import {
   useCreateWorkflow,
   useDeleteWorkflow,
@@ -74,7 +74,7 @@ function formatDate(iso: string | null | undefined) {
 const WorkflowListPage = () => {
   const { moduleKey } = useParams<{ moduleKey: string }>();
   const navigate = useNavigate();
-  const canWrite = useCanWriteModule("quy-trinh");
+  const { canCreate, canDelete } = useModulePermissions("quy-trinh");
 
   const validKey =
     isValidModule(moduleKey) && !isWorkflowModuleHidden(moduleKey) ? moduleKey : null;
@@ -162,7 +162,7 @@ const WorkflowListPage = () => {
             Tất cả nhóm
           </Link>
         </Button>
-        {canWrite ? (
+        {canCreate ? (
           <Button onClick={openCreate} disabled={createWf.isPending}>
             <Plus className="mr-1 h-4 w-4" />
             Thêm quy trình
@@ -243,7 +243,7 @@ const WorkflowListPage = () => {
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
-                      {canWrite ? (
+                      {canDelete ? (
                         <Button variant="ghost" size="icon" aria-label="Xoá" onClick={() => setDeleteRow(row)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

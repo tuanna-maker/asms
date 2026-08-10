@@ -36,8 +36,12 @@ function emptyField(): FieldDef {
 function normalizeFieldKeys(fields: FieldDef[]): FieldDef[] {
   const usedKeys: string[] = [];
   return fields.map((field, idx) => {
-    const fallback = field.key?.trim() || `truong_${idx + 1}`;
-    const base = slugFieldKey(field.label?.trim() || fallback);
+    const existing = field.key?.trim() ?? "";
+    const fromLabel = field.label?.trim() ? slugFieldKey(field.label.trim()) : "";
+    let base = fromLabel || existing || `truong_${idx + 1}`;
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(base)) {
+      base = existing && /^[a-zA-Z][a-zA-Z0-9_]*$/.test(existing) ? existing : `truong_${idx + 1}`;
+    }
     const key = ensureUniqueFieldKey(base, usedKeys);
     usedKeys.push(key);
     return { ...field, key };
@@ -71,21 +75,16 @@ export function FieldSchemaBuilder({
     const normalized = normalizeFieldKeys(value);
     const changed = normalized.some((f, i) => f.key !== value[i]?.key);
     if (changed) onChange(normalized);
-  }, [value, onChange]);
+    // Chỉ chạy khi value đổi — không đưa onChange vào deps để tránh vòng lặp.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setState ổn định
+  }, [value]);
 
   const duplicateKeys = findDuplicateFieldKeys(value);
 
   return (
     <div className="space-y-3 rounded-lg border border-border/50 p-3">
       <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-medium">Cấu hình trường nhập liệu</p>
-          <p className="text-xs text-muted-foreground">
-            {variant === "entity"
-              ? "Các trường này hiển thị ở phần header phiếu trên màn Bàn giao & HL."
-              : "Các trường này hiển thị khi người dùng điền nội dung bước trên màn nghiệp vụ."}
-          </p>
-        </div>
+        <p className="text-sm font-medium">Cấu hình trường nhập liệu</p>
         <div className="flex flex-wrap gap-2">
           {variant === "entity" && moduleKey === "handover" ? (
             <Button
@@ -94,7 +93,7 @@ export function FieldSchemaBuilder({
               size="sm"
               onClick={() => onChange(getModuleEntityFieldTemplate("handover"))}
             >
-              Khôi phục mẫu header bàn giao
+              Khôi phục mẫu header
             </Button>
           ) : null}
           <Button type="button" variant="outline" size="sm" onClick={addField}>
@@ -105,99 +104,131 @@ export function FieldSchemaBuilder({
       </div>
 
       {value.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">Chưa có trường nào. Nhấn «Thêm trường» để bắt đầu.</p>
+        <p className="py-2 text-sm text-muted-foreground">Chưa có trường. Nhấn «Thêm trường».</p>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {value.map((field, index) => {
-            const otherKeys = value.filter((_, i) => i !== index).map((f) => f.key.trim()).filter(Boolean);
             const keyDuplicate = Boolean(field.key.trim() && duplicateKeys.includes(field.key.trim()));
             return (
-            <div key={index} className="space-y-2 rounded-md border border-border/40 bg-muted/20 p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-muted-foreground">Trường {index + 1}</span>
-                <div className="flex gap-1">
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={index === 0} onClick={() => move(index, -1)} aria-label="Lên">
-                    <ChevronUp className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={index === value.length - 1} onClick={() => move(index, 1)} aria-label="Xuống">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeAt(index)} aria-label="Xóa trường">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+              <div
+                key={index}
+                className="flex flex-col gap-2 rounded-md border border-border/40 bg-muted/20 p-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    Trường {index + 1}
+                    {keyDuplicate ? (
+                      <span className="ml-1 text-destructive">(trùng mã)</span>
+                    ) : null}
+                  </span>
+                  <div className="flex gap-0.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      disabled={index === 0}
+                      onClick={() => move(index, -1)}
+                      aria-label="Lên"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      disabled={index === value.length - 1}
+                      onClick={() => move(index, 1)}
+                      aria-label="Xuống"
+                    >
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-destructive"
+                      onClick={() => removeAt(index)}
+                      aria-label="Xóa trường"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label className="text-xs">Nhãn hiển thị</Label>
+                  <Label className="text-xs">Nhãn</Label>
                   <Input
                     value={field.label}
                     onChange={(e) => updateAt(index, { label: e.target.value })}
                     placeholder="Ví dụ: Loại hợp đồng"
                   />
                 </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Mã trường được tự động tạo từ nhãn (ví dụ: checklist_chuan_bi_hang_hoa), tự đảm bảo không trùng.
-              </p>
 
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label className="text-xs">Kiểu dữ liệu</Label>
-                  <Select value={field.type} onValueChange={(v) => updateAt(index, { type: v as FieldInputType })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FIELD_INPUT_TYPES.map((t) => (
-                        <SelectItem key={t.value} value={t.value}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end pb-1">
-                  <div className="flex items-center gap-2">
-                    <Switch id={`req-${index}`} checked={Boolean(field.required)} onCheckedChange={(c) => updateAt(index, { required: c })} />
-                    <Label htmlFor={`req-${index}`} className="text-xs font-normal cursor-pointer">
-                      Bắt buộc
-                    </Label>
-                  </div>
-                </div>
-              </div>
-
-              {field.type === "select" ? (
-                <div className="space-y-2 rounded border border-dashed border-border/50 p-2">
+                <div className="grid grid-cols-[1fr_auto] items-end gap-2">
                   <div className="space-y-1">
-                    <Label className="text-xs">Danh mục hệ thống</Label>
-                    <p className="text-xs text-muted-foreground">
-                      Chỉ dùng cho trường chọn. Lấy giá trị từ Cài đặt thuộc tính; nếu không chọn thì nhập tùy chọn bên dưới.
-                    </p>
+                    <Label className="text-xs">Kiểu</Label>
                     <Select
-                      value={field.definitionCategory ?? "__none__"}
-                      onValueChange={(v) => updateAt(index, { definitionCategory: v === "__none__" ? undefined : v })}
+                      value={field.type}
+                      onValueChange={(v) => updateAt(index, { type: v as FieldInputType })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Chọn danh mục" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">— Không dùng danh mục —</SelectItem>
-                        {ALL_DEFINITION_CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>
-                            {getDefinitionCategoryLabel(c)}
+                        {FIELD_INPUT_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  {!field.definitionCategory ? (
-                    <InlineOptionsEditor options={field.options ?? []} onChange={(options) => updateAt(index, { options })} />
-                  ) : null}
+                  <div className="flex h-10 items-center gap-2 pb-0.5">
+                    <Switch
+                      id={`req-${index}`}
+                      checked={Boolean(field.required)}
+                      onCheckedChange={(c) => updateAt(index, { required: c })}
+                    />
+                    <Label htmlFor={`req-${index}`} className="cursor-pointer text-xs font-normal">
+                      Bắt buộc
+                    </Label>
+                  </div>
                 </div>
-              ) : null}
-            </div>
+
+                {field.type === "select" ? (
+                  <div className="space-y-2 rounded border border-dashed border-border/50 p-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Danh mục hệ thống</Label>
+                      <Select
+                        value={field.definitionCategory ?? "__none__"}
+                        onValueChange={(v) =>
+                          updateAt(index, { definitionCategory: v === "__none__" ? undefined : v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Chọn danh mục" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">— Không dùng danh mục —</SelectItem>
+                          {ALL_DEFINITION_CATEGORIES.map((c) => (
+                            <SelectItem key={c} value={c}>
+                              {getDefinitionCategoryLabel(c)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {!field.definitionCategory ? (
+                      <InlineOptionsEditor
+                        options={field.options ?? []}
+                        onChange={(options) => updateAt(index, { options })}
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
         </div>

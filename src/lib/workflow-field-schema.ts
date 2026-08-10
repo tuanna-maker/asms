@@ -88,16 +88,19 @@ export function slugFieldKey(label: string): string {
   const base = label
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    // Chữ đ/Đ tiếng Việt không tách được bằng NFD
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "d")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
-  return base || `field_${Date.now()}`;
+  // Không dùng Date.now() — gây đổi key mỗi lần normalize → vòng lặp onChange vô hạn.
+  return base || "field";
 }
 
 /** Đảm bảo key không trùng trong danh sách hiện có (thêm hậu tố _2, _3, …). */
 export function ensureUniqueFieldKey(key: string, existingKeys: string[]): string {
-  const base = key.trim();
-  if (!base) return base;
+  const base = key.trim() || "field";
   if (!existingKeys.includes(base)) return base;
   let n = 2;
   while (existingKeys.includes(`${base}_${n}`)) n++;
@@ -117,13 +120,9 @@ export function findDuplicateFieldKeys(fields: FieldDef[]): string[] {
   return [...dups];
 }
 
-export function isFieldVisible(def: FieldDef, values: Record<string, unknown>): boolean {
-  if (!def.showWhen) return true;
-  const current = values[def.showWhen.field];
-  const want = def.showWhen.value;
-  const cur = current == null ? "" : String(current);
-  if (Array.isArray(want)) return want.includes(cur);
-  return cur === want;
+export function isFieldVisible(_def: FieldDef, _values: Record<string, unknown>): boolean {
+  // Không còn nhánh showWhen — mọi trường đã khai báo đều hiện; dropdown chỉ chọn giá trị.
+  return true;
 }
 
 export function emptyPayloadForSchema(schema: FieldDef[]): Record<string, unknown> {

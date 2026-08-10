@@ -49,6 +49,7 @@ type Props = {
   index: number;
   total: number;
   canWrite: boolean;
+  canDelete?: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onMove: (dir: "up" | "down") => void;
@@ -62,6 +63,7 @@ export function WorkflowStepCard({
   index,
   total,
   canWrite,
+  canDelete = false,
   onEdit,
   onDelete,
   onMove,
@@ -132,32 +134,38 @@ export function WorkflowStepCard({
           <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{step.description}</p>
         ) : null}
       </div>
-      {canWrite ? (
+      {canWrite || canDelete ? (
         <div className="flex shrink-0 items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Lên"
-            disabled={index === 0}
-            onClick={() => onMove("up")}
-          >
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Xuống"
-            disabled={index === total - 1}
-            onClick={() => onMove("down")}
-          >
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Sửa" onClick={onEdit}>
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label="Xoá" onClick={onDelete}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {canWrite ? (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Lên"
+                disabled={index === 0}
+                onClick={() => onMove("up")}
+              >
+                <ArrowUp className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Xuống"
+                disabled={index === total - 1}
+                onClick={() => onMove("down")}
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" aria-label="Sửa" onClick={onEdit}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+            </>
+          ) : null}
+          {canDelete ? (
+            <Button variant="ghost" size="icon" aria-label="Xoá" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          ) : null}
         </div>
       ) : null}
     </div>

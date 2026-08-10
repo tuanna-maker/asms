@@ -62,6 +62,7 @@ export type WorkflowDetail = {
 export type WorkflowInstanceListSnapshot = {
   instanceId: string;
   workflowId: string;
+  moduleKey?: string;
   workflowCode: string;
   workflowName: string;
   status: string;
@@ -223,6 +224,7 @@ export function useUpdateStep() {
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: qk.workflows.detail(vars.workflowId) });
       void qc.invalidateQueries({ queryKey: qk.workflows.all });
+      void qc.invalidateQueries({ queryKey: ["workflow-instance"] });
     },
   });
 }
@@ -237,6 +239,7 @@ export function useDeleteStep() {
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: qk.workflows.detail(vars.workflowId) });
       void qc.invalidateQueries({ queryKey: qk.workflows.all });
+      void qc.invalidateQueries({ queryKey: ["workflow-instance"] });
     },
   });
 }
@@ -325,12 +328,13 @@ export function useAttachWorkflow() {
       moduleKey: WorkflowEntityModuleKey;
       entityId: string;
       workflowId: string;
-    }) =>
-      api.post<ApiSuccess<WorkflowInstance>>(`/api/v1/workflows/instances/attach`, {
+    }) => {
+      return api.post<ApiSuccess<WorkflowInstance>>(`/api/v1/workflows/instances/attach`, {
         moduleKey,
         entityId,
         workflowId,
-      }),
+      });
+    },
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: ["workflow-instance"] });
       void qc.invalidateQueries({ queryKey: ["handovers"] });

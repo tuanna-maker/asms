@@ -31,34 +31,12 @@ const NONE = "__none__";
 
 function buildStep3Payload(form: WarrantyFormSnapshot): Record<string, unknown> {
   const mode = form.executionMode === NONE ? null : form.executionMode;
-  const base: Record<string, unknown> = { executionMode: mode };
-
-  if (mode === "outsource") {
-    return {
-      ...base,
-      outsourcePartner: form.outsourcePartner.trim() || null,
-      outsourceBudget: form.outsourceBudget.trim() === "" ? null : form.outsourceBudget.trim(),
-      outsourceTimeline: form.outsourceTimeline.trim() || null,
-      repairDetails: null,
-    };
-  }
-
-  if (mode === "self") {
-    return {
-      ...base,
-      outsourcePartner: null,
-      outsourceBudget: null,
-      outsourceTimeline: null,
-      repairDetails: form.repairDetails.trim() || null,
-    };
-  }
-
   return {
-    ...base,
-    outsourcePartner: null,
-    outsourceBudget: null,
-    outsourceTimeline: null,
-    repairDetails: null,
+    executionMode: mode,
+    outsourcePartner: form.outsourcePartner.trim() || null,
+    outsourceBudget: form.outsourceBudget.trim() === "" ? null : form.outsourceBudget.trim(),
+    outsourceTimeline: form.outsourceTimeline.trim() || null,
+    repairDetails: form.repairDetails.trim() || null,
   };
 }
 

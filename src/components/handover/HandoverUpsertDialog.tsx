@@ -434,6 +434,14 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
                   </div>
                   {stepsForTabs.map((step) => (
                     <TabsContent key={step.id} value={step.id} className="mt-0 space-y-4 py-4">
+                      {editing && step.requireDocument ? (
+                        <WorkflowInstancePanel
+                          moduleKey="handover"
+                          entityId={editing.id}
+                          focusStepId={step.id}
+                          compact
+                        />
+                      ) : null}
                       <DynamicStepFormFields
                         fieldSchema={step.fieldSchema}
                         values={stepPayloads[step.id] ?? {}}
@@ -441,7 +449,7 @@ export function HandoverUpsertDialog({ open, onOpenChange, contracts, editing }:
                         stepDescription={step.description}
                         workflowEditHref={workflowEditHref}
                       />
-                      {editing ? (
+                      {editing && !step.requireDocument ? (
                         <WorkflowInstancePanel
                           moduleKey="handover"
                           entityId={editing.id}

@@ -35,6 +35,7 @@ import { workflowStepTabTriggerClass } from "@/components/workflow/WorkflowStepS
 type WorkflowSnapshot = {
   instanceId?: string | null;
   workflowId?: string | null;
+  moduleKey?: string | null;
   workflowName?: string | null;
   currentStepIndex?: number;
   totalSteps?: number;
@@ -84,54 +85,104 @@ export function CourseWorkflowSection({
   const [pendingSwitchId, setPendingSwitchId] = useState<string | null>(null);
   const autoAttachAttempted = useRef(false);
 
-  const { data: workflows = [] } = useWorkflowsList(moduleKey, { enabled: open });
+  const { data: workflows = [], isFetched: workflowsFetched } = useWorkflowsList(moduleKey, {
+    enabled: open,
+  });
   const { data: liveInstance } = useInstanceForEntity(moduleKey, courseId, {
     enabled: Boolean(courseId) && open && !isCreateMode,
   });
 
+  const workflowOptions = useMemo(
+    () =>
+      workflows.filter(
+        (w) =>
+          (w.moduleKey === moduleKey || w.moduleKey === "contract") &&
+          (w.isActive ||
+            w.id === selectedWorkflowId ||
+            w.id === liveInstance?.workflowId ||
+            w.id === detailWorkflow?.workflowId),
+      ),
+    [workflows, selectedWorkflowId, liveInstance?.workflowId, detailWorkflow?.workflowId, moduleKey],
+  );
+
+  const allowedIds = useMemo(() => new Set(workflowOptions.map((w) => w.id)), [workflowOptions]);
+
+  /** Chỉ chấp nhận ID khi đã tải list và ID nằm trong nhóm đúng — tránh hiện bước QT training khi dropdown coaching trống. */
+  const matchedDetailWorkflowId =
+    workflowsFetched &&
+    detailWorkflow?.workflowId &&
+    (detailWorkflow.moduleKey === moduleKey || detailWorkflow.moduleKey === "contract") &&
+    allowedIds.has(detailWorkflow.workflowId)
+      ? detailWorkflow.workflowId
+      : null;
+
+  const matchedLiveWorkflowId =
+    workflowsFetched && liveInstance?.workflowId && allowedIds.has(liveInstance.workflowId)
+      ? liveInstance.workflowId
+      : null;
+
+  const matchedSelectedWorkflowId =
+    workflowsFetched && selectedWorkflowId && allowedIds.has(selectedWorkflowId)
+      ? selectedWorkflowId
+      : "";
+
   const workflowIdForDetail =
-    selectedWorkflowId ||
-    liveInstance?.workflowId ||
-    detailWorkflow?.workflowId ||
-    null;
+    matchedSelectedWorkflowId || matchedLiveWorkflowId || matchedDetailWorkflowId || null;
 
   const { data: workflowDetail, isFetching: workflowDetailLoading } = useWorkflowDetail(
     workflowIdForDetail,
     { enabled: open && !!workflowIdForDetail },
   );
 
-  const workflowEditHref = workflowIdForDetail
-    ? `/quy-trinh/${moduleKey}/${workflowIdForDetail}`
-    : null;
+  const workflowModuleOk =
+    !workflowDetail ||
+    workflowDetail.moduleKey === moduleKey ||
+    workflowDetail.moduleKey === "contract";
+
+  const workflowEditHref =
+    workflowIdForDetail && workflowModuleOk
+      ? `/quy-trinh/${moduleKey}/${workflowIdForDetail}`
+      : null;
 
   const stepsForTabs = useMemo(() => {
-    if (!workflowDetail?.steps?.length) return [];
+    if (!workflowModuleOk || !workflowDetail?.steps?.length) return [];
     return [...workflowDetail.steps].sort((a, b) => a.order - b.order);
-  }, [workflowDetail?.steps]);
+  }, [workflowDetail, workflowModuleOk]);
 
-  const workflowOptions = useMemo(
-    () =>
-      workflows.filter(
-        (w) =>
-          w.isActive ||
-          w.id === selectedWorkflowId ||
-          w.id === liveInstance?.workflowId ||
-          w.id === detailWorkflow?.workflowId,
-      ),
-    [workflows, selectedWorkflowId, liveInstance?.workflowId, detailWorkflow?.workflowId],
-  );
-
-  const hasWorkflowSelected = Boolean(workflowIdForDetail);
+  const hasWorkflowSelected = Boolean(workflowIdForDetail) && workflowModuleOk;
   const workflowReady = hasWorkflowSelected && !workflowDetailLoading && Boolean(workflowDetail);
   const showDynamicTabs = workflowReady && stepsForTabs.length > 0;
+
+  // Xóa ID QT sai nhóm còn sót (vd. training trên khóa coaching) khi đã có danh sách QT.
+  useEffect(() => {
+    if (!open || !workflowsFetched || !selectedWorkflowId) return;
+    if (!allowedIds.has(selectedWorkflowId)) {
+      onSelectedWorkflowIdChange("");
+    }
+  }, [open, workflowsFetched, selectedWorkflowId, allowedIds, onSelectedWorkflowIdChange]);
+
+  // Sau khi xóa ID sai / mở dialog: gắn lại ID từ instance đang chạy (đúng nhóm) để Lưu không bị trống.
+  useEffect(() => {
+    if (!open || !workflowsFetched || selectedWorkflowId) return;
+    if (liveInstance?.workflowId && allowedIds.has(liveInstance.workflowId)) {
+      onSelectedWorkflowIdChange(liveInstance.workflowId);
+    }
+  }, [
+    open,
+    workflowsFetched,
+    selectedWorkflowId,
+    liveInstance?.workflowId,
+    allowedIds,
+    onSelectedWorkflowIdChange,
+  ]);
 
   useEffect(() => {
     if (!open || !isCreateMode || selectedWorkflowId) return;
     const defCode = DEFAULT_WORKFLOW_CODE[moduleKey];
     const def =
-      workflows.find((w) => w.code === defCode) ?? workflows.find((w) => w.isActive);
+      workflowOptions.find((w) => w.code === defCode) ?? workflowOptions.find((w) => w.isActive);
     if (def) onSelectedWorkflowIdChange(def.id);
-  }, [open, isCreateMode, workflows, selectedWorkflowId, moduleKey, onSelectedWorkflowIdChange]);
+  }, [open, isCreateMode, workflowOptions, selectedWorkflowId, moduleKey, onSelectedWorkflowIdChange]);
 
   useEffect(() => {
     if (!open || !stepsForTabs.length) return;
@@ -166,11 +217,12 @@ export function CourseWorkflowSection({
       isCreateMode ||
       readOnly ||
       !courseId ||
-      !selectedWorkflowId ||
+      !matchedSelectedWorkflowId ||
       liveInstance ||
       attachWf.isPending ||
       autoAttachAttempted.current ||
-      detailWorkflow?.instanceId
+      matchedDetailWorkflowId ||
+      matchedLiveWorkflowId
     ) {
       return;
     }
@@ -179,7 +231,7 @@ export function CourseWorkflowSection({
       .mutateAsync({
         moduleKey,
         entityId: courseId,
-        workflowId: selectedWorkflowId,
+        workflowId: matchedSelectedWorkflowId,
       })
       .catch(() => {
         autoAttachAttempted.current = false;
@@ -189,10 +241,11 @@ export function CourseWorkflowSection({
     isCreateMode,
     readOnly,
     courseId,
-    selectedWorkflowId,
+    matchedSelectedWorkflowId,
     liveInstance,
     attachWf,
-    detailWorkflow?.instanceId,
+    matchedDetailWorkflowId,
+    matchedLiveWorkflowId,
     moduleKey,
   ]);
 
@@ -264,7 +317,7 @@ export function CourseWorkflowSection({
         <div className="space-y-1.5 max-w-2xl">
           <Label>{selectLabel}</Label>
           <Select
-            value={selectedWorkflowId || undefined}
+            value={matchedSelectedWorkflowId || undefined}
             onValueChange={handleWorkflowSelect}
             disabled={attachWf.isPending}
           >
@@ -287,13 +340,26 @@ export function CourseWorkflowSection({
           ) : null}
           {workflowSelectHint ? (
             <p className="text-xs text-muted-foreground">{workflowSelectHint}</p>
+          ) : workflowsFetched && workflowOptions.length === 0 ? (
+            <p className="text-xs text-destructive">
+              Chưa có quy trình nhóm «{moduleKey}». Tạo tại mục Quy trình trước khi gắn.
+            </p>
           ) : null}
         </div>
       ) : null}
 
-      {!hasWorkflowSelected ? (
+      {!workflowsFetched ? (
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-12">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          Đang tải danh sách quy trình…
+        </div>
+      ) : !hasWorkflowSelected ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          {readOnly ? "Chưa gắn quy trình." : "Chọn quy trình để hiển thị các bước."}
+          {readOnly
+            ? "Chưa gắn quy trình."
+            : workflowOptions.length === 0
+              ? `Chưa có quy trình nhóm «${moduleKey}» — tạo tại mục Quy trình rồi chọn lại.`
+              : "Chọn quy trình để hiển thị các bước."}
         </div>
       ) : workflowDetailLoading ? (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-12">
@@ -319,13 +385,22 @@ export function CourseWorkflowSection({
               ))}
             </TabsList>
           </div>
-          <div className="relative min-h-[12rem]">
+          {/* Chiều cao ổn định khi đổi tab — tránh modal co giãn theo số trường từng bước */}
+          <div className="relative min-h-[28rem]">
             {stepsForTabs.map((step) => (
               <TabsContent
                 key={step.id}
                 value={step.id}
-                className="mt-0 space-y-4 data-[state=inactive]:hidden"
+                className="mt-0 space-y-4 pt-4 data-[state=inactive]:hidden focus-visible:outline-none"
               >
+                {courseId && !isCreateMode && step.requireDocument ? (
+                  <WorkflowInstancePanel
+                    moduleKey={moduleKey}
+                    entityId={courseId}
+                    focusStepId={step.id}
+                    compact
+                  />
+                ) : null}
                 <DynamicStepFormFields
                   fieldSchema={step.fieldSchema}
                   values={stepPayloads[step.id] ?? {}}
@@ -334,7 +409,7 @@ export function CourseWorkflowSection({
                   workflowEditHref={workflowEditHref}
                   readOnly={readOnly}
                 />
-                {courseId && !isCreateMode ? (
+                {courseId && !isCreateMode && !step.requireDocument ? (
                   <WorkflowInstancePanel
                     moduleKey={moduleKey}
                     entityId={courseId}

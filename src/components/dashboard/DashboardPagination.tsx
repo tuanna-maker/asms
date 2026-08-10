@@ -20,6 +20,7 @@ const DashboardPagination = ({
   className,
 }: DashboardPaginationProps) => {
   if (totalItems === 0) return null;
+  if (totalPages <= 1) return null;
 
   const start = (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, totalItems);
@@ -32,43 +33,35 @@ const DashboardPagination = ({
       )}
     >
       <span className="tabular-nums">
-        {totalPages > 1 ? (
-          <>
-            {start}–{end} / {totalItems}
-          </>
-        ) : (
-          <>Tổng {totalItems}</>
-        )}
+        {start}–{end} / {totalItems}
       </span>
-      {totalPages > 1 && (
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            disabled={page <= 1}
-            onClick={() => onPageChange(page - 1)}
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Trước
-          </Button>
-          <span className="px-1.5 tabular-nums font-medium text-card-foreground">
-            {page}/{totalPages}
-          </span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            disabled={page >= totalPages}
-            onClick={() => onPageChange(page + 1)}
-          >
-            Sau
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      )}
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={page <= 1}
+          onClick={() => onPageChange(page - 1)}
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+          Trước
+        </Button>
+        <span className="px-1.5 tabular-nums font-medium text-card-foreground">
+          {page}/{totalPages}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 px-2 text-xs"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+        >
+          Sau
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Button>
+      </div>
     </div>
   );
 };

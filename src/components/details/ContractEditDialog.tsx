@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import {
   FileText, Calendar, Clock, CircleDot, DollarSign, Package, Shield, Users,
-  Info, ListChecks, Boxes, Files, MessageSquareWarning,
+  Info, ListChecks, Boxes, Files, MessageSquareWarning, Download,
 } from "lucide-react";
 import { CustomerFeedbackSection } from "@/components/feedback/CustomerFeedbackSection";
 import { CONTRACT_STATUS_LABELS } from "@/lib/contract-status";
@@ -24,6 +24,7 @@ import {
 import { formatSlaDeadline } from "@/lib/contract-execution-sla";
 import { resolveDefinitionLabel } from "@/lib/attribute-definition-map";
 import { getProductStatusLabel } from "@/lib/display-labels";
+import { resolveUploadUrl } from "@/lib/upload-url";
 import { toast } from "sonner";
 import { getApiErrorMessage, toastApiError } from "@/lib/api-errors";
 import ContractProductDetailDialog from "./ContractProductDetailDialog";
@@ -68,6 +69,7 @@ type DetailDocument = {
   name?: string;
   fileType?: string | null;
   fileSize?: string | null;
+  fileUrl?: string | null;
 };
 
 type DraftProduct = DetailProduct & {
@@ -223,6 +225,7 @@ const ContractEditDialog = ({
         name: doc.name,
         fileType: toDocType(doc.file),
         fileSize: `${Math.max(1, Math.round(doc.file.size / 1024))} KB`,
+        fileUrl: null as string | null,
       })),
     ],
     [draftExistingDocuments, draftNewDocuments],
@@ -946,6 +949,20 @@ const ContractEditDialog = ({
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
+                      {d.fileUrl ? (
+                        <a
+                          href={resolveUploadUrl(d.fileUrl)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                        >
+                          <Download className="h-4 w-4" /> Tải về
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {d.id ? "Chưa có file" : "Lưu để tải về"}
+                        </span>
+                      )}
                       <Badge variant="outline">Tài liệu</Badge>
                       <Button
                         size="sm"

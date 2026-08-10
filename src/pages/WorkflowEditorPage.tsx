@@ -34,7 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useCanWriteModule } from "@/hooks/use-module-permissions";
+import { useModulePermissions } from "@/hooks/use-module-permissions";
 import {
   useAddStep,
   useDeleteStep,
@@ -77,12 +77,22 @@ type SortableStepProps = {
   index: number;
   total: number;
   canWrite: boolean;
+  canDelete: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onMove: (dir: "up" | "down") => void;
 };
 
-function SortableStep({ step, index, total, canWrite, onEdit, onDelete, onMove }: SortableStepProps) {
+function SortableStep({
+  step,
+  index,
+  total,
+  canWrite,
+  canDelete,
+  onEdit,
+  onDelete,
+  onMove,
+}: SortableStepProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,
     disabled: !canWrite,
@@ -98,6 +108,7 @@ function SortableStep({ step, index, total, canWrite, onEdit, onDelete, onMove }
         index={index}
         total={total}
         canWrite={canWrite}
+        canDelete={canDelete}
         onEdit={onEdit}
         onDelete={onDelete}
         onMove={onMove}
@@ -115,7 +126,8 @@ function errMessage(e: unknown) {
 const WorkflowEditorPage = () => {
   const params = useParams<{ moduleKey: string; workflowId: string }>();
   const navigate = useNavigate();
-  const canWrite = useCanWriteModule("quy-trinh");
+  const { canUpdate, canDelete } = useModulePermissions("quy-trinh");
+  const canWrite = canUpdate;
 
   const validKey = isValidModule(params.moduleKey) ? params.moduleKey : null;
   const workflowId = params.workflowId ?? "";
@@ -435,6 +447,7 @@ const WorkflowEditorPage = () => {
                           index={index}
                           total={steps.length}
                           canWrite={canWrite}
+                          canDelete={canDelete}
                           onEdit={() => {
                             setEditingStep(step);
                             setStepDialogOpen(true);

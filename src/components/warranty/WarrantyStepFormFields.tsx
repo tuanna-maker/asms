@@ -4,7 +4,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  clearStep3BranchFields,
   isGenericNotesStep,
   ROOT_CAUSE_LABELS,
 } from "@/lib/warranty-step-field-template";
@@ -162,12 +161,6 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
   } = props;
 
   const handleExecutionModeChange = (v: string) => {
-    clearStep3BranchFields(v, {
-      setOutsourcePartner,
-      setOutsourceBudget,
-      setOutsourceTimeline,
-      setRepairDetails,
-    });
     setExecutionMode(v);
   };
 
@@ -273,10 +266,6 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
   }
 
   if (stepIndex === 2) {
-    const showOutsource = executionMode === "outsource";
-    const showSelf = executionMode === "self";
-    const showModeHint = executionMode !== "outsource" && executionMode !== "self";
-
     return (
       <FieldBlock>
         <div className="space-y-4">
@@ -294,39 +283,24 @@ export function WarrantyStepFormFields(props: WarrantyStepFormFieldsProps) {
             </Select>
           </div>
 
-          {showModeHint ? (
-            <p className="text-xs text-muted-foreground">Chọn hình thức thực hiện để nhập nội dung bước này.</p>
-          ) : null}
-
-          {showOutsource ? (
-            <div className="space-y-3 rounded-lg border p-3">
-              <p className="text-sm font-medium">Thuê đối tác ngoài</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label>Đối tác</Label>
-                  <Input value={outsourcePartner} onChange={(e) => setOutsourcePartner(e.target.value)} disabled={readOnly} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Kinh phí</Label>
-                  <Input value={outsourceBudget} onChange={(e) => setOutsourceBudget(e.target.value)} disabled={readOnly} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Thời gian</Label>
-                  <Input value={outsourceTimeline} onChange={(e) => setOutsourceTimeline(e.target.value)} disabled={readOnly} />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Đối tác</Label>
+              <Input value={outsourcePartner} onChange={(e) => setOutsourcePartner(e.target.value)} disabled={readOnly} />
             </div>
-          ) : null}
-
-          {showSelf ? (
-            <div className="space-y-3 rounded-lg border p-3">
-              <p className="text-sm font-medium">Tự thực hiện</p>
-              <div className="space-y-2">
-                <Label>Nội dung sửa chữa</Label>
-                <Textarea value={repairDetails} onChange={(e) => setRepairDetails(e.target.value)} rows={4} readOnly={readOnly} />
-              </div>
+            <div className="space-y-2">
+              <Label>Kinh phí</Label>
+              <Input value={outsourceBudget} onChange={(e) => setOutsourceBudget(e.target.value)} disabled={readOnly} />
             </div>
-          ) : null}
+            <div className="space-y-2">
+              <Label>Thời gian</Label>
+              <Input value={outsourceTimeline} onChange={(e) => setOutsourceTimeline(e.target.value)} disabled={readOnly} />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Nội dung sửa chữa</Label>
+              <Textarea value={repairDetails} onChange={(e) => setRepairDetails(e.target.value)} rows={4} readOnly={readOnly} />
+            </div>
+          </div>
         </div>
       </FieldBlock>
     );

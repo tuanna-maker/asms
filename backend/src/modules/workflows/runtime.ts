@@ -232,7 +232,16 @@ export async function attachWorkflowToEntity(args: {
   if (!workflow) throw new HttpError(404, "Không tìm thấy quy trình");
   // Cho phép workflow contract áp dụng cho mọi entity (handover/warranty/training).
   if (workflow.moduleKey !== args.moduleKey && workflow.moduleKey !== "contract") {
-    throw new HttpError(400, `Quy trình thuộc nhóm ${workflow.moduleKey}, không khớp với ${args.moduleKey}.`);
+    const hint =
+      args.moduleKey === "coaching"
+        ? " Khóa huấn luyện chỉ nhận quy trình nhóm «coaching»."
+        : args.moduleKey === "training"
+          ? " Khóa đào tạo chỉ nhận quy trình nhóm «training»."
+          : "";
+    throw new HttpError(
+      400,
+      `Quy trình thuộc nhóm ${workflow.moduleKey}, không khớp với ${args.moduleKey}.${hint}`,
+    );
   }
   if (!workflow.isActive) {
     throw new HttpError(400, "Quy trình đang tắt — không thể áp dụng.");
@@ -241,6 +250,36 @@ export async function attachWorkflowToEntity(args: {
     throw new HttpError(400, "Quy trình chưa có bước nào — không thể áp dụng.");
   }
   const firstStep = workflow.steps[0]!;
+
+  // Đã gắn đúng QT đang chạy → giữ nguyên (tránh reset tiến độ mỗi lần Lưu).
+  const alreadyRunning = await prisma.workflowInstance.findFirst({
+    where: {
+      moduleKey: args.moduleKey,
+      entityId: args.entityId,
+      workflowId: args.workflowId,
+      status: "running",
+    },
+    select: { id: true },
+  });
+  if (alreadyRunning) {
+    if (isTrainingCourseModule(args.moduleKey)) {
+      await prisma.trainingCourse.updateMany({
+        where: { id: args.entityId },
+        data: { workflowInstanceId: alreadyRunning.id },
+      });
+    } else if (args.moduleKey === "handover") {
+      await prisma.handover.updateMany({
+        where: { id: args.entityId },
+        data: { workflowInstanceId: alreadyRunning.id },
+      });
+    } else if (args.moduleKey === "warranty") {
+      await prisma.warranty.updateMany({
+        where: { id: args.entityId },
+        data: { workflowInstanceId: alreadyRunning.id },
+      });
+    }
+    return getInstanceByIdService(alreadyRunning.id);
+  }
 
   const newInstance = await prisma.$transaction(async (tx) => {
     const current = await tx.workflowInstance.findFirst({

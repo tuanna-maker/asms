@@ -94,11 +94,17 @@ export async function listTrainingCoursesService(filters: {
   });
   const counts = await getContractProductCounts(rows.map((row) => row.contractId).filter(Boolean) as string[]);
   const workflowMap = await loadWorkflowSnapshotsByInstanceIds(rows.map((row) => row.workflowInstanceId));
-  return rows.map((row) => ({
-    ...row,
-    participants: row.contractId ? counts.get(row.contractId) ?? 0 : row.participants,
-    workflow: row.workflowInstanceId ? workflowMap.get(row.workflowInstanceId) ?? null : null,
-  }));
+  return rows.map((row) => {
+    const expectedModule = workflowModuleForCourseKind(row.courseKind);
+    const raw = row.workflowInstanceId ? workflowMap.get(row.workflowInstanceId) ?? null : null;
+    const workflow =
+      raw && (raw.moduleKey === expectedModule || raw.moduleKey === "contract") ? raw : null;
+    return {
+      ...row,
+      participants: row.contractId ? counts.get(row.contractId) ?? 0 : row.participants,
+      workflow,
+    };
+  });
 }
 
 export async function getTrainingCourseDetailService(id: string) {
@@ -125,9 +131,12 @@ export async function getTrainingCourseDetailService(id: string) {
     enriched = { ...enriched, participants };
   }
   const workflowMap = await loadWorkflowSnapshotsByInstanceIds([enriched.workflowInstanceId]);
-  const workflow = enriched.workflowInstanceId
+  const raw = enriched.workflowInstanceId
     ? (workflowMap.get(enriched.workflowInstanceId) ?? null)
     : null;
+  const expectedModule = workflowModuleForCourseKind(enriched.courseKind);
+  const workflow =
+    raw && (raw.moduleKey === expectedModule || raw.moduleKey === "contract") ? raw : null;
   return { ...enriched, workflow };
 }
 

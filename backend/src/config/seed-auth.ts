@@ -32,28 +32,29 @@ export async function seedAuthUsers() {
     })
   );
 
-  // Seed users (upsert by email)
+  // Seed users tuần tự (tránh race khi upsert song song)
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
-  await Promise.all(
-    USER_SEEDS.map(async (u) => {
-      const role = roleRecords.find((r) => r.code === u.roleCode);
-      if (!role) return;
+  for (const u of USER_SEEDS) {
+    const role = roleRecords.find((r) => r.code === u.roleCode);
+    if (!role) continue;
 
-      await prisma.user.upsert({
-        where: { email: u.email },
-        update: {
-          fullName: u.fullName,
-          roleId: role.id,
-          passwordHash,
-        },
-        create: {
-          fullName: u.fullName,
-          email: u.email,
-          passwordHash,
-          roleId: role.id,
-        },
-      });
-    })
-  );
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {
+        fullName: u.fullName,
+        roleId: role.id,
+        passwordHash,
+        status: "active",
+        deletedAt: null,
+      },
+      create: {
+        fullName: u.fullName,
+        email: u.email,
+        passwordHash,
+        roleId: role.id,
+        status: "active",
+      },
+    });
+  }
 }
 

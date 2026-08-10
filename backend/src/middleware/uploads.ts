@@ -28,6 +28,21 @@ function verifyUploadAccess(req: Request): void {
   }
 }
 
+function isInlinePreviewable(filePath: string): boolean {
+  const ext = path.extname(filePath).toLowerCase();
+  return [
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".gif",
+    ".webp",
+    ".bmp",
+    ".svg",
+    ".pdf",
+    ".txt",
+  ].includes(ext);
+}
+
 export function createProtectedUploadsRouter(): Router {
   const router = express.Router();
   const uploadRoot = path.resolve(process.cwd(), "uploads");
@@ -52,6 +67,14 @@ export function createProtectedUploadsRouter(): Router {
 
     if (!fs.existsSync(normalized) || !fs.statSync(normalized).isFile()) {
       return res.status(404).json({ success: false, data: null, message: "File not found" });
+    }
+
+    const fileName = path.basename(normalized);
+    // Ảnh / PDF mở trực tiếp trên trình duyệt; còn lại vẫn cho tải về.
+    if (isInlinePreviewable(normalized)) {
+      res.setHeader("Content-Disposition", `inline; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    } else {
+      res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
     }
 
     return res.sendFile(normalized);

@@ -345,17 +345,13 @@ async function syncStepFieldSchemas(workflowId: string, moduleKey: string, steps
   }
 }
 
-export async function seedWorkflows() {
-  await prisma.workflowDefinition.updateMany({
-    where: { code: "WF_HANDOVER_DEFAULT" },
-    data: { isActive: false },
-  });
-  await prisma.workflowDefinition.updateMany({
-    where: { code: "WF_CONTRACT_DEFAULT" },
-    data: { isActive: false },
-  });
+/** QT legacy — vẫn seed để tương thích, nhưng không active mặc định. */
+const INACTIVE_BY_DEFAULT = new Set(["WF_HANDOVER_DEFAULT", "WF_CONTRACT_DEFAULT"]);
 
+/** Đảm bảo mỗi nhóm module có ít nhất một QT hệ thống riêng (seed upsert). */
+export async function seedWorkflows() {
   for (const wf of WORKFLOWS) {
+    const isActive = !INACTIVE_BY_DEFAULT.has(wf.code);
     const existing = await prisma.workflowDefinition.findUnique({
       where: { code: wf.code },
       select: { id: true, isSystem: true },
@@ -365,9 +361,10 @@ export async function seedWorkflows() {
         where: { id: existing.id },
         data: {
           isSystem: true,
-          isActive: true,
+          isActive,
           name: wf.name,
           description: wf.description ?? null,
+          moduleKey: wf.moduleKey,
         },
       });
       await syncStepDescriptions(existing.id, wf.steps);
@@ -380,7 +377,7 @@ export async function seedWorkflows() {
         name: wf.name,
         moduleKey: wf.moduleKey,
         description: wf.description ?? null,
-        isActive: true,
+        isActive,
         isSystem: true,
         ...(wf.moduleKey === "handover"
           ? { entityFieldSchema: HANDOVER_ENTITY_FIELD_SCHEMA }

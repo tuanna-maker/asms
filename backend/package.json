@@ -39,6 +39,7 @@
     "prisma:studio": "prisma studio",
     "bootstrap:auth": "tsx scripts/bootstrap-auth.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
+    "seed:workflows": "tsx scripts/seed-workflows.ts",
     "db:status": "tsx scripts/db-status.ts",
     "db:check": "tsx scripts/db-check.ts",
     "smoke:handover": "tsx scripts/smoke-handover-api.ts",

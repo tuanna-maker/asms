@@ -158,7 +158,15 @@ const Handover = () => {
 
   useEffect(() => {
     if (!workflowDialogOpen || !workflowCourseDetail) return;
-    setWorkflowSelectedId(workflowCourseDetail.workflow?.workflowId ?? "");
+    const wfId = workflowCourseDetail.workflow?.workflowId ?? "";
+    const wfModule = workflowCourseDetail.workflow?.moduleKey;
+    // Không giữ ID quy trình nhóm training trên khóa coaching
+    if (wfModule && wfModule !== "coaching" && wfModule !== "contract") {
+      setWorkflowSelectedId("");
+      setWorkflowStepPayloads(workflowCourseDetail.stepPayloads ?? {});
+      return;
+    }
+    setWorkflowSelectedId(wfId);
     setWorkflowStepPayloads(workflowCourseDetail.stepPayloads ?? {});
   }, [workflowDialogOpen, workflowCourseDetail]);
 
@@ -260,15 +268,25 @@ const Handover = () => {
   );
 
   const needsProcessingRows = useMemo<NeedsProcessingRow[]>(() => {
-    const matchAssigned = (workflow: HandoverListItem["workflow"]) =>
-      canUserActOnWorkflowSnapshot(role, user?.id, workflow ?? null);
+    const matchAssigned = (
+      workflow: HandoverListItem["workflow"],
+      expectedModule: "handover" | "coaching",
+    ) => {
+      if (!workflow) return false;
+      // Instance gắn sai nhóm (vd. training trên khóa coaching) → không hiện «Cần xử lý»
+      // vì panel thao tác theo module đúng sẽ không tìm thấy phiên xử lý.
+      if (workflow.moduleKey && workflow.moduleKey !== expectedModule && workflow.moduleKey !== "contract") {
+        return false;
+      }
+      return canUserActOnWorkflowSnapshot(role, user?.id, workflow);
+    };
 
     const handovers: NeedsProcessingRow[] = syncedHandoverRows
-      .filter((h) => matchAssigned(h.workflow))
+      .filter((h) => matchAssigned(h.workflow, "handover"))
       .map((h) => ({ kind: "handover", item: h }));
 
     const trainings: NeedsProcessingRow[] = syncedTrainingRows
-      .filter((t) => matchAssigned(t.workflow))
+      .filter((t) => matchAssigned(t.workflow, "coaching"))
       .map((t) => ({ kind: "training", item: t }));
 
     return [...handovers, ...trainings];
@@ -325,6 +343,11 @@ const Handover = () => {
     }
     try {
       setTrainingSubmitting(true);
+      const coachingWorkflowIds = new Set(trainingWorkflows.map((w) => w.id));
+      const safeWorkflowId =
+        trainingForm.workflowId && coachingWorkflowIds.has(trainingForm.workflowId)
+          ? trainingForm.workflowId
+          : undefined;
       const payload = {
         title: trainingForm.title.trim(),
         typeCode: trainingForm.type,
@@ -334,7 +357,7 @@ const Handover = () => {
         endDate: trainingForm.endDate || trainingForm.startDate,
         participants: Number(trainingForm.participants || 0),
         contractId: trainingForm.contractId || undefined,
-        workflowId: trainingForm.workflowId || undefined,
+        workflowId: safeWorkflowId,
         location: trainingForm.location.trim() || undefined,
         description: trainingForm.description.trim() || undefined,
       };
@@ -372,12 +395,27 @@ const Handover = () => {
     if (!workflowCourseId) return;
     setWorkflowSaving(true);
     try {
+      const coachingWorkflowIds = new Set(trainingWorkflows.map((w) => w.id));
+      const safeWorkflowId =
+        workflowSelectedId && coachingWorkflowIds.has(workflowSelectedId)
+          ? workflowSelectedId
+          : undefined;
+      if (workflowSelectedId && !safeWorkflowId) {
+        toast.error("Quy trình đang chọn thuộc nhóm đào tạo — hãy chọn quy trình huấn luyện (coaching).");
+        return;
+      }
+      const hasPayloads = Object.keys(workflowStepPayloads).length > 0;
+      if (!safeWorkflowId && !hasPayloads) {
+        toast.error("Chọn quy trình huấn luyện (coaching) trước khi lưu.");
+        return;
+      }
       await api.put(`/api/v1/training/${workflowCourseId}`, {
-        ...(workflowSelectedId ? { workflowId: workflowSelectedId } : {}),
-        ...(Object.keys(workflowStepPayloads).length > 0 ? { stepPayloads: workflowStepPayloads } : {}),
+        ...(safeWorkflowId ? { workflowId: safeWorkflowId } : {}),
+        ...(hasPayloads ? { stepPayloads: workflowStepPayloads } : {}),
       });
       await qc.invalidateQueries({ queryKey: ["trainingCourses"] });
       await qc.invalidateQueries({ queryKey: ["trainingCourse", workflowCourseId] });
+      await qc.invalidateQueries({ queryKey: ["workflow-instance", "coaching", workflowCourseId] });
       toast.success("Đã lưu quy trình huấn luyện");
     } catch (error) {
       toast.error(getApiErrorMessage(error, "Không lưu được quy trình"));
@@ -469,9 +507,15 @@ const Handover = () => {
                         {formatShortDate(t.startDate)} – {formatShortDate(t.endDate)}
                       </TableCell>
                       <TableCell className="px-4 py-3.5 text-center">{statusBadge(t.displayStatus)}</TableCell>
-                      <TableCell className="px-4 py-3.5 text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditTraining(t)}>
-                          <Pencil className="h-4 w-4" />
+                        <TableCell className="px-4 py-3.5 text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Xử lý quy trình"
+                          onClick={() => openWorkflowDialog(t)}
+                        >
+                          <GitBranch className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -876,24 +920,26 @@ const Handover = () => {
           if (!open) setWorkflowCourseId(null);
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="flex h-[min(90vh,52rem)] w-[min(100vw-2rem,48rem)] max-w-3xl flex-col gap-0 overflow-hidden p-0 sm:rounded-lg">
+          <DialogHeader className="shrink-0 space-y-0 border-b border-border/50 px-6 py-4 pr-12 text-left">
             <DialogTitle>Quy trình huấn luyện</DialogTitle>
           </DialogHeader>
-          {workflowCourseId ? (
-            <CourseWorkflowSection
-              open={workflowDialogOpen}
-              courseId={workflowCourseId}
-              moduleKey="coaching"
-              detailWorkflow={workflowCourseDetail?.workflow ?? undefined}
-              detailStepPayloads={workflowCourseDetail?.stepPayloads}
-              selectedWorkflowId={workflowSelectedId}
-              onSelectedWorkflowIdChange={setWorkflowSelectedId}
-              stepPayloads={workflowStepPayloads}
-              onStepPayloadsChange={setWorkflowStepPayloads}
-            />
-          ) : null}
-          <DialogFooter>
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            {workflowCourseId ? (
+              <CourseWorkflowSection
+                open={workflowDialogOpen}
+                courseId={workflowCourseId}
+                moduleKey="coaching"
+                detailWorkflow={workflowCourseDetail?.workflow ?? undefined}
+                detailStepPayloads={workflowCourseDetail?.stepPayloads}
+                selectedWorkflowId={workflowSelectedId}
+                onSelectedWorkflowIdChange={setWorkflowSelectedId}
+                stepPayloads={workflowStepPayloads}
+                onStepPayloadsChange={setWorkflowStepPayloads}
+              />
+            ) : null}
+          </div>
+          <DialogFooter className="shrink-0 border-t border-border/50 px-6 py-4 sm:space-x-2">
             <Button variant="outline" onClick={() => setWorkflowDialogOpen(false)}>
               Đóng
             </Button>

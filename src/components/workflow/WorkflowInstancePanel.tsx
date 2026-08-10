@@ -1,12 +1,30 @@
-import { useRef, useState } from "react";
-import { Check, CircleDot, Download, FileText, History, Paperclip, Trash2, Upload, X } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
+import {
+  Check,
+  CircleDot,
+  Download,
+  Eye,
+  FileText,
+  History,
+  ImageIcon,
+  Paperclip,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { getApiErrorMessage } from "@/lib/api-errors";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { resolveUploadUrl } from "@/lib/upload-url";
+import {
+  downloadUploadFile,
+  isBrowserPreviewable,
+  isImageDocument,
+} from "@/lib/workflow-document-file";
 import { useRole } from "@/hooks/use-role";
 import { useAuth } from "@/hooks/use-auth";
 import { canUserActOnWorkflowStep } from "@/lib/workflow-step-access";
@@ -18,6 +36,7 @@ import {
   useInstanceForEntity,
   useUploadInstanceDocument,
   type WorkflowEntityModuleKey,
+  type WorkflowInstanceDocument,
 } from "@/hooks/use-workflows-api";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -58,14 +77,152 @@ type Props = {
   compact?: boolean;
 };
 
+type ImagePreviewState = { url: string; fileName: string } | null;
+
+function toWorkflowDocumentUrl(storagePath: string): string {
+  return resolveUploadUrl(storagePath);
+}
+
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 102.4) / 10} KB`;
   return `${Math.round(bytes / 104857.6) / 10} MB`;
 }
 
-function toWorkflowDocumentUrl(storagePath: string): string {
-  return resolveUploadUrl(storagePath);
+function WorkflowDocumentActions({
+  doc,
+  onPreviewImage,
+  canDelete,
+  deleting,
+  onDelete,
+}: {
+  doc: WorkflowInstanceDocument;
+  onPreviewImage: (state: ImagePreviewState) => void;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: () => void;
+}) {
+  const url = toWorkflowDocumentUrl(doc.storagePath);
+  const isImage = isImageDocument(doc.mimeType, doc.fileName);
+  const canPreview = isBrowserPreviewable(doc.mimeType, doc.fileName);
+
+  const onView = () => {
+    if (isImage) {
+      onPreviewImage({ url, fileName: doc.fileName });
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const onDownload = () => {
+    void downloadUploadFile(url, doc.fileName).catch(() => {
+      toast.error("Không tải được tài liệu");
+    });
+  };
+
+  return (
+    <div className="flex shrink-0 items-center gap-0.5">
+      {canPreview ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          aria-label={isImage ? "Xem ảnh" : "Xem tài liệu"}
+          title={isImage ? "Xem ảnh" : "Xem tài liệu"}
+          onClick={onView}
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </Button>
+      ) : null}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        aria-label="Tải về"
+        title="Tải về"
+        onClick={onDownload}
+      >
+        <Download className="h-3.5 w-3.5" />
+      </Button>
+      {canDelete && onDelete ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          aria-label="Xoá tài liệu"
+          onClick={onDelete}
+          disabled={deleting}
+        >
+          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function DocumentListItem({
+  doc,
+  meta,
+  onPreviewImage,
+  canDelete,
+  deleting,
+  onDelete,
+}: {
+  doc: WorkflowInstanceDocument;
+  meta?: ReactNode;
+  onPreviewImage: (state: ImagePreviewState) => void;
+  canDelete?: boolean;
+  deleting?: boolean;
+  onDelete?: () => void;
+}) {
+  const url = toWorkflowDocumentUrl(doc.storagePath);
+  const isImage = isImageDocument(doc.mimeType, doc.fileName);
+
+  return (
+    <li className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-card px-2 py-1.5 text-xs">
+      {isImage ? (
+        <button
+          type="button"
+          className="h-9 w-9 shrink-0 overflow-hidden rounded border border-border/60 bg-muted"
+          onClick={() => onPreviewImage({ url, fileName: doc.fileName })}
+          title="Xem ảnh"
+        >
+          <img src={url} alt={doc.fileName} className="h-full w-full object-cover" />
+        </button>
+      ) : (
+        <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      )}
+      <button
+        type="button"
+        className="min-w-0 flex-1 truncate text-left hover:underline"
+        onClick={() => {
+          if (isImage) onPreviewImage({ url, fileName: doc.fileName });
+          else if (isBrowserPreviewable(doc.mimeType, doc.fileName)) {
+            window.open(url, "_blank", "noopener,noreferrer");
+          } else {
+            void downloadUploadFile(url, doc.fileName).catch(() => {
+              toast.error("Không tải được tài liệu");
+            });
+          }
+        }}
+        title={doc.fileName}
+      >
+        <span className="font-medium text-foreground">{doc.fileName}</span>
+        <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
+      </button>
+      {meta}
+      <WorkflowDocumentActions
+        doc={doc}
+        onPreviewImage={onPreviewImage}
+        canDelete={canDelete}
+        deleting={deleting}
+        onDelete={onDelete}
+      />
+    </li>
+  );
 }
 
 export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compact }: Props) {
@@ -77,6 +234,7 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
   const uploadDoc = useUploadInstanceDocument();
   const deleteDoc = useDeleteInstanceDocument();
   const [comment, setComment] = useState("");
+  const [imagePreview, setImagePreview] = useState<ImagePreviewState>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   if (!entityId) return null;
@@ -167,9 +325,96 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
 
   const showAct = compact ? canActOnFocus : canAct;
   const showDocsBlock = Boolean(actionStep);
-  /** Cho phép đính kèm cho mọi bước trong lúc quy trình còn chạy. */
+  /** Cho phép đính kèm khi quy trình còn chạy. */
   const canUploadDocs = showDocsBlock && instance.status === "running";
   const docStepLabel = compact && actionStep ? actionStep.name : "bước hiện tại";
+
+  const docsSection = showDocsBlock ? (
+    <div
+      className={cn(
+        "rounded-md border p-3",
+        requireDoc
+          ? "border-amber-300/80 bg-amber-50/50 dark:border-amber-700 dark:bg-amber-950/30"
+          : "border-border/50 bg-secondary/10",
+      )}
+    >
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-card-foreground">
+          <Paperclip className="h-4 w-4" />
+          Tài liệu {compact ? `— ${docStepLabel}` : `của ${docStepLabel}`}
+          {requireDoc ? <span className="ml-1 text-destructive">(bắt buộc)</span> : null}
+        </div>
+      </div>
+
+      {canUploadDocs ? (
+        <>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx,.xls,.xlsx,.csv,.txt"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void onUploadFile(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={onUploadClick}
+            disabled={uploadDoc.isPending}
+            className={cn(
+              "mb-3 flex w-full flex-col items-center justify-center gap-1 rounded-md border border-dashed px-3 py-4 text-center transition-colors",
+              requireDoc
+                ? "border-amber-400 bg-white/70 hover:bg-amber-50 dark:bg-background/40 dark:hover:bg-amber-950/40"
+                : "border-border bg-background/50 hover:bg-muted/40",
+              uploadDoc.isPending && "opacity-60",
+            )}
+          >
+            <Upload className="h-5 w-5 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
+              {uploadDoc.isPending ? "Đang tải lên…" : "Chọn hoặc kéo thả file để đính kèm"}
+            </span>
+            <span className="text-[11px] text-muted-foreground">PDF, ảnh, Word, Excel — tối đa 25MB</span>
+          </button>
+        </>
+      ) : (
+        <p className="mb-2 text-xs text-muted-foreground">
+          {instance.status !== "running"
+            ? "Quy trình đã đóng — không thể đính kèm thêm."
+            : "Không thể đính kèm tài liệu ở trạng thái hiện tại."}
+        </p>
+      )}
+
+      {stepDocs.length === 0 ? (
+        <p className={cn("text-xs", requireDoc ? "text-destructive" : "text-muted-foreground")}>
+          {requireDoc ? "Chưa có tài liệu — bắt buộc đính kèm trước khi phê duyệt." : "Chưa có tài liệu nào cho bước này."}
+        </p>
+      ) : (
+        <ul className="space-y-1.5">
+          {stepDocs.map((doc) => (
+            <DocumentListItem
+              key={doc.id}
+              doc={doc}
+              onPreviewImage={setImagePreview}
+              canDelete={canUploadDocs}
+              deleting={deleteDoc.isPending}
+              onDelete={() => void onDeleteDocument(doc.id)}
+              meta={
+                doc.uploadedBy ? (
+                  <span className="shrink-0 text-muted-foreground">
+                    {doc.uploadedBy.fullName} · {formatDateTime(doc.uploadedAt)}
+                  </span>
+                ) : (
+                  <span className="shrink-0 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</span>
+                )
+              }
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -178,143 +423,56 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
         compact && "border-0 bg-transparent p-0 shadow-none",
       )}
     >
-      {!compact ? (
-        <>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-card-foreground">Tiến trình xử lý</h4>
-                <Badge variant="outline" className="text-xs">
-                  {instance.workflow.name}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Bắt đầu lúc {formatDateTime(instance.startedAt)}
-                {instance.completedAt ? ` · Kết thúc ${formatDateTime(instance.completedAt)}` : ""}
-              </p>
-            </div>
-            {instance.status === "completed" ? (
-              <Badge className="bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/15">Hoàn tất</Badge>
-            ) : instance.status === "cancelled" ? (
-              <Badge variant="destructive">Đã trả lại</Badge>
-            ) : (
-              <Badge className="bg-amber-500/15 text-amber-700 hover:bg-amber-500/15">Đang xử lý</Badge>
-            )}
-          </div>
+      {compact ? docsSection : null}
 
-          <ol className="space-y-2">
+      {!compact ? (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-medium text-card-foreground">Tiến trình quy trình</div>
+            <Badge variant={instance.status === "running" ? "default" : "secondary"}>
+              {instance.status === "running"
+                ? "Đang chạy"
+                : instance.status === "completed"
+                  ? "Hoàn thành"
+                  : "Đã đóng"}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {instance.workflow.name} · Bước {currentIndex >= 0 ? currentIndex + 1 : "—"}/
+            {instance.workflow.steps.length}
+          </p>
+          <ol className="space-y-1.5">
             {instance.workflow.steps.map((step, idx) => {
-              const isDone = currentIndex >= 0 ? idx < currentIndex : instance.status === "completed";
-              const isCurrent = idx === currentIndex && instance.status === "running";
+              const isCurrent = step.id === instance.currentStepId;
+              const isDone = currentIndex >= 0 && idx < currentIndex;
               return (
-                <li
-                  key={step.id}
-                  className={workflowStepListItemClass(isDone, isCurrent)}
-                >
-                  <span
-                    className={cn(
-                      "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white",
-                      isDone ? "bg-emerald-500" : isCurrent ? "bg-amber-500" : "bg-muted-foreground/60",
+                <li key={step.id} className={workflowStepListItemClass(isCurrent)}>
+                  <span className="mt-0.5 shrink-0">
+                    {isDone ? (
+                      <Check className="h-4 w-4 text-success" />
+                    ) : isCurrent ? (
+                      <CircleDot className="h-4 w-4 text-primary" />
+                    ) : (
+                      <span className="inline-block h-4 w-4 rounded-full border border-muted-foreground/40" />
                     )}
-                  >
-                    {isDone ? <Check className="h-3 w-3" /> : isCurrent ? <CircleDot className="h-3 w-3" /> : idx + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium">{step.name}</span>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {ACTION_LABEL[step.actionCode] ?? step.actionCode}
-                      </Badge>
-                      {step.requireDocument ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                          <Paperclip className="h-2.5 w-2.5" />
-                          tài liệu
-                        </span>
-                      ) : null}
+                    <div className="font-medium text-foreground">
+                      {idx + 1}. {step.name}
                     </div>
-                    <div className="mt-0.5 text-xs text-muted-foreground">
-                      <span>{ROLE_LABEL[step.roleCode] ?? step.roleCode}</span>
+                    <div className="text-muted-foreground">
+                      {ROLE_LABEL[step.roleCode] ?? step.roleCode}
+                      {step.requireDocument ? " · Cần tài liệu" : ""}
                     </div>
                   </div>
                 </li>
               );
             })}
           </ol>
-        </>
-      ) : null}
-
-      {showDocsBlock ? (
-        <div className="rounded-md border border-border/50 bg-secondary/20 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-sm font-medium text-card-foreground">
-              Tài liệu {compact ? `— ${docStepLabel}` : `của ${docStepLabel}`}
-              {requireDoc ? <span className="ml-1 text-destructive">(bắt buộc)</span> : null}
-            </div>
-            {canUploadDocs ? (
-              <>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void onUploadFile(f);
-                    e.target.value = "";
-                  }}
-                />
-                <Button variant="outline" size="sm" onClick={onUploadClick} disabled={uploadDoc.isPending}>
-                  <Upload className="mr-1 h-4 w-4" />
-                  {uploadDoc.isPending ? "Đang tải lên…" : "Đính kèm"}
-                </Button>
-              </>
-            ) : null}
-          </div>
-          {stepDocs.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Chưa có tài liệu nào cho bước này.</p>
-          ) : (
-            <ul className="space-y-1.5">
-              {stepDocs.map((doc) => (
-                <li key={doc.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-card px-2 py-1.5 text-xs">
-                  <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <span className="min-w-0 flex-1 truncate">
-                    <span className="font-medium text-foreground">{doc.fileName}</span>
-                    <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
-                  </span>
-                  <a
-                    href={toWorkflowDocumentUrl(doc.storagePath)}
-                    download={doc.fileName}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="shrink-0"
-                  >
-                    <Button variant="ghost" size="icon" aria-label="Tải tài liệu">
-                      <Download className="h-3.5 w-3.5" />
-                    </Button>
-                  </a>
-                  {doc.uploadedBy ? (
-                    <span className="shrink-0 text-muted-foreground">
-                      {doc.uploadedBy.fullName} · {formatDateTime(doc.uploadedAt)}
-                    </span>
-                  ) : (
-                    <span className="shrink-0 text-muted-foreground">{formatDateTime(doc.uploadedAt)}</span>
-                  )}
-                  {canUploadDocs ? (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Xoá tài liệu"
-                      onClick={() => void onDeleteDocument(doc.id)}
-                      disabled={deleteDoc.isPending}
-                    >
-                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       ) : null}
+
+      {!compact ? docsSection : null}
       <div className="rounded-md border border-border/50 bg-secondary/10 p-3">
         <div className="mb-2 text-sm font-medium text-card-foreground">
           Tất cả tài liệu đã đính kèm
@@ -324,29 +482,18 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
         ) : (
           <ul className="space-y-1.5">
             {allDocs.map((doc) => (
-              <li key={`all-${doc.id}`} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-card px-2 py-1.5 text-xs">
-                <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                <span className="min-w-0 flex-1 truncate">
-                  <span className="font-medium text-foreground">{doc.fileName}</span>
-                  <span className="ml-1 text-muted-foreground">({formatSize(doc.fileSize)})</span>
-                </span>
-                <span className="shrink-0 text-muted-foreground">
-                  {doc.stepId
-                    ? `Bước ${instance.workflow.steps.find((s) => s.id === doc.stepId)?.order ?? "?"}`
-                    : "Tài liệu chung"}
-                </span>
-                <a
-                  href={toWorkflowDocumentUrl(doc.storagePath)}
-                  download={doc.fileName}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="shrink-0"
-                >
-                  <Button variant="ghost" size="icon" aria-label="Tải tài liệu">
-                    <Download className="h-3.5 w-3.5" />
-                  </Button>
-                </a>
-              </li>
+              <DocumentListItem
+                key={`all-${doc.id}`}
+                doc={doc}
+                onPreviewImage={setImagePreview}
+                meta={
+                  <span className="shrink-0 text-muted-foreground">
+                    {doc.stepId
+                      ? `Bước ${instance.workflow.steps.find((s) => s.id === doc.stepId)?.order ?? "?"}`
+                      : "Tài liệu chung"}
+                  </span>
+                }
+              />
             ))}
           </ul>
         )}
@@ -397,25 +544,66 @@ export function WorkflowInstancePanel({ moduleKey, entityId, focusStepId, compac
       ) : null}
 
       {!compact && instance.logs.length > 0 ? (
-        <details className="rounded-md bg-secondary/10 px-3 py-2 text-xs">
-          <summary className="cursor-pointer text-muted-foreground inline-flex items-center gap-1">
-            <History className="h-3.5 w-3.5" /> Nhật ký ({instance.logs.length})
-          </summary>
-          <ul className="mt-2 space-y-1.5">
-            {instance.logs.map((log) => (
-              <li key={log.id} className="flex items-start gap-2 text-muted-foreground">
-                <span className="w-32 shrink-0 text-foreground">{formatDateTime(log.createdAt)}</span>
-                <span className="flex-1">
-                  <span className="font-medium text-foreground">{ACTION_LABEL[log.action] ?? log.action}</span>
-                  {log.step ? ` · ${log.step.name}` : ""}
-                  {log.actor ? ` · ${log.actor.fullName}` : ""}
-                  {log.comment ? ` — ${log.comment}` : ""}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1.5 text-sm font-medium text-card-foreground">
+            <History className="h-4 w-4" />
+            Nhật ký
+          </div>
+          <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-muted-foreground">
+            {instance.logs.slice(0, 20).map((log) => (
+              <li key={log.id} className="rounded bg-card/60 px-2 py-1">
+                <span className="font-medium text-foreground">
+                  {ACTION_LABEL[log.action] ?? log.action}
                 </span>
+                {log.step ? ` · ${log.step.name}` : ""}
+                {log.actor ? ` · ${log.actor.fullName}` : ""}
+                <span className="ml-1">{formatDateTime(log.createdAt)}</span>
+                {log.comment ? <div className="mt-0.5 italic">{log.comment}</div> : null}
               </li>
             ))}
           </ul>
-        </details>
+        </div>
       ) : null}
+
+      <Dialog open={Boolean(imagePreview)} onOpenChange={(o) => !o && setImagePreview(null)}>
+        <DialogContent className="max-w-4xl gap-3 overflow-hidden p-4 sm:rounded-lg">
+          <DialogHeader className="space-y-1 pr-8 text-left">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="truncate">{imagePreview?.fileName ?? "Xem ảnh"}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {imagePreview ? (
+            <div className="flex max-h-[75vh] flex-col gap-3">
+              <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-md bg-muted/40 p-2">
+                <img
+                  src={imagePreview.url}
+                  alt={imagePreview.fileName}
+                  className="max-h-[70vh] max-w-full object-contain"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void downloadUploadFile(imagePreview.url, imagePreview.fileName).catch(() => {
+                      toast.error("Không tải được ảnh");
+                    });
+                  }}
+                >
+                  <Download className="mr-1 h-4 w-4" />
+                  Tải về
+                </Button>
+                <Button type="button" size="sm" onClick={() => setImagePreview(null)}>
+                  Đóng
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

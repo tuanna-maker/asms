@@ -13,6 +13,8 @@ export type WorkflowStepSnapshot = {
 export type WorkflowSnapshot = {
   instanceId: string;
   workflowId: string;
+  /** moduleKey của instance (handover / coaching / training / …) — dùng lọc «Cần xử lý». */
+  moduleKey: string;
   workflowCode: string;
   workflowName: string;
   status: string;
@@ -36,11 +38,13 @@ export async function loadWorkflowSnapshotsByInstanceIds(ids: Array<string | nul
       id: true,
       status: true,
       workflowId: true,
+      moduleKey: true,
       currentStepId: true,
       workflow: {
         select: {
           code: true,
           name: true,
+          moduleKey: true,
           steps: {
             orderBy: { order: "asc" },
             select: {
@@ -65,6 +69,7 @@ export async function loadWorkflowSnapshotsByInstanceIds(ids: Array<string | nul
     map.set(inst.id, {
       instanceId: inst.id,
       workflowId: inst.workflowId,
+      moduleKey: inst.moduleKey,
       workflowCode: inst.workflow.code,
       workflowName: inst.workflow.name,
       status: inst.status,
